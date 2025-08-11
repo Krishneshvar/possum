@@ -2,6 +2,7 @@ import express from 'express';
 import { initDB } from './db.js';
 import productsRouter from './routes/products.routes.js';
 import salesRouter from './routes/sales.routes.js';
+import dashboardRouter from './routes/dashboard.routes.js';
 import dotenv from 'dotenv';
 
 function startServer() {
@@ -17,6 +18,7 @@ function startServer() {
 
   app.use('/api/products', productsRouter);
   app.use('/api/sales', salesRouter);
+  app.use('/api/dashboard', dashboardRouter);
 
   app.listen(process.env.SERVER_PORT, () => {
     console.log(`Backend running on ${process.env.VITE_BASE_URL}:${process.env.SERVER_PORT}`);
