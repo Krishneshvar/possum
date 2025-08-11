@@ -1,10 +1,11 @@
 import express from 'express';
 import { initDB } from './db.js';
+import dotenv from 'dotenv';
 
 function startServer() {
+  dotenv.config();
   const app = express();
   const db = initDB();
-  const PORT = 3001;
 
   app.use(express.json());
 
@@ -12,8 +13,8 @@ function startServer() {
     res.json({ message: 'pong', dbPath: db.name });
   });
 
-  app.listen(PORT, () => {
-    console.log(`Backend running on http://localhost:${PORT}`);
+  app.listen(process.env.SERVER_PORT, () => {
+    console.log(`Backend running on ${process.env.VITE_BASE_URL}${process.env.SERVER_PORT}`);
   });
 }
 
