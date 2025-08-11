@@ -1,25 +1,17 @@
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  sku TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  price_cents INTEGER NOT NULL,
-  qty_on_hand INTEGER DEFAULT 0,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  category TEXT,
+  price REAL NOT NULL,
+  stock INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS sales (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  cashier TEXT,
-  total_cents INTEGER,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS sale_items (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  sale_id INTEGER,
-  product_id INTEGER,
-  qty INTEGER,
-  price_cents INTEGER,
-  FOREIGN KEY(sale_id) REFERENCES sales(id),
-  FOREIGN KEY(product_id) REFERENCES products(id)
+  product_id INTEGER NOT NULL,
+  quantity INTEGER NOT NULL,
+  total_price REAL NOT NULL,
+  sold_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products (id)
 );
