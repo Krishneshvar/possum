@@ -1,6 +1,17 @@
+# Electron
 node_modules
 dist
 out
 .DS_Store
 .eslintcache
 *.log*
+
+# Frontend
+./app/node_modules
+
+# Environment variables
+.env
+./app/.env
+
+# Database
+*.db

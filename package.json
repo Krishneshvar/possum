@@ -1,41 +1,35 @@
 {
   "name": "possum",
   "version": "1.0.0",
-  "description": "An Electron application with React",
-  "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "description": "Point Of Sale Solution for Unified Management",
+  "main": "electron/main.js",
+  "type": "module",
   "scripts": {
-    "format": "prettier --write .",
-    "lint": "eslint --cache .",
-    "start": "electron-vite preview",
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "dev": "concurrently \"npm run watch:preload\" \"npm run dev:react\" \"npm run dev:electron\"",
+    "dev:react": "cd app && npm run dev",
+    "dev:electron": "wait-on tcp:5173 && electron .",
+    "build": "cd app && vite build && cd .. && npm run build:preload && electron-builder",
+    "postinstall": "cd app && npm install && cd .. && electron-rebuild",
+    "init-db": "node scripts/init-db.js",
+    "build:preload": "vite build --config electron/preload.vite.config.js",
+    "watch:preload": "vite build --config electron/preload.vite.config.js --watch"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "electron-updater": "^6.3.9"
+    "better-sqlite3": "^12.2.0",
+    "concurrently": "^9.2.0",
+    "electron-updater": "^6.3.9",
+    "express": "^5.1.0",
+    "wait-on": "^8.0.4"
   },
   "devDependencies": {
-    "@electron-toolkit/eslint-config": "^2.0.0",
-    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@electron/rebuild": "^4.0.1",
     "electron": "^37.2.3",
     "electron-builder": "^25.1.8",
-    "electron-vite": "^4.0.0",
-    "eslint": "^9.31.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "prettier": "^3.6.2",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "vite": "^7.0.5"
+    "vite": "^7.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
