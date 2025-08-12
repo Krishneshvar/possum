@@ -1,4 +1,3 @@
-import * as React from "react"
 import {
   ChartColumn,
   CircleQuestionMark,
@@ -11,9 +10,9 @@ import {
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/dashboard/nav-main"
+import { NavSecondary } from "@/components/dashboard/nav-secondary"
+import { NavUser } from "@/components/dashboard/nav-user"
 import { Separator } from "@/components/ui/separator"
 import {
   Sidebar,

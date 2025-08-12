@@ -1,6 +1,4 @@
-"use client";
-import * as React from "react"
-
+import { Link } from "react-router-dom"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -20,10 +18,10 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild>
-                <a href={item.url}>
+                <Link to={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
