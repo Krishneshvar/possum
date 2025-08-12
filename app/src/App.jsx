@@ -1,8 +1,8 @@
-import DashboardPage from "./pages/DashboardPage";
+import DashboardPage from './app/dashboard/DashboardPage'
 
 export default function App() {
   return (
-    <div style={{ padding: '1rem' }}>
+    <div>
       <DashboardPage />
     </div>
   );
