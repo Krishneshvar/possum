@@ -22,7 +22,7 @@ function createWindow() {
   });
 
   if (isDev) {
-    win.loadURL(`${process.env.VITE_BASE_URL}${process.env.VITE_UI_PORT}`);
+    win.loadURL('http://localhost:5173');
     win.webContents.openDevTools();
   } else {
     win.loadFile(path.join(__dirname, '../app/dist/index.html'));

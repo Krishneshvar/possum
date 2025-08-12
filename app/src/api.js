@@ -1,32 +1,29 @@
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = 'http://localhost:3001/api';
 
-const productsAPI = {
-  getAll: () => fetch(`${API_BASE}/products`).then(res => res.json()),
-  get: (id) => fetch(`${API_BASE}/products/${id}`).then(res => res.json()),
-  create: (data) =>
-    fetch(`${API_BASE}/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    }).then(res => res.json()),
-  updateStock: (id, stock) =>
-    fetch(`${API_BASE}/products/${id}/stock`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stock }),
-    }).then(res => res.json()),
-  delete: (id) =>
-    fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' }).then(res => res.json()),
+export const productsAPI = {
+  getAll: () => fetch(`${API_BASE}/products`).then(r => r.json()),
+  get: (id) => fetch(`${API_BASE}/products/${id}`).then(r => r.json()),
+  create: (data) => fetch(`${API_BASE}/products`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(r => r.json()),
+  updateStock: (id, stock) => fetch(`${API_BASE}/products/${id}/stock`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stock })
+  }).then(r => r.json()),
+  delete: (id) => fetch(`${API_BASE}/products/${id}`, {
+    method: 'DELETE'
+  }).then(r => r.json()),
 };
 
-const salesAPI = {
-  getAll: () => fetch(`${API_BASE}/sales`).then(res => res.json()),
-  create: (data) =>
-    fetch(`${API_BASE}/sales`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    }).then(res => res.json()),
+export const salesAPI = {
+  getAll: () => fetch(`${API_BASE}/sales`).then(r => r.json()),
+  get: (id) => fetch(`${API_BASE}/sales/${id}`).then(r => r.json()),
+  create: (payload) => fetch(`${API_BASE}/sales`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(r => r.json()),
 };
-
-export { productsAPI, salesAPI }

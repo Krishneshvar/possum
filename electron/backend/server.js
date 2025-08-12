@@ -3,23 +3,29 @@ import { initDB } from './db.js';
 import productsRouter from './routes/products.routes.js';
 import salesRouter from './routes/sales.routes.js';
 import dotenv from 'dotenv';
+import cors from 'cors';
+
+dotenv.config();
 
 function startServer() {
-  dotenv.config();
-  const app = express();
   initDB();
+  const app = express();
+
+  const corsOptions = {
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
+  };
+  
+  app.use(cors(corsOptions));
 
   app.use(express.json());
-
-  app.get('/api/ping', (req, res) => {
-    res.json({ message: 'pong' });
-  });
 
   app.use('/api/products', productsRouter);
   app.use('/api/sales', salesRouter);
 
-  app.listen(process.env.SERVER_PORT, () => {
-    console.log(`Backend running on ${process.env.VITE_BASE_URL}:${process.env.SERVER_PORT}`);
+  app.listen(3001, () => {
+    console.log('Backend running on http://localhost:3001');
   });
 }
 
