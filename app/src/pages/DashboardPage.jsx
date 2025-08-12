@@ -12,14 +12,13 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-const SalesPage = () => <div className="p-6"><h1>Sales Page</h1><p>Content for sales.</p></div>
-const AnalyticsPage = () => <div className="p-6"><h1>Analytics Page</h1><p>Content for analytics.</p></div>
-const ProductsPage = () => <div className="p-6"><h1>Products Page</h1><p>Content for products.</p></div>
-const SalesHistoryPage = () => <div className="p-6"><h1>Sales History Page</h1><p>Content for sales history.</p></div>
-const PluginsPage = () => <div className="p-6"><h1>Plugins Page</h1><p>Content for plugins.</p></div>
-const SettingsPage = () => <div className="p-6"><h1>Settings Page</h1><p>Content for settings.</p></div>
-const HelpPage = () => <div className="p-6"><h1>Help Page</h1><p>Content for help.</p></div>
-
+import AnalyticsPage from './AnalyticsPage'
+import HelpPage from './HelpPage'
+import PluginsPage from './PluginsPage'
+import ProductsPage from './ProductsPage'
+import SalesHistoryPage from './SalesHistoryPage'
+import SalesPage from './SalesPage'
+import SettingsPage from './SettingsPage'
 
 export default function DashboardPage() {
   return (

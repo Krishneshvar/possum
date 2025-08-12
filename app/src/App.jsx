@@ -1,4 +1,4 @@
-import DashboardPage from './app/dashboard/DashboardPage'
+import DashboardPage from './pages/DashboardPage'
 
 export default function App() {
   return (
