@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllProducts, getProductById, addProduct, updateStock, deleteProduct } from '../models/products.db.js';
+import { getAllProducts, getProductById, addProduct, updateProduct, updateStock, deleteProduct } from '../models/products.db.js';
 
 const router = express.Router();
 
@@ -8,7 +8,11 @@ router.get('/', (req, res) => {
 });
 
 router.get('/:id', (req, res) => {
-  const product = getProductById(req.params.id);
+  const productId = parseInt(req.params.id, 10);
+  if (isNaN(productId)) {
+    return res.status(400).json({ error: 'Invalid product ID' });
+  }
+  const product = getProductById(productId);
   if (!product) return res.status(404).json({ error: 'Not found' });
   res.json(product);
 });
@@ -22,9 +26,24 @@ router.post('/', (req, res) => {
   }
 });
 
+router.put('/:id', (req, res) => {
+  try {
+    const productId = parseInt(req.params.id, 10);
+    const { name, category, price, stock } = req.body;
+    updateProduct(productId, { name, category, price, stock });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 router.put('/:id/stock', (req, res) => {
   try {
-    updateStock(req.params.id, req.body.stock);
+    const productId = parseInt(req.params.id, 10);
+    if (isNaN(productId)) {
+        return res.status(400).json({ error: 'Invalid product ID' });
+    }
+    updateStock(productId, req.body.stock);
     res.json({ success: true });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -32,8 +51,20 @@ router.put('/:id/stock', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  deleteProduct(req.params.id);
-  res.json({ success: true });
+  try {
+    const productId = parseInt(req.params.id, 10);
+    if (isNaN(productId)) {
+      return res.status(400).json({ error: 'Invalid product ID' });
+    }
+    const changes = deleteProduct(productId);
+    if (changes.changes === 0) {
+        return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting product:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

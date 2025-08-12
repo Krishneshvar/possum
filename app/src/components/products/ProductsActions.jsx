@@ -1,8 +1,9 @@
 import { Plus, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from 'react-router-dom';
 
-export default function ProductsActions({ searchTerm, onSearchChange, filteredCount }) {
+export default function ProductsActions({ searchTerm, onSearchChange, filteredCount, onProductAdded }) {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -10,8 +11,10 @@ export default function ProductsActions({ searchTerm, onSearchChange, filteredCo
           <h1 className="text-2xl font-semibold">Product Management</h1>
           <p className="text-sm text-muted-foreground">Manage your inventory and product catalog.</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Add Product
+        <Button asChild>
+          <Link to="/products/add">
+            <Plus className="mr-2 h-4 w-4" /> Add Product
+          </Link>
         </Button>
       </div>
 

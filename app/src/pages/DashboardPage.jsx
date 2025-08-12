@@ -15,7 +15,9 @@ import {
 import AnalyticsPage from './AnalyticsPage'
 import HelpPage from './HelpPage'
 import PluginsPage from './PluginsPage'
+import ProductDetailsPage from './ProductDetailsPage'
 import ProductsPage from './ProductsPage'
+import AddProductPage from './AddProductPage'
 import SalesHistoryPage from './SalesHistoryPage'
 import SalesPage from './SalesPage'
 import SettingsPage from './SettingsPage'
@@ -43,6 +45,8 @@ export default function DashboardPage() {
                   <Route path="/sales" element={<SalesPage />} />
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/products" element={<ProductsPage />} />
+                  <Route path="/products/add" element={<AddProductPage />} />
+                  <Route path="/products/:productId" element={<ProductDetailsPage />} />
                   <Route path="/sales-history" element={<SalesHistoryPage />} />
                   <Route path="/plugins" element={<PluginsPage />} />
                   <Route path="/help" element={<HelpPage />} />

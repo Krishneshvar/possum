@@ -34,5 +34,6 @@ export function decrementStock(id, qty) {
 }
 
 export function deleteProduct(id) {
+  db.prepare('DELETE FROM sale_items WHERE product_id = ?').run(id);
   return db.prepare('DELETE FROM products WHERE id = ?').run(id);
 }
