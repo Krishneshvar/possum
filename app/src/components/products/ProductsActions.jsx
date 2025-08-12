@@ -2,7 +2,7 @@ import { Plus, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function ProductActions({ table }) {
+export default function ProductsActions({ searchTerm, onSearchChange, filteredCount }) {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -14,17 +14,18 @@ export default function ProductActions({ table }) {
           <Plus className="mr-2 h-4 w-4" /> Add Product
         </Button>
       </div>
+
       <div className="flex items-center justify-between">
         <div className="relative w-full md:w-1/3">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
             className="pl-8"
-            value={table.getColumn("name")?.getFilterValue() ?? ""}
-            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
-        <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} products</span>
+        <span className="text-sm text-muted-foreground">{filteredCount} products</span>
       </div>
     </>
   );

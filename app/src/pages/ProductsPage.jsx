@@ -1,48 +1,38 @@
 import { useEffect, useState } from 'react';
-import { productsAPI } from '../api';
-import { useReactTable, getCoreRowModel, getFilteredRowModel, getSortedRowModel, getPaginationRowModel } from "@tanstack/react-table";
+import { productsAPI } from '../api.js';
 import ProductsTable from '@/components/products/ProductsTable';
-import ProductActions from '@/components/products/ProductsActions';
+import ProductsActions from '@/components/products/ProductsActions';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
-  const [sorting, setSorting] = useState([]);
-  const [columnFilters, setColumnFilters] = useState([]);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    let isMounted = true;
     async function fetchProducts() {
       try {
         const data = await productsAPI.getAll();
-        setProducts(data);
+        if (isMounted) {
+          setProducts(data);
+        }
       } catch (error) {
         console.error("Failed to fetch products:", error);
       }
     }
     fetchProducts();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const table = useReactTable({
-    data: products,
-    columns: ProductsTable.columns,
-    state: {
-      sorting,
-      columnFilters,
-      pagination,
-    },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <ProductActions table={table} />
-      <ProductsTable table={table} />
+      <ProductsActions searchTerm={searchTerm} onSearchChange={setSearchTerm} filteredCount={filteredProducts.length} />
+      <ProductsTable products={filteredProducts} />
     </div>
   );
 }
