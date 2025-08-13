@@ -18,18 +18,18 @@ function initDB() {
     ? path.join(__dirname, '../../possum.db') 
     : path.join(app.getPath('userData'), 'possum.db');
 
-  const firstTime = !fs.existsSync(dbPath);
   const db = new Database(dbPath);
-
-  if (firstTime) {
-    const schemaPath = path.join(__dirname, '../../db/schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    db.exec(schema);
-    console.log('Database initialized with schema.');
-  }
-
   dbInstance = db;
+  
   return db;
 }
 
-export { initDB };
+function closeDB() {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+    console.log('Database connection closed.');
+  }
+}
+
+export { initDB, closeDB };
