@@ -16,7 +16,7 @@ function startServer() {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type'],
   };
-  
+
   app.use(cors(corsOptions));
 
   app.use(express.json());

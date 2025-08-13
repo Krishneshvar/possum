@@ -1,5 +1,4 @@
 import {
-  ChartColumn,
   CircleQuestionMark,
   History,
   LayoutDashboard,
@@ -39,11 +38,6 @@ const data = {
       title: "Sales",
       url: "/sales",
       icon: ShoppingCart,
-    },
-    {
-      title: "Analytics",
-      url: "/analytics",
-      icon: ChartColumn,
     },
     {
       title: "Products",

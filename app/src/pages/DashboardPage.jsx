@@ -12,7 +12,6 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-import AnalyticsPage from './AnalyticsPage'
 import HelpPage from './HelpPage'
 import PluginsPage from './PluginsPage'
 import ProductDetailsPage from './ProductDetailsPage'
@@ -43,7 +42,6 @@ export default function DashboardPage() {
                   <Route path="/" element={<SectionCards />} />
                   <Route path="/dashboard" element={<SectionCards />} />
                   <Route path="/sales" element={<SalesPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/products" element={<ProductsPage />} />
                   <Route path="/products/add" element={<AddProductPage />} />
                   <Route path="/products/:productId" element={<ProductDetailsPage />} />
