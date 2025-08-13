@@ -75,4 +75,23 @@ const getProductDetails = async (req, res) => {
   }
 };
 
-export { getProducts, createProduct, getProductDetails };
+const deleteProductController = async (req, res) => {
+  const { id } = req.params;
+
+  const productId = parseInt(id, 10);
+  if (isNaN(productId)) {
+    return res.status(400).json({ error: 'Invalid product ID.' });
+  }
+
+  try {
+    const changes = deleteProduct(productId);
+    if (changes.changes === 0) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete product.' });
+  }
+};
+
+export { getProducts, createProduct, getProductDetails, updateProduct, deleteProductController };

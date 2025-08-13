@@ -17,25 +17,12 @@ export const productsAPI = {
     body: JSON.stringify(data)
   }).then(r => r.json()),
 
-  updateStock: (id, stock) => fetch(`${API_BASE}/products/${id}/stock`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ stock })
-  }).then(r => r.json()),
-
   delete: (id) => fetch(`${API_BASE}/products/${id}`, {
     method: 'DELETE'
-  }).then(r => r.json()),
-};
-
-export const salesAPI = {
-  getAll: () => fetch(`${API_BASE}/sales`).then(r => r.json()),
-
-  get: (id) => fetch(`${API_BASE}/sales/${id}`).then(r => r.json()),
-
-  create: (payload) => fetch(`${API_BASE}/sales`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).then(r => r.json()),
+  }).then(r => {
+    if (r.status === 204) {
+      return null;
+    }
+    return r.json();
+  }),
 };

@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { productsAPI } from "../../api";
+import { productsAPI } from "@/api/productsAPI.js";
 
 export default function DeleteProductDialog({ product, isOpen, onConfirm, onCancel }) {
   if (!product) {
@@ -30,7 +30,7 @@ export default function DeleteProductDialog({ product, isOpen, onConfirm, onCanc
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the product **{product.name}** and remove it from our servers.
+            This action cannot be undone. This will permanently delete the product <b>{product.name}</b> and remove it from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

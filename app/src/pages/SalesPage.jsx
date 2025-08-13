@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { productsAPI, salesAPI } from "../api";
+import { productsAPI } from "@/api/productsAPI.js";
+import { salesAPI } from "@/api/salesAPI.js";
 import {
   Card,
   CardContent,

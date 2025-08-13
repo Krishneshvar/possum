@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { productsAPI } from '../api.js';
+import { productsAPI } from '@/api/productsAPI.js';
 import ProductsTable from '@/components/products/ProductsTable';
 import ProductsActions from '@/components/products/ProductsActions';
 
@@ -7,6 +7,8 @@ export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDataStale, setIsDataStale] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     let isMounted = true;
@@ -35,10 +37,24 @@ export default function ProductsPage() {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <ProductsActions searchTerm={searchTerm} onSearchChange={setSearchTerm} filteredCount={filteredProducts.length} />
-      <ProductsTable products={filteredProducts} onProductDeleted={handleProductDeleted} />
+      <ProductsTable
+        products={paginatedProducts}
+        onProductDeleted={handleProductDeleted}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

@@ -18,14 +18,21 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from 'react-router-dom';
 import DeleteProductDialog from '@/components/products/DeleteProductDialog';
 import { useState } from 'react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
 
-export default function ProductsTable({ products, onProductDeleted }) {
+export default function ProductsTable({ products, onProductDeleted, currentPage, totalPages, onPageChange }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -45,6 +52,28 @@ export default function ProductsTable({ products, onProductDeleted }) {
     onProductDeleted();
   };
 
+  const renderPaginationItems = () => {
+    const items = [];
+    for (let i = 1; i <= totalPages; i++) {
+      items.push(
+        <PaginationItem key={i} className="cursor-pointer">
+          <PaginationLink
+            onClick={() => onPageChange(i)}
+            isActive={i === currentPage}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+    return items;
+  };
+
+  const formatPrice = (price) => {
+    if (price === null || isNaN(price)) return 'N/A';
+    return `$${parseFloat(price).toFixed(2)}`;
+  };
+
   return (
     <>
       <div className="rounded-md border">
@@ -57,7 +86,6 @@ export default function ProductsTable({ products, onProductDeleted }) {
               <TableHead>Category</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -71,19 +99,23 @@ export default function ProductsTable({ products, onProductDeleted }) {
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell className="text-muted-foreground">{product.sku}</TableCell>
-                  <TableCell className="text-muted-foreground">{product.category}</TableCell>
+                  <TableCell className="text-muted-foreground">{product.category_name}</TableCell>
                   <TableCell>
-                    {product.stock <= 10 ? (
+                    {product.stock <= 10 && product.stock !== 0 ? (
                       <span className="inline-flex h-6 items-center rounded-full bg-yellow-100 px-2 text-xs font-semibold text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
-                        Low Stock
+                        Low Stock ({product.stock})
+                      </span>
+                    ) : product.stock === 0 ? (
+                      <span className="inline-flex h-6 items-center rounded-full bg-red-100 px-2 text-xs font-semibold text-red-800 dark:bg-red-800 dark:text-red-100">
+                        Out of Stock
                       </span>
                     ) : (
                       <span className="inline-flex h-6 items-center rounded-full bg-green-100 px-2 text-xs font-semibold text-green-800 dark:bg-green-800 dark:text-green-100">
-                        In Stock
+                        In Stock ({product.stock})
                       </span>
                     )}
                   </TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>{formatPrice(product.price)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -119,6 +151,30 @@ export default function ProductsTable({ products, onProductDeleted }) {
             )}
           </TableBody>
         </Table>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-end px-4 py-2 border-t">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    className="cursor-pointer"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  />
+                </PaginationItem>
+                {renderPaginationItems()}
+                <PaginationItem>
+                  <PaginationNext
+                    className="cursor-pointer"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
 
       <DeleteProductDialog
