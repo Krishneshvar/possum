@@ -1,9 +1,11 @@
 import {
+  Ellipsis,
+  FilePlus2,
   FileText,
-  Folder,
-  Forward,
-  MoreHorizontal,
-  Trash2
+  FolderInput,
+  FolderPlus,
+  Trash2,
+  View,
 } from "lucide-react";
 
 import {
@@ -15,7 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuButton,
@@ -30,7 +31,31 @@ export function NavDocuments({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Documents</SidebarGroupLabel>
+      <div className="flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-500">
+        <span>Documents</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="h-6 w-6 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center">
+              <Ellipsis className="h-4 w-4" />
+              <span className="sr-only">Add Document</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-48 rounded-lg"
+            side={isMobile ? "bottom" : "right"}
+            align={isMobile ? "end" : "start"}>
+            <DropdownMenuItem>
+              <FilePlus2 className="text-muted-foreground" />
+              <span>Add Document</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <FolderPlus className="text-muted-foreground" />
+              <span>Add Folder</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
@@ -43,7 +68,7 @@ export function NavDocuments({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
+                  <Ellipsis />
                   <span className="sr-only">More</span>
                 </SidebarMenuAction>
               </DropdownMenuTrigger>
@@ -52,16 +77,16 @@ export function NavDocuments({
                 side={isMobile ? "bottom" : "right"}
                 align={isMobile ? "end" : "start"}>
                 <DropdownMenuItem>
-                  <Folder className="text-muted-foreground" />
+                  <View className="text-muted-foreground" />
                   <span>View</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Forward className="text-muted-foreground" />
-                  <span>Share</span>
+                  <FolderInput className="text-muted-foreground" />
+                  <span>Move to</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className="text-muted-foreground" />
+                <DropdownMenuItem className="text-red-500">
+                  <Trash2 className="text-red-500" />
                   <span>Delete</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

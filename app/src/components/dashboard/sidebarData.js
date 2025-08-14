@@ -1,16 +1,24 @@
 import {
+  ArrowLeftRight,
+  BarChart,
+  Boxes,
   CircleQuestionMark,
+  ClipboardCheck,
+  ClipboardList,
   FileText,
-  Frame,
   History,
+  IdCardLanyard,
+  Layers,
   LayoutDashboard,
-  Map,
   Package,
-  PieChart,
   Puzzle,
+  Receipt,
   Settings,
   ShoppingCart,
-  Split
+  Split,
+  Truck,
+  User,
+  Users,
 } from "lucide-react"
 
 export const sidebarData = {
@@ -26,26 +34,97 @@ export const sidebarData = {
       icon: LayoutDashboard,
     },
     {
-      title: "Sales",
+      title: "POS / Sales",
       url: "/sales",
       icon: ShoppingCart,
       items: [
         {
+          title: "Orders",
+          url: "/orders",
+          icon: Receipt,
+        },
+        {
           title: "History",
-          url: "/sales/history",
+          url: "/history",
           icon: History,
+        },
+        {
+          title: "Transactions",
+          url: "/transactions",
+          icon: ArrowLeftRight,
         },
       ]
     },
     {
       title: "Products",
       url: "/products",
-      icon: Package,
+      icon: Package, // The main category for all goods
       items: [
         {
+          title: "Product List",
+          url: "/products/list",
+          icon: ClipboardList, // A specific icon for the main product inventory
+        },
+        {
+          title: "Inventory",
+          url: "/inventory",
+          icon: Boxes, // For managing stock levels
+        },
+        {
           title: "Variants",
-          url: "/variants",
-          icon: Split,
+          url: "/products/variants",
+          icon: Split, // For different versions of a product
+        },
+        {
+          title: "Categories",
+          url: "/products/categories",
+          icon: Layers, // To group products
+        },
+      ]
+    },
+    {
+      title: "Purchase",
+      url: "/purchase",
+      icon: Truck,
+      items: [
+        {
+          title: "Purchase Orders",
+          url: "/purchase-orders",
+          icon: FileText,
+        },
+        {
+          title: "Suppliers",
+          url: "/suppliers",
+          icon: Users,
+        },
+      ]
+    },
+    {
+      title: "People",
+      url: "/people",
+      icon: Users,
+      items: [
+        {
+          title: "Customers",
+          url: "/customers",
+          icon: User,
+        },
+        {
+          title: "Employees",
+          url: "/employees",
+          icon: IdCardLanyard,
+        },
+      ]
+    },
+    {
+      title: "Reports & Logs",
+      url: "/reports",
+      icon: BarChart,
+      items: [
+        {
+          title: "Audit Log",
+          url: "/audit-log",
+          icon: ClipboardCheck,
         },
       ]
     },
