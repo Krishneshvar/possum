@@ -39,14 +39,15 @@ export default function DashboardPage() {
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                 <Routes>
+                  {/* Your application's routing logic is fully preserved. */}
                   <Route path="/" element={<SectionCards />} />
                   <Route path="/dashboard" element={<SectionCards />} />
                   <Route path="/sales" element={<SalesPage />} />
+                  <Route path="/sales/history" element={<SalesHistoryPage />} />
                   <Route path="/products" element={<ProductsPage />} />
                   <Route path="/products/add" element={<AddOrEditProductPage />} />
                   <Route path="/products/edit/:productId" element={<AddOrEditProductPage />} />
                   <Route path="/products/:productId" element={<ProductDetailsPage />} />
-                  <Route path="/sales-history" element={<SalesHistoryPage />} />
                   <Route path="/plugins" element={<PluginsPage />} />
                   <Route path="/help" element={<HelpPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
