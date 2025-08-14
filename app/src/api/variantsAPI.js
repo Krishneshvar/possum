@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from "@/lib/api-client";
 
 export const variantsAPI = {
   getAllForProduct: (productId) => fetch(`${API_BASE}/variants/products/${productId}`).then(r => r.json()),

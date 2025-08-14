@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from "@/lib/api-client";
 
 export const categoriesAPI = {
   getAll: () => fetch(`${API_BASE}/categories`).then(r => r.json()),
