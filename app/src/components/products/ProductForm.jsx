@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useProductForm } from '@/hooks/useProductForm';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,31 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function ProductForm({ initialData, categories, onSubmit, isEditMode, isSaving }) {
   const {
     formData,
-    setFormData,
     handleChange,
     handleSelectChange,
     clearPriceFields,
     getCleanData
   } = useProductForm(initialData);
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name ?? '',
-        sku: initialData.sku ?? '',
-        category_id: initialData.category_id ? String(initialData.category_id) : '',
-        price: initialData.price ? String(initialData.price) : '',
-        cost_price: initialData.cost_price ? String(initialData.cost_price) : '',
-        profit_margin: initialData.profit_margin ? String(initialData.profit_margin) : '',
-        stock: initialData.stock ? String(initialData.stock) : '',
-        status: initialData.status ?? 'active',
-      });
-    }
-  }, [initialData, setFormData]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const productData = getCleanData();
+    console.log('Form data being sent:', productData);
     onSubmit(productData);
   };
 

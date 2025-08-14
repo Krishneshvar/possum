@@ -3,7 +3,7 @@ import { initDB } from '../db.js';
 const db = initDB();
 
 const addProduct = ({
-  name, sku, category_id = null, price = 0, cost_price = 0, profit_margin = 0, stock = 0, product_tax = 0, status = 'active'
+  name, sku, category_id = null, price = 0, cost_price = 0, profit_margin = 0, stock = 0, product_tax = 0, status
 }) => {
   const stmt = db.prepare(`
     INSERT INTO products (name, sku, category_id, price, cost_price, profit_margin, stock, product_tax, status)
@@ -14,7 +14,7 @@ const addProduct = ({
 }
 
 const updateProduct = (id, {
-  name, sku, category_id, price, cost_price, profit_margin, stock, product_tax, status
+  name, sku, category_id, price, cost_price, profit_margin, stock, product_tax = 0, status
 }) => {
   const stmt = db.prepare(`
     UPDATE products
@@ -23,6 +23,7 @@ const updateProduct = (id, {
       stock = ?, product_tax = ?, status = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `);
+
   return stmt.run(name, sku, category_id, price, cost_price, profit_margin, stock, product_tax, status, id);
 }
 
