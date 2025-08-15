@@ -19,10 +19,10 @@ const getProducts = async (req, res) => {
 };
 
 const createProduct = async (req, res) => {
-  let { name, sku, category_id, price, cost_price, profit_margin, stock = 0, product_tax = 0, status = 'active' } = req.body;
+  let { name, sku, category_id, price, cost_price, profit_margin, stock = 0, stock_alert_cap = 10, product_tax = 0, status = 'active' } = req.body;
 
-  if (!name || !sku || !category_id) {
-    return res.status(400).json({ error: 'Name, SKU, and category_id are required fields.' });
+  if (!name || !sku) {
+    return res.status(400).json({ error: 'Name and SKU are required fields.' });
   }
   
   if (price !== undefined && cost_price !== undefined) {
@@ -55,6 +55,7 @@ const createProduct = async (req, res) => {
       cost_price,
       profit_margin,
       stock,
+      stock_alert_cap,
       product_tax,
       status
     });

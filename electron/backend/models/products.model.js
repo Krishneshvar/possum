@@ -3,28 +3,28 @@ import { initDB } from '../db.js';
 const db = initDB();
 
 const addProduct = ({
-  name, sku, category_id = null, price = 0, cost_price = 0, profit_margin = 0, stock = 0, product_tax = 0, status
+  name, sku, category_id = null, price = 0, cost_price = 0, profit_margin = 0, stock = 0, stock_alert_cap = 10, product_tax = 0, status
 }) => {
   const stmt = db.prepare(`
-    INSERT INTO products (name, sku, category_id, price, cost_price, profit_margin, stock, product_tax, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO products (name, sku, category_id, price, cost_price, profit_margin, stock, stock_alert_cap, product_tax, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  const info = stmt.run(name, sku, category_id, price, cost_price, profit_margin, stock, product_tax, status);
+  const info = stmt.run(name, sku, category_id, price, cost_price, profit_margin, stock, stock_alert_cap, product_tax, status);
   return { id: info.lastInsertRowid };
 }
 
 const updateProduct = (id, {
-  name, sku, category_id, price, cost_price, profit_margin, stock, product_tax = 0, status
+  name, sku, category_id, price, cost_price, profit_margin, stock, stock_alert_cap = 10, product_tax = 0, status
 }) => {
   const stmt = db.prepare(`
     UPDATE products
     SET
       name = ?, sku = ?, category_id = ?, price = ?, cost_price = ?, profit_margin = ?,
-      stock = ?, product_tax = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+      stock = ?, stock_alert_cap = ?, product_tax = ?, status = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `);
 
-  return stmt.run(name, sku, category_id, price, cost_price, profit_margin, stock, product_tax, status, id);
+  return stmt.run(name, sku, category_id, price, cost_price, profit_margin, stock, stock_alert_cap, product_tax, status, id);
 }
 
 const updateStock = (id, newStock) => {
@@ -43,7 +43,7 @@ const deleteProduct = (id) => {
 const getProductWithCategory = (id) => {
   const query = `
     SELECT
-      p.id, p.name, p.sku, p.price, p.cost_price, p.profit_margin, p.stock, p.product_tax, p.status,
+      p.id, p.name, p.sku, p.price, p.cost_price, p.profit_margin, p.stock, p.stock_alert_cap, p.product_tax, p.status,
       c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
@@ -55,7 +55,7 @@ const getProductWithCategory = (id) => {
 const getAllProductsWithCategories = () => {
   const query = `
     SELECT
-      p.id, p.name, p.sku, p.price, p.cost_price, p.profit_margin, p.stock, p.product_tax, p.status,
+      p.id, p.name, p.sku, p.price, p.cost_price, p.profit_margin, p.stock, p.stock_alert_cap, p.product_tax, p.status,
       c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id

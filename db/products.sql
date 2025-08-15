@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS products (
   cost_price INTEGER,
   profit_margin INTEGER,
   stock INTEGER,
+  stock_alert_cap INTEGER DEFAULT 10,
   product_tax INTEGER DEFAULT 0,
   status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'discontinued')),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
