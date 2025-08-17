@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const calculateProfitMargin = (price, cost_price) => {
   if (cost_price > 0) {
@@ -15,8 +15,8 @@ const calculatePrice = (cost_price, profit_margin) => {
   return cost_price * (1 + (profit_margin / 100));
 };
 
-export const useProductForm = (initialState) => {
-  const getInitialFormData = (data) => {
+export const useProductForm = (initialState = {}) => {
+  const getInitialFormData = useCallback((data) => {
     return {
       name: data?.name ?? '',
       sku: data?.sku ?? '',
@@ -26,48 +26,49 @@ export const useProductForm = (initialState) => {
       profit_margin: data?.profit_margin ? String(data.profit_margin) : '',
       stock: data?.stock ? String(data.stock) : '',
       stock_alert_cap: data?.stock_alert_cap ? String(data.stock_alert_cap) : '10',
-      product_tax: data?.product_tax ? String(data.product_tax) : '0',
+      product_tax: data?.product_tax ? String(data.product_tax) : '',
       status: data?.status ?? 'active',
     };
-  };
+  }, []);
 
   const [formData, setFormData] = useState(() => getInitialFormData(initialState));
   const [disabledField, setDisabledField] = useState("profit_margin");
 
-  const handleCalculation = useCallback((data, currentDisabledField) => {
+  useEffect(() => {
+    setFormData(getInitialFormData(initialState));
+  }, [initialState, getInitialFormData]);
+
+  const calculatePricing = useCallback((data, currentDisabledField) => {
+    const price = Number.parseFloat(data.price) || 0;
+    const cost_price = Number.parseFloat(data.cost_price) || 0;
+    const profit_margin = Number.parseFloat(data.profit_margin) || 0;
+
     let updatedData = { ...data };
 
-    const price = Number(updatedData.price);
-    const cost_price = Number(updatedData.cost_price);
-    const profit_margin = Number(updatedData.profit_margin);
-
     if (currentDisabledField === 'price' && cost_price > 0 && profit_margin >= 0) {
-      updatedData = { ...updatedData, price: calculatePrice(cost_price, profit_margin).toFixed(2) };
+      updatedData.price = calculatePrice(cost_price, profit_margin).toFixed(2);
     }
     else if (currentDisabledField === 'cost_price' && price > 0 && profit_margin >= 0) {
-      updatedData = { ...updatedData, cost_price: calculateCostPrice(price, profit_margin).toFixed(2) };
+      updatedData.cost_price = calculateCostPrice(price, profit_margin).toFixed(2);
     }
-    else if (currentDisabledField === 'profit_margin' && price > 0 && cost_price >= 0) {
-      updatedData = { ...updatedData, profit_margin: calculateProfitMargin(price, cost_price).toFixed(2) };
+    else if (currentDisabledField === 'profit_margin' && price > 0 && cost_price > 0) {
+      updatedData.profit_margin = calculateProfitMargin(price, cost_price).toFixed(2);
     }
 
     return updatedData;
   }, []);
 
-  useEffect(() => {
-    setFormData(getInitialFormData(initialState));
-  }, [initialState]);
-
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    let updatedData = { ...formData, [name]: value };
+    setFormData(prev => {
+      const updatedData = { ...prev, [name]: value };
 
-    if (['price', 'cost_price', 'profit_margin'].includes(name)) {
-      setFormData(handleCalculation(updatedData, disabledField));
-    } else {
-      setFormData(updatedData);
-    }
-  }, [formData, handleCalculation, disabledField]);
+      if (['price', 'cost_price', 'profit_margin'].includes(name)) {
+        return calculatePricing(updatedData, disabledField);
+      }
+      return updatedData;
+    });
+  }, [calculatePricing, disabledField]);
 
   const handleSelectChange = useCallback((name, value) => {
     setFormData(prevState => ({ ...prevState, [name]: value }));
@@ -75,8 +76,8 @@ export const useProductForm = (initialState) => {
 
   const handleRadioChange = useCallback((value) => {
     setDisabledField(value);
-    setFormData(handleCalculation(formData, value));
-  }, [formData, handleCalculation]);
+    setFormData(prev => calculatePricing(prev, value));
+  }, [calculatePricing]);
 
   const clearPriceFields = useCallback(() => {
     setFormData(prevState => ({
@@ -91,19 +92,17 @@ export const useProductForm = (initialState) => {
   const resetForm = useCallback(() => {
     setFormData(getInitialFormData(initialState));
     setDisabledField('profit_margin');
-  }, [initialState]);
+  }, [initialState, getInitialFormData]);
 
   const getCleanData = useCallback(() => {
-    return {
-      ...formData,
-      price: formData.price !== '' ? parseFloat(formData.price) : null,
-      cost_price: formData.cost_price !== '' ? parseFloat(formData.cost_price) : null,
-      profit_margin: formData.profit_margin !== '' ? parseFloat(formData.profit_margin) : null,
-      stock: formData.stock !== '' ? parseInt(formData.stock, 10) : null,
-      stock_alert_cap: formData.stock_alert_cap !== '' ? parseInt(formData.stock_alert_cap, 10) : null,
-      category_id: formData.category_id !== '' ? parseInt(formData.category_id, 10) : null,
-      product_tax: formData.product_tax !== '' ? parseFloat(formData.product_tax) : null,
-    };
+    const cleanData = { ...formData };
+
+    cleanData.stock = cleanData.stock ? Number.parseInt(cleanData.stock) : null;
+    cleanData.stock_alert_cap = cleanData.stock_alert_cap ? Number.parseInt(cleanData.stock_alert_cap) : null;
+
+    cleanData.category_id = cleanData.category_id ? Number.parseInt(cleanData.category_id, 10) : null;
+
+    return cleanData;
   }, [formData]);
 
   return {

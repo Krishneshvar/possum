@@ -1,102 +1,81 @@
 import { ArrowLeft } from 'lucide-react';
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from '@/components/ui/separator';
-import { toast } from "sonner";
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
-import { categoriesAPI } from '@/api/categoriesAPI.js';
-import { productsAPI } from '@/api/productsAPI.js';
+import { useGetProductQuery, useAddProductMutation, useUpdateProductMutation } from '@/services/productsApi';
+import { useGetCategoriesQuery } from '@/services/categoriesApi';
 import ProductForm from '../components/ProductForm';
 
 export default function AddOrEditProductPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState([]);
-  const [product, setProduct] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isFormLoading, setIsFormLoading] = useState(!!productId);
-
   const isEditMode = !!productId;
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      try {
-        const categoriesList = await categoriesAPI.getAll();
-        
-        if (!isMounted) return;
-        setCategories(categoriesList);
+  const { data: product, isLoading: isProductLoading, error: productError } = useGetProductQuery(productId, {
+    skip: !isEditMode,
+  });
+  const { data: categories, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery();
 
-        if (isEditMode) {
-          const productData = await productsAPI.getById(productId);
-          
-          if (!isMounted) return;
+  const [addProduct, { isLoading: isAdding }] = useAddProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
-          if (productData) {
-            const matchingCategory = categoriesList.find(cat => cat.name === productData.category_name);
-            if (matchingCategory) {
-              productData.category_id = matchingCategory.id;
-            }
-          }
-          setProduct(productData);
-        }
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
-        navigate('/products');
-        toast.error("Could not load product or categories. Please try again later.", {
-          description: "Error fetching data",
-          duration: 5000,
-        });
-      } finally {
-        if (isMounted) {
-          setIsFormLoading(false);
-        }
-      }
-    };
+  const isSaving = isAdding || isUpdating;
+  const isFormLoading = isEditMode && isProductLoading;
+  const hasError = productError || categoriesError;
+
+  if (hasError) {
+    toast.error('Error fetching data', {
+      description: 'Could not load product or categories. Please try again later.',
+      duration: 5000,
+    });
+    // Navigate after the toast is shown
+    navigate('/products');
+    return null;
+  }
+  
+  if (isFormLoading || isCategoriesLoading) {
+    return <div className="p-6">Loading product data...</div>;
+  }
+  
+  // This is the key change: prepare initial data to ensure the form has the correct values
+  let initialData = null;
+  if (isEditMode && product && categories) {
+    const matchingCategory = categories.find(cat => cat.name === product.category_name);
     
-    fetchData();
-
-    return () => {
-      isMounted = false;
+    initialData = {
+      ...product,
+      category_id: matchingCategory ? matchingCategory.id : '',
     };
-  }, [productId, isEditMode, navigate]);
+  }
 
   const handleSubmit = async (productData) => {
-    setIsSaving(true);
     try {
       if (isEditMode) {
-        await productsAPI.update(Number(productId), productData);
-        toast.success("Product updated successfully!", {
+        await updateProduct({ id: Number(productId), ...productData }).unwrap();
+        toast.success('Product updated successfully!', {
           description: `${productData.name} has been updated.`,
           duration: 5000,
         });
       } else {
-        await productsAPI.create(productData);
-        toast.success("Product added successfully!", {
+        await addProduct(productData).unwrap();
+        toast.success('Product added successfully!', {
           description: `${productData.name} has been added to your inventory.`,
           duration: 5000,
         });
       }
-      navigate('/products')
+      navigate('/products');
     } catch (err) {
-      console.error("Failed to save product:", err);
-      toast.error("An error occurred while saving. Please try again later.", {
-        description: "Error saving product"
+      console.error('Failed to save product:', err);
+      toast.error('Error saving product', {
+        description: 'An error occurred while saving. Please try again later.',
+        duration: 5000,
       });
-    } finally {
-      setIsSaving(false);
     }
   };
-
-  if (isEditMode && isFormLoading) {
-    return <div className="p-6">Loading product data...</div>;
-  }
-
-  const initialData = isEditMode && product ? product : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,23 +97,16 @@ export default function AddOrEditProductPage() {
           </div>
 
           <Card className="shadow-lg border-0 bg-card">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">Product Details</CardTitle>
-              <Separator />
-            </CardHeader>
-
-            {(!isEditMode || product) && (
-              <ProductForm
-                initialData={initialData}
-                categories={categories}
-                onSubmit={handleSubmit}
-                isEditMode={isEditMode}
-                isSaving={isSaving}
-              />
-            )}
+            <ProductForm
+              initialData={initialData}
+              categories={categories}
+              onSubmit={handleSubmit}
+              isEditMode={isEditMode}
+              isSaving={isSaving}
+            />
           </Card>
         </div>
       </div>
     </div>
   );
-};
+}

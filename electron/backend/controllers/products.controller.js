@@ -24,27 +24,11 @@ const createProduct = async (req, res) => {
   if (!name || !sku) {
     return res.status(400).json({ error: 'Name and SKU are required fields.' });
   }
-  
-  if (price !== undefined && cost_price !== undefined) {
-    if (price > 0) {
-      profit_margin = Math.round(((price - cost_price) / price) * 100);
-    } else {
-      profit_margin = 0;
-    }
-  }
-  else if (price !== undefined && profit_margin !== undefined) {
-    cost_price = price - (price * (profit_margin / 100));
-  }
-  else if (cost_price !== undefined && profit_margin !== undefined) {
-    price = Math.round(cost_price / (1 - (profit_margin / 100)));
-  }
-  else {
-    return res.status(400).json({ error: 'Insufficient data. Please provide either (price and cost_price), (price and profit_margin), or (cost_price and profit_margin).' });
-  }
 
-  price = Math.round(price);
-  cost_price = Math.round(cost_price);
-  profit_margin = Math.round(profit_margin);
+  price = price * 100;
+  cost_price = cost_price * 100;
+  profit_margin = profit_margin * 100;
+  console.log("Product: ", {name, sku, category_id, price, cost_price, profit_margin, stock, stock_alert_cap, product_tax, status} );
 
   try {
     const newProduct = addProduct({

@@ -17,12 +17,13 @@ export const productsAPI = {
     body: JSON.stringify(data)
   }).then(r => r.json()),
 
-  delete: (id) => fetch(`${API_BASE}/products/${id}`, {
-    method: 'DELETE'
-  }).then(r => {
-    if (r.status === 204) {
-      return null;
+  delete: async (id) => {
+    const r = await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
+    if (r.status === 204 || r.status === 404) return null;
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || `Delete failed: ${r.status}`);
     }
-    return r.json();
-  }),
+    return r.json().catch(() => null);
+  },
 };

@@ -1,61 +1,46 @@
-import { useEffect, useState } from 'react';
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 
-import { productsAPI } from '@/api/productsAPI.js';
-import ProductsTable from '../components/ProductsTable';
-import ProductsActions from '../components/ProductsActions';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+
+import ProductsTable from "../components/ProductsTable";
+import ProductsActions from "../components/ProductsActions";
+import { useGetProductsQuery } from '@/services/productsApi';
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isDataStale, setIsDataStale] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const { isLoading, isFetching, error, refetch } = useGetProductsQuery();
 
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchProducts() {
-      try {
-        const data = await productsAPI.getAll();
-        if (isMounted) {
-          setProducts(data);
-          setIsDataStale(false);
-        }
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      }
-    }
-    fetchProducts();
-    return () => {
-      isMounted = false;
-    };
-  }, [isDataStale]);
-
-  const handleProductDeleted = () => {
-    setIsDataStale(true);
+  const handleRetry = () => {
+    refetch();
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
+  const isDataLoading = isLoading || isFetching;
+  
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <ProductsActions searchTerm={searchTerm} onSearchChange={setSearchTerm} filteredCount={filteredProducts.length} />
-      <ProductsTable
-        products={paginatedProducts}
-        onProductDeleted={handleProductDeleted}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+    <div className="container mx-auto space-y-6 p-6">
+      <ProductsActions />
+
+      {isDataLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm text-muted-foreground">Loading products...</span>
+          </div>
+        </div>
+      ) : error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>Failed to load products. Please try again.</span>
+            <Button variant="outline" size="sm" onClick={handleRetry}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <ProductsTable onProductDeleted={refetch} />
+      )}
     </div>
   );
-};
+}
