@@ -32,7 +32,6 @@ export default function AddOrEditProductPage() {
       description: 'Could not load product or categories. Please try again later.',
       duration: 5000,
     });
-    // Navigate after the toast is shown
     navigate('/products');
     return null;
   }
@@ -40,8 +39,7 @@ export default function AddOrEditProductPage() {
   if (isFormLoading || isCategoriesLoading) {
     return <div className="p-6">Loading product data...</div>;
   }
-  
-  // This is the key change: prepare initial data to ensure the form has the correct values
+
   let initialData = null;
   if (isEditMode && product && categories) {
     const matchingCategory = categories.find(cat => cat.name === product.category_name);
@@ -81,7 +79,7 @@ export default function AddOrEditProductPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-8">
         <div className="">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-6 flex flex-col gap-2 items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">
                 {isEditMode ? 'Edit Product' : 'Add New Product'}
@@ -92,7 +90,7 @@ export default function AddOrEditProductPage() {
             </div>
             <Button variant="outline" onClick={() => navigate(-1)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
+              Back to Products
             </Button>
           </div>
 

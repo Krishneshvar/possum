@@ -28,9 +28,19 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input";
 
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
+import ColumnVisibilityDropdown from "./ColumnVisibilityDropdown"
 import { setSearchTerm, setCurrentPage } from "../productsSlice";
 import DeleteProductDialog from "../components/DeleteProductDialog"
 import ProductsFilter from "./ProductsFilter";
+
+const allColumns = [
+  { key: "product", label: "Product" },
+  { key: "status", label: "Status" },
+  { key: "sku", label: "SKU" },
+  { key: "category", label: "Category" },
+  { key: "stock", label: "Stock Status" },
+  { key: "price", label: "Price" },
+]
 
 export default function ProductsTable({ onProductDeleted }) {
   const dispatch = useDispatch();
@@ -40,24 +50,30 @@ export default function ProductsTable({ onProductDeleted }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [deleteProduct] = useDeleteProductMutation();
+  const [visibleColumns, setVisibleColumns] = useState(
+    allColumns.reduce((acc, col) => {
+      acc[col.key] = true
+      return acc
+    }, {})
+  )
 
-  const filteredProducts = products
-    ? products.filter((product) => {
-        const matchesSearchTerm =
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredProducts = products ? products.filter((product) => {
+    const matchesSearchTerm =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const getStockStatus = (stock) => {
-          if (stock === 0) return 'out-of-stock';
-          if (stock <= 10) return 'low-stock';
-          return 'in-stock';
-        };
-        const matchesStockStatus =
-          filters.stockStatus === 'all' || getStockStatus(product.stock) === filters.stockStatus;
-          
-        return matchesSearchTerm && matchesStockStatus;
-      })
-    : [];
+    const getStockStatus = (stock) => {
+      if (stock === 0) return 'out-of-stock';
+      if (stock <= 10) return 'low-stock';
+      return 'in-stock';
+    };
+
+    const matchesStockStatus = filters.stockStatus === 'all' || getStockStatus(product.stock) === filters.stockStatus;
+    const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category_name);
+    const matchesStatus = filters.status === "all" || product.status === filters.status;
+
+    return matchesSearchTerm && matchesStockStatus && matchesCategory && matchesStatus;
+  }) : [];
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -164,14 +180,17 @@ export default function ProductsTable({ onProductDeleted }) {
       <Card>
         <CardContent className="space-y-4 pt-2">
           <div className="flex flex-col gap-4 sm:justify-between">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search products by name or SKU..."
-                className="pl-9 h-9"
-                value={searchTerm}
-                onChange={(e) => dispatch(setSearchTerm(e.target.value))}
-              />
+            <div className="flex flex-col md:flex-row gap-2">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search products by name or SKU..."
+                  className="pl-9 h-9"
+                  value={searchTerm}
+                  onChange={(e) => dispatch(setSearchTerm(e.target.value))}
+                />
+              </div>
+              <ColumnVisibilityDropdown columns={allColumns} onChange={setVisibleColumns} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <ProductsFilter />
@@ -184,11 +203,12 @@ export default function ProductsTable({ onProductDeleted }) {
             <TableHeader>
               <TableRow className="border-b">
                 <TableHead className="w-12"></TableHead>
-                <TableHead className="font-semibold">Product</TableHead>
-                <TableHead className="font-semibold">SKU</TableHead>
-                <TableHead className="font-semibold">Category</TableHead>
-                <TableHead className="font-semibold">Stock Status</TableHead>
-                <TableHead className="font-semibold text-right">Price</TableHead>
+                {visibleColumns.product && <TableHead className="font-semibold">Product</TableHead>}
+                {visibleColumns.status && <TableHead className="font-semibold">Status</TableHead>}
+                {visibleColumns.sku && <TableHead className="font-semibold">SKU</TableHead>}
+                {visibleColumns.category && <TableHead className="font-semibold">Category</TableHead>}
+                {visibleColumns.stock && <TableHead className="font-semibold">Stock Status</TableHead>}
+                {visibleColumns.price && <TableHead className="font-semibold text-right">Price</TableHead>}
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -203,26 +223,36 @@ export default function ProductsTable({ onProductDeleted }) {
                         </AvatarFallback>
                       </Avatar>
                     </TableCell>
-                    <TableCell className="py-2">
-                      <div className="space-y-1">
-                        <p className="font-medium leading-none">{product.name}</p>
-                        {product.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-2">
-                      <code className="relative rounded bg-muted px-2 py-1 text-sm font-mono">{product.sku}</code>
-                    </TableCell>
-                    <TableCell className="py-2">
-                      <Badge variant="outline" className="font-normal">
-                        {product.category_name}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-2">{getStockStatus(product.stock)}</TableCell>
-                    <TableCell className="py-4 text-right">
-                      <span className="font-semibold">{formatPrice(product.price)}</span>
-                    </TableCell>
+                    {visibleColumns.product && (
+                      <TableCell className="py-2">
+                        <div className="space-y-1">
+                          <p className="font-medium leading-none">{product.name}</p>
+                        </div>
+                      </TableCell>
+                    )}
+                    {visibleColumns.status && (
+                      <TableCell className="py-2">
+                        <Badge>{product.status}</Badge>
+                      </TableCell>
+                    )}
+                    {visibleColumns.sku && (
+                      <TableCell className="py-2">
+                        <code className="relative rounded bg-muted px-2 py-1 text-sm font-mono">{product.sku}</code>
+                      </TableCell>
+                    )}
+                    {visibleColumns.category && (
+                      <TableCell className="py-2">
+                        <Badge variant="outline" className="font-normal">{product.category_name}</Badge>
+                      </TableCell>
+                    )}
+                    {visibleColumns.stock && (
+                      <TableCell className="py-2">{getStockStatus(product.stock)}</TableCell>
+                    )}
+                    {visibleColumns.price && (
+                      <TableCell className="py-4 text-right">
+                        <span className="font-semibold">{formatPrice(product.price)}</span>
+                      </TableCell>
+                    )}
                     <TableCell className="py-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

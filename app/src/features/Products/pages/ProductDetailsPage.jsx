@@ -14,7 +14,7 @@ import {
   Hash,
   Plus,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -22,40 +22,42 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
-import { productsAPI } from "@/api/productsAPI.js"
+import { toast } from "sonner"
+import DeleteProductDialog from "../components/DeleteProductDialog"
+import { useDeleteProductMutation, useGetProductQuery } from "@/services/productsApi"
 
 export default function ProductDetailsPage() {
   const { productId } = useParams()
   const navigate = useNavigate()
-  const [product, setProduct] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const { data: product, isLoading, isError } = useGetProductQuery(productId)
+  const [deleteProduct] = useDeleteProductMutation()
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-  useEffect(() => {
-    let isMounted = true
-    async function fetchProduct() {
-      try {
-        const data = await productsAPI.getById(productId)
-        if (isMounted) {
-          setProduct(data)
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError("Failed to fetch product data.")
-        }
-        console.error("Failed to fetch product:", err)
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleDialogOpenChange = (open) => {
+    setIsDeleteDialogOpen(open)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!product) return
+    try {
+      await deleteProduct(product.id).unwrap()
+      setIsDeleteDialogOpen(false)
+      toast.success("Product deleted successfully", {
+        description: "The product was deleted successfully.",
+        duration: 5000,
+      })
+      navigate("/products")
+    } catch (err) {
+      toast.error("Error deleting product", {
+        description: "An error occurred while deleting product. Please try again later.",
+        duration: 5000,
+      })
     }
-    fetchProduct()
-    return () => {
-      isMounted = false
-    }
-  }, [productId])
+  }
 
   const formatPriceAndMargin = (price) => {
     if (price === null || isNaN(price)) return "N/A"
@@ -72,7 +74,7 @@ export default function ProductDetailsPage() {
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
         <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -114,14 +116,14 @@ export default function ProductDetailsPage() {
     )
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <Alert variant="destructive" className="max-w-md border-0 shadow-lg">
           <AlertTriangle className="h-5 w-5" />
           <AlertTitle className="text-lg">Something went wrong</AlertTitle>
           <AlertDescription className="mt-2 space-y-4">
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">Failed to fetch product data.</p>
             <Button
               variant="outline"
               size="sm"
@@ -162,13 +164,14 @@ export default function ProductDetailsPage() {
   const StockIcon = stockStatus.icon
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => navigate(-1)}
-            className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 -ml-2"
+            className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 -ml-2 cursor-pointer"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Products
@@ -177,18 +180,19 @@ export default function ProductDetailsPage() {
           <div className="flex items-center gap-3">
             <Button
               onClick={() => navigate(`/products/edit/${product.id}`)}
-              className="bg-blue-600 hover:bg-blue-700 shadow-sm"
+              className="bg-blue-600 hover:bg-blue-700 shadow-sm cursor-pointer"
             >
               <Edit2 className="mr-2 h-4 w-4" />
               Edit Product
             </Button>
-            <Button variant="outline" className="border-slate-200 hover:bg-slate-50 bg-transparent" onClick={() => {}}>
+            <Button variant="outline" className="border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer" onClick={() => {}}>
               <Plus className="mr-2 h-4 w-4" />
               Add Variant
             </Button>
             <Button
               variant="outline"
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 bg-transparent"
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 bg-transparent cursor-pointer"
+              onClick={handleDeleteClick}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
@@ -197,7 +201,6 @@ export default function ProductDetailsPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="border-0 shadow-sm">
               <CardHeader className="pb-6">
@@ -306,7 +309,7 @@ export default function ProductDetailsPage() {
                     <TrendingUp className="h-4 w-4 text-blue-600" />
                     <p className="text-sm font-medium text-blue-700 uppercase tracking-wide">Profit Margin</p>
                   </div>
-                  <p className="text-2xl font-bold text-blue-900">{formatPriceAndMargin(product.profit_margin)}%</p>
+                  <p className="text-2xl font-bold text-blue-900">{product.profit_margin/100}%</p>
                 </div>
 
                 <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200 rounded-xl">
@@ -322,5 +325,13 @@ export default function ProductDetailsPage() {
         </div>
       </div>
     </div>
+
+    <DeleteProductDialog
+      product={product}
+      open={isDeleteDialogOpen}
+      onOpenChange={handleDialogOpenChange}
+      onConfirm={handleConfirmDelete}
+    />
+    </>
   )
 }

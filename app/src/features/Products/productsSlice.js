@@ -6,6 +6,8 @@ const initialState = {
   itemsPerPage: 10,
   filters: {
     stockStatus: 'all',
+    categories: [],
+    status: 'all',
   },
 };
 
