@@ -5,12 +5,14 @@ import {
 } from 'react-router-dom';
 
 import { AppSidebar } from "@/layouts/Sidebar/app-sidebar";
-import { SectionCards } from "@/components/common/section-cards";
+import { StatCards } from "@/components/common/stat-cards";
 import { SiteHeader } from '@/components/common/site-header';
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+
+import { cardData } from './dashboardStatsData';
 
 import HelpPage from '../../features/Misc/HelpPage';
 import PluginsPage from '../../features/Misc/PluginsPage';
@@ -50,8 +52,8 @@ export default function DashboardPage() {
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                 <Routes>
-                  <Route path="/" element={<SectionCards />} />
-                  <Route path="/dashboard" element={<SectionCards />} />
+                  <Route path="/" element={<StatCards cardData={cardData} />} />
+                  <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
 
                   <Route path="/sales" element={<SalesPage />} />
                   <Route path="/sales/orders" element={<OrdersPage />} />

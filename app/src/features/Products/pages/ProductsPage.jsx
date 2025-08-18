@@ -7,6 +7,9 @@ import ProductsTable from "../components/ProductsTable"
 import { useGetProductsQuery } from "@/services/productsApi"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 
+import { StatCards } from "@/components/common/stat-cards"
+import { productsStatsData } from "../data/productsStatsData.js"
+
 export default function ProductsPage() {
   const { isLoading, isFetching, error, refetch } = useGetProductsQuery()
 
@@ -25,6 +28,8 @@ export default function ProductsPage() {
         actionLabel={"Add Product"}
         actionUrl={"/products/add"}
       />
+
+      <StatCards cardData={productsStatsData} />
 
       {isDataLoading ? (
         <div className="flex items-center justify-center py-8 sm:py-12">
