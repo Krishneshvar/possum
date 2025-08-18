@@ -77,33 +77,35 @@ export default function AddOrEditProductPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-8">
-        <div className="">
-          <div className="mb-6 flex flex-col gap-2 items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                {isEditMode ? 'Edit Product' : 'Add New Product'}
-              </h1>
-              <p className="text-muted-foreground">
-                {isEditMode ? 'Update an existing product in your inventory.' : 'Create a new product entry for your POS system inventory.'}
-              </p>
-            </div>
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Products
-            </Button>
+      <div className="container mx-auto px-8">
+        <div className="mb-6 flex flex-col gap-2 items-start justify-between">
+          <Button
+            variant="outline"
+            onClick={() => navigate(-1)}
+            className="mb-4 bg-black text-white hover:bg-gray-800 hover:text-slate-50 cursor-pointer"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Products
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {isEditMode ? 'Edit Product' : 'Add New Product'}
+            </h1>
+            <p className="text-muted-foreground">
+              {isEditMode ? 'Update an existing product in your inventory.' : 'Create a new product entry for your inventory.'}
+            </p>
           </div>
-
-          <Card className="shadow-lg border-0 bg-card">
-            <ProductForm
-              initialData={initialData}
-              categories={categories}
-              onSubmit={handleSubmit}
-              isEditMode={isEditMode}
-              isSaving={isSaving}
-            />
-          </Card>
         </div>
+
+        <Card className="shadow-lg border-0 bg-card">
+          <ProductForm
+            initialData={initialData}
+            categories={categories}
+            onSubmit={handleSubmit}
+            isEditMode={isEditMode}
+            isSaving={isSaving}
+          />
+        </Card>
       </div>
     </div>
   );

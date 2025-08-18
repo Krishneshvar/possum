@@ -11,7 +11,7 @@ export default function ProductInventory({ formData, handleChange }) {
           <BarChart3 className="h-5 w-5 text-orange-600" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Inventory & Tax</h3>
+          <h3 className="text-lg font-semibold text-foreground">Inventory</h3>
           <p className="text-sm text-muted-foreground">Stock management</p>
         </div>
       </div>

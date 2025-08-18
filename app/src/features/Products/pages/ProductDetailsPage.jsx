@@ -5,11 +5,9 @@ import {
   Trash2,
   Package,
   DollarSign,
-  TrendingUp,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  BarChart3,
   Tag,
   Hash,
   Plus,
@@ -25,6 +23,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import { useDeleteProductMutation, useGetProductQuery } from "@/services/productsApi"
+import ProductFinancialMetrics from "../components/ProductFinancialMetrics"
 
 export default function ProductDetailsPage() {
   const { productId } = useParams()
@@ -171,7 +170,7 @@ export default function ProductDetailsPage() {
           <Button
             variant="outline"
             onClick={() => navigate(-1)}
-            className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 -ml-2 cursor-pointer"
+            className="bg-black text-white hover:bg-gray-800 hover:text-slate-50 cursor-pointer"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Products
@@ -293,35 +292,7 @@ export default function ProductDetailsPage() {
             </Card>
           </div>
 
-          <div className="space-y-6">
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-slate-900 flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-4 w-4 text-purple-600" />
-                  </div>
-                  Financial Metrics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200 rounded-xl">
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="h-4 w-4 text-blue-600" />
-                    <p className="text-sm font-medium text-blue-700 uppercase tracking-wide">Profit Margin</p>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-900">{product.profit_margin/100}%</p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200 rounded-xl">
-                  <div className="flex items-center gap-2 mb-3">
-                    <DollarSign className="h-4 w-4 text-purple-600" />
-                    <p className="text-sm font-medium text-purple-700 uppercase tracking-wide">Tax Rate</p>
-                  </div>
-                  <p className="text-2xl font-bold text-purple-900">{product.product_tax}%</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ProductFinancialMetrics product={product} />
         </div>
       </div>
     </div>

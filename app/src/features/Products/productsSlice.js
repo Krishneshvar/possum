@@ -23,13 +23,16 @@ const productsSlice = createSlice({
       state.currentPage = action.payload;
     },
     setFilter: (state, action) => {
-      const { name, value } = action.payload;
-      state.filters[name] = value;
+      const { key, value } = action.payload;
+      if (key === 'all') {
+        state.filters = value;
+      } else {
+        state.filters[key] = value;
+      }
       state.currentPage = 1;
     },
   },
 });
 
 export const { setSearchTerm, setCurrentPage, setFilter } = productsSlice.actions;
-
 export default productsSlice.reducer;

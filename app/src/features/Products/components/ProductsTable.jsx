@@ -4,14 +4,12 @@ import { useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
 import { Table } from "@/components/ui/table"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
 import ColumnVisibilityDropdown from "@/components/common/ColumnVisibilityDropdown"
-import { setSearchTerm, setCurrentPage } from "../productsSlice"
-import ProductsFilter from "./ProductsFilter"
+import { setSearchTerm, setCurrentPage, setFilter } from "../productsSlice"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 
 import GenericTableHeader from "@/components/common/GenericTableHeader"
@@ -20,11 +18,15 @@ import GenericPagination from "@/components/common/GenericPagination"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 
 import { allColumns } from "./productsTableContents.jsx"
+import GenericFilter from "@/components/common/GenericFilter"
+import { useGetCategoriesQuery } from "@/services/categoriesApi"
+import { stockStatusFilter, statusFilter, categoryFilter } from "../data/productsFiltersConfig"
 
 export default function ProductsTable({ onProductDeleted }) {
   const dispatch = useDispatch()
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state) => state.products)
   const { data: products = [] } = useGetProductsQuery()
+  const { data: categories = [] } = useGetCategoriesQuery()
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
@@ -33,29 +35,59 @@ export default function ProductsTable({ onProductDeleted }) {
     allColumns.reduce((acc, col) => {
       acc[col.key] = true
       return acc
-    }, {}),
+    }, {})
   )
 
-  const filteredProducts = products
-    ? products.filter((product) => {
-        const matchesSearchTerm =
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleFilterChange = (key, value) => {
+    dispatch(setFilter({ key, value }))
+  }
 
-        const getStockStatus = (stock) => {
-          if (stock === 0) return "out-of-stock"
-          if (stock <= 10) return "low-stock"
-          return "in-stock"
-        }
-
-        const matchesStockStatus =
-          filters.stockStatus === "all" || getStockStatus(product.stock) === filters.stockStatus
-        const matchesCategory = filters.categories.length === 0 || filters.categories.includes(product.category_name)
-        const matchesStatus = filters.status === "all" || product.status === filters.status
-
-        return matchesSearchTerm && matchesStockStatus && matchesCategory && matchesStatus
+  const handleClearAllFilters = () => {
+    dispatch(
+      setFilter({
+        key: "all",
+        value: {
+          stockStatus: "all",
+          status: "all",
+          categories: [],
+        },
       })
-    : []
+    )
+  }
+
+  const categoryNameToId = new Map(
+    (categories ?? []).map(c => [c.name, String(c.id ?? c.category_id)])
+  )
+
+  const filteredProducts = products ? products.filter((product) => {
+    const name = (product.name ?? '').toLowerCase()
+    const sku  = (product.sku  ?? '').toLowerCase()
+    const matchesSearchTerm =
+      name.includes(searchTerm.toLowerCase()) ||
+      sku.includes(searchTerm.toLowerCase())
+
+    const getStockStatus = (stock) => {
+      if (stock === 0) return "out-of-stock"
+      if (stock <= 10) return "low-stock"
+      return "in-stock"
+    }
+
+    const matchesStockStatus = filters.stockStatus === "all" || getStockStatus(product.stock) === filters.stockStatus
+    const directCatId =
+      product.category_id ??
+      product.categoryId ??
+      product.category?.id ??
+      (product.category_name ? categoryNameToId.get(product.category_name) : null) ??
+      (product.category?.name ? categoryNameToId.get(product.category.name) : null)
+
+    const productCatId = directCatId != null ? String(directCatId) : null
+    const matchesCategory =
+      filters.categories.length === 0 ||
+      (productCatId && filters.categories.includes(productCatId))
+    const matchesStatus = filters.status === "all" || product.status === filters.status
+
+    return matchesSearchTerm && matchesStockStatus && matchesCategory && matchesStatus
+  }) : []
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -97,14 +129,10 @@ export default function ProductsTable({ onProductDeleted }) {
   }
 
   const emptyState = (
-    <div className="flex flex-col items-center gap-3 py-8">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 border border-border/40">
-        <Package className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <div className="text-center space-y-1">
-        <p className="text-base font-medium text-foreground">No products found</p>
-        <p className="text-sm text-muted-foreground">Try adjusting your search or add a new product</p>
-      </div>
+    <div className="flex flex-col items-center gap-2">
+      <Package className="h-8 w-8 text-muted-foreground" />
+      <p className="text-sm text-muted-foreground">No products found</p>
+      <p className="text-xs text-muted-foreground">Try adjusting your search or add a new product</p>
     </div>
   )
 
@@ -133,27 +161,39 @@ export default function ProductsTable({ onProductDeleted }) {
     </ActionsDropdown>
   )
 
+  const filtersConfig = [
+    stockStatusFilter,
+    statusFilter,
+    categoryFilter(categories),
+  ];
+
   return (
     <>
       <Card className="border-border/50 shadow-sm">
-        <CardContent className="space-y-4 sm:space-y-6 ">
+        <CardContent className="space-y-4 sm:space-y-6">
           <div className="flex flex-col gap-4 sm:gap-6">
-            <div className="relative flex-1 max-w-full sm:max-w-md">
+            <div className="relative w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search products..."
-                className="pl-10 h-10 sm:h-10 border-border/60 focus:border-border bg-background text-sm sm:text-base"
+                placeholder="Search products by name or SKU..."
+                className="pl-10 h-10 border-border/60 focus:border-border bg-background text-sm sm:text-base w-full"
                 value={searchTerm}
                 onChange={(e) => dispatch(setSearchTerm(e.target.value))}
               />
             </div>
-            <div className="flex flex-col lg:flex-row gap-4 lg:justify-between lg:items-start">
-              <div className="flex-1">
-                <ProductsFilter />
-              </div>
-              <div className="shrink-0">
-                <ColumnVisibilityDropdown columns={allColumns} onChange={setVisibleColumns} />
-              </div>
+
+            <div className="flex flex-col md:flex-row sm:items-center sm:justify-between gap-3">
+              <GenericFilter
+                filtersConfig={filtersConfig}
+                activeFilters={filters}
+                onFilterChange={handleFilterChange}
+                onClearAll={handleClearAllFilters}
+              />
+
+              <ColumnVisibilityDropdown
+                columns={allColumns}
+                onChange={setVisibleColumns}
+              />
             </div>
           </div>
 
@@ -161,10 +201,10 @@ export default function ProductsTable({ onProductDeleted }) {
             <div className="overflow-x-auto">
               <Table className="min-w-[800px]">
                 <GenericTableHeader columns={allColumns} visibleColumns={visibleColumns} />
-                <GenericTableBody
-                  data={paginatedProducts}
+                <GenericTableBody 
+                  data={paginatedProducts} 
                   allColumns={allColumns}
-                  visibleColumns={visibleColumns}
+                  visibleColumns={visibleColumns} 
                   emptyState={emptyState}
                   renderActions={renderProductActions}
                   avatarIcon={<Package className="h-4 w-4 text-primary" />}
@@ -172,8 +212,12 @@ export default function ProductsTable({ onProductDeleted }) {
               </Table>
             </div>
           </div>
-
-          <GenericPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+          
+          <GenericPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </CardContent>
       </Card>
 
@@ -185,5 +229,5 @@ export default function ProductsTable({ onProductDeleted }) {
         onConfirm={handleConfirmDelete}
       />
     </>
-  )
+  );
 }
