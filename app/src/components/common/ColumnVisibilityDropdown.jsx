@@ -15,7 +15,7 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
     columns.reduce((acc, col) => {
       acc[col.key] = col.defaultVisible !== false
       return acc
-    }, {})
+    }, {}),
   )
 
   const handleToggle = (key) => {
@@ -27,14 +27,18 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 gap-2 text-sm font-medium">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 gap-2 text-sm font-medium border-border/60 hover:border-border bg-transparent"
+        >
           <SlidersHorizontal className="h-4 w-4" />
           Columns
-          <ChevronDown className="h-3 w-3 opacity-50" />
+          <ChevronDown className="h-3 w-3 opacity-60" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-52">
-        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <DropdownMenuContent className="w-56" align="end">
+        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 py-2">
           Toggle Columns
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -43,7 +47,7 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
             key={col.key}
             checked={visibleColumns[col.key]}
             onCheckedChange={() => handleToggle(col.key)}
-            className="flex items-center gap-2 py-2"
+            className="flex items-center gap-3 py-2.5 px-3 text-sm"
           >
             {col.label}
           </DropdownMenuCheckboxItem>
