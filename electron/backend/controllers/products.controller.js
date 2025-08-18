@@ -86,6 +86,11 @@ const updateProductController = async (req, res) => {
   const { id } = req.params;
   const productData = req.body;
 
+  productData.price = Math.round(productData.price * 100);
+  productData.cost_price = Math.round(productData.cost_price * 100);
+  productData.profit_margin = Math.round(productData.profit_margin * 100);
+  console.log("productData update: ", productData)
+
   if (productData.product_tax === undefined || productData.product_tax === null) {
     productData.product_tax = 0;
   }

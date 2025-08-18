@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
 import { toast } from "sonner"
-import DeleteProductDialog from "../components/DeleteProductDialog"
+import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import { useDeleteProductMutation, useGetProductQuery } from "@/services/productsApi"
 
 export default function ProductDetailsPage() {
@@ -165,7 +165,7 @@ export default function ProductDetailsPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between">
           <Button
@@ -202,7 +202,7 @@ export default function ProductDetailsPage() {
 
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="border-0 shadow-sm">
+            <Card className="border-0 shadow-lg">
               <CardHeader className="pb-6">
                 <div className="flex items-start justify-between">
                   <div className="space-y-3">
@@ -326,8 +326,9 @@ export default function ProductDetailsPage() {
       </div>
     </div>
 
-    <DeleteProductDialog
-      product={product}
+    <GenericDeleteDialog
+      dialogTitle="Delete Product?"
+      itemName={product?.name ?? "this product"}
       open={isDeleteDialogOpen}
       onOpenChange={handleDialogOpenChange}
       onConfirm={handleConfirmDelete}

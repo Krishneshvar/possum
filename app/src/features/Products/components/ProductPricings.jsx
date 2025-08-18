@@ -77,7 +77,7 @@ export default function ProductPricings({ formData, handleChange, handleRadioCha
               id="price"
               name="price"
               type="number"
-              value={formData.price/100}
+              value={formData.price}
               onChange={handleChange}
               step="0.01"
               disabled={disabledField === "price"}
@@ -103,7 +103,7 @@ export default function ProductPricings({ formData, handleChange, handleRadioCha
               id="cost_price"
               name="cost_price"
               type="number"
-              value={formData.cost_price/100}
+              value={formData.cost_price}
               onChange={handleChange}
               step="0.01"
               disabled={disabledField === "cost_price"}
@@ -127,7 +127,7 @@ export default function ProductPricings({ formData, handleChange, handleRadioCha
               id="profit_margin"
               name="profit_margin"
               type="number"
-              value={formData.profit_margin/100}
+              value={formData.profit_margin}
               onChange={handleChange}
               step="0.01"
               disabled={disabledField === "profit_margin"}

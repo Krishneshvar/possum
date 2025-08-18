@@ -93,7 +93,7 @@ export default function ProductsFilter() {
     (filters.status !== "all" ? 1 : 0)
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-wrap items-center gap-2 space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Filter className="h-4 w-4" />

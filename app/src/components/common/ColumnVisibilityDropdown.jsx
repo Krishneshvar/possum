@@ -27,7 +27,7 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 gap-2 text-sm font-medium p-[1.05rem]">
+        <Button variant="outline" size="sm" className="h-8 gap-2 text-sm font-medium">
           <SlidersHorizontal className="h-4 w-4" />
           Columns
           <ChevronDown className="h-3 w-3 opacity-50" />

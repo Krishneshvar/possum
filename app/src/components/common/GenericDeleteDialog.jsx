@@ -3,8 +3,15 @@ import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 
-export default function DeleteProductDialog({ product, open, onOpenChange, onConfirm }) {
-  if (!open) return null
+export default function GenericDeleteDialog({ 
+  open, 
+  onOpenChange, 
+  onConfirm,
+  dialogTitle = "Confirm Deletion",
+  itemName = "this item",
+  confirmButtonText = "Delete"
+}) {
+  if (!open) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -13,12 +20,12 @@ export default function DeleteProductDialog({ product, open, onOpenChange, onCon
           <div className="flex p-2 items-center justify-center rounded-lg bg-destructive/10">
             <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
-          <h2 className="text-lg font-semibold">Delete Product?</h2>
+          <h2 className="text-lg font-semibold">{dialogTitle}</h2>
         </div>
 
         <p className="text-sm text-muted-foreground mb-6">
           Are you sure you want to delete{" "}
-          <strong>"{product?.name ?? "this product"}"</strong>? This action cannot be undone.
+          <strong>"{itemName}"</strong>? This action cannot be undone.
         </p>
 
         <div className="flex justify-end gap-3">
@@ -33,11 +40,11 @@ export default function DeleteProductDialog({ product, open, onOpenChange, onCon
             onClick={onConfirm}
             className="bg-destructive hover:bg-destructive/90 cursor-pointer text-white"
           >
-            Delete Product
+            {confirmButtonText}
           </Button>
         </div>
       </div>
     </div>,
     document.body
-  )
+  );
 }

@@ -14,7 +14,7 @@ const addProduct = ({
 }
 
 const updateProduct = (id, {
-  name, sku, category_id, price, cost_price, profit_margin, stock, stock_alert_cap = 10, product_tax = 0, status
+  name, sku, category_id, price, cost_price, profit_margin, stock = 0, stock_alert_cap = 10, product_tax = 0, status
 }) => {
   const stmt = db.prepare(`
     UPDATE products

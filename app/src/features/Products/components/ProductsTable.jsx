@@ -1,8 +1,7 @@
-import {  Eye, Trash2, Package, Edit, AlertTriangle, CheckCircle, XCircle, Search } from "lucide-react";
+import {  Eye, Trash2, Package, Edit, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useSelector, useDispatch } from 'react-redux';
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenuItem,
@@ -15,98 +14,20 @@ import { Input } from "@/components/ui/input";
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi";
 import ColumnVisibilityDropdown from "@/components/common/ColumnVisibilityDropdown";
 import { setSearchTerm, setCurrentPage } from "../productsSlice";
-import DeleteProductDialog from "../components/DeleteProductDialog";
 import ProductsFilter from "./ProductsFilter";
+import GenericDeleteDialog from "@/components/common/GenericDeleteDialog";
 
 import GenericTableHeader from "@/components/common/GenericTableHeader";
 import GenericTableBody from "@/components/common/GenericTableBody";
 import GenericPagination from "@/components/common/GenericPagination";
 import ActionsDropdown from "@/components/common/ActionsDropdown";
 
-const formatPrice = (price) => {
-  if (price === null || isNaN(price)) return "N/A";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(Number.parseFloat(price / 100));
-};
-
-const getStockStatus = (stock) => {
-  if (stock === 0) {
-    return (
-      <Badge variant="destructive" className="gap-1">
-        <XCircle className="h-3 w-3" />
-        Out of Stock
-      </Badge>
-    );
-  } else if (stock <= 10) {
-    return (
-      <Badge
-        variant="secondary"
-        className="gap-1 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300"
-      >
-        <AlertTriangle className="h-3 w-3" />
-        Low Stock ({stock})
-      </Badge>
-    );
-  } else {
-    return (
-      <Badge
-        variant="secondary"
-        className="gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300"
-      >
-        <CheckCircle className="h-3 w-3" />
-        In Stock ({stock})
-      </Badge>
-    );
-  }
-};
-
-const allColumns = [
-  { 
-    key: "product", 
-    label: "Product",
-    renderCell: (product) => (
-      <div className="space-y-1">
-        <p className="font-medium leading-none">{product.name}</p>
-      </div>
-    ),
-  },
-  { 
-    key: "status", 
-    label: "Status",
-    renderCell: (product) => <Badge>{product.status}</Badge>,
-  },
-  { 
-    key: "sku", 
-    label: "SKU",
-    renderCell: (product) => (
-      <code className="relative rounded bg-muted px-2 py-1 text-sm font-mono">{product.sku}</code>
-    ),
-  },
-  { 
-    key: "category", 
-    label: "Category",
-    renderCell: (product) => <Badge variant="outline" className="font-normal">{product.category_name}</Badge>,
-  },
-  { 
-    key: "stock", 
-    label: "Stock Status",
-    renderCell: (product) => getStockStatus(product.stock),
-  },
-  { 
-    key: "price", 
-    label: "Price",
-    renderCell: (product) => (
-      <span className="font-semibold">{formatPrice(product.price)}</span>
-    ),
-  },
-];
+import {allColumns} from "./productsTableContents.jsx"
 
 export default function ProductsTable({ onProductDeleted }) {
   const dispatch = useDispatch();
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state) => state.products);
-  const { data: products = [], isFetching, isLoading } = useGetProductsQuery();
+  const { data: products = [] } = useGetProductsQuery();
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -213,7 +134,6 @@ export default function ProductsTable({ onProductDeleted }) {
       <Card>
         <CardContent className="space-y-4 pt-2">
           <div className="flex flex-col gap-4 sm:justify-between">
-            <div className="flex flex-col md:flex-row gap-2">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -223,10 +143,9 @@ export default function ProductsTable({ onProductDeleted }) {
                   onChange={(e) => dispatch(setSearchTerm(e.target.value))}
                 />
               </div>
-              <ColumnVisibilityDropdown columns={allColumns} onChange={setVisibleColumns} />
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex justify-between">
               <ProductsFilter />
+              <ColumnVisibilityDropdown columns={allColumns} onChange={setVisibleColumns} />
             </div>
           </div>
 
@@ -252,8 +171,9 @@ export default function ProductsTable({ onProductDeleted }) {
         </CardContent>
       </Card>
 
-      <DeleteProductDialog
-        product={selectedProduct}
+      <GenericDeleteDialog
+        dialogTitle="Delete Product?"
+        itemName={selectedProduct?.name ?? "this product"}
         open={isDeleteDialogOpen}
         onOpenChange={handleDialogOpenChange}
         onConfirm={handleConfirmDelete}
