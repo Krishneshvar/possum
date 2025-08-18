@@ -1,11 +1,11 @@
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Loader2, AlertCircle, Package, RefreshCw } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 import ProductsTable from "../components/ProductsTable";
-import ProductsActions from "../components/ProductsActions";
 import { useGetProductsQuery } from '@/services/productsApi';
+import GenericPageHeader from "@/components/common/GenericPageHeader";
 
 export default function ProductsPage() {
   const { isLoading, isFetching, error, refetch } = useGetProductsQuery();
@@ -15,10 +15,16 @@ export default function ProductsPage() {
   };
 
   const isDataLoading = isLoading || isFetching;
-  
+
   return (
     <div className="container mx-auto space-y-6 p-6">
-      <ProductsActions />
+      <GenericPageHeader
+        headerIcon={<Package className="h-5 w-5 text-primary" />}
+        headerLabel={"Products"}
+        headerDescription={"Manage your inventory and product catalog"}
+        actionLabel={"Add Product"}
+        actionUrl={"/products/add"}
+      />
 
       {isDataLoading ? (
         <div className="flex items-center justify-center py-12">

@@ -1,3 +1,4 @@
+import { ChevronDown, SlidersHorizontal } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -7,13 +8,12 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { SlidersHorizontal } from "lucide-react"
 import { useState } from "react"
 
 export default function ColumnVisibilityDropdown({ columns, onChange }) {
   const [visibleColumns, setVisibleColumns] = useState(
     columns.reduce((acc, col) => {
-      acc[col.key] = col.defaultVisible !== false // default true unless specified
+      acc[col.key] = col.defaultVisible !== false
       return acc
     }, {})
   )
@@ -30,6 +30,7 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
         <Button variant="outline" size="sm" className="h-8 gap-2 text-sm font-medium p-[1.05rem]">
           <SlidersHorizontal className="h-4 w-4" />
           Columns
+          <ChevronDown className="h-3 w-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-52">
