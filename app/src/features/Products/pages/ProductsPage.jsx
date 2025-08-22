@@ -1,7 +1,4 @@
-import { Loader2, AlertCircle, Package, RefreshCw } from "lucide-react"
-
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+import { Package } from "lucide-react"
 
 import ProductsTable from "../components/ProductsTable"
 import { useGetProductsQuery } from "@/services/productsApi"
@@ -11,13 +8,7 @@ import { StatCards } from "@/components/common/stat-cards"
 import { productsStatsData } from "../data/productsStatsData.js"
 
 export default function ProductsPage() {
-  const { isLoading, isFetching, error, refetch } = useGetProductsQuery()
-
-  const handleRetry = () => {
-    refetch()
-  }
-
-  const isDataLoading = isLoading || isFetching
+  const { refetch } = useGetProductsQuery()
 
   return (
     <div className="container mx-auto space-y-4 p-4 sm:space-y-6 sm:p-6 max-w-7xl">
@@ -31,27 +22,7 @@ export default function ProductsPage() {
 
       <StatCards cardData={productsStatsData} />
 
-      {isDataLoading ? (
-        <div className="flex items-center justify-center py-8 sm:py-12">
-          <div className="flex items-center gap-2 text-center">
-            <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-            <span className="text-xs sm:text-sm text-muted-foreground">Loading products...</span>
-          </div>
-        </div>
-      ) : error ? (
-        <Alert variant="destructive" className="mx-auto max-w-2xl">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <span className="text-sm">Failed to load products. Please try again.</span>
-            <Button variant="outline" size="sm" onClick={handleRetry} className="w-full sm:w-auto bg-transparent">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <ProductsTable onProductDeleted={refetch} />
-      )}
+      <ProductsTable onProductDeleted={refetch} />
     </div>
   )
 }

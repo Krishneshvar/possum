@@ -1,10 +1,10 @@
-import { Eye, Trash2, Package, Edit, Search } from "lucide-react"
+import { Eye, Trash2, Package, Edit, Search, Loader2, RefreshCw, AlertCircle } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
-import { Table } from "@/components/ui/table"
+import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
@@ -25,8 +25,8 @@ import { stockStatusFilter, statusFilter, categoryFilter } from "../data/product
 export default function ProductsTable({ onProductDeleted }) {
   const dispatch = useDispatch()
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state) => state.products)
-  const { data: products = [] } = useGetProductsQuery()
-  const { data: categories = [] } = useGetCategoriesQuery()
+  const { data: products = [], isLoading, isFetching, error, refetch } = useGetProductsQuery()
+  const isDataLoading = isLoading || isFetching
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
@@ -37,6 +37,7 @@ export default function ProductsTable({ onProductDeleted }) {
       return acc
     }, {})
   )
+  const { data: categories = [] } = useGetCategoriesQuery()
 
   const handleFilterChange = (key, value) => {
     dispatch(setFilter({ key, value }))
@@ -201,14 +202,43 @@ export default function ProductsTable({ onProductDeleted }) {
             <div className="overflow-x-auto">
               <Table className="min-w-[800px]">
                 <GenericTableHeader columns={allColumns} visibleColumns={visibleColumns} />
-                <GenericTableBody 
-                  data={paginatedProducts} 
-                  allColumns={allColumns}
-                  visibleColumns={visibleColumns} 
-                  emptyState={emptyState}
-                  renderActions={renderProductActions}
-                  avatarIcon={<Package className="h-4 w-4 text-primary" />}
-                />
+                
+                {isDataLoading ? (
+                  <TableBody>
+                    <TableRow>
+                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-40 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">Loading products...</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                ) : error ? (
+                  <TableBody>
+                    <TableRow>
+                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-40 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <AlertCircle className="h-5 w-5 text-destructive" />
+                          <p className="text-sm text-destructive">Failed to load products. Please try again.</p>
+                          <Button variant="outline" size="sm" onClick={refetch} className="w-full sm:w-auto">
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Retry
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                ) : (
+                  <GenericTableBody
+                    data={paginatedProducts}
+                    allColumns={allColumns}
+                    visibleColumns={visibleColumns}
+                    emptyState={emptyState}
+                    renderActions={renderProductActions}
+                    avatarIcon={<Package className="h-4 w-4 text-primary" />}
+                  />
+                )}
               </Table>
             </div>
           </div>
