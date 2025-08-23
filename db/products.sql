@@ -1,6 +1,8 @@
 CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL UNIQUE
+  name TEXT NOT NULL UNIQUE,
+  parent_id INTEGER,
+  FOREIGN KEY (parent_id) REFERENCES categories(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
@@ -8,14 +10,7 @@ CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
-  sku TEXT NOT NULL UNIQUE,
   category_id INTEGER,
-  price INTEGER,
-  cost_price INTEGER,
-  profit_margin INTEGER,
-  stock INTEGER,
-  stock_alert_cap INTEGER DEFAULT 10,
-  product_tax INTEGER DEFAULT 0,
   status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'discontinued')),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -31,18 +26,21 @@ CREATE TABLE IF NOT EXISTS variants (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   product_id INTEGER NOT NULL,
   name TEXT NOT NULL,
-  sku TEXT NOT NULL UNIQUE,
-  price INTEGER NOT NULL,
-  cost_price INTEGER,
-  profit_margin INTEGER,
+  sku TEXT UNIQUE,
+  price REAL NOT NULL,
+  cost_price REAL,
+  profit_margin REAL,
   stock INTEGER DEFAULT 0,
-  product_tax INTEGER DEFAULT 0,
+  stock_alert_cap INTEGER DEFAULT 10,
+  product_tax REAL DEFAULT 0,
   status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'discontinued')),
+  is_default INTEGER DEFAULT 0 CHECK(is_default IN (0, 1)),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
-  FOREIGN KEY (product_id) REFERENCES products(id)
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
+CREATE INDEX IF NOT EXISTS idx_variants_product_id ON variants(product_id);
 CREATE INDEX IF NOT EXISTS idx_variants_sku ON variants(sku);
 CREATE INDEX IF NOT EXISTS idx_variants_status ON variants(status);

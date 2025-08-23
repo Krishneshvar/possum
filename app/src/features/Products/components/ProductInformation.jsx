@@ -21,7 +21,7 @@ export default function ProductInformation({ formData, categories, handleSelectC
         </div>
         <div>
           <h3 className="text-lg font-semibold text-foreground">Product Information</h3>
-          <p className="text-sm text-muted-foreground">Basic product details and identification</p>
+          <p className="text-sm text-muted-foreground">Basic product details</p>
         </div>
       </div>
 
@@ -76,11 +76,10 @@ export default function ProductInformation({ formData, categories, handleSelectC
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-3">
           <Label htmlFor="category_id" className="text-sm font-medium">
-            Category <RequiredFieldIndicator />
+            Category
           </Label>
           <Select
             onValueChange={(value) => handleSelectChange("category_id", value)}
-            required
             value={formData.category_id}
             key={formData.category_id}
           >
@@ -95,21 +94,6 @@ export default function ProductInformation({ formData, categories, handleSelectC
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="space-y-3">
-          <Label htmlFor="sku" className="text-sm font-medium">
-            SKU <RequiredFieldIndicator />
-          </Label>
-          <Input
-            id="sku"
-            name="sku"
-            value={formData.sku}
-            onChange={handleChange}
-            placeholder="Product SKU"
-            className="h-11 font-mono"
-            required
-          />
         </div>
       </div>
     </div>

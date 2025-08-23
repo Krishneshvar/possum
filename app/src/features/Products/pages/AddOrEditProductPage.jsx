@@ -41,12 +41,12 @@ export default function AddOrEditProductPage() {
   }
 
   let initialData = null;
-  if (isEditMode && product && categories) {
-    const matchingCategory = categories.find(cat => cat.name === product.category_name);
-    
+  if (isEditMode && product) {
+    const matchingCategory = categories?.find(cat => cat.name === product.category_name);
+
     initialData = {
       ...product,
-      category_id: matchingCategory ? matchingCategory.id : '',
+      category_id: matchingCategory ? String(matchingCategory.id) : '',
     };
   }
 

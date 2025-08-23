@@ -32,34 +32,42 @@ CREATE INDEX IF NOT EXISTS idx_purchase_orders_status ON purchase_orders(status)
 CREATE TABLE IF NOT EXISTS purchase_order_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   purchase_order_id INTEGER NOT NULL,
-  product_id INTEGER,
-  product_variant_id INTEGER,
+  product_variant_id INTEGER NOT NULL,
   quantity INTEGER NOT NULL,
-  cost_per_unit INTEGER NOT NULL,
+  cost_per_unit REAL NOT NULL,
   FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
   FOREIGN KEY (product_variant_id) REFERENCES variants(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_purchase_order_items_order_id ON purchase_order_items(purchase_order_id);
-CREATE INDEX IF NOT EXISTS idx_purchase_order_items_product_id ON purchase_order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_purchase_order_items_product_variant_id ON purchase_order_items(product_variant_id);
+
+CREATE TABLE IF NOT EXISTS inventory_lots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  variant_id INTEGER NOT NULL,
+  quantity INTEGER NOT NULL,
+  expiry_date DATETIME,
+  purchase_order_item_id INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (variant_id) REFERENCES variants(id) ON DELETE CASCADE,
+  FOREIGN KEY (purchase_order_item_id) REFERENCES purchase_order_items(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_lots_variant_id ON inventory_lots(variant_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_lots_expiry_date ON inventory_lots(expiry_date);
 
 CREATE TABLE IF NOT EXISTS inventory_adjustments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  product_id INTEGER,
-  product_variant_id INTEGER,
+  lot_id INTEGER,
   quantity_change INTEGER NOT NULL,
-  reason TEXT NOT NULL CHECK(reason IN ('spoilage', 'theft', 'damage', 'correction')),
+  reason TEXT NOT NULL CHECK(reason IN ('spoilage', 'theft', 'damage', 'correction', 'returned')),
   user_id INTEGER NOT NULL,
   adjustment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
-  FOREIGN KEY (product_variant_id) REFERENCES variants(id) ON DELETE SET NULL,
+  FOREIGN KEY (lot_id) REFERENCES inventory_lots(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_lot_id ON inventory_adjustments(lot_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_user_id ON inventory_adjustments(user_id);
-CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_product_id ON inventory_adjustments(product_id);
-CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_product_variant_id ON inventory_adjustments(product_variant_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_reason ON inventory_adjustments(reason);
 CREATE INDEX IF NOT EXISTS idx_inventory_adjustments_adjustment_date ON inventory_adjustments(adjustment_date);

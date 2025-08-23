@@ -25,7 +25,8 @@ import { stockStatusFilter, statusFilter, categoryFilter } from "../data/product
 export default function ProductsTable({ onProductDeleted }) {
   const dispatch = useDispatch()
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state) => state.products)
-  const { data: products = [], isLoading, isFetching, error, refetch } = useGetProductsQuery()
+  const { data, isLoading, isFetching, error, refetch } = useGetProductsQuery()
+  const products = data?.products || []
   const isDataLoading = isLoading || isFetching
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)

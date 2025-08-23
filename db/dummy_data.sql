@@ -57,30 +57,37 @@ INSERT INTO payment_methods (name) VALUES
 ('UPI'),
 ('Gift Card');
 
-INSERT INTO products (name, sku, category_id, price, cost_price, profit_margin, stock, product_tax, status) VALUES
-('Coffee Beans', 'COF-B01', 1, 1500, 800, 700, 50, 100, 'active'),
-('Chocolate Bar', 'SNK-CHOC1', 2, 250, 100, 150, 200, 15, 'active'),
-('Smartphone', 'EL-SMT-01', 3, 75000, 50000, 25000, 15, 2000, 'active'),
-('The Great Book', 'BK-GRT-B', 4, 1200, 500, 700, 30, 80, 'active'),
-('T-Shirt', 'AP-TSH-01', 5, 2000, 800, 1200, 100, 150, 'active'),
-('Coffee Mug', 'HM-MUG-01', 6, 800, 250, 550, 75, 60, 'active'),
-('Shampoo', 'PC-SHMP-01', 7, 600, 300, 300, 50, 45, 'active'),
-('Loaf of Bread', 'BK-BRD-01', 8, 350, 150, 200, 40, 25, 'active'),
-('Milk Gallon', 'DR-MLK-01', 11, 400, 200, 200, 60, 30, 'active'),
-('All-Purpose Cleaner', 'CL-APC-01', 10, 550, 220, 330, 80, 40, 'active'),
-('Headphones', 'EL-HDP-01', 3, 10000, 4000, 6000, 20, 500, 'active');
+INSERT INTO products (id, name, category_id, status) VALUES
+(1, 'Coffee Beans', 1, 'active'),
+(2, 'Chocolate Bar', 2, 'active'),
+(3, 'Smartphone', 3, 'active'),
+(4, 'The Great Book', 4, 'active'),
+(5, 'T-Shirt', 5, 'active'),
+(6, 'Coffee Mug', 6, 'active'),
+(7, 'Shampoo', 7, 'active'),
+(8, 'Loaf of Bread', 8, 'active'),
+(9, 'Milk Gallon', 11, 'active'),
+(10, 'All-Purpose Cleaner', 10, 'active'),
+(11, 'Headphones', 3, 'active');
 
-INSERT INTO variants (product_id, name, sku, price, cost_price, profit_margin, stock, product_tax) VALUES
-(1, 'Arabica', 'COF-B01-A', 1800, 900, 900, 30, 120),
-(1, 'Robusta', 'COF-B01-R', 1700, 850, 850, 25, 110),
-(5, 'Small', 'AP-TSH-01-S', 2000, 800, 1200, 40, 150),
-(5, 'Medium', 'AP-TSH-01-M', 2000, 800, 1200, 35, 150),
-(5, 'Large', 'AP-TSH-01-L', 2000, 800, 1200, 25, 150),
-(6, 'White', 'HM-MUG-01-W', 800, 250, 550, 30, 60),
-(6, 'Black', 'HM-MUG-01-B', 800, 250, 550, 25, 60),
-(6, 'Red', 'HM-MUG-01-R', 800, 250, 550, 20, 60),
-(3, '128GB', 'EL-SMT-01-128', 75000, 50000, 25000, 8, 2000),
-(3, '256GB', 'EL-SMT-01-256', 85000, 55000, 30000, 7, 2200);
+INSERT INTO variants (id, product_id, name, sku, price, cost_price, profit_margin, stock, product_tax, is_default) VALUES
+(1, 1, 'Arabica', 'COF-B01-A', 1800, 900, 900, 30, 120, 1),
+(2, 1, 'Robusta', 'COF-B01-R', 1700, 850, 850, 25, 110, 0),
+(3, 2, 'Milk Chocolate', 'SNK-CHOC1-M', 250, 100, 150, 200, 15, 1),
+(4, 3, '128GB', 'EL-SMT-01-128', 75000, 50000, 25000, 8, 2000, 1),
+(5, 3, '256GB', 'EL-SMT-01-256', 85000, 55000, 30000, 7, 2200, 0),
+(6, 4, 'Paperback', 'BK-GRT-B-PB', 1200, 500, 700, 30, 80, 1),
+(7, 5, 'Small', 'AP-TSH-01-S', 2000, 800, 1200, 40, 150, 0),
+(8, 5, 'Medium', 'AP-TSH-01-M', 2000, 800, 1200, 35, 150, 1),
+(9, 5, 'Large', 'AP-TSH-01-L', 2000, 800, 1200, 25, 150, 0),
+(10, 6, 'White', 'HM-MUG-01-W', 800, 250, 550, 30, 60, 1),
+(11, 6, 'Black', 'HM-MUG-01-B', 800, 250, 550, 25, 60, 0),
+(12, 6, 'Red', 'HM-MUG-01-R', 800, 250, 550, 20, 60, 0),
+(13, 7, '200ml', 'PC-SHMP-01-200', 600, 300, 300, 50, 45, 1),
+(14, 8, 'Whole Wheat', 'BK-BRD-01-WW', 350, 150, 200, 40, 25, 1),
+(15, 9, 'Organic', 'DR-MLK-01-ORG', 400, 200, 200, 60, 30, 1),
+(16, 10, '250ml', 'CL-APC-01-250', 550, 220, 330, 80, 40, 1),
+(17, 11, 'Wireless', 'EL-HDP-01-W', 10000, 4000, 6000, 20, 500, 1);
 
 INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, actual_delivery_date, status, note) VALUES
 (1, '2025-08-01 10:00:00', '2025-08-05 10:00:00', '2025-08-04 15:00:00', 'received', 'Urgent restock of coffee and snacks'),
@@ -95,22 +102,33 @@ INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, ac
 (10, '2025-08-10 19:00:00', '2025-08-14 19:00:00', NULL, 'pending', 'Order for cleaning supplies'),
 (11, '2025-08-11 20:00:00', '2025-08-15 20:00:00', NULL, 'pending', 'Order for new headphones');
 
-INSERT INTO purchase_order_items (purchase_order_id, product_id, product_variant_id, quantity, cost_per_unit) VALUES
+INSERT INTO purchase_order_items (id, purchase_order_id, product_variant_id, quantity, cost_per_unit) VALUES
 (1, 1, 1, 20, 900),
-(1, 2, NULL, 50, 100),
-(2, 3, 9, 5, 50000),
-(2, 3, 10, 5, 55000),
-(3, 5, 3, 10, 800),
-(3, 5, 4, 15, 800),
-(3, 5, 5, 5, 800),
-(4, 7, NULL, 20, 300),
-(5, 2, NULL, 40, 100),
-(6, 4, NULL, 15, 500),
-(7, NULL, NULL, 30, 120),
-(8, 8, NULL, 20, 150),
-(9, 9, NULL, 25, 200),
-(10, 10, NULL, 30, 220),
-(11, 11, NULL, 10, 4000);
+(2, 1, 3, 50, 100),
+(3, 2, 4, 5, 50000),
+(4, 2, 5, 5, 55000),
+(5, 3, 7, 10, 800),
+(6, 3, 8, 15, 800),
+(7, 3, 9, 5, 800),
+(8, 4, 13, 20, 300),
+(9, 5, 3, 40, 100),
+(10, 6, 6, 15, 500),
+(11, 7, 14, 30, 150),
+(12, 8, 14, 20, 150),
+(13, 9, 15, 25, 200),
+(14, 10, 16, 30, 220),
+(15, 11, 17, 10, 4000);
+
+INSERT INTO inventory_lots (variant_id, quantity, expiry_date, purchase_order_item_id) VALUES
+(1, 1, '2025-12-31', 1),
+(2, 3, '2026-06-30', 2),
+(7, 10, NULL, 5),
+(8, 15, NULL, 6),
+(9, 5, NULL, 7),
+(13, 20, '2026-10-31', 8),
+(14, 30, '2025-08-15', 11),
+(14, 20, '2025-08-16', 12),
+(15, 25, '2025-08-20', 13);
 
 INSERT INTO sales (invoice_number, sale_date, total_amount, paid_amount, total_tax, discount, customer_id, user_id, note, status) VALUES
 ('INV-001', '2025-08-12 10:00:00', 3150, 3150, 210, 0, 1, 3, 'Regular sale, paid in full', 'paid'),
@@ -125,32 +143,32 @@ INSERT INTO sales (invoice_number, sale_date, total_amount, paid_amount, total_t
 ('INV-010', '2025-08-12 20:30:00', 1250, 1250, 85, 0, 10, 7, 'Paid by card', 'paid'),
 ('INV-011', '2025-08-12 21:00:00', 550, 550, 40, 0, 11, 7, 'Single item purchase', 'paid');
 
-INSERT INTO sale_items (sale_id, product_id, product_variant_id, quantity, price_per_unit, cost_per_unit, total_price) VALUES
-(1, 1, 1, 1, 1800, 900, 1800),
-(1, 2, NULL, 5, 250, 100, 1250),
-(1, 6, NULL, 1, 800, 250, 800),
-(2, 3, 10, 1, 85000, 55000, 85000),
-(2, 2, NULL, 8, 250, 100, 2000),
-(3, 5, 4, 1, 2000, 800, 2000),
-(3, 2, NULL, 1, 250, 100, 250),
-(4, 5, 4, 1, 2000, 800, 2000),
-(5, 11, NULL, 1, 10000, 4000, 10000),
-(5, 7, NULL, 1, 600, 300, 600),
-(5, 8, NULL, 1, 350, 150, 350),
-(6, 4, NULL, 1, 1200, 500, 1200),
-(6, 6, 7, 2, 800, 250, 1600),
-(6, 9, NULL, 2, 400, 200, 800),
-(7, 4, NULL, 2, 1200, 500, 2400),
-(7, 7, NULL, 1, 600, 300, 600),
-(7, 8, NULL, 1, 350, 150, 350),
-(7, 10, NULL, 5, 550, 220, 2750),
-(8, 5, 5, 1, 2000, 800, 2000),
-(8, 2, NULL, 4, 250, 100, 1000),
-(9, 2, NULL, 2, 250, 100, 500),
-(10, 8, NULL, 1, 350, 150, 350),
-(10, 9, NULL, 2, 400, 200, 800),
-(10, 6, 6, 1, 800, 250, 800),
-(11, 10, NULL, 1, 550, 220, 550);
+INSERT INTO sale_items (sale_id, product_variant_id, quantity, price_per_unit, cost_per_unit, total_price) VALUES
+(1, 1, 1, 1800, 900, 1800),
+(1, 3, 5, 250, 100, 1250),
+(1, 10, 1, 800, 250, 800),
+(2, 5, 1, 85000, 55000, 85000),
+(2, 3, 8, 250, 100, 2000),
+(3, 8, 1, 2000, 800, 2000),
+(3, 3, 1, 250, 100, 250),
+(4, 8, 1, 2000, 800, 2000),
+(5, 17, 1, 10000, 4000, 10000),
+(5, 13, 1, 600, 300, 600),
+(5, 14, 1, 350, 150, 350),
+(6, 6, 1, 1200, 500, 1200),
+(6, 11, 2, 800, 250, 1600),
+(6, 15, 2, 400, 200, 800),
+(7, 6, 2, 1200, 500, 2400),
+(7, 13, 1, 600, 300, 600),
+(7, 14, 1, 350, 150, 350),
+(7, 16, 5, 550, 220, 2750),
+(8, 9, 1, 2000, 800, 2000),
+(8, 3, 4, 250, 100, 1000),
+(9, 3, 2, 250, 100, 500),
+(10, 14, 1, 350, 150, 350),
+(10, 15, 2, 400, 200, 800),
+(10, 10, 1, 800, 250, 800),
+(11, 16, 1, 550, 220, 550);
 
 INSERT INTO transactions (sale_id, user_id, amount, type, payment_method_id, transaction_date) VALUES
 (1, 3, 3150, 'payment', 1, '2025-08-12 10:00:00'),
@@ -165,17 +183,17 @@ INSERT INTO transactions (sale_id, user_id, amount, type, payment_method_id, tra
 (10, 7, 1250, 'payment', 2, '2025-08-12 20:30:00'),
 (11, 7, 550, 'payment', 1, '2025-08-12 21:00:00');
 
-INSERT INTO inventory_adjustments (product_id, product_variant_id, quantity_change, reason, user_id, adjustment_date) VALUES
-(2, NULL, -5, 'spoilage', 6, '2025-08-12 09:00:00'),
-(5, 4, 2, 'correction', 6, '2025-08-12 09:15:00'),
-(NULL, 10, -1, 'damage', 6, '2025-08-12 09:30:00'),
-(4, NULL, -2, 'theft', 6, '2025-08-12 09:45:00'),
-(1, 2, 5, 'correction', 6, '2025-08-12 10:00:00'),
-(8, NULL, -3, 'spoilage', 6, '2025-08-12 11:00:00'),
-(9, NULL, -1, 'damage', 6, '2025-08-12 12:00:00'),
-(10, NULL, 10, 'correction', 6, '2025-08-12 13:00:00'),
-(11, NULL, -1, 'theft', 6, '2025-08-12 14:00:00'),
-(3, 9, 2, 'correction', 6, '2025-08-12 15:00:00');
+INSERT INTO inventory_adjustments (lot_id, quantity_change, reason, user_id, adjustment_date) VALUES
+(2, -5, 'spoilage', 6, '2025-08-12 09:00:00'),
+(8, 2, 'correction', 6, '2025-08-12 09:15:00'),
+(5, -1, 'damage', 6, '2025-08-12 09:30:00'),
+(6, -2, 'theft', 6, '2025-08-12 09:45:00'),
+(2, 5, 'correction', 6, '2025-08-12 10:00:00'),
+(7, -3, 'spoilage', 6, '2025-08-12 11:00:00'),
+(9, -1, 'damage', 6, '2025-08-12 12:00:00'),
+(NULL, 10, 'correction', 6, '2025-08-12 13:00:00'),
+(NULL, -1, 'theft', 6, '2025-08-12 14:00:00'),
+(4, 2, 'correction', 6, '2025-08-12 15:00:00');
 
 INSERT INTO audit_log (user_id, action, table_name, row_id, old_data, new_data, created_at) VALUES
 (1, 'create', 'products', 1, NULL, '{"name": "Coffee Beans"}', '2025-08-12 08:00:00'),
