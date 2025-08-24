@@ -1,5 +1,4 @@
 import { Package } from "lucide-react";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,8 +8,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
+
+import CategorySelector from "./CategorySelector";
 
 export default function ProductInformation({ formData, categories, handleSelectChange, handleChange }) {
   return (
@@ -25,7 +25,7 @@ export default function ProductInformation({ formData, categories, handleSelectC
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-3">
           <Label htmlFor="status" className="text-sm font-medium">
             Status <RequiredFieldIndicator />
@@ -71,29 +71,16 @@ export default function ProductInformation({ formData, categories, handleSelectC
             required
           />
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-3">
-          <Label htmlFor="category_id" className="text-sm font-medium">
-            Category
+          <Label htmlFor="name" className="text-sm font-medium">
+            Product Category
           </Label>
-          <Select
-            onValueChange={(value) => handleSelectChange("category_id", value)}
+          <CategorySelector
+            categories={categories}
             value={formData.category_id}
-            key={formData.category_id}
-          >
-            <SelectTrigger id="category_id" className="w-full py-[1.3rem]">
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={String(category.id)}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={handleSelectChange}
+          />
         </div>
       </div>
     </div>

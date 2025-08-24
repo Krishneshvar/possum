@@ -1,15 +1,45 @@
-INSERT INTO categories (name) VALUES
-('Beverages'),
-('Snacks'),
-('Electronics'),
-('Books'),
-('Apparel'),
-('Home Goods'),
-('Personal Care'),
-('Baked Goods'),
-('Produce'),
-('Cleaning Supplies'),
-('Dairy');
+INSERT INTO categories (name, parent_id) VALUES
+('Apparel', NULL),
+('Electronics', NULL),
+('Home Goods', NULL),
+('Books', NULL),
+
+('Men''s Clothing', 1),
+('Women''s Clothing', 1),
+('Children''s Clothing', 1),
+
+('Computers & Tablets', 2),
+('Smartphones & Accessories', 2),
+('TVs & Home Theater', 2),
+
+('Kitchen & Dining', 3),
+('Bed & Bath', 3),
+('Furniture', 3),
+
+('Fiction', 4),
+('Non-Fiction', 4),
+
+('Tops', 5),
+('Bottoms', 5),
+('Outerwear', 5),
+
+('Dresses', 6),
+('Skirts', 6),
+
+('Laptops', 8),
+('Desktops', 8),
+('Tablets', 8),
+
+('Cookware', 11),
+('Dinnerware', 11),
+
+('Sci-Fi', 14),
+('Fantasy', 14),
+
+('T-Shirts', 16),
+('Sweatshirts', 16),
+('Jeans', 17),
+('Shorts', 17);
 
 INSERT INTO suppliers (name, contact_person, phone, email) VALUES
 ('Global Foods Inc.', 'Jane Doe', '555-1001', 'jane.doe@globalfoods.com'),
