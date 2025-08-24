@@ -76,7 +76,7 @@ const updateVariant = (variant) => {
     variant.stock,
     variant.stock_alert_cap,
     variant.product_tax,
-    variant.id // Use the variant ID for the WHERE clause
+    variant.id
   );
 };
 
@@ -102,30 +102,23 @@ const addVariant = (productId, variant) => {
 
 const updateProductWithVariants = (productId, { name, category_id, status, variants }) => {
   const transaction = db.transaction(() => {
-    // 1. Update the main product details
     const productChanges = updateProduct(productId, { name, category_id, status });
 
-    // 2. Get the IDs of the variants currently in the DB for this product
     const existingVariants = db.prepare('SELECT id FROM variants WHERE product_id = ?').all(productId);
     const existingVariantIds = existingVariants.map(v => v.id);
 
-    // 3. Get the IDs of the variants sent from the frontend
     const submittedVariantIds = variants.filter(v => v._tempId && typeof v._tempId === 'number').map(v => v._tempId);
 
-    // 4. Find variants to be deleted (present in DB, but not in submitted data)
     const variantsToDelete = existingVariantIds.filter(id => !submittedVariantIds.includes(id));
     if (variantsToDelete.length > 0) {
       const placeholders = variantsToDelete.map(() => '?').join(',');
       db.prepare(`UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`).run(...variantsToDelete);
     }
 
-    // 5. Loop through submitted variants to update or add
     for (const variant of variants) {
       if (variant._tempId && typeof variant._tempId === 'number') {
-        // Variant has an ID, so it's an update
         updateVariant({ ...variant, id: variant._tempId });
       } else {
-        // Variant has a temporary ID (_tempId), so it's a new variant
         addVariant(productId, variant);
       }
     }
@@ -136,13 +129,11 @@ const updateProductWithVariants = (productId, { name, category_id, status, varia
   return transaction();
 };
 
-// Deletes a product and all its variants via cascading delete
 const deleteProduct = (id) => {
   const stmt = db.prepare('UPDATE products SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
   return stmt.run(id);
 }
 
-// Retrieves products with filtering, searching, and pagination
 const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage }) => {
   let query = `
     SELECT
@@ -161,7 +152,6 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
   `;
   const params = [];
 
-  // Filter conditions
   if (searchTerm) {
     query += ` AND (p.name LIKE ? OR v.sku LIKE ?)`;
     params.push(`%${searchTerm}%`, `%${searchTerm}%`);
@@ -178,24 +168,22 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
     params.push(status);
   }
 
-  // Count the total number of products before applying pagination
+  query += ` GROUP BY p.id`;
+
   const countQuery = `SELECT COUNT(*) FROM (${query}) AS filtered_products`;
   const totalCount = db.prepare(countQuery).get(...params)['COUNT(*)'];
 
-  // Apply stock status filter
   const getStockStatus = (stock, stockAlertCap) => {
     if (stock === 0) return 'out-of-stock';
     if (stock <= stockAlertCap) return 'low-stock';
     return 'in-stock';
   };
-  
-  // The stock status filter is applied in-memory after fetching from the DB
+
   const allProducts = db.prepare(query + ` ORDER BY p.name ASC`).all(...params);
   const filteredProducts = stockStatus === 'all'
     ? allProducts
     : allProducts.filter(p => getStockStatus(p.stock, p.stock_alert_cap) === stockStatus);
 
-  // Apply pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
 

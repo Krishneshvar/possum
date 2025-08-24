@@ -37,10 +37,8 @@ export default function GenericFilter({ filtersConfig, activeFilters, onFilterCh
       return null
     }
 
-    // Safely get the current filter value, defaulting to an empty array for checkbox type
     const currentFilterValue = type === "checkbox" ? (activeFilters[key] || []) : activeFilters[key]
 
-    // Determine the button variant and label based on the active filter state
     const isActive = Array.isArray(currentFilterValue)
       ? currentFilterValue.length > 0
       : currentFilterValue !== "all" && currentFilterValue !== null

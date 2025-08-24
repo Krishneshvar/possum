@@ -1,19 +1,19 @@
 import { useState, useCallback, useEffect } from 'react';
 import { nanoid } from '@reduxjs/toolkit';
 
-const calculateProfitMargin = (price, cost_price) => {
-  if (cost_price > 0) {
-    return ((price - cost_price) / cost_price) * 100;
+const calculateProfitMargin = (priceInCents, costPriceInCents) => {
+  if (costPriceInCents > 0) {
+    return ((priceInCents - costPriceInCents) / costPriceInCents) * 100;
   }
   return 0;
 };
 
-const calculateCostPrice = (price, profit_margin) => {
-  return price / (1 + (profit_margin / 100));
+const calculateCostPrice = (priceInCents, profitMargin) => {
+  return priceInCents / (1 + (profitMargin / 100));
 };
 
-const calculatePrice = (cost_price, profit_margin) => {
-  return cost_price * (1 + (profit_margin / 100));
+const calculatePrice = (costPriceInCents, profitMargin) => {
+  return costPriceInCents * (1 + (profitMargin / 100));
 };
 
 const getDefaultVariant = () => ({
@@ -31,7 +31,6 @@ const getDefaultVariant = () => ({
 });
 
 const getInitialFormData = (data) => {
-  // If editing an existing product, populate with its data
   if (data?.variants?.length > 0) {
     const defaultVariant = data.variants.find(v => v.is_default);
     return {
@@ -51,7 +50,6 @@ const getInitialFormData = (data) => {
       })),
     };
   }
-  // If adding a new product, provide a default variant
   return {
     name: '',
     category_id: '',
@@ -88,14 +86,19 @@ export const useProductAndVariantForm = (initialState = {}) => {
             const cost_price = Number.parseFloat(updatedVariant.cost_price) || 0;
             const profit_margin = Number.parseFloat(updatedVariant.profit_margin) || 0;
 
-            if (updatedVariant.disabledField === 'price' && cost_price > 0 && profit_margin >= 0) {
-              updatedVariant.price = calculatePrice(cost_price, profit_margin).toFixed(2);
+            const priceInCents = Math.round(price * 100);
+            const costPriceInCents = Math.round(cost_price * 100);
+
+            if (updatedVariant.disabledField === 'price' && costPriceInCents > 0 && profit_margin >= 0) {
+              const newPriceInCents = calculatePrice(costPriceInCents, profit_margin);
+              updatedVariant.price = (newPriceInCents / 100).toFixed(2);
             }
-            else if (updatedVariant.disabledField === 'cost_price' && price > 0 && profit_margin >= 0) {
-              updatedVariant.cost_price = calculateCostPrice(price, profit_margin).toFixed(2);
+            else if (updatedVariant.disabledField === 'cost_price' && priceInCents > 0 && profit_margin >= 0) {
+              const newCostPriceInCents = calculateCostPrice(priceInCents, profit_margin);
+              updatedVariant.cost_price = (newCostPriceInCents / 100).toFixed(2);
             }
-            else if (updatedVariant.disabledField === 'profit_margin' && price > 0 && cost_price > 0) {
-              updatedVariant.profit_margin = calculateProfitMargin(price, cost_price).toFixed(2);
+            else if (updatedVariant.disabledField === 'profit_margin' && priceInCents > 0 && costPriceInCents > 0) {
+              updatedVariant.profit_margin = calculateProfitMargin(priceInCents, costPriceInCents).toFixed(2);
             }
           }
           return updatedVariant;
@@ -127,14 +130,19 @@ export const useProductAndVariantForm = (initialState = {}) => {
           const cost_price = Number.parseFloat(updatedVariant.cost_price) || 0;
           const profit_margin = Number.parseFloat(updatedVariant.profit_margin) || 0;
 
-          if (value === 'price' && cost_price > 0 && profit_margin >= 0) {
-            updatedVariant.price = calculatePrice(cost_price, profit_margin).toFixed(2);
+          const priceInCents = Math.round(price * 100);
+          const costPriceInCents = Math.round(cost_price * 100);
+
+          if (value === 'price' && costPriceInCents > 0 && profit_margin >= 0) {
+            const newPriceInCents = calculatePrice(costPriceInCents, profit_margin);
+            updatedVariant.price = (newPriceInCents / 100).toFixed(2);
           }
-          else if (value === 'cost_price' && price > 0 && profit_margin >= 0) {
-            updatedVariant.cost_price = calculateCostPrice(price, profit_margin).toFixed(2);
+          else if (value === 'cost_price' && priceInCents > 0 && profit_margin >= 0) {
+            const newCostPriceInCents = calculateCostPrice(priceInCents, profit_margin);
+            updatedVariant.cost_price = (newCostPriceInCents / 100).toFixed(2);
           }
-          else if (value === 'profit_margin' && price > 0 && cost_price > 0) {
-            updatedVariant.profit_margin = calculateProfitMargin(price, cost_price).toFixed(2);
+          else if (value === 'profit_margin' && priceInCents > 0 && costPriceInCents > 0) {
+            updatedVariant.profit_margin = calculateProfitMargin(priceInCents, costPriceInCents).toFixed(2);
           }
 
           return updatedVariant;

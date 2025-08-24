@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-import { useProductAndVariantForm } from "@/features/Products/hooks/useProductForm";
+import { useProductAndVariantForm } from "@/features/Products/hooks/useProductAndVariantForm";
 import ProductInformation from "./ProductInformation";
-import VariantForm from "./VariantForm"; // New component
+import VariantForm from "./VariantForm";
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
 export default function ProductForm({ initialData, categories, onSubmit, isEditMode, isSaving }) {

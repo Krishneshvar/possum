@@ -6,7 +6,7 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(Number.parseFloat(price / 100))
+  }).format(Number.parseFloat(price))
 }
 
 const getProductStatus = (status) => {
