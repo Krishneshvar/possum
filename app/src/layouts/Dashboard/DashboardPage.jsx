@@ -40,45 +40,47 @@ export default function DashboardPage() {
       <SidebarProvider
         className="bg-slate-100"
         style={{
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
+          "--sidebar-width": "min(280px, calc(100vw - 32px))",
+          // "--header-height": "auto",
         }}
       >
         <AppSidebar variant="floating" />
-        <div className="w-full bg-slate-100 p-2">
-          <SiteHeader />
-          <Separator />
-          <div className=" flex flex-1 flex-col py-6 px-1">
-            <Routes>
-              <Route path="/" element={<StatCards cardData={cardData} />} />
-              <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
+        <div className="w-full bg-slate-100 p-1 sm:p-2 lg:p-4 min-h-screen">
+          <div className="w-full max-w-full overflow-hidden">
+            <SiteHeader />
+            <Separator className="my-2 sm:my-4" />
+            <div className="flex flex-1 flex-col py-2 px-1 sm:py-4 sm:px-2 lg:py-6 lg:px-4 space-y-4 sm:space-y-6">
+              <Routes>
+                <Route path="/" element={<StatCards cardData={cardData} />} />
+                <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
 
-              <Route path="/sales" element={<SalesPage />} />
-              <Route path="/sales/orders" element={<OrdersPage />} />
-              <Route path="/sales/history" element={<SalesHistoryPage />} />
-              <Route path="/sales/transactions" element={<TransactionsPage />} />
+                <Route path="/sales" element={<SalesPage />} />
+                <Route path="/sales/orders" element={<OrdersPage />} />
+                <Route path="/sales/history" element={<SalesHistoryPage />} />
+                <Route path="/sales/transactions" element={<TransactionsPage />} />
 
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/products/add" element={<AddOrEditProductPage />} />
-              <Route path="/products/edit/:productId" element={<AddOrEditProductPage />} />
-              <Route path="/products/:productId" element={<ProductDetailsPage />} />
-              <Route path="/products/inventory" element={<InventoryPage />} />
-              <Route path="/products/variants" element={<VariantsPage />} />
-              <Route path="/products/categories" element={<CategoriesPage />} />
+                <Route path="/products" element={<ProductsPage />} />
+                <Route path="/products/add" element={<AddOrEditProductPage />} />
+                <Route path="/products/edit/:productId" element={<AddOrEditProductPage />} />
+                <Route path="/products/:productId" element={<ProductDetailsPage />} />
+                <Route path="/products/inventory" element={<InventoryPage />} />
+                <Route path="/products/variants" element={<VariantsPage />} />
+                <Route path="/products/categories" element={<CategoriesPage />} />
 
-              <Route path="/purchase" element={<PurchasePage />} />
-              <Route path="/purchase/orders" element={<PurchaseOrdersPage />} />
-              <Route path="/suppliers" element={<SuppliersPage />} />
+                <Route path="/purchase" element={<PurchasePage />} />
+                <Route path="/purchase/orders" element={<PurchaseOrdersPage />} />
+                <Route path="/suppliers" element={<SuppliersPage />} />
 
-              <Route path="/people" element={<PeoplePage />} />
-              <Route path="/customers" element={<CustomersPage />} />
-              <Route path="/employees" element={<EmployeesPage />} />
+                <Route path="/people" element={<PeoplePage />} />
+                <Route path="/customers" element={<CustomersPage />} />
+                <Route path="/employees" element={<EmployeesPage />} />
 
-              <Route path="/plugins" element={<PluginsPage />} />
+                <Route path="/plugins" element={<PluginsPage />} />
 
-              <Route path="/help" element={<HelpPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
+                <Route path="/help" element={<HelpPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
+            </div>
           </div>
         </div>
       </SidebarProvider>

@@ -5,12 +5,14 @@ import { useSelector, useDispatch } from "react-redux"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
 import ColumnVisibilityDropdown from "@/components/common/ColumnVisibilityDropdown"
 import { setSearchTerm, setCurrentPage, setFilter } from "../productsSlice"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
+import { Separator } from "@/components/ui/separator"
 
 import GenericTableHeader from "@/components/common/GenericTableHeader"
 import GenericTableBody from "@/components/common/GenericTableBody"
@@ -131,10 +133,10 @@ export default function ProductsTable({ onProductDeleted }) {
   }
 
   const emptyState = (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
       <Package className="h-8 w-8 text-muted-foreground" />
-      <p className="text-sm text-muted-foreground">No products found</p>
-      <p className="text-xs text-muted-foreground">Try adjusting your search or add a new product</p>
+      <p className="text-sm font-medium text-muted-foreground">No products found</p>
+      <p className="text-xs text-muted-foreground max-w-sm">Try adjusting your search or add a new product</p>
     </div>
   )
 
@@ -143,13 +145,15 @@ export default function ProductsTable({ onProductDeleted }) {
       <DropdownMenuItem asChild>
         <Link to={`/products/${product.id}`} className="cursor-pointer">
           <Eye className="mr-2 h-4 w-4" />
-          View Details
+          <span className="hidden sm:inline">View Details</span>
+          <span className="sm:hidden">View</span>
         </Link>
       </DropdownMenuItem>
       <DropdownMenuItem asChild>
         <Link to={`/products/edit/${product.id}`} className="cursor-pointer">
           <Edit className="mr-2 h-4 w-4" />
-          Edit Product
+          <span className="hidden sm:inline">Edit Product</span>
+          <span className="sm:hidden">Edit</span>
         </Link>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
@@ -158,7 +162,8 @@ export default function ProductsTable({ onProductDeleted }) {
         onClick={() => handleDeleteClick(product)}
       >
         <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-        Delete Product
+        <span className="hidden sm:inline">Delete Product</span>
+        <span className="sm:hidden">Delete</span>
       </DropdownMenuItem>
     </ActionsDropdown>
   )
@@ -171,44 +176,49 @@ export default function ProductsTable({ onProductDeleted }) {
 
   return (
     <>
-      <Card className="border-border/50 shadow-sm">
-        <CardContent className="space-y-4 sm:space-y-6">
+      <Card className="border-border/50 shadow-sm w-full max-w-full overflow-hidden">
+        <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6">
           <div className="flex flex-col gap-4 sm:gap-6">
-            <div className="relative w-full sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Search products by name or SKU..."
-                className="pl-10 h-10 border-border/60 focus:border-border bg-background text-sm sm:text-base w-full"
+                className="pl-10 h-10 sm:h-11 focus:border-border bg-background text-sm sm:text-base w-full"
                 value={searchTerm}
                 onChange={(e) => dispatch(setSearchTerm(e.target.value))}
               />
             </div>
 
-            <div className="flex flex-col md:flex-row sm:items-center sm:justify-between gap-3">
-              <GenericFilter
-                filtersConfig={filtersConfig}
-                activeFilters={filters}
-                onFilterChange={handleFilterChange}
-                onClearAll={handleClearAllFilters}
-              />
+            <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1 min-w-0">
+                <GenericFilter
+                  filtersConfig={filtersConfig}
+                  activeFilters={filters}
+                  onFilterChange={handleFilterChange}
+                  onClearAll={handleClearAllFilters}
+                />
+              </div>
 
-              <ColumnVisibilityDropdown
-                columns={allColumns}
-                onChange={setVisibleColumns}
-              />
+              <div className="flex-shrink-0">
+                <ColumnVisibilityDropdown
+                  columns={allColumns}
+                  onChange={setVisibleColumns}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-border/80 overflow-hidden">
+          <div className="w-full overflow-hidden rounded-md">
             <div className="overflow-x-auto">
-              <Table className="min-w-[800px]">
+              <Separator />
+              <Table className="min-w-full">
                 <GenericTableHeader columns={allColumns} visibleColumns={visibleColumns} />
-                
+
                 {isDataLoading ? (
                   <TableBody>
-                    <TableRow>
-                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-40 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3">
+                    <TableRow className="hover:bg-slate-50">
+                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-32 sm:h-40 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3 py-4">
                           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                           <p className="text-sm text-muted-foreground">Loading products...</p>
                         </div>
@@ -217,11 +227,11 @@ export default function ProductsTable({ onProductDeleted }) {
                   </TableBody>
                 ) : error ? (
                   <TableBody>
-                    <TableRow>
-                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-40 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3">
+                    <TableRow className="hover:bg-slate-50">
+                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-32 sm:h-40 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3 py-4 px-4">
                           <AlertCircle className="h-5 w-5 text-destructive" />
-                          <p className="text-sm text-destructive">Failed to load products. Please try again.</p>
+                          <p className="text-sm text-destructive text-center">Failed to load products. Please try again.</p>
                           <Button variant="outline" size="sm" onClick={refetch} className="w-full sm:w-auto">
                             <RefreshCw className="mr-2 h-4 w-4" />
                             Retry
@@ -241,14 +251,17 @@ export default function ProductsTable({ onProductDeleted }) {
                   />
                 )}
               </Table>
+              <Separator />
             </div>
           </div>
-          
-          <GenericPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+
+          <div className="flex justify-center pt-2">
+            <GenericPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </CardContent>
       </Card>
 

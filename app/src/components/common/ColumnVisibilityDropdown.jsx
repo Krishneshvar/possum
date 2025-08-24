@@ -30,7 +30,7 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
         <Button
           variant="outline"
           size="sm"
-          className="h-9 gap-2 text-sm font-medium border-border/60 hover:border-border bg-transparent"
+          className="h-9 gap-2 text-sm font-medium bg-transparent"
         >
           <SlidersHorizontal className="h-4 w-4" />
           Columns

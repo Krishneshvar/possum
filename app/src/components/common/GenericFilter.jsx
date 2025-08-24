@@ -31,7 +31,7 @@ export default function GenericFilter({ filtersConfig, activeFilters, onFilterCh
   }
 
   const renderFilterDropdown = (filter) => {
-    const { key, type, label, placeholder, icon: Icon, options, show = true } = filter
+    const { key, type, label, placeholder, options, show = true } = filter
 
     if (!show) {
       return null
@@ -54,9 +54,8 @@ export default function GenericFilter({ filtersConfig, activeFilters, onFilterCh
           <Button
             variant={isActive ? "default" : "outline"}
             size="sm"
-            className="h-10 sm:h-9 gap-2 text-sm font-medium border-border/60 hover:border-border justify-start xs:justify-center"
+            className="h-10 sm:h-9 gap-2 text-sm font-medium justify-start xs:justify-center"
           >
-            {Icon && <Icon className="h-4 w-4" />}
             <span className="truncate">{dropdownLabel}</span>
             <ChevronDown className="h-3 w-3 opacity-60 ml-auto xs:ml-0" />
           </Button>

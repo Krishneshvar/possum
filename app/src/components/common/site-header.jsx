@@ -28,8 +28,7 @@ export function SiteHeader() {
   const pageTitle = getPageTitle(location.pathname, sidebarData);
 
   return (
-    <header
-      className="py-3">
+    <header>
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />

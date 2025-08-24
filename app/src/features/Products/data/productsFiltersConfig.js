@@ -5,12 +5,11 @@ export const stockStatusFilter = {
   type: "radio",
   label: "Stock Status",
   placeholder: "Filter by stock",
-  icon: Package,
   options: [
-    { value: "all", label: "All Stock", icon: Package, color: "text-muted-foreground" },
-    { value: "in-stock", label: "In Stock", icon: Package, color: "text-green-600" },
-    { value: "low-stock", label: "Low Stock", icon: AlertTriangle, color: "text-amber-600" },
-    { value: "out-of-stock", label: "Out of Stock", icon: XCircle, color: "text-red-600" },
+    { value: "all", label: "All Stock", color: "text-muted-foreground" },
+    { value: "in-stock", label: "In Stock", color: "text-green-600" },
+    { value: "low-stock", label: "Low Stock", color: "text-amber-600" },
+    { value: "out-of-stock", label: "Out of Stock", color: "text-red-600" },
   ],
   badgeProps: {
     className: "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100",
@@ -22,7 +21,6 @@ export const statusFilter = {
   type: "radio",
   label: "Product Status",
   placeholder: "Filter by status",
-  icon: Layers,
   options: [
     { value: "all", label: "All Status" },
     { value: "active", label: "Active" },
@@ -38,12 +36,10 @@ export const categoryFilter = (categories) => ({
   key: "categories",
   type: "checkbox",
   label: "Categories",
-  placeholder: "Filter by categories",
-  icon: Layers,
+  placeholder: "Categories",
   options: categories.map((cat) => ({
     value: String(cat.id ?? cat.category_id),
     label: cat.name ?? String(cat.id ?? cat.category_id),
-    icon: Layers,
     color: "text-purple-600",
   })),
   badgeProps: {

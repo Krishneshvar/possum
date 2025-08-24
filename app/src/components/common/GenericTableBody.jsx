@@ -8,7 +8,7 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
     <TableBody>
       {data.length > 0 ? (
         data.map((item) => (
-          <TableRow key={item.id} className="hover:bg-muted/30 transition-colors border-b border-border/30">
+          <TableRow key={item.id} className="hover:bg-slate-100 transition-colors border-b border-border">
             <TableCell className="">
               <Avatar className="rounded-xl h-10 w-10 border border-border/40">
                 <AvatarFallback className="bg-primary/8 text-primary rounded-xl">{avatarIcon}</AvatarFallback>

@@ -8,7 +8,7 @@ import {
 export function StatCards({ cardData }) {
   return (
     <div
-      className="grid grid-cols-4 gap-2">
+      className="grid lg:grid-cols-4 md:grid-cols-2 gap-2">
       {cardData.map((item, index) => {
         const Icon = item.icon;
         return (
