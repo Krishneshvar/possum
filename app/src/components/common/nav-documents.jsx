@@ -59,7 +59,7 @@ export function NavDocuments({
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton asChild className="hover:bg-slate-100">
               <a href={item.url}>
                 <FileText />
                 <span>{item.name}</span>

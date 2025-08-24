@@ -56,5 +56,3 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT NOT NULL UNIQUE,
   value TEXT
 );
-
-INSERT INTO settings (key, value) VALUES ('tax_enabled', 'false');
