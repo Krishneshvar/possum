@@ -13,10 +13,10 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-import { NavDocuments } from "@/components/common/nav-documents"
-import { NavMain } from "@/components/common/nav-main"
-import { NavSecondary } from "@/components/common/nav-secondary"
-import { NavUser } from "@/components/common/nav-user"
+import { NavDocuments } from "@/layouts/Sidebar/components/nav-documents"
+import { NavMain } from "@/layouts/Sidebar/components/nav-main"
+import { NavSecondary } from "@/layouts/Sidebar/components/nav-secondary"
+import { NavUser } from "@/layouts/Sidebar/components/nav-user"
 import { sidebarData } from "@/data/sidebarData.js"
 
 export function AppSidebar({
