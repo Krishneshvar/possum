@@ -12,7 +12,7 @@ export default function GenericTableHeader({ columns, visibleColumns }) {
                 key={column.key}
                 className="font-semibold text-foreground py-3 sm:py-4 text-xs sm:text-sm px-2 sm:px-4"
               >
-                <span className="truncate block max-w-[80px] sm:max-w-none">{column.label}</span>
+                <span className="truncate block max-w-[80px] sm:max-w-none min-w-none">{column.label}</span>
               </TableHead>
             ),
         )}

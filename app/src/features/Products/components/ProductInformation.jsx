@@ -29,7 +29,7 @@ export default function ProductInformation({ formData, categories, handleSelectC
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
             <Label htmlFor="status" className="text-sm font-medium">
               Status <RequiredFieldIndicator />
@@ -86,9 +86,25 @@ export default function ProductInformation({ formData, categories, handleSelectC
               onChange={handleSelectChange}
             />
           </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="tax" className="text-sm font-medium">
+              Product Tax
+            </Label>
+            <Input
+              id="tax"
+              name="tax"
+              type="number"
+              // value={}
+              // onChange={}
+              step="0.01"
+              className="h-11 pl-8"
+              placeholder="0.00"
+            />
+          </div>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col sm:flex-row gap-6">
           <div className="flex flex-col space-y-3 flex-grow">
             <Label>Product Image</Label>
             <div className="flex justify-center items-center border-2 border-slate-200 border-dashed bg-slate-50 rounded-lg flex-grow cursor-pointer">

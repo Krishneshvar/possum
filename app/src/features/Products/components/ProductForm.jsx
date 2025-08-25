@@ -1,4 +1,4 @@
-import { Split } from "lucide-react";
+import { Plus, Split } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -31,7 +31,7 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 mb-6">
       <ProductInformation
         formData={formData}
         categories={categories}
@@ -39,7 +39,7 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
         handleChange={handleProductChange}
       />
 
-      <Separator className="my-8" />
+      <Separator className="my-4" />
 
       <div className="space-y-6">
         <Card>
@@ -73,22 +73,29 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
           ))}
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={addVariant}
-        >
-          Add another variant
-        </Button>
+        <div className="flex">
+          <Button
+            type="button"
+            variant="outline"
+            className="mx-auto bg-black text-white hover:bg-gray-700 hover:text-white cursor-pointer"
+            onClick={addVariant}
+          >
+            <Plus />
+            Add variant
+          </Button>
+        </div>
       </div>
 
-      <CardFooter className="flex justify-between items-center bg-muted/30 px-6 py-4">
+      <Card className="flex flex-row justify-between items-center px-6 py-4">
         <p className="text-sm text-muted-foreground"> <RequiredFieldIndicator /> Required fields</p>
-        <Button type="submit" disabled={isSaving} className="min-w-[120px] h-11">
-          {isSaving ? "Saving..." : isEditMode ? "Save Changes" : "Add Product"}
+        <Button
+          type="submit"
+          disabled={isSaving}
+          className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+        >
+          Save
         </Button>
-      </CardFooter>
+      </Card>
     </form>
   );
 };

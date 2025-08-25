@@ -49,10 +49,10 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 flex-shrink-0 cursor-pointer"
+              className="h-10 w-10 flex-shrink-0 hover:bg-white hover:shadow-sm cursor-pointer"
               onClick={() => navigate(-1)}
             >
-              <ArrowLeft className="h-5 w-5 text-slate-500" />
+              <ArrowLeft className="h-5 w-5 text-black" />
             </Button>
           )}
           {headerIcon && (
@@ -60,7 +60,7 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
               {headerIcon}
             </div>
           )}
-          <div className="min-w-0 flex flex-col">
+          <div className="min-w-none flex flex-col">
             <h1 className="text-[1.5rem] font-bold text-slate-900">{headerLabel}</h1>
           </div>
 

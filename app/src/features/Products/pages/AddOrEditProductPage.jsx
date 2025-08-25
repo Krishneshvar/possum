@@ -1,8 +1,6 @@
-import { ArrowLeft, Package } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-
-import { Button } from '@/components/ui/button';
 
 import { useGetProductQuery, useAddProductMutation, useUpdateProductMutation } from '@/services/productsApi';
 import { useGetCategoriesQuery } from '@/services/categoriesApi';
@@ -76,27 +74,23 @@ export default function AddOrEditProductPage() {
   };
 
   return (
-    <div className="min-h-screen ">
-      <div className="container mx-auto ">
-        <div className="mb-6 flex flex-col gap-2 items-start justify-between">
-          <GenericPageHeader
-            headerIcon={<Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />}
-            headerLabel={isEditMode ? 'Edit Product' : 'Add New Product'}
-            actions={{}}
-            showBackButton={true}
-          />
-        </div>
-
-        <div>
-          <ProductForm
-            initialData={initialData}
-            categories={categories}
-            onSubmit={handleSubmit}
-            isEditMode={isEditMode}
-            isSaving={isSaving}
-          />
-        </div>
+    <div className="flex flex-col w-full px-1 mx-auto max-w-5xl">
+      <div className=" mb-4">
+        <GenericPageHeader
+          headerIcon={<Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />}
+          headerLabel={isEditMode ? 'Edit Product' : 'Add Product'}
+          actions={{}}
+          showBackButton={true}
+        />
       </div>
+
+      <ProductForm
+        initialData={initialData}
+        categories={categories}
+        onSubmit={handleSubmit}
+        isEditMode={isEditMode}
+        isSaving={isSaving}
+      />
     </div>
   );
 }

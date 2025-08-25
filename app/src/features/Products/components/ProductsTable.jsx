@@ -142,11 +142,11 @@ export default function ProductsTable({ onProductDeleted }) {
 
   return (
     <>
-      <Card className="border-border/50 shadow-sm w-full max-w-full overflow-hidden">
+      <Card className="border-border/50 shadow-sm w-full overflow-hidden">
         <CardContent className="space-y-4 sm:space-y-6">
           <div className="flex flex-col gap-3">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search products by name or SKU..."
                 className="pl-10 h-10 sm:h-11 focus:border-border bg-background text-sm sm:text-base w-full"
@@ -155,8 +155,8 @@ export default function ProductsTable({ onProductDeleted }) {
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex-1 min-w-0">
+            <div className="flex flex-col flex-wrap md:flex-col sm:flex-row gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1 min-w-none">
                 <GenericFilter
                   filtersConfig={filtersConfig}
                   activeFilters={filters}
@@ -174,9 +174,9 @@ export default function ProductsTable({ onProductDeleted }) {
             </div>
           </div>
 
-          <div className="w-full ">
+          <div className="w-full">
             <div className="overflow-x-auto mb-2">
-              <Table className="min-w-full">
+              <Table className="overflow-x-auto">
                 <GenericTableHeader columns={allColumns} visibleColumns={visibleColumns} />
 
                 {isDataLoading ? (
