@@ -8,8 +8,21 @@ export const productsApi = createApi({
   endpoints: (builder) => ({
     getProducts: builder.query({
       query: (params) => {
-        const queryParams = new URLSearchParams(params).toString();
-        console.log("params: ", queryParams);
+        const query = new URLSearchParams();
+
+        for (const key in params) {
+          if (params.hasOwnProperty(key)) {
+            const value = params[key];
+
+            if (Array.isArray(value)) {
+              value.forEach(item => query.append(key, item));
+            } else if (value !== null && value !== '') {
+              query.append(key, value);
+            }
+          }
+        }
+        
+        const queryParams = query.toString();
         return `/products?${queryParams}`;
       },
       providesTags: ['Products'],

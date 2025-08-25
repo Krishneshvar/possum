@@ -1,52 +1,38 @@
 import { ChevronDown, Filter, X } from "lucide-react"
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 
 export default function GenericFilter({ filtersConfig, activeFilters, onFilterChange, onClearAll }) {
   const activeFiltersCount = Object.values(activeFilters).reduce((count, value) => {
-    if (Array.isArray(value)) {
-      return count + value.length
-    }
-    if (value !== null && value !== "" && value !== "all") {
-      return count + 1
-    }
-    return count
-  }, 0)
+    return count + (Array.isArray(value) ? value.length : 0);
+  }, 0);
 
-  const isFilterActive = activeFiltersCount > 0
+  const isFilterActive = activeFiltersCount > 0;
 
   const handleClearAllFilters = () => {
-    onClearAll()
-  }
+    onClearAll();
+  };
 
   const renderFilterDropdown = (filter) => {
-    const { key, type, label, placeholder, options, show = true } = filter
+    const { key, label, placeholder, options } = filter;
 
-    if (!show) {
-      return null
-    }
+    const currentFilterValue = activeFilters[key] || [];
 
-    const currentFilterValue = type === "checkbox" ? (activeFilters[key] || []) : activeFilters[key]
+    const isActive = currentFilterValue.length > 0;
 
-    const isActive = Array.isArray(currentFilterValue)
-      ? currentFilterValue.length > 0
-      : currentFilterValue !== "all" && currentFilterValue !== null
-
-    const dropdownLabel =
-      type === "checkbox"
-        ? `${currentFilterValue.length > 0 ? `${currentFilterValue.length} Selected` : placeholder}`
-        : `${options.find((opt) => opt.value === currentFilterValue)?.label ?? placeholder}`
+    const dropdownLabel = isActive
+      ? `${currentFilterValue.length} Selected`
+      : placeholder;
 
     return (
       <DropdownMenu key={key}>
@@ -65,94 +51,65 @@ export default function GenericFilter({ filtersConfig, activeFilters, onFilterCh
             {label}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {type === "radio" ? (
-            <DropdownMenuRadioGroup value={currentFilterValue} onValueChange={(value) => onFilterChange(key, value)}>
-              {options.map((option) => {
-                const OptionIcon = option.icon
-                return (
-                  <DropdownMenuRadioItem
-                    key={option.value}
-                    value={option.value}
-                    className="flex items-center gap-3 py-2.5 px-3"
-                  >
-                    {OptionIcon && <OptionIcon className={cn("h-4 w-4", option.color)} />}
-                    <span className="flex-1 text-sm">{option.label}</span>
-                  </DropdownMenuRadioItem>
-                )
-              })}
-            </DropdownMenuRadioGroup>
-          ) : (
-            options.map((option) => {
-              const OptionIcon = option.icon
-              return (
-                <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={currentFilterValue.includes(option.value)}
-                  onCheckedChange={() => {
-                    const newValues = currentFilterValue.includes(option.value)
-                      ? currentFilterValue.filter((v) => v !== option.value)
-                      : [...currentFilterValue, option.value]
-                    onFilterChange(key, newValues)
-                  }}
-                  className="flex items-center gap-3 py-2.5 px-3"
+          {options.map((option) => {
+            const isChecked = currentFilterValue.includes(option.value);
+
+            return (
+              <DropdownMenuItem
+                key={option.value}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  const newValues = isChecked
+                    ? currentFilterValue.filter((v) => v !== option.value)
+                    : [...currentFilterValue, option.value];
+                  onFilterChange(key, newValues);
+                }}
+                className="flex items-center gap-3 py-2.5 px-3 cursor-pointer"
+              >
+                <Checkbox
+                  checked={isChecked}
+                  id={`checkbox-${key}-${option.value}`}
+                  className="h-4 w-4"
+                />
+                <label
+                  htmlFor={`checkbox-${key}-${option.value}`}
+                  className="text-sm cursor-pointer"
                 >
-                  {OptionIcon && <OptionIcon className={cn("h-4 w-4", option.color)} />}
-                  <span className="text-sm">{option.label}</span>
-                </DropdownMenuCheckboxItem>
-              )
-            })
-          )}
+                  {option.label}
+                </label>
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
-    )
-  }
+    );
+  };
 
   const renderActiveBadges = () => {
-    const badges = []
+    const badges = [];
     filtersConfig.forEach((filter) => {
-      const { key, type, options, badgeProps = {} } = filter
-      const activeValue = type === "checkbox" ? (activeFilters[key] || []) : activeFilters[key]
+      const { key, options, badgeProps = {} } = filter;
+      const activeValues = activeFilters[key] || [];
 
-      if (type === "radio" && activeValue && activeValue !== "all") {
-        const option = options.find((opt) => opt.value === activeValue)
+      activeValues.forEach((value) => {
+        const option = options.find((opt) => opt.value === value);
         if (option) {
-          const BadgeIcon = option.icon
           badges.push(
-            <Badge key={key} {...badgeProps} className={cn("h-7 px-3 text-xs font-medium", badgeProps.className)}>
-              {BadgeIcon && <BadgeIcon className="h-3 w-3 mr-1.5" />}
+            <Badge key={`${key}-${value}`} {...badgeProps} className={cn("h-7 px-3 text-xs font-medium", badgeProps.className)}>
               <span className="truncate max-w-[120px] sm:max-w-none">{option.label}</span>
               <button
-                onClick={() => onFilterChange(key, "all")}
+                onClick={() => onFilterChange(key, activeValues.filter((v) => v !== value))}
                 className="ml-1.5 hover:bg-white/20 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
             </Badge>,
-          )
+          );
         }
-      } else if (type === "checkbox" && activeValue && activeValue.length > 0) {
-        activeValue.forEach((value) => {
-          const option = options.find((opt) => opt.value === value)
-          if (option) {
-            const BadgeIcon = option.icon
-            badges.push(
-              <Badge key={`${key}-${value}`} {...badgeProps} className={cn("h-7 px-3 text-xs font-medium", badgeProps.className)}>
-                {BadgeIcon && <BadgeIcon className="h-3 w-3 mr-1.5" />}
-                <span className="truncate max-w-[120px] sm:max-w-none">{option.label}</span>
-                <button
-                  onClick={() => onFilterChange(key, activeValue.filter((v) => v !== value))}
-                  className="ml-1.5 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                >
-                  <X className="h-2.5 w-2.5" />
-                </button>
-              </Badge>,
-            )
-          }
-        })
-      }
-    })
-    return badges
-  }
+      });
+    });
+    return badges;
+  };
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
@@ -191,5 +148,5 @@ export default function GenericFilter({ filtersConfig, activeFilters, onFilterCh
         </div>
       )}
     </div>
-  )
+  );
 }

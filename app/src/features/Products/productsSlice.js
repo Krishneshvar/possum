@@ -5,9 +5,9 @@ const initialState = {
   currentPage: 1,
   itemsPerPage: 10,
   filters: {
-    stockStatus: 'all',
+    status: [],
+    stockStatus: [],
     categories: [],
-    status: 'all',
   },
 };
 
@@ -24,11 +24,7 @@ const productsSlice = createSlice({
     },
     setFilter: (state, action) => {
       const { key, value } = action.payload;
-      if (key === 'all') {
-        state.filters = value;
-      } else {
-        state.filters[key] = value;
-      }
+      state.filters[key] = value;
       state.currentPage = 1;
     },
   },

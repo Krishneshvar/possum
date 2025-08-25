@@ -151,18 +151,25 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
     filterParams.push(...categories);
   }
 
-  if (status && status !== 'all') {
-    filterClauses.push(`p.status = ?`);
-    filterParams.push(status);
+  if (status && status.length > 0) {
+    const placeholders = status.map(() => '?').join(',');
+    filterClauses.push(`p.status IN (${placeholders})`);
+    filterParams.push(...status);
   }
 
-  if (stockStatus && stockStatus !== 'all') {
-    if (stockStatus === 'out-of-stock') {
-      filterClauses.push(`v.stock = 0`);
-    } else if (stockStatus === 'low-stock') {
-      filterClauses.push(`v.stock > 0 AND v.stock <= COALESCE(v.stock_alert_cap, 0)`);
-    } else if (stockStatus === 'in-stock') {
-      filterClauses.push(`v.stock > COALESCE(v.stock_alert_cap, 0)`);
+  if (stockStatus && stockStatus.length > 0) {
+    const stockConditions = [];
+    stockStatus.forEach(s => {
+      if (s === 'out-of-stock') {
+        stockConditions.push(`v.stock = 0`);
+      } else if (s === 'low-stock') {
+        stockConditions.push(`v.stock > 0 AND v.stock <= COALESCE(v.stock_alert_cap, 0)`);
+      } else if (s === 'in-stock') {
+        stockConditions.push(`v.stock > COALESCE(v.stock_alert_cap, 0)`);
+      }
+    });
+    if (stockConditions.length > 0) {
+      filterClauses.push(`(${stockConditions.join(' OR ')})`);
     }
   }
 

@@ -12,10 +12,18 @@ const getProductsController = async (req, res) => {
       page = 1,
       limit = 10,
       searchTerm = '',
-      stockStatus = 'all',
-      status = 'all',
+      stockStatus,
+      status,
       categories
     } = req.query;
+
+    const stockStatusArray = Array.isArray(stockStatus)
+      ? stockStatus.filter(s => s !== '')
+      : (stockStatus ? [stockStatus] : []);
+
+    const statusArray = Array.isArray(status)
+      ? status.filter(s => s !== '')
+      : (status ? [status] : []);
 
     let categoryIds = [];
     if (categories) {
@@ -25,8 +33,8 @@ const getProductsController = async (req, res) => {
 
     const productsData = getProducts({
       searchTerm,
-      stockStatus,
-      status,
+      stockStatus: stockStatusArray,
+      status: statusArray,
       categories: categoryIds,
       currentPage: parseInt(page, 10),
       itemsPerPage: parseInt(limit, 10)

@@ -58,16 +58,9 @@ export default function ProductsTable({ onProductDeleted }) {
   }
 
   const handleClearAllFilters = () => {
-    dispatch(
-      setFilter({
-        key: "all",
-        value: {
-          stockStatus: "all",
-          status: "all",
-          categories: [],
-        },
-      })
-    )
+    dispatch(setFilter({ key: "stockStatus", value: [] }))
+    dispatch(setFilter({ key: "status", value: [] }))
+    dispatch(setFilter({ key: "categories", value: [] }))
   }
   
   const handlePageChange = (page) => {
@@ -181,9 +174,8 @@ export default function ProductsTable({ onProductDeleted }) {
             </div>
           </div>
 
-          <div className="w-full overflow-hidden rounded-md">
-            <div className="overflow-x-auto">
-              <Separator />
+          <div className="w-full ">
+            <div className="overflow-x-auto mb-2">
               <Table className="min-w-full">
                 <GenericTableHeader columns={allColumns} visibleColumns={visibleColumns} />
 
@@ -226,14 +218,14 @@ export default function ProductsTable({ onProductDeleted }) {
               </Table>
               <Separator />
             </div>
-          </div>
 
-          <div className="flex justify-center">
-            <GenericPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+            <div className="flex justify-center">
+              <GenericPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

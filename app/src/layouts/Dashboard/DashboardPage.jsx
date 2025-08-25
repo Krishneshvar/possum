@@ -14,20 +14,20 @@ import { Separator } from '@/components/ui/separator';
 
 import { cardData } from './dashboardStatsData';
 
-import HelpPage from '../../features/Misc/HelpPage';
-import PluginsPage from '../../features/Misc/PluginsPage';
-import ProductDetailsPage from '../../features/Products/pages/ProductDetailsPage';
-import ProductsPage from '../../features/Products/pages/ProductsPage';
-import AddOrEditProductPage from '../../features/Products/pages/AddOrEditProductPage';
-import OrdersPage from '../../features/Orders/pages/OrdersPage';
-import CategoriesPage from '../../features/Categories/pages/CategoriesPage';
-import InventoryPage from '../../features/Inventory/pages/InventoryPage';
-import VariantsPage from '../../features/Variants/pages/VariantsPage';
-import SalesHistoryPage from '../../features/Sales/pages/SalesHistoryPage';
-import SalesPage from '../../features/Sales/pages/SalesPage';
-import SettingsPage from '../../features/Settings/pages/SettingsPage';
-import TransactionsPage from '../../features/Transactions/pages/TransactionsPage';
-import PurchasePage from '../../features/Purchase/pages/PurchasePage';
+import HelpPage from '@/features/Misc/HelpPage';
+import PluginsPage from '@/features/Misc/PluginsPage';
+import ProductDetailsPage from '@/features/Products/pages/ProductDetailsPage';
+import ProductsPage from '@/features/Products/pages/ProductsPage';
+import AddOrEditProductPage from '@/features/Products/pages/AddOrEditProductPage';
+import OrdersPage from '@/features/Orders/pages/OrdersPage';
+import CategoriesPage from '@/features/Categories/pages/CategoriesPage';
+import InventoryPage from '@/features/Inventory/pages/InventoryPage';
+import VariantsPage from '@/features/Variants/pages/VariantsPage';
+import SalesHistoryPage from '@/features/Sales/pages/SalesHistoryPage';
+import SalesPage from '@/features/Sales/pages/SalesPage';
+import SettingsPage from '@/features/Settings/pages/SettingsPage';
+import TransactionsPage from '@/features/Transactions/pages/TransactionsPage';
+import PurchasePage from '@/features/Purchase/pages/PurchasePage';
 import PurchaseOrdersPage from '@/features/Purchase/pages/PurchaseOrderPage';
 import SuppliersPage from '@/features/Suppliers/pages/SuppliersPage';
 import PeoplePage from '@/features/People/pages/PeoplePage';
@@ -39,17 +39,14 @@ export default function DashboardPage() {
     <HashRouter>
       <SidebarProvider
         className="bg-slate-100"
-        style={{
-          "--sidebar-width": "min(280px, calc(100vw - 32px))",
-          // "--header-height": "auto",
-        }}
+        style={{ "--sidebar-width": "min(280px, calc(100vw - 32px))" }}
       >
         <AppSidebar variant="floating" />
         <div className="w-full bg-slate-100 p-1 sm:p-2 lg:p-4 min-h-screen">
           <div className="w-full max-w-full overflow-hidden">
             <SiteHeader />
             <Separator className="my-2 sm:my-4" />
-            <div className="flex flex-1 flex-col py-2 px-1 sm:py-4 sm:px-2 lg:py-6 lg:px-4 space-y-4 sm:space-y-6">
+            <div className="flex flex-1 flex-col px-1 lg:px-4 sm:px-2">
               <Routes>
                 <Route path="/" element={<StatCards cardData={cardData} />} />
                 <Route path="/dashboard" element={<StatCards cardData={cardData} />} />

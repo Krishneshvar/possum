@@ -3,10 +3,11 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
@@ -42,16 +43,31 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
           Toggle Columns
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {columns.map((col) => (
-          <DropdownMenuCheckboxItem
-            key={col.key}
-            checked={visibleColumns[col.key]}
-            onCheckedChange={() => handleToggle(col.key)}
-            className="flex items-center gap-3 py-2.5 px-3 text-sm"
-          >
-            {col.label}
-          </DropdownMenuCheckboxItem>
-        ))}
+        {columns.map((col) => {
+          const isChecked = visibleColumns[col.key]
+          return (
+            <DropdownMenuItem
+              key={col.key}
+              onSelect={(e) => {
+                e.preventDefault()
+                handleToggle(col.key)
+              }}
+              className="flex items-center gap-3 py-2.5 px-3 cursor-pointer"
+            >
+              <Checkbox
+                checked={isChecked}
+                id={`col-checkbox-${col.key}`}
+                className="h-4 w-4 data-[state=checked]:bg-primary [data-state=checked]:text-white"
+              />
+              <label
+                htmlFor={`col-checkbox-${col.key}`}
+                className="text-sm cursor-pointer"
+              >
+                {col.label}
+              </label>
+            </DropdownMenuItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )

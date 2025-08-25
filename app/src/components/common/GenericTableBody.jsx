@@ -9,9 +9,9 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
       {data.length > 0 ? (
         data.map((item) => (
           <TableRow key={item.id} className="hover:bg-slate-100 transition-colors border-b border-border">
-            <TableCell className="">
-              <Avatar className="rounded-xl h-10 w-10 border border-border/40">
-                <AvatarFallback className="bg-primary/8 text-primary rounded-xl">{avatarIcon}</AvatarFallback>
+            <TableCell>
+              <Avatar className="rounded-lg h-10 w-10 border border-border">
+                <AvatarFallback className="bg-primary/8 text-primary rounded-lg">{avatarIcon}</AvatarFallback>
               </Avatar>
             </TableCell>
             {columnsToRender.map((column) => (
@@ -24,7 +24,7 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
         ))
       ) : (
         <TableRow>
-          <TableCell colSpan={columnsToRender.length + 2} className="h-40 text-center">
+          <TableCell colSpan={columnsToRender.length + 2} className="h-40 text-center hover:bg-slate-100">
             <div className="flex flex-col items-center justify-center space-y-3">{emptyState}</div>
           </TableCell>
         </TableRow>
