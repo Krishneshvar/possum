@@ -135,7 +135,50 @@ const deleteProduct = (id) => {
 }
 
 const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage }) => {
-  let query = `
+  const filterClauses = [];
+  const filterParams = [];
+
+  filterClauses.push(`p.deleted_at IS NULL`);
+  
+  if (searchTerm) {
+    filterClauses.push(`(p.name LIKE ? OR v.sku LIKE ?)`);
+    filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`);
+  }
+
+  if (categories && categories.length > 0) {
+    const placeholders = categories.map(() => '?').join(',');
+    filterClauses.push(`p.category_id IN (${placeholders})`);
+    filterParams.push(...categories);
+  }
+
+  if (status && status !== 'all') {
+    filterClauses.push(`p.status = ?`);
+    filterParams.push(status);
+  }
+
+  if (stockStatus && stockStatus !== 'all') {
+    if (stockStatus === 'out-of-stock') {
+      filterClauses.push(`v.stock = 0`);
+    } else if (stockStatus === 'low-stock') {
+      filterClauses.push(`v.stock > 0 AND v.stock <= COALESCE(v.stock_alert_cap, 0)`);
+    } else if (stockStatus === 'in-stock') {
+      filterClauses.push(`v.stock > COALESCE(v.stock_alert_cap, 0)`);
+    }
+  }
+
+  const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
+
+  const countQuery = `
+    SELECT
+      COUNT(DISTINCT p.id)
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    INNER JOIN variants v ON p.id = v.product_id AND v.is_default = 1
+    ${whereClause}
+  `;
+  const totalCount = db.prepare(countQuery).get(...filterParams)['COUNT(DISTINCT p.id)'];
+
+  const paginatedQuery = `
     SELECT
       p.id,
       p.name,
@@ -148,50 +191,22 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     INNER JOIN variants v ON p.id = v.product_id AND v.is_default = 1
-    WHERE p.deleted_at IS NULL
+    ${whereClause}
+    GROUP BY p.id
+    ORDER BY p.name ASC
+    LIMIT ? OFFSET ?
   `;
-  const params = [];
-
-  if (searchTerm) {
-    query += ` AND (p.name LIKE ? OR v.sku LIKE ?)`;
-    params.push(`%${searchTerm}%`, `%${searchTerm}%`);
-  }
-
-  if (categories && categories.length > 0) {
-    const placeholders = categories.map(() => '?').join(',');
-    query += ` AND p.category_id IN (${placeholders})`;
-    params.push(...categories);
-  }
-
-  if (status && status !== 'all') {
-    query += ` AND p.status = ?`;
-    params.push(status);
-  }
-
-  query += ` GROUP BY p.id`;
-
-  const countQuery = `SELECT COUNT(*) FROM (${query}) AS filtered_products`;
-  const totalCount = db.prepare(countQuery).get(...params)['COUNT(*)'];
-
-  const getStockStatus = (stock, stockAlertCap) => {
-    if (stock === 0) return 'out-of-stock';
-    if (stock <= stockAlertCap) return 'low-stock';
-    return 'in-stock';
-  };
-
-  const allProducts = db.prepare(query + ` ORDER BY p.name ASC`).all(...params);
-  const filteredProducts = stockStatus === 'all'
-    ? allProducts
-    : allProducts.filter(p => getStockStatus(p.stock, p.stock_alert_cap) === stockStatus);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedParams = [...filterParams, itemsPerPage, startIndex];
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = db.prepare(paginatedQuery).all(...paginatedParams);
+  
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return {
     products: paginatedProducts,
-    totalCount: filteredProducts.length,
+    totalCount: totalCount,
     totalPages
   };
 };

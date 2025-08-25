@@ -67,10 +67,7 @@ export default function GenericPagination({ currentPage, totalPages, onPageChang
   }
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 px-1">
-      <p className="text-sm text-muted-foreground font-medium text-center sm:text-left">
-        Page {currentPage} of {totalPages}
-      </p>
+    <div className="flex flex-1 flex-col items-center justify-between gap-2">
       <Pagination>
         <PaginationContent className="gap-1">
           <PaginationItem>
@@ -88,6 +85,9 @@ export default function GenericPagination({ currentPage, totalPages, onPageChang
           </PaginationItem>
         </PaginationContent>
       </Pagination>
+      <p className="text-sm text-muted-foreground font-medium text-center">
+        Page {currentPage} of {totalPages}
+      </p>
     </div>
   )
 }

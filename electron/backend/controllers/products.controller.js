@@ -14,14 +14,20 @@ const getProductsController = async (req, res) => {
       searchTerm = '',
       stockStatus = 'all',
       status = 'all',
-      categories = []
+      categories
     } = req.query;
+
+    let categoryIds = [];
+    if (categories) {
+      categoryIds = Array.isArray(categories) ? categories : [categories];
+      categoryIds = categoryIds.filter(id => id !== '');
+    }
 
     const productsData = getProducts({
       searchTerm,
       stockStatus,
       status,
-      categories: Array.isArray(categories) ? categories : [categories],
+      categories: categoryIds,
       currentPage: parseInt(page, 10),
       itemsPerPage: parseInt(limit, 10)
     });

@@ -27,8 +27,19 @@ import { stockStatusFilter, statusFilter, categoryFilter } from "../data/product
 export default function ProductsTable({ onProductDeleted }) {
   const dispatch = useDispatch()
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state) => state.products)
-  const { data, isLoading, isFetching, error, refetch } = useGetProductsQuery()
+
+  const { data, isLoading, isFetching, error, refetch } = useGetProductsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    searchTerm: searchTerm,
+    stockStatus: filters.stockStatus,
+    status: filters.status,
+    categories: filters.categories,
+  });
+
   const products = data?.products || []
+  const totalPages = data?.totalPages || 1;
+  const totalCount = data?.totalCount || 0;
   const isDataLoading = isLoading || isFetching
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -58,45 +69,7 @@ export default function ProductsTable({ onProductDeleted }) {
       })
     )
   }
-
-  const categoryNameToId = new Map(
-    (categories ?? []).map(c => [c.name, String(c.id ?? c.category_id)])
-  )
-
-  const filteredProducts = products ? products.filter((product) => {
-    const name = (product.name ?? '').toLowerCase()
-    const sku  = (product.sku  ?? '').toLowerCase()
-    const matchesSearchTerm =
-      name.includes(searchTerm.toLowerCase()) ||
-      sku.includes(searchTerm.toLowerCase())
-
-    const getStockStatus = (stock) => {
-      if (stock === 0) return "out-of-stock"
-      if (stock <= 10) return "low-stock"
-      return "in-stock"
-    }
-
-    const matchesStockStatus = filters.stockStatus === "all" || getStockStatus(product.stock) === filters.stockStatus
-    const directCatId =
-      product.category_id ??
-      product.categoryId ??
-      product.category?.id ??
-      (product.category_name ? categoryNameToId.get(product.category_name) : null) ??
-      (product.category?.name ? categoryNameToId.get(product.category.name) : null)
-
-    const productCatId = directCatId != null ? String(directCatId) : null
-    const matchesCategory =
-      filters.categories.length === 0 ||
-      (productCatId && filters.categories.includes(productCatId))
-    const matchesStatus = filters.status === "all" || product.status === filters.status
-
-    return matchesSearchTerm && matchesStockStatus && matchesCategory && matchesStatus
-  }) : []
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage)
-
+  
   const handlePageChange = (page) => {
     dispatch(setCurrentPage(page))
   }
@@ -177,7 +150,7 @@ export default function ProductsTable({ onProductDeleted }) {
   return (
     <>
       <Card className="border-border/50 shadow-sm w-full max-w-full overflow-hidden">
-        <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6">
+        <CardContent className="space-y-4 sm:space-y-6">
           <div className="flex flex-col gap-4 sm:gap-6">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -242,7 +215,7 @@ export default function ProductsTable({ onProductDeleted }) {
                   </TableBody>
                 ) : (
                   <GenericTableBody
-                    data={paginatedProducts}
+                    data={products}
                     allColumns={allColumns}
                     visibleColumns={visibleColumns}
                     emptyState={emptyState}
@@ -255,7 +228,7 @@ export default function ProductsTable({ onProductDeleted }) {
             </div>
           </div>
 
-          <div className="flex justify-center pt-2">
+          <div className="flex justify-center">
             <GenericPagination
               currentPage={currentPage}
               totalPages={totalPages}
