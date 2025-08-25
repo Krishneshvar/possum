@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Ellipsis, ArrowLeft } from "lucide-react"; // Import ArrowLeft
+import { Ellipsis, ArrowLeft } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -9,11 +9,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Add showBackButton prop to the component signature
 export default function GenericPageHeader({ headerIcon, headerLabel, actions, showBackButton = false }) {
   const primaryAction = actions.primary;
   const secondaryActions = actions.secondary || [];
-  const navigate = useNavigate(); // Initialize the useNavigate hook
+  const navigate = useNavigate();
 
   const renderActionButton = (action, isPrimary) => {
     const buttonClasses = isPrimary
@@ -43,9 +42,9 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
   };
 
   return (
-    <div className="">
-      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center">
+    <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between lg:gap-8">
+        <div className="flex items-center gap-3 sm:gap-4 flex-grow">
           {showBackButton && (
             <Button
               variant="ghost"
@@ -53,34 +52,21 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
               className="h-10 w-10 flex-shrink-0 cursor-pointer"
               onClick={() => navigate(-1)}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5 text-slate-500" />
             </Button>
           )}
-
-          <div className="flex gap-2">
-            {headerIcon && (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/10 border border-blue-600/20 shrink-0">
-                {headerIcon}
-              </div>
-            )}
-            <div className="min-w-0 flex flex-col">
-              <h1 className="text-[1.5rem] font-bold text-slate-900">{headerLabel}</h1>
+          {headerIcon && (
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/10 border border-blue-600/20 shrink-0">
+              {headerIcon}
             </div>
+          )}
+          <div className="min-w-0 flex flex-col">
+            <h1 className="text-[1.5rem] font-bold text-slate-900">{headerLabel}</h1>
           </div>
-        </div>
-
-        <div className="flex gap-2 sm:gap-4 w-full sm:w-auto flex-row-reverse items-center justify-between lg:justify-end">
-          {primaryAction && renderActionButton(primaryAction, true)}
 
           {secondaryActions.length > 0 && (
             <>
-              <div className="hidden lg:flex gap-2 sm:gap-4">
-                {secondaryActions.map((action, index) => (
-                  <div key={index}>{renderActionButton(action, false)}</div>
-                ))}
-              </div>
-
-              <div className="flex lg:hidden">
+              <div className="flex lg:hidden ml-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 px-2">
@@ -100,6 +86,17 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
                 </DropdownMenu>
               </div>
             </>
+          )}
+        </div>
+
+        <div className="flex gap-2 sm:gap-4 w-full sm:w-auto flex-row-reverse items-center justify-between sm:justify-end">
+          {primaryAction && renderActionButton(primaryAction, true)}
+          {secondaryActions.length > 0 && (
+            <div className="hidden lg:flex gap-2 sm:gap-4">
+              {secondaryActions.map((action, index) => (
+                <div key={index}>{renderActionButton(action, false)}</div>
+              ))}
+            </div>
           )}
         </div>
       </div>

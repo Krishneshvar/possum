@@ -155,7 +155,7 @@ export default function ProductsTable({ onProductDeleted }) {
               />
             </div>
 
-            <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex-1 min-w-0">
                 <GenericFilter
                   filtersConfig={filtersConfig}
@@ -165,7 +165,7 @@ export default function ProductsTable({ onProductDeleted }) {
                 />
               </div>
 
-              <div className="flex-shrink-0">
+              <div className="flex items-end">
                 <ColumnVisibilityDropdown
                   columns={allColumns}
                   onChange={setVisibleColumns}

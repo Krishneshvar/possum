@@ -31,7 +31,7 @@ export default function ProductsPage() {
   const { refetch } = useGetProductsQuery()
 
   return (
-    <div className="space-y-4 sm:space-y-6 sm:p-4 lg:p-2 mb-6 w-full max-w-full overflow-hidden">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-full overflow-hidden">
       <div className="w-full">
         <GenericPageHeader
           headerIcon={<Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />}

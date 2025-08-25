@@ -127,7 +127,7 @@ export default function GenericFilter({ filtersConfig, activeFilters, onFilterCh
           )}
         </div>
 
-        <div className="flex lg:flex-row md:flex-row sm:flex-row xs:flex-row flex-wrap items-stretch xs:items-center gap-2">
+        <div className="flex sm:flex-row flex-col items-stretch xs:items-center gap-2">
           {filtersConfig.map(renderFilterDropdown)}
           {isFilterActive && (
             <Button

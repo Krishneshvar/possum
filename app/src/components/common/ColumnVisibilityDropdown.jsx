@@ -1,4 +1,4 @@
-import { ChevronDown, SlidersHorizontal } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -27,13 +27,12 @@ export default function ColumnVisibilityDropdown({ columns, onChange }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild className="flex sm:w-auto w-full justify-between">
         <Button
           variant="outline"
           size="sm"
           className="h-9 gap-2 text-sm font-medium bg-transparent"
         >
-          <SlidersHorizontal className="h-4 w-4" />
           Columns
           <ChevronDown className="h-3 w-3 opacity-60" />
         </Button>
