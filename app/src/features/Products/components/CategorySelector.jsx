@@ -145,6 +145,7 @@ export default function CategoryDropdown({ categories = [], value, onChange }) {
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <Button
+        type="button"
         variant="outline"
         onClick={() => handleOpenChange(!open)}
         className="w-full justify-between h-11 text-left bg-white border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"

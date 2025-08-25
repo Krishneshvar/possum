@@ -1,13 +1,13 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Package } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 import { useGetProductQuery, useAddProductMutation, useUpdateProductMutation } from '@/services/productsApi';
 import { useGetCategoriesQuery } from '@/services/categoriesApi';
 import ProductForm from '../components/ProductForm';
+import GenericPageHeader from '@/components/common/GenericPageHeader';
 
 export default function AddOrEditProductPage() {
   const { productId } = useParams();
@@ -76,28 +76,18 @@ export default function AddOrEditProductPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-8">
+    <div className="min-h-screen ">
+      <div className="container mx-auto ">
         <div className="mb-6 flex flex-col gap-2 items-start justify-between">
-          <Button
-            variant="outline"
-            onClick={() => navigate(-1)}
-            className="mb-4 bg-black text-white hover:bg-gray-800 hover:text-slate-50 cursor-pointer"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Products
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              {isEditMode ? 'Edit Product' : 'Add New Product'}
-            </h1>
-            <p className="text-muted-foreground">
-              {isEditMode ? 'Update an existing product in your inventory.' : 'Create a new product entry for your inventory.'}
-            </p>
-          </div>
+          <GenericPageHeader
+            headerIcon={<Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />}
+            headerLabel={isEditMode ? 'Edit Product' : 'Add New Product'}
+            actions={{}}
+            showBackButton={true}
+          />
         </div>
 
-        <Card className="shadow-lg border-0 bg-card">
+        <div>
           <ProductForm
             initialData={initialData}
             categories={categories}
@@ -105,7 +95,7 @@ export default function AddOrEditProductPage() {
             isEditMode={isEditMode}
             isSaving={isSaving}
           />
-        </Card>
+        </div>
       </div>
     </div>
   );

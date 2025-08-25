@@ -39,7 +39,7 @@ export default function DashboardPage() {
     <HashRouter>
       <SidebarProvider
         className="bg-slate-100"
-        style={{ "--sidebar-width": "min(280px, calc(100vw - 32px))" }}
+        style={{ "--sidebar-width": "min(250px, calc(100vw - 32px))" }}
       >
         <AppSidebar variant="floating" />
         <div className="w-full bg-slate-100 p-1 sm:p-2 lg:p-4 min-h-screen">

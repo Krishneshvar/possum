@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
 import { Button } from "@/components/ui/button";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, ArrowLeft } from "lucide-react"; // Import ArrowLeft
 
 import {
   DropdownMenu,
@@ -9,9 +9,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function GenericPageHeader({ headerIcon, headerLabel, actions }) {
+// Add showBackButton prop to the component signature
+export default function GenericPageHeader({ headerIcon, headerLabel, actions, showBackButton = false }) {
   const primaryAction = actions.primary;
   const secondaryActions = actions.secondary || [];
+  const navigate = useNavigate(); // Initialize the useNavigate hook
 
   const renderActionButton = (action, isPrimary) => {
     const buttonClasses = isPrimary
@@ -43,14 +45,27 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions }) 
   return (
     <div className="">
       <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3 sm:gap-4">
-          {headerIcon && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/10 border border-blue-600/20 shrink-0">
-              {headerIcon}
-            </div>
+        <div className="flex items-center">
+          {showBackButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 flex-shrink-0 cursor-pointer"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
           )}
-          <div className="min-w-0 flex flex-col">
-            <h1 className="text-[1.5rem] font-bold text-slate-900">{headerLabel}</h1>
+
+          <div className="flex gap-2">
+            {headerIcon && (
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/10 border border-blue-600/20 shrink-0">
+                {headerIcon}
+              </div>
+            )}
+            <div className="min-w-0 flex flex-col">
+              <h1 className="text-[1.5rem] font-bold text-slate-900">{headerLabel}</h1>
+            </div>
           </div>
         </div>
 

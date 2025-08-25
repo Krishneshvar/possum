@@ -10,6 +10,14 @@ import {
   RadioGroupItem,
 } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+
+} from "@/components/ui/select";
 
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
@@ -25,7 +33,7 @@ export default function VariantForm({
 }) {
   return (
     <Card className="shadow-sm border-2">
-      <CardHeader className="flex flex-row items-center justify-between p-4 bg-muted/30">
+      <CardHeader className="flex flex-row items-center justify-between p-4 bg-slate-50 border-1 border-slate-100">
         <h4 className="font-semibold">Variant {index + 1}</h4>
         {showRemoveButton && (
           <Button
@@ -40,9 +48,40 @@ export default function VariantForm({
         )}
       </CardHeader>
       <CardContent className="p-6 space-y-8">
-        {/* Variant Information */}
         <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-3">
+              <Label htmlFor="status" className="text-sm font-medium">
+                Status <RequiredFieldIndicator />
+              </Label>
+              <Select>
+              {/* <Select onValueChange={(value) => handleSelectChange("status", value)} value={formData.status}> */}
+                <SelectTrigger id="status" className="w-full py-[1.3rem]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      Active
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="inactive">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                      Inactive
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="discontinued">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-red-500" />
+                      Discontinued
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-3">
               <Label htmlFor={`variant-name-${variant._tempId}`} className="text-sm font-medium">
                 Variant Name <RequiredFieldIndicator />

@@ -144,7 +144,7 @@ export default function ProductsTable({ onProductDeleted }) {
     <>
       <Card className="border-border/50 shadow-sm w-full max-w-full overflow-hidden">
         <CardContent className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="flex flex-col gap-3">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input

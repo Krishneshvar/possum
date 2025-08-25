@@ -10,8 +10,10 @@ CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
+  description TEXT,
   category_id INTEGER,
   status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'discontinued')),
+  image_path TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
