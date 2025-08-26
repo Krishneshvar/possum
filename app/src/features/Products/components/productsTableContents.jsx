@@ -1,14 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, CheckCircle, XCircle } from "lucide-react"
 
-const formatPrice = (price) => {
-  if (price === null || isNaN(price)) return "N/A"
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(Number.parseFloat(price))
-}
-
 const getProductStatus = (status) => {
   if (status === "active") {
     return (
@@ -75,6 +67,7 @@ export const allColumns = [
     renderCell: (product) => (
       <div className="space-y-0.5">
         <p className="font-semibold leading-none text-foreground">{product.name}</p>
+        <p className="text-sm text-muted-foreground">{product.category_name}</p>
       </div>
     ),
   },
@@ -84,31 +77,8 @@ export const allColumns = [
     renderCell: (product) => getProductStatus(product.status),
   },
   {
-    key: "sku",
-    label: "SKU",
-    renderCell: (product) => (
-      <code className="relative rounded-md bg-muted/60 border border-border/40 px-2.5 py-1.5 text-xs font-mono font-medium text-foreground">
-        {product.sku}
-      </code>
-    ),
-  },
-  {
-    key: "category",
-    label: "Category",
-    renderCell: (product) => (
-      <Badge variant="outline" className="font-medium border-border/60 text-muted-foreground hover:text-foreground">
-        {product.category_name}
-      </Badge>
-    ),
-  },
-  {
     key: "stock",
     label: "Stock Status",
     renderCell: (product) => getStockStatus(product.stock),
-  },
-  {
-    key: "price",
-    label: "Price",
-    renderCell: (product) => <span className="font-bold text-foreground text-base">{formatPrice(product.price)}</span>,
   },
 ]

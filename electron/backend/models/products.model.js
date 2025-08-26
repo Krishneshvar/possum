@@ -164,8 +164,8 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
   filterClauses.push(`p.deleted_at IS NULL`);
   
   if (searchTerm) {
-    filterClauses.push(`(p.name LIKE ? OR v.sku LIKE ?)`);
-    filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`);
+    filterClauses.push(`(p.name LIKE ?)`);
+    filterParams.push(`%${searchTerm}%`);
   }
 
   if (categories && categories.length > 0) {
@@ -214,10 +214,7 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
       p.name,
       p.status,
       p.image_path,
-      p.product_tax,
       c.name AS category_name,
-      v.sku,
-      v.price,
       v.stock,
       v.stock_alert_cap
     FROM products p

@@ -1,14 +1,12 @@
 import {
   ArrowLeft,
-  Boxes,
   Edit2,
   Trash2,
   Package,
-  DollarSign,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Tag,
+  Split,
   Hash,
   Plus,
 } from "lucide-react"
@@ -19,11 +17,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 
 import { toast } from "sonner"
+import DisplayVariants from "../components/DisplayVariants"
+import GenericPageHeader from "@/components/common/GenericPageHeader"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import { useDeleteProductMutation, useGetProductQuery } from "@/services/productsApi"
-import ProductFinancialMetrics from "../components/ProductFinancialMetrics"
 
 export default function ProductDetailsPage() {
   const { productId } = useParams()
@@ -58,15 +58,63 @@ export default function ProductDetailsPage() {
     }
   }
 
-  const formatPriceAndMargin = (price) => {
+  const productActions = {
+    primary: {
+      label: "Edit Product",
+      url: "/products/add",
+      icon: Edit2,
+    },
+    secondary: [
+      {
+        label: "Add Variant",
+        url: "/products",
+        icon: Plus,
+      },
+      {
+        label: "Delete",
+        onClick: () => handleDeleteClick(),
+        icon: Trash2,
+      }
+    ],
+  };
+
+  const formatPrice = (price) => {
     if (price === null || isNaN(price)) return "N/A"
-    return `$${Number.parseFloat(price / 100).toFixed(2)}`
+    return `$${Number.parseFloat(price).toFixed(2)}`
   }
 
-  const getStockStatus = () => {
-    if (product.stock <= 0) {
-      return { label: "Out of Stock",  icon: XCircle, styles: "bg-red-100 border-1 border-red-400 text-red-600" }
-    } else if (product.stock <= product.stock_alert_cap) {
+  const getProductStatus = (status) => {
+    if (status === "active") {
+      return (
+        <Badge
+          variant="secondary"
+          className="text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-medium"
+        >
+          Active
+        </Badge>
+      )
+    } else if (status === "inactive") {
+      return (
+        <Badge
+          variant="secondary"
+          className="text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 font-medium"
+        >
+          Inactive
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge variant="destructive" className="font-medium">
+          Discontinued
+        </Badge>
+      )
+    }
+  }
+
+  const getVariantStockStatus = (variant) => {
+    if (variant.stock <= 0) {
+      return { label: "Out of Stock", icon: XCircle, styles: "bg-red-100 border-1 border-red-400 text-red-600" }
+    } else if (variant.stock <= variant.stock_alert_cap) {
       return { label: "Low Stock", icon: AlertTriangle, styles: "bg-amber-100 border-1 border-amber-400 text-amber-600" }
     } else {
       return { label: "In Stock", icon: CheckCircle, styles: "bg-green-100 border-1 border-green-400 text-emerald-600" }
@@ -158,142 +206,85 @@ export default function ProductDetailsPage() {
       </div>
     )
   }
-
-  const stockStatus = getStockStatus()
-  const StockIcon = stockStatus.icon
-
+  
   return (
     <>
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={() => navigate(-1)}
-            className="bg-black text-white hover:bg-gray-800 hover:text-slate-50 cursor-pointer"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Products
-          </Button>
+    <div className="min-h-screen px-10 space-y-8">
+      <GenericPageHeader
+        showBackButton
+        headerIcon={""}
+        headerLabel={product.name}
+        actions={productActions}
+      />
 
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => navigate(`/products/edit/${product.id}`)}
-              className="bg-blue-600 hover:bg-blue-700 shadow-sm cursor-pointer"
-            >
-              <Edit2 className="mr-2 h-4 w-4" />
-              Edit Product
-            </Button>
-            <Button variant="outline" className="border-slate-200 hover:bg-slate-50 bg-transparent cursor-pointer" onClick={() => {}}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Variant
-            </Button>
-            <Button
-              variant="outline"
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 bg-transparent cursor-pointer"
-              onClick={handleDeleteClick}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </div>
+      <div className="grid gap-8 lg:grid-cols-3">
+        <Card className="lg:col-span-2 shadow-lg">
+          <CardContent>
+            <div className="flex pb-4 gap-2 mb-4 items-center text-lg font-medium border-b">
+              <Package className="h-5 w-5" /> 
+              Product Overview
+            </div>
+            <div className="flex gap-6">
+              {product.imageUrl && (
+                <img src={product.imageUrl} alt={product.name} className="size-32 rounded-lg object-cover" />
+              )}
+              <div className="flex flex-col flex-1">
+                <h2 className="text-2xl font-bold mb-2">
+                  {product.name}
+                </h2>
+                <p className="text-gray-500 mb-4">
+                  {product.description || "No description..."}
+                </p>
+                <div className="flex gap-6 text-sm">
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-slate-500 font-medium">Status:</Label>
+                    {getProductStatus(product.status)}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-slate-500 font-medium">Category:</Label>
+                    <span className="font-medium">{product.category_name}</span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-slate-500 font-medium">Tax:</Label>
+                    <span className="text-slate-900 font-medium">{product.product_tax}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="lg:col-span-1 space-y-6">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle>Product Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-slate-600">
+              <p>{product.description}</p>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center border-t pt-2">
+                  <span className="font-semibold text-slate-800">Tax Class:</span>
+                  <span>{product.product_tax}%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-3">
-                    <CardTitle className="text-3xl font-bold text-slate-900 leading-tight">{product.name}</CardTitle>
-                    <div className="flex items-center gap-6 text-sm text-slate-500">
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-4 w-4" />
-                        <span className="font-medium">ID:</span>
-                        <span>{product.id}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-4 w-4" />
-                        <span className="font-medium">SKU:</span>
-                        <span>{product.sku}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={product.status === "active" ? "default" : "secondary"}
-                    className="capitalize px-3 py-1 text-sm font-medium"
-                  >
-                    {product.status}
-                  </Badge>
-                </div>
-              </CardHeader>
+        <Card className="lg:col-span-2">
+          <CardContent>
+            <div className="flex mb-4 gap-4 items-center">
+              <Split className="size-5" />
+              <h2 className="text-lg font-medium">Variants</h2>
+            </div>
+            <DisplayVariants
+              product={product}
+              getVariantStockStatus={getVariantStockStatus}
+              formatPrice={formatPrice}
+            />
+          </CardContent>
+        </Card>
 
-              <CardContent className="space-y-8">
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                    <Package className="h-5 w-5 text-slate-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Category</p>
-                    <p className="text-lg font-semibold text-slate-900">{product.category_name}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Boxes className="h-4 w-4 text-blue-600" />
-                    </div>
-                    Inventory Information
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Current Stock</p>
-                        <Badge className={`text-xs font-medium ${stockStatus.styles}`}>
-                          <StockIcon className="mr-1 h-3 w-3" />
-                          {stockStatus.label}
-                        </Badge>
-                      </div>
-                      <p className="text-3xl font-bold text-slate-900">
-                        {product.stock}
-                        <span className="text-lg font-medium text-slate-500 ml-1">units</span>
-                      </p>
-                    </div>
-                    <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
-                      <p className="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">Low Stock Alert</p>
-                      <p className="text-3xl font-bold text-slate-900">
-                        {product.stock_alert_cap}
-                        <span className="text-lg font-medium text-slate-500 ml-1">units</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    Pricing Information
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200 rounded-xl">
-                      <p className="text-sm font-medium text-emerald-700 uppercase tracking-wide mb-3">Selling Price</p>
-                      <p className="text-3xl font-bold text-emerald-900">{formatPriceAndMargin(product.price)}</p>
-                    </div>
-                    <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200 rounded-xl">
-                      <p className="text-sm font-medium text-amber-700 uppercase tracking-wide mb-3">Cost Price</p>
-                      <p className="text-3xl font-bold text-amber-900">{formatPriceAndMargin(product.cost_price)}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <ProductFinancialMetrics product={product} />
-        </div>
       </div>
     </div>
 

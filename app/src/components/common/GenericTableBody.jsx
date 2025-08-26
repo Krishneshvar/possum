@@ -1,5 +1,5 @@
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function GenericTableBody({ data, allColumns, visibleColumns, emptyState, renderActions, avatarIcon }) {
   const columnsToRender = allColumns.filter((column) => visibleColumns[column.key])
@@ -11,7 +11,11 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
           <TableRow key={item.id} className="hover:bg-slate-100 transition-colors border-b border-border">
             <TableCell className="min-w-none">
               <Avatar className="rounded-lg h-10 w-10 border border-border">
-                <AvatarFallback className="bg-primary/8 text-primary rounded-lg">{avatarIcon}</AvatarFallback>
+                {item.imageUrl ? (
+                  <AvatarImage src={item.imageUrl} alt={item.name} className="object-cover" />
+                ) : (
+                  <AvatarFallback className="bg-primary/8 text-primary rounded-lg">{avatarIcon}</AvatarFallback>
+                )}
               </Avatar>
             </TableCell>
             {columnsToRender.map((column) => (

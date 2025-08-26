@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Ellipsis, ArrowLeft } from "lucide-react";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +16,9 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
   const renderActionButton = (action, isPrimary) => {
     const buttonClasses = isPrimary
       ? "bg-blue-600 hover:bg-blue-700 text-white"
-      : "bg-slate-200 hover:bg-white text-slate-800 shadow-sm";
+      : action.label === 'Delete'
+        ? "bg-red-500 hover:bg-red-600 text-white shadow-sm"
+        : "bg-slate-200 hover:bg-white text-slate-800 shadow-sm";
 
     const content = (
       <>
@@ -26,15 +27,25 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
       </>
     );
 
-    if (action.url) {
+    if (action.label === 'Delete') {
       return (
-        <Button asChild size="default" className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto ${buttonClasses}`}>
+        <Button
+          size="default"
+          onClick={action.onClick}
+          className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}
+        >
+          {content}
+        </Button>
+      );
+    } else if (action.url) {
+      return (
+        <Button asChild size="default" className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
           <Link to={action.url}>{content}</Link>
         </Button>
       );
     } else {
       return (
-        <Button size="default" onClick={action.onClick} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto ${buttonClasses}`}>
+        <Button size="default" onClick={action.onClick} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
           {content}
         </Button>
       );
@@ -75,11 +86,23 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {secondaryActions.map((action, index) => (
-                      <DropdownMenuItem key={index} asChild>
-                        <Link to={action.url || "#"} className="flex items-center">
-                          {action.icon && <action.icon className="h-4 w-4 mr-2" />}
-                          {action.label}
-                        </Link>
+                      <DropdownMenuItem
+                        key={index}
+                        onClick={action.onClick}
+                        asChild={!!action.url}
+                        className={action.label === 'Delete' ? 'text-destructive focus:text-destructive' : ''}
+                      >
+                        {action.url ? (
+                          <Link to={action.url || "#"} className="flex items-center">
+                            {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                            {action.label}
+                          </Link>
+                        ) : (
+                          <div className="flex items-center">
+                            {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                            {action.label}
+                          </div>
+                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>

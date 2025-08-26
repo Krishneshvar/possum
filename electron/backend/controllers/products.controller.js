@@ -8,6 +8,13 @@ import {
 import path from 'path';
 import fs from 'fs';
 
+const buildImageUrl = (imagePath) => {
+  if (!imagePath) {
+    return null;
+  }
+  return `http://localhost:3001${imagePath}`;
+};
+
 const getProductsController = async (req, res) => {
   try {
     const {
@@ -42,7 +49,15 @@ const getProductsController = async (req, res) => {
       itemsPerPage: parseInt(limit, 10)
     });
 
-    res.json(productsData);
+    const productsWithImageUrls = productsData.products.map(product => ({
+      ...product,
+      imageUrl: buildImageUrl(product.image_path)
+    }));
+
+    res.json({
+      ...productsData,
+      products: productsWithImageUrls
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to retrieve products.' });
@@ -95,7 +110,10 @@ const getProductDetails = async (req, res) => {
     if (!product) {
       return res.status(404).json({ error: 'Product not found.' });
     }
-    res.json(product);
+    res.json({
+      ...product,
+      imageUrl: buildImageUrl(product.image_path)
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to retrieve product details.' });
   }
