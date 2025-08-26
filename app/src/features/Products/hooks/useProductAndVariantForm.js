@@ -9,7 +9,10 @@ const calculateProfitMargin = (priceInCents, costPriceInCents) => {
 };
 
 const calculateCostPrice = (priceInCents, profitMargin) => {
-  return priceInCents / (1 + (profitMargin / 100));
+  if (profitMargin !== -100) {
+    return priceInCents / (1 + (profitMargin / 100));
+  }
+  return 0;
 };
 
 const calculatePrice = (costPriceInCents, profitMargin) => {
@@ -25,8 +28,6 @@ const getDefaultVariant = () => ({
   profit_margin: '',
   stock: '0',
   stock_alert_cap: '10',
-  product_tax: '0',
-  disabledField: 'profit_margin',
   is_default: 1,
   status: 'active',
 });
@@ -39,6 +40,7 @@ const getInitialFormData = (data) => {
       image_path: data.image_path ?? null,
       category_id: data.category_id ? String(data.category_id) : '',
       status: data.status ?? 'active',
+      product_tax: data.product_tax ? String(data.product_tax) : '0',
       variants: data.variants.map(v => ({
         ...v,
         _tempId: v.id,
@@ -47,8 +49,6 @@ const getInitialFormData = (data) => {
         profit_margin: v.cost_price && v.price ? calculateProfitMargin(v.price, v.cost_price).toFixed(2) : '0',
         stock: v.stock ? String(v.stock) : '0',
         stock_alert_cap: v.stock_alert_cap ? String(v.stock_alert_cap) : '10',
-        product_tax: v.product_tax ? String(v.product_tax) : '0',
-        disabledField: 'profit_margin',
         status: v.status ?? 'active',
       })),
     };
@@ -60,6 +60,7 @@ const getInitialFormData = (data) => {
     imageFile: null,
     category_id: '',
     status: 'active',
+    product_tax: '0',
     variants: [getDefaultVariant()],
   };
 };
@@ -98,27 +99,20 @@ export const useProductAndVariantForm = (initialState = {}) => {
         if (variant._tempId === variantId) {
           let updatedVariant = { ...variant, [name]: value };
 
-          if (['price', 'cost_price', 'profit_margin'].includes(name)) {
-            const price = Number.parseFloat(updatedVariant.price) || 0;
-            const cost_price = Number.parseFloat(updatedVariant.cost_price) || 0;
-            const profit_margin = Number.parseFloat(updatedVariant.profit_margin) || 0;
+          const price = Number.parseFloat(updatedVariant.price) || 0;
+          const cost_price = Number.parseFloat(updatedVariant.cost_price) || 0;
+          const profit_margin = Number.parseFloat(updatedVariant.profit_margin) || 0;
 
-            const priceInCents = Math.round(price * 100);
-            const costPriceInCents = Math.round(cost_price * 100);
-
-            if (updatedVariant.disabledField === 'price' && costPriceInCents > 0 && profit_margin >= 0) {
-              const newPriceInCents = calculatePrice(costPriceInCents, profit_margin);
-              updatedVariant.price = (newPriceInCents / 100).toFixed(2);
-            }
-            else if (updatedVariant.disabledField === 'cost_price' && priceInCents > 0 && profit_margin >= 0) {
-              const newCostPriceInCents = calculateCostPrice(priceInCents, profit_margin);
-              updatedVariant.cost_price = (newCostPriceInCents / 100).toFixed(2);
-            }
-            else if (updatedVariant.disabledField === 'profit_margin' && priceInCents > 0 && costPriceInCents > 0) {
-              updatedVariant.profit_margin = calculateProfitMargin(priceInCents, costPriceInCents).toFixed(2);
-            }
+          if (name === 'price' || name === 'cost_price') {
+            updatedVariant.profit_margin = calculateProfitMargin(price * 100, cost_price * 100).toFixed(2);
+          } else if (name === 'profit_margin') {
+             if (updatedVariant.price) {
+               updatedVariant.cost_price = (calculateCostPrice(price * 100, profit_margin) / 100).toFixed(2);
+             } else if (updatedVariant.cost_price) {
+                updatedVariant.price = (calculatePrice(cost_price * 100, profit_margin) / 100).toFixed(2);
+             }
           }
-          return updatedVariant;
+           return updatedVariant;
         }
         return variant;
       });
@@ -138,38 +132,6 @@ export const useProductAndVariantForm = (initialState = {}) => {
     });
   }, []);
 
-  const handleRadioChange = useCallback((variantId, value) => {
-    setFormData(prev => {
-      const newVariants = prev.variants.map(variant => {
-        if (variant._tempId === variantId) {
-          let updatedVariant = { ...variant, disabledField: value };
-          const price = Number.parseFloat(updatedVariant.price) || 0;
-          const cost_price = Number.parseFloat(updatedVariant.cost_price) || 0;
-          const profit_margin = Number.parseFloat(updatedVariant.profit_margin) || 0;
-
-          const priceInCents = Math.round(price * 100);
-          const costPriceInCents = Math.round(cost_price * 100);
-
-          if (value === 'price' && costPriceInCents > 0 && profit_margin >= 0) {
-            const newPriceInCents = calculatePrice(costPriceInCents, profit_margin);
-            updatedVariant.price = (newPriceInCents / 100).toFixed(2);
-          }
-          else if (value === 'cost_price' && priceInCents > 0 && profit_margin >= 0) {
-            const newCostPriceInCents = calculateCostPrice(priceInCents, profit_margin);
-            updatedVariant.cost_price = (newCostPriceInCents / 100).toFixed(2);
-          }
-          else if (value === 'profit_margin' && priceInCents > 0 && costPriceInCents > 0) {
-            updatedVariant.profit_margin = calculateProfitMargin(priceInCents, costPriceInCents).toFixed(2);
-          }
-
-          return updatedVariant;
-        }
-        return variant;
-      });
-      return { ...prev, variants: newVariants };
-    });
-  }, []);
-
   const clearPriceFields = useCallback((variantId) => {
     setFormData(prevState => {
       const newVariants = prevState.variants.map(variant => {
@@ -179,7 +141,6 @@ export const useProductAndVariantForm = (initialState = {}) => {
             price: '',
             cost_price: '',
             profit_margin: '',
-            disabledField: 'profit_margin',
           };
         }
         return variant;
@@ -203,22 +164,21 @@ export const useProductAndVariantForm = (initialState = {}) => {
   }, []);
 
   const getCleanData = useCallback(() => {
+    const { product_tax, ...rest } = formData;
     const cleanData = {
-      ...formData,
+      ...rest,
       category_id: formData.category_id ? Number.parseInt(formData.category_id, 10) : null,
+      product_tax: product_tax ? Number.parseFloat(product_tax) : 0,
       variants: formData.variants.map(v => ({
         ...v,
         id: v.id,
         price: v.price ? Number.parseFloat(v.price) : 0,
         cost_price: v.cost_price ? Number.parseFloat(v.cost_price) : 0,
-        profit_margin: v.profit_margin ? Number.parseFloat(v.profit_margin) : 0,
         stock: v.stock ? Number.parseInt(v.stock) : 0,
         stock_alert_cap: v.stock_alert_cap ? Number.parseInt(v.stock_alert_cap) : 0,
-        product_tax: v.product_tax ? Number.parseFloat(v.product_tax) : 0,
       }))
     };
 
-    // Remove the temporary _tempId from variants
     cleanData.variants = cleanData.variants.map(({ _tempId, ...rest }) => rest);
 
     return cleanData;
@@ -230,7 +190,6 @@ export const useProductAndVariantForm = (initialState = {}) => {
     handleProductSelectChange,
     handleVariantChange,
     handleVariantSelectChange,
-    handleRadioChange,
     handleFileChange,
     handleRemoveImage,
     clearPriceFields,

@@ -2,20 +2,20 @@ import { initDB } from '../db.js';
 
 const db = initDB();
 
-const addProductWithVariants = ({ name, description, category_id, status, image_path, variants }) => {
+const addProductWithVariants = ({ name, description, category_id, status, product_tax, image_path, variants }) => {
   const transaction = db.transaction(() => {
     const productInfo = db.prepare(`
-      INSERT INTO products (name, description, category_id, status, image_path)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(name, description, category_id, status, image_path);
-    
+      INSERT INTO products (name, description, category_id, status, product_tax, image_path)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(name, description, category_id, status, product_tax, image_path);
+
     const newProductId = productInfo.lastInsertRowid;
 
     const insertVariant = db.prepare(`
       INSERT INTO variants (
-        product_id, name, sku, price, cost_price, stock, stock_alert_cap, product_tax, is_default, status
+        product_id, name, sku, price, cost_price, stock, stock_alert_cap, is_default, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const variant of variants) {
@@ -27,7 +27,6 @@ const addProductWithVariants = ({ name, description, category_id, status, image_
         variant.cost_price,
         variant.stock,
         variant.stock_alert_cap,
-        variant.product_tax,
         variant.is_default ? 1 : 0,
         variant.status
       );
@@ -42,7 +41,7 @@ const addProductWithVariants = ({ name, description, category_id, status, image_
 const getProductWithAllVariants = (id) => {
   const product = db.prepare(`
     SELECT
-      p.id, p.name, p.description, p.status, p.image_path, c.name AS category_name
+      p.id, p.name, p.description, p.status, p.image_path, p.product_tax, c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.id = ? AND p.deleted_at IS NULL
@@ -54,9 +53,9 @@ const getProductWithAllVariants = (id) => {
   return { ...product, variants };
 }
 
-const updateProduct = (productId, { name, description, category_id, status, image_path }) => {
-  let updateFields = ['name = ?', 'category_id = ?', 'status = ?', 'updated_at = CURRENT_TIMESTAMP'];
-  let params = [name, category_id, status];
+const updateProduct = (productId, { name, description, category_id, status, product_tax, image_path }) => {
+  let updateFields = ['name = ?', 'category_id = ?', 'status = ?', 'product_tax = ?', 'updated_at = CURRENT_TIMESTAMP'];
+  let params = [name, category_id, status, product_tax];
 
   if (description !== undefined) {
     updateFields.push('description = ?');
@@ -81,7 +80,7 @@ const updateProduct = (productId, { name, description, category_id, status, imag
 const updateVariant = (variant) => {
   const stmt = db.prepare(`
     UPDATE variants
-    SET name = ?, sku = ?, price = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, product_tax = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, sku = ?, price = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, status = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `);
   return stmt.run(
@@ -91,7 +90,6 @@ const updateVariant = (variant) => {
     variant.cost_price,
     variant.stock,
     variant.stock_alert_cap,
-    variant.product_tax,
     variant.status,
     variant.id
   );
@@ -100,9 +98,9 @@ const updateVariant = (variant) => {
 const addVariant = (productId, variant) => {
   const stmt = db.prepare(`
     INSERT INTO variants (
-      product_id, name, sku, price, cost_price, stock, stock_alert_cap, product_tax, is_default, status
+      product_id, name, sku, price, cost_price, stock, stock_alert_cap, is_default, status
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return stmt.run(
     productId,
@@ -112,15 +110,14 @@ const addVariant = (productId, variant) => {
     variant.cost_price,
     variant.stock,
     variant.stock_alert_cap,
-    variant.product_tax,
     variant.is_default ? 1 : 0,
     variant.status
   );
 };
 
-const updateProductWithVariants = (productId, { name, description, category_id, status, image_path, variants }) => {
+const updateProductWithVariants = (productId, { name, description, category_id, status, product_tax, image_path, variants }) => {
   const transaction = db.transaction(() => {
-    const productChanges = updateProduct(productId, { name, description, category_id, status, image_path });
+    const productChanges = updateProduct(productId, { name, description, category_id, status, product_tax, image_path });
 
     const existingVariants = db.prepare('SELECT id FROM variants WHERE product_id = ?').all(productId);
     const existingVariantIds = existingVariants.map(v => v.id);
@@ -217,6 +214,7 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
       p.name,
       p.status,
       p.image_path,
+      p.product_tax,
       c.name AS category_name,
       v.sku,
       v.price,

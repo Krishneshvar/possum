@@ -34,18 +34,24 @@ export const productsApi = createApi({
     addProduct: builder.mutation({
       query: (body) => {
         const formData = new FormData();
-        
-        // Append all fields except imageFile and variants
+
+        const variantsData = body.variants.map(v => {
+          const { product_tax, ...rest } = v;
+          return rest;
+        });
+
         for (const key in body) {
-          if (key !== 'imageFile' && key !== 'variants') {
+          if (key !== 'imageFile' && key !== 'variants' && key !== 'product_tax') {
             formData.append(key, body[key]);
           }
         }
-        
-        // Append the variants array as a string
-        formData.append('variants', JSON.stringify(body.variants));
 
-        // Conditionally append the image file
+        if (body.product_tax !== undefined) {
+          formData.append('product_tax', body.product_tax);
+        }
+
+        formData.append('variants', JSON.stringify(variantsData));
+
         if (body.imageFile) {
           formData.append('image', body.imageFile);
         }
@@ -61,18 +67,24 @@ export const productsApi = createApi({
     updateProduct: builder.mutation({
       query: ({ id, ...body }) => {
         const formData = new FormData();
-        
-        // Append all fields except imageFile and variants
+
+        const variantsData = body.variants.map(v => {
+          const { product_tax, ...rest } = v;
+          return rest;
+        });
+
         for (const key in body) {
-          if (key !== 'imageFile' && key !== 'variants') {
+          if (key !== 'imageFile' && key !== 'variants' && key !== 'product_tax') {
             formData.append(key, body[key]);
           }
         }
-        
-        // Append the variants array as a string
-        formData.append('variants', JSON.stringify(body.variants));
 
-        // Conditionally append the image file
+        if (body.product_tax !== undefined) {
+          formData.append('product_tax', body.product_tax);
+        }
+
+        formData.append('variants', JSON.stringify(variantsData));
+
         if (body.imageFile) {
           formData.append('image', body.imageFile);
         }

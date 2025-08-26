@@ -105,14 +105,16 @@ export default function ProductInformation({
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="tax" className="text-sm font-medium">
+            <Label htmlFor="product_tax" className="text-sm font-medium">
               Product Tax
             </Label>
             <Input
-              id="tax"
-              name="tax"
+              id="product_tax"
+              name="product_tax"
               type="number"
               step="0.01"
+              value={formData.product_tax}
+              onChange={handleChange}
               className="h-11 pl-8"
               placeholder="0.00"
             />

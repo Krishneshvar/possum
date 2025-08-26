@@ -1,33 +1,24 @@
-import { Trash2, DollarSign, BarChart3 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
 
-} from "@/components/ui/select";
-
-import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
+import VariantInformation from "./VariantInformation";
+import VariantPricings from "./VariantPricings";
+import VariantInventory from "./VariantInventory";
 
 export default function VariantForm({
   variant,
   index,
   onVariantChange,
   onSelectChange,
-  onRadioChange,
-  onClearPriceFields,
   onRemoveVariant,
   showRemoveButton,
+  onClearPriceFields
 }) {
   return (
-    <Card className="shadow-sm ">
+    <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between p-4 bg-slate-50 border-1 border-slate-100">
         <h4 className="font-semibold">Variant {index + 1}</h4>
         {showRemoveButton && (
@@ -43,203 +34,27 @@ export default function VariantForm({
         )}
       </CardHeader>
       <CardContent className="p-6 space-y-8">
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="space-y-3">
-              <Label htmlFor="status" className="text-sm font-medium">
-                Status <RequiredFieldIndicator />
-              </Label>
-              <Select
-                onValueChange={(value) => onSelectChange(variant._tempId, 'status', value)}
-                value={variant.status}
-              >
-                <SelectTrigger id="status" className="w-full py-[1.3rem]">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                      Active
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="inactive">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                      Inactive
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="discontinued">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-red-500" />
-                      Discontinued
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor={`variant-name-${variant._tempId}`} className="text-sm font-medium">
-                Variant Name <RequiredFieldIndicator />
-              </Label>
-              <Input
-                id={`variant-name-${variant._tempId}`}
-                name="name"
-                value={variant.name}
-                onChange={(e) => onVariantChange(variant._tempId, e)}
-                placeholder="e.g. Red, Size L"
-                className="h-11"
-                required
-              />
-            </div>
-            <div className="space-y-3">
-              <Label htmlFor={`sku-${variant._tempId}`} className="text-sm font-medium">
-                SKU <RequiredFieldIndicator />
-              </Label>
-              <Input
-                id={`sku-${variant._tempId}`}
-                name="sku"
-                value={variant.sku}
-                onChange={(e) => onVariantChange(variant._tempId, e)}
-                placeholder="Variant SKU"
-                className="h-11 font-mono"
-                required
-              />
-            </div>
-          </div>
-        </div>
+        <VariantInformation
+          variant={variant}
+          onVariantChange={onVariantChange}
+          onSelectChange={onSelectChange}
+        />
 
         <Separator />
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-              <DollarSign className="h-5 w-5 text-green-600" />
-            </div>
-            <div className="flex w-full items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">Pricing & Margins</h3>
-              <Button
-                variant="outline"
-                onClick={() => onClearPriceFields(variant._tempId)}
-                type="button"
-                className="bg-black text-white hover:bg-gray-700 hover:text-white cursor-pointer"
-                title="Reset pricing fields"
-              >
-                Reset
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
-            <div className="space-y-3">
-              <Label htmlFor={`price-${variant._tempId}`} className="text-sm font-medium">
-                Selling Price <RequiredFieldIndicator />
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                <Input
-                  id={`price-${variant._tempId}`}
-                  name="price"
-                  type="number"
-                  value={variant.price}
-                  onChange={(e) => onVariantChange(variant._tempId, e)}
-                  step="0.01"
-                  disabled={variant.disabledField === "price"}
-                  className="h-11 pl-8"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor={`cost_price-${variant._tempId}`} className="text-sm font-medium">
-                Cost Price
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                <Input
-                  id={`cost_price-${variant._tempId}`}
-                  name="cost_price"
-                  type="number"
-                  value={variant.cost_price}
-                  onChange={(e) => onVariantChange(variant._tempId, e)}
-                  step="0.01"
-                  disabled={variant.disabledField === "cost_price"}
-                  className="h-11 pl-8"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor={`profit_margin-${variant._tempId}`} className="text-sm font-medium">
-                Profit Margin
-              </Label>
-              <div className="relative">
-                <Input
-                  id={`profit_margin-${variant._tempId}`}
-                  name="profit_margin"
-                  type="number"
-                  value={variant.profit_margin}
-                  onChange={(e) => onVariantChange(variant._tempId, e)}
-                  step="0.01"
-                  disabled={variant.disabledField === "profit_margin"}
-                  className="h-11 pr-8"
-                  placeholder="0.00"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <VariantPricings
+          variant={variant}
+          onVariantChange={onVariantChange}
+          onClearPriceFields={onClearPriceFields}
+        />
 
         <Separator />
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
-              <BarChart3 className="h-5 w-5 text-orange-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">Inventory</h3>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <Label htmlFor={`stock-${variant._tempId}`} className="text-sm font-medium">
-                Current Stock
-              </Label>
-              <Input
-                id={`stock-${variant._tempId}`}
-                name="stock"
-                type="number"
-                value={variant.stock}
-                onChange={(e) => onVariantChange(variant._tempId, e)}
-                placeholder="0"
-                className="h-11"
-                min="0"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label htmlFor={`stock_alert_cap-${variant._tempId}`} className="text-sm font-medium">
-                Low Stock Alert
-              </Label>
-              <Input
-                id={`stock_alert_cap-${variant._tempId}`}
-                name="stock_alert_cap"
-                type="number"
-                value={variant.stock_alert_cap}
-                onChange={(e) => onVariantChange(variant._tempId, e)}
-                placeholder="10"
-                className="h-11"
-                min="0"
-              />
-            </div>
-          </div>
-        </div>
+        <VariantInventory
+          variant={variant}
+          onVariantChange={onVariantChange}
+        />
       </CardContent>
     </Card>
   );
-};
+}

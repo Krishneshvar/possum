@@ -50,7 +50,7 @@ const getProductsController = async (req, res) => {
 };
 
 const createProductController = async (req, res) => {
-  const { name, category_id, description, status, variants } = req.body;
+  const { name, category_id, description, status, product_tax, variants } = req.body;
   const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
   const parsedVariants = JSON.parse(variants);
@@ -74,6 +74,7 @@ const createProductController = async (req, res) => {
       category_id,
       description,
       status,
+      product_tax,
       image_path,
       variants: parsedVariants,
     });
@@ -120,7 +121,7 @@ const deleteProductController = async (req, res) => {
 
 const updateProductController = async (req, res) => {
   const { id } = req.params;
-  const { name, category_id, description, status, variants } = req.body;
+  const { name, category_id, description, status, product_tax, variants } = req.body;
   const image_path = req.file ? `/uploads/${req.file.filename}` : undefined;
 
   if (image_path) {
@@ -134,7 +135,7 @@ const updateProductController = async (req, res) => {
   }
 
   const parsedVariants = JSON.parse(variants);
-  const productData = { name, category_id, description, status, variants: parsedVariants };
+  const productData = { name, category_id, description, status, product_tax, variants: parsedVariants };
   if (image_path) {
     productData.image_path = image_path;
   }

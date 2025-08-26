@@ -87,37 +87,37 @@ INSERT INTO payment_methods (name) VALUES
 ('UPI'),
 ('Gift Card');
 
-INSERT INTO products (id, name, category_id, status) VALUES
-(1, 'Coffee Beans', 1, 'active'),
-(2, 'Chocolate Bar', 2, 'active'),
-(3, 'Smartphone', 3, 'active'),
-(4, 'The Great Book', 4, 'active'),
-(5, 'T-Shirt', 5, 'active'),
-(6, 'Coffee Mug', 6, 'active'),
-(7, 'Shampoo', 7, 'active'),
-(8, 'Loaf of Bread', 8, 'active'),
-(9, 'Milk Gallon', 11, 'active'),
-(10, 'All-Purpose Cleaner', 10, 'active'),
-(11, 'Headphones', 3, 'active');
+INSERT INTO products (id, name, category_id, status, product_tax) VALUES
+(1, 'Coffee Beans', 1, 'active', 50.00),
+(2, 'Chocolate Bar', 2, 'active', 50.00),
+(3, 'Smartphone', 3, 'active', 50.00),
+(4, 'The Great Book', 4, 'active', 50.00),
+(5, 'T-Shirt', 5, 'active', 50.00),
+(6, 'Coffee Mug', 6, 'active', 50.00),
+(7, 'Shampoo', 7, 'active', 50.00),
+(8, 'Loaf of Bread', 8, 'active', 50.00),
+(9, 'Milk Gallon', 11, 'active', 50.00),
+(10, 'All-Purpose Cleaner', 10, 'active', 50.00),
+(11, 'Headphones', 3, 'active', 50.00);
 
-INSERT INTO variants (id, product_id, name, sku, price, cost_price, profit_margin, stock, product_tax, is_default) VALUES
-(1, 1, 'Arabica', 'COF-B01-A', 1800, 900, 900, 30, 120, 1),
-(2, 1, 'Robusta', 'COF-B01-R', 1700, 850, 850, 25, 110, 0),
-(3, 2, 'Milk Chocolate', 'SNK-CHOC1-M', 250, 100, 150, 200, 15, 1),
-(4, 3, '128GB', 'EL-SMT-01-128', 75000, 50000, 25000, 8, 2000, 1),
-(5, 3, '256GB', 'EL-SMT-01-256', 85000, 55000, 30000, 7, 2200, 0),
-(6, 4, 'Paperback', 'BK-GRT-B-PB', 1200, 500, 700, 30, 80, 1),
-(7, 5, 'Small', 'AP-TSH-01-S', 2000, 800, 1200, 40, 150, 0),
-(8, 5, 'Medium', 'AP-TSH-01-M', 2000, 800, 1200, 35, 150, 1),
-(9, 5, 'Large', 'AP-TSH-01-L', 2000, 800, 1200, 25, 150, 0),
-(10, 6, 'White', 'HM-MUG-01-W', 800, 250, 550, 30, 60, 1),
-(11, 6, 'Black', 'HM-MUG-01-B', 800, 250, 550, 25, 60, 0),
-(12, 6, 'Red', 'HM-MUG-01-R', 800, 250, 550, 20, 60, 0),
-(13, 7, '200ml', 'PC-SHMP-01-200', 600, 300, 300, 50, 45, 1),
-(14, 8, 'Whole Wheat', 'BK-BRD-01-WW', 350, 150, 200, 40, 25, 1),
-(15, 9, 'Organic', 'DR-MLK-01-ORG', 400, 200, 200, 60, 30, 1),
-(16, 10, '250ml', 'CL-APC-01-250', 550, 220, 330, 80, 40, 1),
-(17, 11, 'Wireless', 'EL-HDP-01-W', 10000, 4000, 6000, 20, 500, 1);
+INSERT INTO variants (id, product_id, name, sku, price, cost_price, profit_margin, stock, is_default) VALUES
+(1, 1, 'Arabica', 'COF-B01-A', 1800, 900, 900, 30, 1),
+(2, 1, 'Robusta', 'COF-B01-R', 1700, 850, 850, 25, 0),
+(3, 2, 'Milk Chocolate', 'SNK-CHOC1-M', 250, 100, 150, 200, 1),
+(4, 3, '128GB', 'EL-SMT-01-128', 75000, 50000, 25000, 8, 1),
+(5, 3, '256GB', 'EL-SMT-01-256', 85000, 55000, 30000, 7, 0),
+(6, 4, 'Paperback', 'BK-GRT-B-PB', 1200, 500, 700, 30, 1),
+(7, 5, 'Small', 'AP-TSH-01-S', 2000, 800, 1200, 40, 0),
+(8, 5, 'Medium', 'AP-TSH-01-M', 2000, 800, 1200, 35, 1),
+(9, 5, 'Large', 'AP-TSH-01-L', 2000, 800, 1200, 25, 0),
+(10, 6, 'White', 'HM-MUG-01-W', 800, 250, 550, 30, 1),
+(11, 6, 'Black', 'HM-MUG-01-B', 800, 250, 550, 25, 0),
+(12, 6, 'Red', 'HM-MUG-01-R', 800, 250, 550, 20, 0),
+(13, 7, '200ml', 'PC-SHMP-01-200', 600, 300, 300, 50, 1),
+(14, 8, 'Whole Wheat', 'BK-BRD-01-WW', 350, 150, 200, 40, 1),
+(15, 9, 'Organic', 'DR-MLK-01-ORG', 400, 200, 200, 60, 1),
+(16, 10, '250ml', 'CL-APC-01-250', 550, 220, 330, 80, 1),
+(17, 11, 'Wireless', 'EL-HDP-01-W', 10000, 4000, 6000, 50, 1);
 
 INSERT INTO purchase_orders (supplier_id, order_date, expected_delivery_date, actual_delivery_date, status, note) VALUES
 (1, '2025-08-01 10:00:00', '2025-08-05 10:00:00', '2025-08-04 15:00:00', 'received', 'Urgent restock of coffee and snacks'),
