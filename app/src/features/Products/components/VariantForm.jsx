@@ -1,14 +1,9 @@
-import { Trash2, DollarSign, BarChart3, Info, RefreshCcw } from "lucide-react";
+import { Trash2, DollarSign, BarChart3 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -54,7 +49,10 @@ export default function VariantForm({
               <Label htmlFor="status" className="text-sm font-medium">
                 Status <RequiredFieldIndicator />
               </Label>
-              <Select>
+              <Select
+                onValueChange={(value) => onSelectChange(variant._tempId, 'status', value)}
+                value={variant.status}
+              >
                 <SelectTrigger id="status" className="w-full py-[1.3rem]">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>

@@ -2,20 +2,20 @@ import { initDB } from '../db.js';
 
 const db = initDB();
 
-const addProductWithVariants = ({ name, category_id, status, variants }) => {
+const addProductWithVariants = ({ name, description, category_id, status, image_path, variants }) => {
   const transaction = db.transaction(() => {
     const productInfo = db.prepare(`
-      INSERT INTO products (name, category_id, status)
-      VALUES (?, ?, ?)
-    `).run(name, category_id, status);
+      INSERT INTO products (name, description, category_id, status, image_path)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(name, description, category_id, status, image_path);
     
     const newProductId = productInfo.lastInsertRowid;
 
     const insertVariant = db.prepare(`
       INSERT INTO variants (
-        product_id, name, sku, price, cost_price, stock, stock_alert_cap, product_tax, is_default
+        product_id, name, sku, price, cost_price, stock, stock_alert_cap, product_tax, is_default, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const variant of variants) {
@@ -28,7 +28,8 @@ const addProductWithVariants = ({ name, category_id, status, variants }) => {
         variant.stock,
         variant.stock_alert_cap,
         variant.product_tax,
-        variant.is_default ? 1 : 0
+        variant.is_default ? 1 : 0,
+        variant.status
       );
     }
 
@@ -41,7 +42,7 @@ const addProductWithVariants = ({ name, category_id, status, variants }) => {
 const getProductWithAllVariants = (id) => {
   const product = db.prepare(`
     SELECT
-      p.id, p.name, p.status, c.name AS category_name
+      p.id, p.name, p.description, p.status, p.image_path, c.name AS category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.id = ? AND p.deleted_at IS NULL
@@ -53,19 +54,34 @@ const getProductWithAllVariants = (id) => {
   return { ...product, variants };
 }
 
-const updateProduct = (productId, { name, category_id, status }) => {
+const updateProduct = (productId, { name, description, category_id, status, image_path }) => {
+  let updateFields = ['name = ?', 'category_id = ?', 'status = ?', 'updated_at = CURRENT_TIMESTAMP'];
+  let params = [name, category_id, status];
+
+  if (description !== undefined) {
+    updateFields.push('description = ?');
+    params.push(description);
+  }
+
+  if (image_path !== undefined) {
+    updateFields.push('image_path = ?');
+    params.push(image_path);
+  }
+
   const stmt = db.prepare(`
     UPDATE products
-    SET name = ?, category_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+    SET ${updateFields.join(', ')}
     WHERE id = ?
   `);
-  return stmt.run(name, category_id, status, productId);
+  
+  params.push(productId);
+  return stmt.run(...params);
 };
 
 const updateVariant = (variant) => {
   const stmt = db.prepare(`
     UPDATE variants
-    SET name = ?, sku = ?, price = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, product_tax = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, sku = ?, price = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, product_tax = ?, status = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `);
   return stmt.run(
@@ -76,6 +92,7 @@ const updateVariant = (variant) => {
     variant.stock,
     variant.stock_alert_cap,
     variant.product_tax,
+    variant.status,
     variant.id
   );
 };
@@ -83,9 +100,9 @@ const updateVariant = (variant) => {
 const addVariant = (productId, variant) => {
   const stmt = db.prepare(`
     INSERT INTO variants (
-      product_id, name, sku, price, cost_price, stock, stock_alert_cap, product_tax, is_default
+      product_id, name, sku, price, cost_price, stock, stock_alert_cap, product_tax, is_default, status
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return stmt.run(
     productId,
@@ -96,18 +113,19 @@ const addVariant = (productId, variant) => {
     variant.stock,
     variant.stock_alert_cap,
     variant.product_tax,
-    variant.is_default ? 1 : 0
+    variant.is_default ? 1 : 0,
+    variant.status
   );
 };
 
-const updateProductWithVariants = (productId, { name, category_id, status, variants }) => {
+const updateProductWithVariants = (productId, { name, description, category_id, status, image_path, variants }) => {
   const transaction = db.transaction(() => {
-    const productChanges = updateProduct(productId, { name, category_id, status });
+    const productChanges = updateProduct(productId, { name, description, category_id, status, image_path });
 
     const existingVariants = db.prepare('SELECT id FROM variants WHERE product_id = ?').all(productId);
     const existingVariantIds = existingVariants.map(v => v.id);
 
-    const submittedVariantIds = variants.filter(v => v._tempId && typeof v._tempId === 'number').map(v => v._tempId);
+    const submittedVariantIds = variants.filter(v => v.id).map(v => v.id);
 
     const variantsToDelete = existingVariantIds.filter(id => !submittedVariantIds.includes(id));
     if (variantsToDelete.length > 0) {
@@ -116,8 +134,8 @@ const updateProductWithVariants = (productId, { name, category_id, status, varia
     }
 
     for (const variant of variants) {
-      if (variant._tempId && typeof variant._tempId === 'number') {
-        updateVariant({ ...variant, id: variant._tempId });
+      if (variant.id) {
+        updateVariant({ ...variant, id: variant.id });
       } else {
         addVariant(productId, variant);
       }
@@ -130,6 +148,14 @@ const updateProductWithVariants = (productId, { name, category_id, status, varia
 };
 
 const deleteProduct = (id) => {
+  const product = db.prepare('SELECT image_path FROM products WHERE id = ?').get(id);
+  if (product && product.image_path) {
+    const filePath = path.join(__dirname, '..', product.image_path);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  }
+  
   const stmt = db.prepare('UPDATE products SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
   return stmt.run(id);
 }
@@ -190,6 +216,7 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
       p.id,
       p.name,
       p.status,
+      p.image_path,
       c.name AS category_name,
       v.sku,
       v.price,

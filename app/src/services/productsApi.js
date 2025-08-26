@@ -21,7 +21,7 @@ export const productsApi = createApi({
             }
           }
         }
-        
+
         const queryParams = query.toString();
         return `/products?${queryParams}`;
       },
@@ -32,19 +32,57 @@ export const productsApi = createApi({
       providesTags: ['Products'],
     }),
     addProduct: builder.mutation({
-      query: (body) => ({
-        url: '/products',
-        method: 'POST',
-        body,
-      }),
+      query: (body) => {
+        const formData = new FormData();
+        
+        // Append all fields except imageFile and variants
+        for (const key in body) {
+          if (key !== 'imageFile' && key !== 'variants') {
+            formData.append(key, body[key]);
+          }
+        }
+        
+        // Append the variants array as a string
+        formData.append('variants', JSON.stringify(body.variants));
+
+        // Conditionally append the image file
+        if (body.imageFile) {
+          formData.append('image', body.imageFile);
+        }
+
+        return {
+          url: '/products',
+          method: 'POST',
+          body: formData,
+        };
+      },
       invalidatesTags: ['Products'],
     }),
     updateProduct: builder.mutation({
-      query: ({ id, ...body }) => ({
-        url: `/products/${id}`,
-        method: 'PUT',
-        body,
-      }),
+      query: ({ id, ...body }) => {
+        const formData = new FormData();
+        
+        // Append all fields except imageFile and variants
+        for (const key in body) {
+          if (key !== 'imageFile' && key !== 'variants') {
+            formData.append(key, body[key]);
+          }
+        }
+        
+        // Append the variants array as a string
+        formData.append('variants', JSON.stringify(body.variants));
+
+        // Conditionally append the image file
+        if (body.imageFile) {
+          formData.append('image', body.imageFile);
+        }
+
+        return {
+          url: `/products/${id}`,
+          method: 'PUT',
+          body: formData,
+        };
+      },
       invalidatesTags: ['Products'],
     }),
     deleteProduct: builder.mutation({

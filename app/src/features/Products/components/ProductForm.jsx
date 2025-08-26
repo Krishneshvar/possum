@@ -1,7 +1,7 @@
 import { Plus, Split } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 import { useProductAndVariantForm } from "@/features/Products/hooks/useProductAndVariantForm";
@@ -17,6 +17,8 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
     handleVariantChange,
     handleVariantSelectChange,
     handleRadioChange,
+    handleFileChange,
+    handleRemoveImage,
     clearPriceFields,
     addVariant,
     removeVariant,
@@ -37,6 +39,9 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
         categories={categories}
         handleSelectChange={handleProductSelectChange}
         handleChange={handleProductChange}
+        handleFileChange={handleFileChange}
+        handleRemoveImage={handleRemoveImage}
+        isEditMode={isEditMode}
       />
 
       <Separator className="my-4" />

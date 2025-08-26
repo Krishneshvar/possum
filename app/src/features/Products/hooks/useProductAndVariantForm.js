@@ -28,13 +28,15 @@ const getDefaultVariant = () => ({
   product_tax: '0',
   disabledField: 'profit_margin',
   is_default: 1,
+  status: 'active',
 });
 
 const getInitialFormData = (data) => {
   if (data?.variants?.length > 0) {
-    const defaultVariant = data.variants.find(v => v.is_default);
     return {
       name: data.name ?? '',
+      description: data.description ?? '',
+      image_path: data.image_path ?? null,
       category_id: data.category_id ? String(data.category_id) : '',
       status: data.status ?? 'active',
       variants: data.variants.map(v => ({
@@ -47,11 +49,15 @@ const getInitialFormData = (data) => {
         stock_alert_cap: v.stock_alert_cap ? String(v.stock_alert_cap) : '10',
         product_tax: v.product_tax ? String(v.product_tax) : '0',
         disabledField: 'profit_margin',
+        status: v.status ?? 'active',
       })),
     };
   }
   return {
     name: '',
+    description: '',
+    image_path: null,
+    imageFile: null,
     category_id: '',
     status: 'active',
     variants: [getDefaultVariant()],
@@ -72,6 +78,17 @@ export const useProductAndVariantForm = (initialState = {}) => {
 
   const handleProductSelectChange = useCallback((name, value) => {
     setFormData(prevState => ({ ...prevState, [name]: value }));
+  }, []);
+
+  const handleFileChange = useCallback((e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, imageFile: file, image_path: null }));
+    }
+  }, []);
+
+  const handleRemoveImage = useCallback(() => {
+    setFormData(prev => ({ ...prev, imageFile: null, image_path: null }));
   }, []);
 
   const handleVariantChange = useCallback((variantId, e) => {
@@ -191,6 +208,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
       category_id: formData.category_id ? Number.parseInt(formData.category_id, 10) : null,
       variants: formData.variants.map(v => ({
         ...v,
+        id: v.id,
         price: v.price ? Number.parseFloat(v.price) : 0,
         cost_price: v.cost_price ? Number.parseFloat(v.cost_price) : 0,
         profit_margin: v.profit_margin ? Number.parseFloat(v.profit_margin) : 0,
@@ -199,6 +217,10 @@ export const useProductAndVariantForm = (initialState = {}) => {
         product_tax: v.product_tax ? Number.parseFloat(v.product_tax) : 0,
       }))
     };
+
+    // Remove the temporary _tempId from variants
+    cleanData.variants = cleanData.variants.map(({ _tempId, ...rest }) => rest);
+
     return cleanData;
   }, [formData]);
 
@@ -209,6 +231,8 @@ export const useProductAndVariantForm = (initialState = {}) => {
     handleVariantChange,
     handleVariantSelectChange,
     handleRadioChange,
+    handleFileChange,
+    handleRemoveImage,
     clearPriceFields,
     addVariant,
     removeVariant,

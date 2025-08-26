@@ -5,6 +5,8 @@ import {
   deleteProduct,
   getProducts
 } from '../models/products.model.js';
+import path from 'path';
+import fs from 'fs';
 
 const getProductsController = async (req, res) => {
   try {
@@ -48,13 +50,19 @@ const getProductsController = async (req, res) => {
 };
 
 const createProductController = async (req, res) => {
-  const { name, category_id, status, variants } = req.body;
+  const { name, category_id, description, status, variants } = req.body;
+  const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-  if (!name || !variants || variants.length === 0) {
+  const parsedVariants = JSON.parse(variants);
+
+  if (!name || !parsedVariants || parsedVariants.length === 0) {
+    if (image_path) {
+      fs.unlinkSync(path.join(__dirname, '..', image_path));
+    }
     return res.status(400).json({ error: 'Product name and at least one variant are required fields.' });
   }
 
-  for (const variant of variants) {
+  for (const variant of parsedVariants) {
     if (!variant.name || !variant.sku) {
       return res.status(400).json({ error: 'Each variant must have a name and SKU.' });
     }
@@ -64,12 +72,17 @@ const createProductController = async (req, res) => {
     const newProduct = addProductWithVariants({
       name,
       category_id,
+      description,
       status,
-      variants,
+      image_path,
+      variants: parsedVariants,
     });
     res.status(201).json(newProduct);
   } catch (err) {
     console.error(err);
+    if (image_path) {
+      fs.unlinkSync(path.join(__dirname, '..', image_path));
+    }
     res.status(500).json({ error: 'Failed to create product.' });
   }
 };
@@ -107,18 +120,41 @@ const deleteProductController = async (req, res) => {
 
 const updateProductController = async (req, res) => {
   const { id } = req.params;
-  const productData = req.body;
+  const { name, category_id, description, status, variants } = req.body;
+  const image_path = req.file ? `/uploads/${req.file.filename}` : undefined;
+
+  if (image_path) {
+    const oldProduct = getProductWithAllVariants(parseInt(id, 10));
+    if (oldProduct && oldProduct.image_path) {
+      const oldImagePath = path.join(__dirname, '..', oldProduct.image_path);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+  }
+
+  const parsedVariants = JSON.parse(variants);
+  const productData = { name, category_id, description, status, variants: parsedVariants };
+  if (image_path) {
+    productData.image_path = image_path;
+  }
 
   try {
     const changes = updateProductWithVariants(parseInt(id, 10), productData);
 
     if (changes.productChanges.changes === 0 && changes.variantChanges.changes === 0) {
+      if (image_path) {
+        fs.unlinkSync(path.join(__dirname, '..', image_path));
+      }
       return res.status(404).json({ error: 'Product not found or no changes made.' });
     }
 
     res.status(200).json({ message: 'Product updated successfully.' });
   } catch (err) {
     console.error(err);
+    if (image_path) {
+      fs.unlinkSync(path.join(__dirname, '..', image_path));
+    }
     res.status(500).json({ error: 'Failed to update product.' });
   }
 };
