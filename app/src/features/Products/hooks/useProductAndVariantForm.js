@@ -19,16 +19,16 @@ const calculatePrice = (costPriceInCents, profitMargin) => {
   return costPriceInCents * (1 + (profitMargin / 100));
 };
 
-const getDefaultVariant = () => ({
+const getDefaultVariant = (isFirst = false) => ({
   _tempId: nanoid(),
-  name: 'Default Variant',
+  name: isFirst ? 'Default' : '',
   sku: '',
   price: '',
   cost_price: '',
   profit_margin: '',
   stock: '0',
   stock_alert_cap: '10',
-  is_default: 1,
+  is_default: isFirst ? 1 : 0,
   status: 'active',
 });
 
@@ -61,7 +61,7 @@ const getInitialFormData = (data) => {
     category_id: '',
     status: 'active',
     product_tax: '0',
-    variants: [getDefaultVariant()],
+    variants: [getDefaultVariant(true)],
   };
 };
 
@@ -163,6 +163,18 @@ export const useProductAndVariantForm = (initialState = {}) => {
     }));
   }, []);
 
+  const handleSetDefaultVariant = useCallback((variantId) => {
+    setFormData(prev => {
+      const newVariants = prev.variants.map(v => {
+        if (v._tempId === variantId) {
+          return { ...v, is_default: 1, name: 'Default Variant' };
+        }
+        return { ...v, is_default: 0 };
+      });
+      return { ...prev, variants: newVariants };
+    });
+  }, []);
+
   const getCleanData = useCallback(() => {
     const { product_tax, ...rest } = formData;
     const cleanData = {
@@ -195,6 +207,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
     clearPriceFields,
     addVariant,
     removeVariant,
+    handleSetDefaultVariant,
     getCleanData,
   };
 };

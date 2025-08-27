@@ -13,9 +13,9 @@ const addProductWithVariants = ({ name, description, category_id, status, produc
 
     const insertVariant = db.prepare(`
       INSERT INTO variants (
-        product_id, name, sku, price, cost_price, stock, stock_alert_cap, is_default, status
+        product_id, name, sku, price, cost_price, profit_margin, stock, stock_alert_cap, is_default, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const variant of variants) {
@@ -25,6 +25,7 @@ const addProductWithVariants = ({ name, description, category_id, status, produc
         variant.sku,
         variant.price,
         variant.cost_price,
+        variant.profit_margin,
         variant.stock,
         variant.stock_alert_cap,
         variant.is_default ? 1 : 0,
@@ -80,7 +81,7 @@ const updateProduct = (productId, { name, description, category_id, status, prod
 const updateVariant = (variant) => {
   const stmt = db.prepare(`
     UPDATE variants
-    SET name = ?, sku = ?, price = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, sku = ?, price = ?, cost_price = ?, profit_margin = ?, stock = ?, stock_alert_cap = ?, status = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `);
   return stmt.run(
@@ -88,6 +89,7 @@ const updateVariant = (variant) => {
     variant.sku,
     variant.price,
     variant.cost_price,
+    variant.profit_margin,
     variant.stock,
     variant.stock_alert_cap,
     variant.status,
@@ -98,9 +100,9 @@ const updateVariant = (variant) => {
 const addVariant = (productId, variant) => {
   const stmt = db.prepare(`
     INSERT INTO variants (
-      product_id, name, sku, price, cost_price, stock, stock_alert_cap, is_default, status
+      product_id, name, sku, price, cost_price, profit_margin, stock, stock_alert_cap, is_default, status
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) -- ⭐ **Change:** Added a tenth placeholder
   `);
   return stmt.run(
     productId,
@@ -108,6 +110,7 @@ const addVariant = (productId, variant) => {
     variant.sku,
     variant.price,
     variant.cost_price,
+    variant.profit_margin,
     variant.stock,
     variant.stock_alert_cap,
     variant.is_default ? 1 : 0,
@@ -130,15 +133,21 @@ const updateProductWithVariants = (productId, { name, description, category_id, 
       db.prepare(`UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`).run(...variantsToDelete);
     }
 
-    for (const variant of variants) {
-      if (variant.id) {
-        updateVariant({ ...variant, id: variant.id });
-      } else {
-        addVariant(productId, variant);
-      }
+    const newVariants = variants.filter(v => !v.id);
+    const updatedVariants = variants.filter(v => v.id);
+
+    let variantChanges = { changes: 0 };
+    for (const variant of newVariants) {
+      addVariant(productId, variant);
+      variantChanges.changes += 1;
     }
 
-    return { productChanges };
+    for (const variant of updatedVariants) {
+      const changes = updateVariant({ ...variant, id: variant.id });
+      variantChanges.changes += changes.changes;
+    }
+
+    return { productChanges, variantChanges };
   });
 
   return transaction();

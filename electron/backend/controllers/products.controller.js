@@ -78,8 +78,8 @@ const createProductController = async (req, res) => {
   }
 
   for (const variant of parsedVariants) {
-    if (!variant.name || !variant.sku) {
-      return res.status(400).json({ error: 'Each variant must have a name and SKU.' });
+    if (!variant.name) {
+      return res.status(400).json({ error: 'Each variant must have a name.' });
     }
   }
 

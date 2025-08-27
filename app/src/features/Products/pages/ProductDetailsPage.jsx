@@ -61,7 +61,7 @@ export default function ProductDetailsPage() {
   const productActions = {
     primary: {
       label: "Edit Product",
-      url: "/products/add",
+      url: `/products/edit/${productId}`,
       icon: Edit2,
     },
     secondary: [
@@ -113,12 +113,20 @@ export default function ProductDetailsPage() {
 
   const getVariantStockStatus = (variant) => {
     if (variant.stock <= 0) {
-      return { label: "Out of Stock", icon: XCircle, styles: "bg-red-100 border-1 border-red-400 text-red-600" }
+      return { label: "Out of Stock", icon: XCircle, styles: "text-red-600" }
     } else if (variant.stock <= variant.stock_alert_cap) {
-      return { label: "Low Stock", icon: AlertTriangle, styles: "bg-amber-100 border-1 border-amber-400 text-amber-600" }
+      return { label: "Low Stock", icon: AlertTriangle, styles: "text-amber-600" }
     } else {
-      return { label: "In Stock", icon: CheckCircle, styles: "bg-green-100 border-1 border-green-400 text-emerald-600" }
+      return { label: "In Stock", icon: CheckCircle, styles: "text-emerald-600" }
     }
+  }
+
+  const calculateTotalStock = () => {
+    let totalStock = 0;
+    for (let i = 0; i < product.variants.length; i++) {
+      totalStock += product.variants[i].stock;
+    }
+    return totalStock;
   }
 
   if (isLoading) {
@@ -209,7 +217,7 @@ export default function ProductDetailsPage() {
   
   return (
     <>
-    <div className="min-h-screen px-10 space-y-8">
+    <div className="min-h-screen mb-6 space-y-8">
       <GenericPageHeader
         showBackButton
         headerIcon={""}
@@ -217,17 +225,19 @@ export default function ProductDetailsPage() {
         actions={productActions}
       />
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-8 grid-cols-1 lg:grid-cols-1 xl:grid-cols-3">
         <Card className="lg:col-span-2 shadow-lg">
-          <CardContent>
-            <div className="flex pb-4 gap-2 mb-4 items-center text-lg font-medium border-b">
+          <CardContent className="w-full">
+            <div className="flex mb-4 gap-2 items-center text-lg font-medium">
               <Package className="h-5 w-5" /> 
-              Product Overview
+              Product Information
             </div>
-            <div className="flex gap-6">
-              {product.imageUrl && (
-                <img src={product.imageUrl} alt={product.name} className="size-32 rounded-lg object-cover" />
-              )}
+            <div className="flex flex-col gap-6 sm:flex-row md:flex-col lg:flex-row">
+              <div className="flex justify-center">
+                {product.imageUrl && (
+                  <img src={product.imageUrl} alt={product.name} className="size-32 rounded-lg object-cover" />
+                )}
+              </div>
               <div className="flex flex-col flex-1">
                 <h2 className="text-2xl font-bold mb-2">
                   {product.name}
@@ -235,16 +245,16 @@ export default function ProductDetailsPage() {
                 <p className="text-gray-500 mb-4">
                   {product.description || "No description..."}
                 </p>
-                <div className="flex gap-6 text-sm">
-                  <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-between md:gap-2 lg:justify-start lg:gap-6 text-sm">
+                  <div className="flex items-center gap-1">
                     <Label className="text-slate-500 font-medium">Status:</Label>
                     {getProductStatus(product.status)}
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
                     <Label className="text-slate-500 font-medium">Category:</Label>
                     <span className="font-medium">{product.category_name}</span>
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
                     <Label className="text-slate-500 font-medium">Tax:</Label>
                     <span className="text-slate-900 font-medium">{product.product_tax}%</span>
                   </div>
@@ -254,35 +264,31 @@ export default function ProductDetailsPage() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle>Product Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-600">
-              <p>{product.description}</p>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center border-t pt-2">
-                  <span className="font-semibold text-slate-800">Tax Class:</span>
-                  <span>{product.product_tax}%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="lg:col-span-2">
-          <CardContent>
-            <div className="flex mb-4 gap-4 items-center">
-              <Split className="size-5" />
-              <h2 className="text-lg font-medium">Variants</h2>
+        <Card className="lg:col-span-2 space-y-6 xl:col-span-1 border-0 shadow-lg">
+          <CardContent className="space-y-4">
+            <div className="flex gap-2 items-center font-medium">
+              <Package /> Product Overview
             </div>
-            <DisplayVariants
-              product={product}
-              getVariantStockStatus={getVariantStockStatus}
-              formatPrice={formatPrice}
-            />
+            <div className="flex flex-col gap-2 text-md">
+              <div className="flex justify-between">
+                <h3 className="text-slate-500">Total Stock:</h3>
+                <p>{calculateTotalStock()}</p>
+              </div>
+              <div className="flex justify-between">
+                <h3 className="text-slate-500">Total Variants:</h3>
+                <p>{product.variants.length}</p>
+              </div>
+            </div>
           </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2 shadow-lg">
+          <DisplayVariants
+            product={product}
+            getProductStatus={getProductStatus}
+            getVariantStockStatus={getVariantStockStatus}
+            formatPrice={formatPrice}
+          />
         </Card>
 
       </div>

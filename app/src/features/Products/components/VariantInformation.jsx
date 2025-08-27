@@ -62,7 +62,7 @@ export default function VariantInformation({ variant, onVariantChange, onSelectC
       </div>
       <div className="space-y-3">
         <Label htmlFor={`sku-${variant._tempId}`} className="text-sm font-medium">
-          SKU <RequiredFieldIndicator />
+          SKU
         </Label>
         <Input
           id={`sku-${variant._tempId}`}

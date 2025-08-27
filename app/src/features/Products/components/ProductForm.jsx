@@ -22,6 +22,7 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
     clearPriceFields,
     addVariant,
     removeVariant,
+    handleSetDefaultVariant,
     getCleanData,
   } = useProductAndVariantForm(initialData);
 
@@ -74,6 +75,7 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
               onClearPriceFields={clearPriceFields}
               onRemoveVariant={removeVariant}
               showRemoveButton={formData.variants.length > 1}
+              onSetDefaultVariant={handleSetDefaultVariant}
             />
           ))}
         </div>
