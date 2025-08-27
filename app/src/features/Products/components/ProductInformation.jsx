@@ -106,18 +106,21 @@ export default function ProductInformation({
 
           <div className="space-y-3">
             <Label htmlFor="product_tax" className="text-sm font-medium">
-              Product Tax
+              Profit Margin
             </Label>
-            <Input
-              id="product_tax"
-              name="product_tax"
-              type="number"
-              step="0.01"
-              value={formData.product_tax}
-              onChange={handleChange}
-              className="h-11 pl-8"
-              placeholder="0.00"
-            />
+            <div className="relative">
+              <Input
+                id="product_tax"
+                name="product_tax"
+                type="number"
+                value={formData.product_tax}
+                onChange={handleChange}
+                step="0.01"
+                className="h-11 pr-8"
+                placeholder="0.00"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+            </div>
           </div>
         </div>
 

@@ -19,16 +19,16 @@ const calculatePrice = (costPriceInCents, profitMargin) => {
   return costPriceInCents * (1 + (profitMargin / 100));
 };
 
-const getDefaultVariant = (isFirst = false) => ({
+const getDefaultVariant = (isDefault = false) => ({
   _tempId: nanoid(),
-  name: isFirst ? 'Default' : '',
+  name: isDefault ? 'Default Variant' : '',
   sku: '',
   price: '',
   cost_price: '',
   profit_margin: '',
-  stock: '0',
-  stock_alert_cap: '10',
-  is_default: isFirst ? 1 : 0,
+  stock: '',
+  stock_alert_cap: '',
+  is_default: isDefault ? 1 : 0,
   status: 'active',
 });
 
@@ -166,10 +166,13 @@ export const useProductAndVariantForm = (initialState = {}) => {
   const handleSetDefaultVariant = useCallback((variantId) => {
     setFormData(prev => {
       const newVariants = prev.variants.map(v => {
+        if (v.is_default === 1) {
+          return { ...v, is_default: 0, name: '' };
+        }
         if (v._tempId === variantId) {
           return { ...v, is_default: 1, name: 'Default Variant' };
         }
-        return { ...v, is_default: 0 };
+        return v;
       });
       return { ...prev, variants: newVariants };
     });

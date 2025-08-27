@@ -6,6 +6,8 @@ import VariantInformation from "./VariantInformation";
 import VariantPricings from "./VariantPricings";
 import VariantInventory from "./VariantInventory";
 
+import { Badge } from "@/components/ui/badge";
+
 export default function VariantForm({
   variant,
   index,
@@ -16,12 +18,21 @@ export default function VariantForm({
   onClearPriceFields,
   onSetDefaultVariant
 }) {
+  const isDefaultVariant = variant.is_default === 1;
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between py-2 bg-slate-50 border-1 border-slate-100">
-        <h4 className="font-semibold">Variant {index + 1}</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="font-semibold">Variant {index + 1}</h4>
+          {isDefaultVariant && (
+            <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+              Default
+            </Badge>
+          )}
+        </div>
         <div className="flex gap-2">
-          {variant.is_default !== 1 && (
+          {!isDefaultVariant && (
             <Button
               variant="outline"
               onClick={() => onSetDefaultVariant(variant._tempId)}
@@ -30,7 +41,7 @@ export default function VariantForm({
               Set as Default
             </Button>
           )}
-          {showRemoveButton && (
+          {showRemoveButton && !isDefaultVariant && (
             <Button
               size="icon"
               onClick={() => onRemoveVariant(variant._tempId)}

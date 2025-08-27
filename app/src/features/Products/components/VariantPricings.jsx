@@ -13,7 +13,7 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
           <DollarSign className="h-5 w-5 text-green-600" />
         </div>
         <div className="flex w-full items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">Pricing & Margins</h3>
+          <h3 className="text-lg font-semibold text-foreground">Pricings</h3>
           <Button
             variant="outline"
             onClick={() => onClearPriceFields(variant._tempId)}
