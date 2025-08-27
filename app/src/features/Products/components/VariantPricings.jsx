@@ -1,5 +1,4 @@
 import { DollarSign } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +24,6 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
           </Button>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
         <div className="space-y-3">
           <Label htmlFor={`price-${variant._tempId}`} className="text-sm font-medium">
@@ -38,7 +36,7 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
               name="price"
               type="number"
               value={variant.price}
-              onChange={(e) => onVariantChange(variant._tempId, e)}
+              onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
               step="0.01"
               className="h-11 pl-8"
               placeholder="0.00"
@@ -46,7 +44,6 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
             />
           </div>
         </div>
-
         <div className="space-y-3">
           <Label htmlFor={`cost_price-${variant._tempId}`} className="text-sm font-medium">
             Cost Price
@@ -58,14 +55,13 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
               name="cost_price"
               type="number"
               value={variant.cost_price}
-              onChange={(e) => onVariantChange(variant._tempId, e)}
+              onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
               step="0.01"
               className="h-11 pl-8"
               placeholder="0.00"
             />
           </div>
         </div>
-
         <div className="space-y-3">
           <Label htmlFor={`profit_margin-${variant._tempId}`} className="text-sm font-medium">
             Profit Margin
@@ -76,7 +72,7 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
               name="profit_margin"
               type="number"
               value={variant.profit_margin}
-              onChange={(e) => onVariantChange(variant._tempId, e)}
+              onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
               step="0.01"
               className="h-11 pr-8"
               placeholder="0.00"

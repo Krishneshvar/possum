@@ -1,64 +1,45 @@
-import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, CheckCircle, XCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { productStatusBadges, stockStatusBadges } from "../data/productsBadgeStyles";
+
+const iconMap = {
+  AlertTriangle: AlertTriangle,
+  CheckCircle: CheckCircle,
+  XCircle: XCircle,
+};
 
 const getProductStatus = (status) => {
-  if (status === "active") {
-    return (
-      <Badge
-        variant="secondary"
-        className="text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-medium"
-      >
-        Active
-      </Badge>
-    )
-  } else if (status === "inactive") {
-    return (
-      <Badge
-        variant="secondary"
-        className="text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 font-medium"
-      >
-        Inactive
-      </Badge>
-    )
-  } else {
-    return (
-      <Badge variant="destructive" className="font-medium">
-        Discontinued
-      </Badge>
-    )
-  }
-}
+  const statusConfig = productStatusBadges[status];
+  if (!statusConfig) return null;
+
+  return (
+    <Badge variant="secondary" className={`${statusConfig.className} font-medium`}>
+      {statusConfig.text}
+    </Badge>
+  );
+};
 
 const getStockStatus = (stock) => {
+  let statusKey = "in-stock";
   if (stock === 0) {
-    return (
-      <Badge variant="destructive" className="gap-1.5 font-medium">
-        <XCircle className="h-3 w-3" />
-        Out of Stock
-      </Badge>
-    )
+    statusKey = "out-of-stock";
   } else if (stock <= 10) {
-    return (
-      <Badge
-        variant="secondary"
-        className="gap-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 font-medium"
-      >
-        <AlertTriangle className="h-3 w-3" />
-        Low Stock ({stock})
-      </Badge>
-    )
-  } else {
-    return (
-      <Badge
-        variant="secondary"
-        className="gap-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 font-medium"
-      >
-        <CheckCircle className="h-3 w-3" />
-        In Stock ({stock})
-      </Badge>
-    )
+    statusKey = "low-stock";
   }
-}
+  
+  const statusConfig = stockStatusBadges[statusKey];
+  if (!statusConfig) return null;
+
+  const IconComponent = iconMap[statusConfig.icon];
+
+  return (
+    <Badge variant="secondary" className={`${statusConfig.className} gap-1.5 font-medium`}>
+      {IconComponent && <IconComponent className="h-3 w-3" />}
+      {statusConfig.text}
+      {statusKey !== "out-of-stock" && ` (${stock})`}
+    </Badge>
+  );
+};
 
 export const allColumns = [
   {
@@ -81,4 +62,4 @@ export const allColumns = [
     label: "Stock Status",
     renderCell: (product) => getStockStatus(product.stock),
   },
-]
+];

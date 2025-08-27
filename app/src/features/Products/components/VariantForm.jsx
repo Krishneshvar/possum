@@ -5,14 +5,12 @@ import { Separator } from "@/components/ui/separator";
 import VariantInformation from "./VariantInformation";
 import VariantPricings from "./VariantPricings";
 import VariantInventory from "./VariantInventory";
-
 import { Badge } from "@/components/ui/badge";
 
 export default function VariantForm({
   variant,
   index,
   onVariantChange,
-  onSelectChange,
   onRemoveVariant,
   showRemoveButton,
   onClearPriceFields,
@@ -57,19 +55,14 @@ export default function VariantForm({
         <VariantInformation
           variant={variant}
           onVariantChange={onVariantChange}
-          onSelectChange={onSelectChange}
         />
-
         <Separator />
-
         <VariantPricings
           variant={variant}
           onVariantChange={onVariantChange}
           onClearPriceFields={onClearPriceFields}
         />
-
         <Separator />
-
         <VariantInventory
           variant={variant}
           onVariantChange={onVariantChange}

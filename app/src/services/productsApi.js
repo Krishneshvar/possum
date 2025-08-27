@@ -1,6 +1,30 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { API_BASE } from '@/lib/api-client';
 
+const createProductFormData = (body) => {
+  const formData = new FormData();
+  
+  const excludedKeys = ['imageFile', 'variants'];
+
+  for (const key in body) {
+    if (body.hasOwnProperty(key) && !excludedKeys.includes(key)) {
+      formData.append(key, body[key]);
+    }
+  }
+
+  const variantsData = body.variants.map(v => {
+    const { product_tax, ...rest } = v;
+    return rest;
+  });
+  formData.append('variants', JSON.stringify(variantsData));
+
+  if (body.imageFile) {
+    formData.append('image', body.imageFile);
+  }
+
+  return formData;
+};
+
 export const productsApi = createApi({
   reducerPath: 'productsApi',
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE }),
@@ -9,21 +33,14 @@ export const productsApi = createApi({
     getProducts: builder.query({
       query: (params) => {
         const query = new URLSearchParams();
-
         for (const key in params) {
-          if (params.hasOwnProperty(key)) {
-            const value = params[key];
-
-            if (Array.isArray(value)) {
-              value.forEach(item => query.append(key, item));
-            } else if (value !== null && value !== '') {
-              query.append(key, value);
-            }
+          if (Array.isArray(params[key])) {
+            params[key].forEach(item => query.append(key, item));
+          } else if (params[key] !== null && params[key] !== '') {
+            query.append(key, params[key]);
           }
         }
-
-        const queryParams = query.toString();
-        return `/products?${queryParams}`;
+        return `/products?${query.toString()}`;
       },
       providesTags: ['Products'],
     }),
@@ -32,69 +49,19 @@ export const productsApi = createApi({
       providesTags: ['Products'],
     }),
     addProduct: builder.mutation({
-      query: (body) => {
-        const formData = new FormData();
-
-        const variantsData = body.variants.map(v => {
-          const { product_tax, ...rest } = v;
-          return rest;
-        });
-
-        for (const key in body) {
-          if (key !== 'imageFile' && key !== 'variants' && key !== 'product_tax') {
-            formData.append(key, body[key]);
-          }
-        }
-
-        if (body.product_tax !== undefined) {
-          formData.append('product_tax', body.product_tax);
-        }
-
-        formData.append('variants', JSON.stringify(variantsData));
-
-        if (body.imageFile) {
-          formData.append('image', body.imageFile);
-        }
-
-        return {
-          url: '/products',
-          method: 'POST',
-          body: formData,
-        };
-      },
+      query: (body) => ({
+        url: '/products',
+        method: 'POST',
+        body: createProductFormData(body),
+      }),
       invalidatesTags: ['Products'],
     }),
     updateProduct: builder.mutation({
-      query: ({ id, ...body }) => {
-        const formData = new FormData();
-
-        const variantsData = body.variants.map(v => {
-          const { product_tax, ...rest } = v;
-          return rest;
-        });
-
-        for (const key in body) {
-          if (key !== 'imageFile' && key !== 'variants' && key !== 'product_tax') {
-            formData.append(key, body[key]);
-          }
-        }
-
-        if (body.product_tax !== undefined) {
-          formData.append('product_tax', body.product_tax);
-        }
-
-        formData.append('variants', JSON.stringify(variantsData));
-
-        if (body.imageFile) {
-          formData.append('image', body.imageFile);
-        }
-
-        return {
-          url: `/products/${id}`,
-          method: 'PUT',
-          body: formData,
-        };
-      },
+      query: ({ id, ...body }) => ({
+        url: `/products/${id}`,
+        method: 'PUT',
+        body: createProductFormData(body),
+      }),
       invalidatesTags: ['Products'],
     }),
     deleteProduct: builder.mutation({

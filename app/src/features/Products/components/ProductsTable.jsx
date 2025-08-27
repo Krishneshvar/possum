@@ -1,6 +1,6 @@
 import { Eye, Trash2, Package, Edit, Search, Loader2, RefreshCw, AlertCircle } from "lucide-react"
 import { Link } from "react-router-dom"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
@@ -10,15 +10,13 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
 import ColumnVisibilityDropdown from "@/components/common/ColumnVisibilityDropdown"
-import { setSearchTerm, setCurrentPage, setFilter } from "../productsSlice"
+import { setSearchTerm, setCurrentPage, setFilter, clearAllFilters } from "../productsSlice"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import { Separator } from "@/components/ui/separator"
-
 import GenericTableHeader from "@/components/common/GenericTableHeader"
 import GenericTableBody from "@/components/common/GenericTableBody"
 import GenericPagination from "@/components/common/GenericPagination"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
-
 import { allColumns } from "./productsTableContents.jsx"
 import GenericFilter from "@/components/common/GenericFilter"
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
@@ -58,9 +56,7 @@ export default function ProductsTable({ onProductDeleted }) {
   }
 
   const handleClearAllFilters = () => {
-    dispatch(setFilter({ key: "stockStatus", value: [] }))
-    dispatch(setFilter({ key: "status", value: [] }))
-    dispatch(setFilter({ key: "categories", value: [] }))
+    dispatch(clearAllFilters())
   }
   
   const handlePageChange = (page) => {
@@ -91,6 +87,7 @@ export default function ProductsTable({ onProductDeleted }) {
         duration: 5000,
       })
     } catch (err) {
+      console.error("Failed to delete product:", err);
       toast.error("Error deleting product", {
         description: "An error occurred while deleting product. Please try again later.",
         duration: 5000,
@@ -134,11 +131,13 @@ export default function ProductsTable({ onProductDeleted }) {
     </ActionsDropdown>
   )
 
-  const filtersConfig = [
-    stockStatusFilter,
-    statusFilter,
-    categoryFilter(categories),
-  ];
+  const filtersConfig = useMemo(() => {
+    return [
+      stockStatusFilter,
+      statusFilter,
+      categoryFilter(categories),
+    ];
+  }, [categories]);
 
   return (
     <>

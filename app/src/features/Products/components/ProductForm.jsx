@@ -1,9 +1,7 @@
 import { Plus, Split } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
 import { useProductAndVariantForm } from "@/features/Products/hooks/useProductAndVariantForm";
 import ProductInformation from "./ProductInformation";
 import VariantForm from "./VariantForm";
@@ -15,8 +13,6 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
     handleProductChange,
     handleProductSelectChange,
     handleVariantChange,
-    handleVariantSelectChange,
-    handleRadioChange,
     handleFileChange,
     handleRemoveImage,
     clearPriceFields,
@@ -44,9 +40,7 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
         handleRemoveImage={handleRemoveImage}
         isEditMode={isEditMode}
       />
-
       <Separator className="my-4" />
-
       <div className="space-y-6">
         <Card>
           <CardContent className="flex items-center gap-3">
@@ -61,7 +55,6 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
             </div>
           </CardContent>
         </Card>
-
         <div className="space-y-6">
           {formData.variants.map((variant, index) => (
             <VariantForm
@@ -70,8 +63,6 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
               index={index}
               isEditMode={isEditMode}
               onVariantChange={handleVariantChange}
-              onSelectChange={handleVariantSelectChange}
-              onRadioChange={handleRadioChange}
               onClearPriceFields={clearPriceFields}
               onRemoveVariant={removeVariant}
               showRemoveButton={formData.variants.length > 1}
@@ -79,7 +70,6 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
             />
           ))}
         </div>
-
         <div className="flex">
           <Button
             type="button"
@@ -92,7 +82,6 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
           </Button>
         </div>
       </div>
-
       <Card className="flex flex-row justify-between items-center px-6 py-4">
         <p className="text-sm text-muted-foreground"> <RequiredFieldIndicator /> Required fields</p>
         <Button

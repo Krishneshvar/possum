@@ -1,37 +1,33 @@
 import {
-  Coins,
-  Crown,
-  PackageCheck,
-  Wallet,
+  Package,
+  Split,
+  TriangleAlert,
+  CircleAlert,
 } from 'lucide-react';
 
-export const productsStatsData = [
+export const productsStatsConfig = [
   {
-    title: 'Sales',
-    icon: Coins,
+    title: 'Total Products',
+    icon: Package,
     color: 'text-green-500',
-    todayValue: '$1,250.00',
-    overallValue: '$2,250.00'
+    todayValue: "123",
   },
   {
-    title: 'Profit',
-    icon: Wallet,
+    title: 'Total Variants',
+    icon: Split,
     color: 'text-blue-500',
-    todayValue: '$1,234.00',
-    overallValue: '$1,789.00'
+    todayValue: "123",
   },
   {
-    title: 'Items Sold',
-    icon: PackageCheck,
-    color: 'text-purple-500',
-    todayValue: '123',
-    overallValue: '212'
-  },
-  {
-    title: 'Highest Bill',
-    icon: Crown,
+    title: 'Inactive Products',
+    icon: TriangleAlert,
     color: 'text-yellow-500',
-    todayValue: '$123.00',
-    overallValue: '$1,234.00'
+    todayValue: "123",
+  },
+  {
+    title: 'Discontinued Products',
+    icon: CircleAlert,
+    color: 'text-red-500',
+    todayValue: "123",
   },
 ];

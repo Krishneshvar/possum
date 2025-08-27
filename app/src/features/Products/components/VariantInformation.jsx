@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
-export default function VariantInformation({ variant, onVariantChange, onSelectChange }) {
+export default function VariantInformation({ variant, onVariantChange }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="space-y-3">
@@ -17,7 +17,7 @@ export default function VariantInformation({ variant, onVariantChange, onSelectC
           Status <RequiredFieldIndicator />
         </Label>
         <Select
-          onValueChange={(value) => onSelectChange(variant._tempId, 'status', value)}
+          onValueChange={(value) => onVariantChange(variant._tempId, 'status', value)}
           value={variant.status}
         >
           <SelectTrigger id={`status-${variant._tempId}`} className="w-full py-[1.3rem]">
@@ -54,7 +54,7 @@ export default function VariantInformation({ variant, onVariantChange, onSelectC
           id={`variant-name-${variant._tempId}`}
           name="name"
           value={variant.name}
-          onChange={(e) => onVariantChange(variant._tempId, e)}
+          onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
           placeholder="e.g. Red, Size L"
           className="h-11"
           required
@@ -68,7 +68,7 @@ export default function VariantInformation({ variant, onVariantChange, onSelectC
           id={`sku-${variant._tempId}`}
           name="sku"
           value={variant.sku}
-          onChange={(e) => onVariantChange(variant._tempId, e)}
+          onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
           placeholder="Variant SKU"
           className="h-11 font-mono"
           required

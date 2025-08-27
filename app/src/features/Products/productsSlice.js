@@ -27,8 +27,12 @@ const productsSlice = createSlice({
       state.filters[key] = value;
       state.currentPage = 1;
     },
+    clearAllFilters: (state) => {
+      state.filters = initialState.filters;
+      state.currentPage = 1;
+    },
   },
 });
 
-export const { setSearchTerm, setCurrentPage, setFilter } = productsSlice.actions;
+export const { setSearchTerm, setCurrentPage, setFilter, clearAllFilters } = productsSlice.actions;
 export default productsSlice.reducer;

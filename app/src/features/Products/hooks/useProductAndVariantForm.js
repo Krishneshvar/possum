@@ -19,6 +19,27 @@ const calculatePrice = (costPriceInCents, profitMargin) => {
   return costPriceInCents * (1 + (profitMargin / 100));
 };
 
+const updatePricingCalculations = (variant) => {
+  const price = Number.parseFloat(variant.price) || 0;
+  const cost_price = Number.parseFloat(variant.cost_price) || 0;
+  const profit_margin = Number.parseFloat(variant.profit_margin) || 0;
+
+  let updatedVariant = { ...variant };
+
+  if (variant.lastChangedField === 'price' || variant.lastChangedField === 'cost_price') {
+    updatedVariant.profit_margin = calculateProfitMargin(price * 100, cost_price * 100).toFixed(2);
+  }
+  else if (variant.lastChangedField === 'profit_margin') {
+    if (updatedVariant.price) {
+      updatedVariant.cost_price = (calculateCostPrice(price * 100, profit_margin) / 100).toFixed(2);
+    } else if (updatedVariant.cost_price) {
+      updatedVariant.price = (calculatePrice(cost_price * 100, profit_margin) / 100).toFixed(2);
+    }
+  }
+
+  return updatedVariant;
+};
+
 const getDefaultVariant = (isDefault = false) => ({
   _tempId: nanoid(),
   name: isDefault ? 'Default Variant' : '',
@@ -26,8 +47,8 @@ const getDefaultVariant = (isDefault = false) => ({
   price: '',
   cost_price: '',
   profit_margin: '',
-  stock: '',
-  stock_alert_cap: '',
+  stock: '0',
+  stock_alert_cap: '10',
   is_default: isDefault ? 1 : 0,
   status: 'active',
 });
@@ -92,43 +113,20 @@ export const useProductAndVariantForm = (initialState = {}) => {
     setFormData(prev => ({ ...prev, imageFile: null, image_path: null }));
   }, []);
 
-  const handleVariantChange = useCallback((variantId, e) => {
-    const { name, value } = e.target;
+  const handleVariantChange = useCallback((variantId, name, value) => {
     setFormData(prev => {
       const newVariants = prev.variants.map(variant => {
         if (variant._tempId === variantId) {
-          let updatedVariant = { ...variant, [name]: value };
+          const updatedVariant = { ...variant, [name]: value, lastChangedField: name };
 
-          const price = Number.parseFloat(updatedVariant.price) || 0;
-          const cost_price = Number.parseFloat(updatedVariant.cost_price) || 0;
-          const profit_margin = Number.parseFloat(updatedVariant.profit_margin) || 0;
-
-          if (name === 'price' || name === 'cost_price') {
-            updatedVariant.profit_margin = calculateProfitMargin(price * 100, cost_price * 100).toFixed(2);
-          } else if (name === 'profit_margin') {
-             if (updatedVariant.price) {
-               updatedVariant.cost_price = (calculateCostPrice(price * 100, profit_margin) / 100).toFixed(2);
-             } else if (updatedVariant.cost_price) {
-                updatedVariant.price = (calculatePrice(cost_price * 100, profit_margin) / 100).toFixed(2);
-             }
+          if (['price', 'cost_price', 'profit_margin'].includes(name)) {
+            return updatePricingCalculations(updatedVariant);
           }
-           return updatedVariant;
+          return updatedVariant;
         }
         return variant;
       });
       return { ...prev, variants: newVariants };
-    });
-  }, []);
-
-  const handleVariantSelectChange = useCallback((variantId, name, value) => {
-    setFormData(prevState => {
-      const newVariants = prevState.variants.map(variant => {
-        if (variant._tempId === variantId) {
-          return { ...variant, [name]: value };
-        }
-        return variant;
-      });
-      return { ...prevState, variants: newVariants };
     });
   }, []);
 
@@ -157,23 +155,27 @@ export const useProductAndVariantForm = (initialState = {}) => {
   }, []);
 
   const removeVariant = useCallback((variantId) => {
+    const isDefault = formData.variants.find(v => v._tempId === variantId)?.is_default === 1;
+    const filteredVariants = formData.variants.filter(v => v._tempId !== variantId);
+
+    if (isDefault && filteredVariants.length > 0) {
+      const newDefaultVariant = { ...filteredVariants[0], is_default: 1, name: 'Default Variant' };
+      filteredVariants[0] = newDefaultVariant;
+    }
+
     setFormData(prev => ({
       ...prev,
-      variants: prev.variants.filter(v => v._tempId !== variantId),
+      variants: filteredVariants,
     }));
-  }, []);
+  }, [formData.variants]);
 
   const handleSetDefaultVariant = useCallback((variantId) => {
     setFormData(prev => {
-      const newVariants = prev.variants.map(v => {
-        if (v.is_default === 1) {
-          return { ...v, is_default: 0, name: '' };
-        }
-        if (v._tempId === variantId) {
-          return { ...v, is_default: 1, name: 'Default Variant' };
-        }
-        return v;
-      });
+      const newVariants = prev.variants.map(v => ({
+        ...v,
+        is_default: v._tempId === variantId ? 1 : 0,
+        name: v._tempId === variantId ? 'Default Variant' : (v.is_default === 1 ? '' : v.name),
+      }));
       return { ...prev, variants: newVariants };
     });
   }, []);
@@ -193,9 +195,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
         stock_alert_cap: v.stock_alert_cap ? Number.parseInt(v.stock_alert_cap) : 0,
       }))
     };
-
-    cleanData.variants = cleanData.variants.map(({ _tempId, ...rest }) => rest);
-
+    cleanData.variants = cleanData.variants.map(({ _tempId, lastChangedField, ...rest }) => rest);
     return cleanData;
   }, [formData]);
 
@@ -204,7 +204,6 @@ export const useProductAndVariantForm = (initialState = {}) => {
     handleProductChange,
     handleProductSelectChange,
     handleVariantChange,
-    handleVariantSelectChange,
     handleFileChange,
     handleRemoveImage,
     clearPriceFields,

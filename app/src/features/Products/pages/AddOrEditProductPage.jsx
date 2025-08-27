@@ -75,7 +75,7 @@ export default function AddOrEditProductPage() {
 
   return (
     <div className="flex flex-col w-full px-1 mx-auto max-w-5xl">
-      <div className=" mb-4">
+      <div className="mb-4">
         <GenericPageHeader
           headerIcon={<Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />}
           headerLabel={isEditMode ? 'Edit Product' : 'Add Product'}

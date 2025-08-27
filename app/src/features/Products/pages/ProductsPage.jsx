@@ -5,7 +5,7 @@ import { useGetProductsQuery } from "@/services/productsApi"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 
 import { StatCards } from "@/components/common/stat-cards"
-import { productsStatsData } from "../data/productsStatsData.js"
+import { productsStatsConfig } from "../data/productsStatsData.js"
 
 const productActions = {
   primary: {
@@ -40,7 +40,7 @@ export default function ProductsPage() {
         />
       </div>
 
-      <StatCards cardData={productsStatsData} />
+      <StatCards cardData={productsStatsConfig} />
 
       <ProductsTable onProductDeleted={refetch} />
     </div>
