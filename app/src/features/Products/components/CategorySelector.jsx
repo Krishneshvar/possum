@@ -90,7 +90,7 @@ export default function CategoryDropdown({ categories = [], value, onChange }) {
       setSearchQuery("")
       setIsSearching(false)
     } else {
-      onChange("category_id", String(category.id))
+      onChange({ target: { name: 'category_id', value: String(category.id) } });
       setOpen(false)
     }
   }
@@ -111,7 +111,7 @@ export default function CategoryDropdown({ categories = [], value, onChange }) {
   }
 
   const handleSearchResultClick = (category) => {
-    onChange("category_id", String(category.id))
+    onChange({ target: { name: 'category_id', value: String(category.id) } });
     setOpen(false)
   }
 

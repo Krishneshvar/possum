@@ -19,6 +19,7 @@ import CategorySelector from "./CategorySelector";
 export default function ProductInformation({
   formData,
   categories,
+  handleSelectChange,
   handleChange, // This corresponds to handleProductSelectChange
   handleFileChange,
   handleRemoveImage,
@@ -51,7 +52,7 @@ export default function ProductInformation({
               Status <RequiredFieldIndicator />
             </Label>
             <Select
-              onValueChange={(value) => handleChange("status", value)} // <-- The Fix is here!
+              onValueChange={(value) => handleSelectChange("status", value)}
               value={formData.status}
             >
               <SelectTrigger id="status" className="w-full py-[1.3rem]">
@@ -88,7 +89,7 @@ export default function ProductInformation({
               id="name"
               name="name"
               value={formData.name}
-              onChange={(e) => handleChange(e.target.name, e.target.value)}
+              onChange={(e) => handleChange(e)}
               placeholder="Enter product name"
               className="h-11"
               required
@@ -116,7 +117,7 @@ export default function ProductInformation({
                 name="product_tax"
                 type="number"
                 value={formData.product_tax}
-                onChange={(e) => handleChange(e.target.name, e.target.value)}
+                onChange={(e) => handleChange(e)}
                 step="0.01"
                 className="h-11 pr-8"
                 placeholder="0.00"
@@ -180,7 +181,7 @@ export default function ProductInformation({
               id="description"
               name="description"
               value={formData.description}
-              onChange={(e) => handleChange(e.target.name, e.target.value)}
+              onChange={(e) => handleChange(e)}
               placeholder="Enter product description..."
               className="flex-grow"
             />

@@ -1,4 +1,7 @@
 import { initDB } from '../db.js';
+import path from 'path';
+import fs from 'fs';
+import { __dirname } from '../server.js';
 
 const db = initDB();
 
@@ -161,7 +164,7 @@ const deleteProduct = (id) => {
       fs.unlinkSync(filePath);
     }
   }
-  
+
   const stmt = db.prepare('UPDATE products SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
   return stmt.run(id);
 }

@@ -28,7 +28,7 @@ const createProductFormData = (body) => {
 export const productsApi = createApi({
   reducerPath: 'productsApi',
   baseQuery: fetchBaseQuery({ baseUrl: API_BASE }),
-  tagTypes: ['Products'],
+  tagTypes: ['Product'],
   endpoints: (builder) => ({
     getProducts: builder.query({
       query: (params) => {
@@ -42,11 +42,17 @@ export const productsApi = createApi({
         }
         return `/products?${query.toString()}`;
       },
-      providesTags: ['Products'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.products.map(({ id }) => ({ type: 'Product', id })),
+              { type: 'Product', id: 'LIST' },
+            ]
+          : [{ type: 'Product', id: 'LIST' }],
     }),
     getProduct: builder.query({
       query: (id) => `/products/${id}`,
-      providesTags: ['Products'],
+      providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
     addProduct: builder.mutation({
       query: (body) => ({
@@ -54,7 +60,7 @@ export const productsApi = createApi({
         method: 'POST',
         body: createProductFormData(body),
       }),
-      invalidatesTags: ['Products'],
+      invalidatesTags: [{ type: 'Product', id: 'LIST' }],
     }),
     updateProduct: builder.mutation({
       query: ({ id, ...body }) => ({
@@ -62,14 +68,20 @@ export const productsApi = createApi({
         method: 'PUT',
         body: createProductFormData(body),
       }),
-      invalidatesTags: ['Products'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Product', id },
+        { type: 'Product', id: 'LIST' },
+      ],
     }),
     deleteProduct: builder.mutation({
       query: (id) => ({
         url: `/products/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Products'],
+      invalidatesTags: (result, error, id) => [
+        { type: 'Product', id },
+        { type: 'Product', id: 'LIST' },
+      ],
     }),
   }),
 });

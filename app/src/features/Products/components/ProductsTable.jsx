@@ -22,7 +22,7 @@ import GenericFilter from "@/components/common/GenericFilter"
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
 import { stockStatusFilter, statusFilter, categoryFilter } from "../data/productsFiltersConfig"
 
-export default function ProductsTable({ onProductDeleted }) {
+export default function ProductsTable() {
   const dispatch = useDispatch()
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state) => state.products)
 
@@ -81,7 +81,6 @@ export default function ProductsTable({ onProductDeleted }) {
       await deleteProduct(selectedProduct.id).unwrap()
       setIsDeleteDialogOpen(false)
       setSelectedProduct(null)
-      onProductDeleted()
       toast.success("Product deleted successfully", {
         description: "The selected product was deleted successfully.",
         duration: 5000,

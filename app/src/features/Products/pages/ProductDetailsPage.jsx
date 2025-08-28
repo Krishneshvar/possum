@@ -6,8 +6,6 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Split,
-  Hash,
   Plus,
 } from "lucide-react"
 import { useState } from "react"
@@ -16,7 +14,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 
 import { toast } from "sonner"
@@ -24,6 +22,7 @@ import DisplayVariants from "../components/DisplayVariants"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import { useDeleteProductMutation, useGetProductQuery } from "@/services/productsApi"
+import { productStatusBadges } from "../data/productsBadgeStyles"
 
 export default function ProductDetailsPage() {
   const { productId } = useParams()
@@ -86,26 +85,23 @@ export default function ProductDetailsPage() {
   const getProductStatus = (status) => {
     if (status === "active") {
       return (
-        <Badge
-          variant="secondary"
-          className="text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-medium"
-        >
-          Active
+        <Badge className={`${productStatusBadges.active.className}`}>
+          {productStatusBadges.active.text}
         </Badge>
       )
     } else if (status === "inactive") {
       return (
         <Badge
           variant="secondary"
-          className="text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 font-medium"
+          className={`${productStatusBadges.inactive.className}`}
         >
-          Inactive
+          {productStatusBadges.inactive.text}
         </Badge>
       )
     } else {
       return (
-        <Badge variant="destructive" className="font-medium">
-          Discontinued
+        <Badge variant="destructive" className={`${productStatusBadges.discontinued.className}`}>
+          {productStatusBadges.discontinued.text}
         </Badge>
       )
     }

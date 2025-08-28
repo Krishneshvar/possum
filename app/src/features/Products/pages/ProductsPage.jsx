@@ -42,7 +42,7 @@ export default function ProductsPage() {
 
       <StatCards cardData={productsStatsConfig} />
 
-      <ProductsTable onProductDeleted={refetch} />
+      <ProductsTable />
     </div>
   )
 }

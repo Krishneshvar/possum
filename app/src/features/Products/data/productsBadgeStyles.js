@@ -1,22 +1,22 @@
 export const productStatusBadges = {
   active: {
     text: "Active",
-    className: "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200",
+    className: "text-emerald-50 bg-emerald-600",
   },
   inactive: {
     text: "Inactive",
-    className: "text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200",
+    className: "text-amber-50 bg-amber-600",
   },
   discontinued: {
     text: "Discontinued",
-    className: "bg-destructive",
+    className: "text-red-50 bg-red-600",
   },
 };
 
 export const stockStatusBadges = {
   "out-of-stock": {
     text: "Out of Stock",
-    className: "bg-destructive",
+    className: "text-red-50 bg-red-600",
     icon: "XCircle",
   },
   "low-stock": {
