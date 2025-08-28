@@ -1,11 +1,13 @@
 import { Package } from 'lucide-react';
+import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { useGetProductQuery, useAddProductMutation, useUpdateProductMutation } from '@/services/productsApi';
+import { useGetProductQuery } from '@/services/productsApi';
 import { useGetCategoriesQuery } from '@/services/categoriesApi';
 import ProductForm from '../components/ProductForm';
 import GenericPageHeader from '@/components/common/GenericPageHeader';
+import { flattenCategories } from '@/utils/categories.utils.js';
 
 export default function AddOrEditProductPage() {
   const { productId } = useParams();
@@ -16,12 +18,11 @@ export default function AddOrEditProductPage() {
   const { data: product, isLoading: isProductLoading, error: productError } = useGetProductQuery(productId, {
     skip: !isEditMode,
   });
-  const { data: categories, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery();
+  const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery();
 
-  const [addProduct, { isLoading: isAdding }] = useAddProductMutation();
-  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const categories = useMemo(() => categoriesData || [], [categoriesData]);
 
-  const isSaving = isAdding || isUpdating;
+  const isSaving = false;
   const isFormLoading = isEditMode && isProductLoading;
   const hasError = productError || categoriesError;
 
@@ -40,7 +41,8 @@ export default function AddOrEditProductPage() {
 
   let initialData = null;
   if (isEditMode && product) {
-    const matchingCategory = categories?.find(cat => cat.name === product.category_name);
+    const flatCategories = flattenCategories(categories);
+    const matchingCategory = flatCategories?.find(cat => cat.name === product.category_name);
 
     initialData = {
       ...product,

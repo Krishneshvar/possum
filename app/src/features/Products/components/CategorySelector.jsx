@@ -1,32 +1,9 @@
-import { useState, useEffect, useRef } from "react"
 import { ChevronRight, ChevronLeft, Search, X, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef, useMemo } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
-const buildCategoryTree = (categories) => {
-  if (!categories || !Array.isArray(categories)) {
-    return []
-  }
-
-  const categoryMap = new Map()
-  categories.forEach((category) => {
-    categoryMap.set(category.id, { ...category, children: [] })
-  })
-
-  const categoryTree = []
-  categoryMap.forEach((category) => {
-    if (category.parent_id === null) {
-      categoryTree.push(category)
-    } else {
-      const parent = categoryMap.get(category.parent_id)
-      if (parent) {
-        parent.children.push(category)
-      }
-    }
-  })
-
-  return categoryTree
-}
+import { flattenCategories } from '@/utils/categories.utils.js';
 
 export default function CategorySelector({ categories = [], value, onChange }) {
   const [open, setOpen] = useState(false)
@@ -37,7 +14,7 @@ export default function CategorySelector({ categories = [], value, onChange }) {
   const [searchResults, setSearchResults] = useState([])
   const dropdownRef = useRef(null)
 
-  const categoryTree = buildCategoryTree(categories)
+  const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -56,26 +33,26 @@ export default function CategorySelector({ categories = [], value, onChange }) {
   }, [open])
 
   useEffect(() => {
-    setCurrentCategories(categoryTree)
+    setCurrentCategories(categories)
     setHistory([])
   }, [categories])
 
   useEffect(() => {
     if (searchQuery.trim()) {
       setIsSearching(true)
-      const results = categories
-        ? categories.filter((category) => category.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : []
+      const results = flatCategories.filter((category) =>
+        category.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
       setSearchResults(results)
     } else {
       setIsSearching(false)
       setSearchResults([])
     }
-  }, [searchQuery, categories])
+  }, [searchQuery, flatCategories])
 
   const handleOpenChange = (isOpen) => {
     if (!isOpen) {
-      setCurrentCategories(categoryTree)
+      setCurrentCategories(categories)
       setHistory([])
       setSearchQuery("")
       setIsSearching(false)
@@ -84,9 +61,9 @@ export default function CategorySelector({ categories = [], value, onChange }) {
   }
 
   const handleCategoryClick = (category) => {
-    if (category.children && category.children.length > 0) {
+    if (category.subcategories && category.subcategories.length > 0) {
       setHistory((prev) => [...prev, { categories: currentCategories, title: getCurrentTitle() }])
-      setCurrentCategories(category.children)
+      setCurrentCategories(category.subcategories)
       setSearchQuery("")
       setIsSearching(false)
     } else {
@@ -116,10 +93,7 @@ export default function CategorySelector({ categories = [], value, onChange }) {
   }
 
   const findCategoryName = (id) => {
-    if (!categories || !Array.isArray(categories)) {
-      return "Select a category"
-    }
-    const category = categories.find((c) => String(c.id) === String(id))
+    const category = flatCategories.find((c) => String(c.id) === String(id))
     return category ? category.name : "Select a category"
   }
 
@@ -130,15 +104,15 @@ export default function CategorySelector({ categories = [], value, onChange }) {
         if (cat.id === targetId) {
           return newPath
         }
-        if (cat.children && cat.children.length > 0) {
-          const result = findPath(cat.children, targetId, newPath)
+        if (cat.subcategories && cat.subcategories.length > 0) {
+          const result = findPath(cat.subcategories, targetId, newPath)
           if (result) return result
         }
       }
       return null
     }
 
-    const path = findPath(categoryTree, categoryId)
+    const path = findPath(categories, categoryId)
     return path ? path.join(" > ") : ""
   }
 
@@ -217,7 +191,7 @@ export default function CategorySelector({ categories = [], value, onChange }) {
                   className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 border-b border-gray-50 last:border-b-0 transition-colors"
                 >
                   <span className="text-sm font-medium text-gray-900">{category.name}</span>
-                  {category.children && category.children.length > 0 && (
+                  {category.subcategories && category.subcategories.length > 0 && (
                     <ChevronRight className="h-4 w-4 text-gray-400" />
                   )}
                 </button>

@@ -1,11 +1,13 @@
 import { Plus, Split } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useProductAndVariantForm } from "@/features/Products/hooks/useProductAndVariantForm";
+import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
+
 import ProductInformation from "./ProductInformation";
 import VariantForm from "./VariantForm";
-import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
 export default function ProductForm({ initialData, categories, onSuccess, onFailure, isEditMode, isSaving }) {
   const {

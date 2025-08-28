@@ -7,6 +7,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
 export default function VariantInformation({ variant, onVariantChange }) {

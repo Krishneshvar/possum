@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +18,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 
-import { toast } from "sonner"
 import DisplayVariants from "../components/DisplayVariants"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"

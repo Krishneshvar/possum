@@ -1,7 +1,6 @@
 import { Download, Package, Plus, Upload } from "lucide-react"
 
 import ProductsTable from "../components/ProductsTable"
-import { useGetProductsQuery } from "@/services/productsApi"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 
 import { StatCards } from "@/components/common/stat-cards"
@@ -28,8 +27,6 @@ const productActions = {
 };
 
 export default function ProductsPage() {
-  const { refetch } = useGetProductsQuery()
-
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
       <div className="w-full">

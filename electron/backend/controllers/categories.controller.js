@@ -1,40 +1,29 @@
 import {
+  getCategoriesAsTree,
   getAllCategories,
   getCategoryById,
   addCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
 } from '../models/categories.model.js';
 
-const getCategories = async (req, res) => {
+const getCategoriesController = (req, res) => {
   try {
-    const categories = getAllCategories();
+    const categories = getCategoriesAsTree();
     res.json(categories);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to retrieve categories.' });
   }
 };
 
-const getCategory = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const category = getCategoryById(id);
-    if (!category) {
-      return res.status(404).json({ error: 'Category not found.' });
-    }
-    res.json(category);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve category details.' });
-  }
-};
-
-const createCategory = async (req, res) => {
-  const { name } = req.body;
+const createCategoryController = (req, res) => {
+  const { name, parentId = null } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'Category name is required.' });
   }
   try {
-    const newCategory = addCategory(name);
+    const newCategory = addCategory(name, parentId);
     res.status(201).json(newCategory);
   } catch (err) {
     if (err.message.includes('UNIQUE constraint failed')) {
@@ -44,16 +33,14 @@ const createCategory = async (req, res) => {
   }
 };
 
-const updateExistingCategory = async (req, res) => {
+const updateCategoryController = (req, res) => {
   const { id } = req.params;
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'New category name is required.' });
-  }
+  const { name, parentId } = req.body;
+
   try {
-    const result = updateCategory(id, name);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Category not found.' });
+    const changes = updateCategory(parseInt(id, 10), { name, parentId });
+    if (changes.changes === 0) {
+      return res.status(404).json({ error: 'Category not found or no changes made.' });
     }
     res.status(200).json({ message: 'Category updated successfully.' });
   } catch (err) {
@@ -64,26 +51,23 @@ const updateExistingCategory = async (req, res) => {
   }
 };
 
-const deleteExistingCategory = async (req, res) => {
+const deleteCategoryController = (req, res) => {
   const { id } = req.params;
   try {
-    const result = deleteCategory(id);
-    if (result.changes === 0) {
+    const changes = deleteCategory(parseInt(id, 10));
+    if (changes.changes === 0) {
       return res.status(404).json({ error: 'Category not found.' });
     }
-    res.status(200).json({ message: 'Category deleted successfully.' });
+    res.status(204).end();
   } catch (err) {
-    if (err.message.includes('FOREIGN KEY constraint failed')) {
-      return res.status(409).json({ error: 'Cannot delete category. It is associated with one or more products.' });
-    }
+    console.error(err);
     res.status(500).json({ error: 'Failed to delete category.' });
   }
 };
 
 export {
-  getCategories,
-  getCategory,
-  createCategory,
-  updateExistingCategory,
-  deleteExistingCategory,
+  getCategoriesController,
+  createCategoryController,
+  updateCategoryController,
+  deleteCategoryController,
 };

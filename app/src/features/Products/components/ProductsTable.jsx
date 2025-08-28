@@ -21,6 +21,7 @@ import { allColumns } from "./productsTableContents.jsx"
 import GenericFilter from "@/components/common/GenericFilter"
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
 import { statusFilter, categoryFilter } from "../data/productsFiltersConfig"
+import { flattenCategories } from "@/utils/categories.utils"
 
 export default function ProductsTable() {
   const dispatch = useDispatch()
@@ -131,9 +132,11 @@ export default function ProductsTable() {
   )
 
   const filtersConfig = useMemo(() => {
+    const flatCategories = flattenCategories(categories);
+
     return [
       statusFilter,
-      categoryFilter(categories),
+      categoryFilter(flatCategories),
     ];
   }, [categories]);
 

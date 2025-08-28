@@ -1,11 +1,13 @@
 import { Trash2 } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+
 import VariantInformation from "./VariantInformation";
 import VariantPricings from "./VariantPricings";
 import VariantInventory from "./VariantInventory";
-import { Badge } from "@/components/ui/badge";
 
 export default function VariantForm({
   variant,

@@ -1,9 +1,10 @@
 import { Package, Upload, X } from "lucide-react";
 import { useRef } from 'react';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectTrigger,
@@ -12,8 +13,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
+import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 import CategorySelector from "./CategorySelector";
 
 export default function ProductInformation({
