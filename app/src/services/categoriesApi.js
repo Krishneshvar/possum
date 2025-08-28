@@ -18,7 +18,45 @@ export const categoriesApi = createApi({
             ]
           : [{ type: 'Category', id: 'LIST' }],
     }),
+    addCategory: builder.mutation({
+      query: (body) => ({
+        url: '/categories',
+        method: 'POST',
+        body,
+      }),
+      // Invalidate the 'LIST' tag to refetch all categories after a new one is added
+      invalidatesTags: [{ type: 'Category', id: 'LIST' }],
+    }),
+    updateCategory: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/categories/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      // Invalidate both the specific category and the list to ensure a fresh UI
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Category', id },
+        { type: 'Category', id: 'LIST' },
+      ],
+    }),
+    deleteCategory: builder.mutation({
+      query: (id) => ({
+        url: `/categories/${id}`,
+        method: 'DELETE',
+      }),
+      // Invalidate the specific category and the list
+      invalidatesTags: (result, error, id) => [
+        { type: 'Category', id },
+        { type: 'Category', id: 'LIST' },
+      ],
+    }),
   }),
 });
 
-export const { useGetCategoriesQuery } = categoriesApi;
+// The export statement needs to be updated to include the new mutation hooks
+export const {
+  useGetCategoriesQuery,
+  useAddCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
+} = categoriesApi;
