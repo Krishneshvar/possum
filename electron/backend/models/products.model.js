@@ -45,7 +45,7 @@ const addProductWithVariants = ({ name, description, category_id, status, produc
 const getProductWithAllVariants = (id) => {
   const product = db.prepare(`
     SELECT
-      p.id, p.name, p.description, p.status, p.image_path, p.product_tax, c.name AS category_name
+      p.id, p.name, p.description, p.status, p.image_path, p.product_tax, c.name AS category_name, p.category_id
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.id = ? AND p.deleted_at IS NULL
@@ -58,17 +58,36 @@ const getProductWithAllVariants = (id) => {
 }
 
 const updateProduct = (productId, { name, description, category_id, status, product_tax, image_path }) => {
-  let updateFields = ['name = ?', 'category_id = ?', 'status = ?', 'product_tax = ?', 'updated_at = CURRENT_TIMESTAMP'];
-  let params = [name, category_id, status, product_tax];
+  let updateFields = ['updated_at = CURRENT_TIMESTAMP'];
+  let params = [];
 
+  if (name !== undefined) {
+    updateFields.push('name = ?');
+    params.push(name);
+  }
   if (description !== undefined) {
     updateFields.push('description = ?');
     params.push(description);
   }
-
+  if (category_id !== undefined) {
+    updateFields.push('category_id = ?');
+    params.push(category_id);
+  }
+  if (status !== undefined) {
+    updateFields.push('status = ?');
+    params.push(status);
+  }
+  if (product_tax !== undefined) {
+    updateFields.push('product_tax = ?');
+    params.push(product_tax);
+  }
   if (image_path !== undefined) {
     updateFields.push('image_path = ?');
     params.push(image_path);
+  }
+
+  if (updateFields.length === 1) {
+    return { changes: 0 };
   }
 
   const stmt = db.prepare(`
@@ -76,7 +95,7 @@ const updateProduct = (productId, { name, description, category_id, status, prod
     SET ${updateFields.join(', ')}
     WHERE id = ?
   `);
-  
+
   params.push(productId);
   return stmt.run(...params);
 };
@@ -84,18 +103,18 @@ const updateProduct = (productId, { name, description, category_id, status, prod
 const updateVariant = (variant) => {
   const stmt = db.prepare(`
     UPDATE variants
-    SET name = ?, sku = ?, price = ?, cost_price = ?, profit_margin = ?, stock = ?, stock_alert_cap = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
+    SET name = ?, sku = ?, price = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND deleted_at IS NULL
   `);
   return stmt.run(
     variant.name,
     variant.sku,
     variant.price,
     variant.cost_price,
-    variant.profit_margin,
     variant.stock,
     variant.stock_alert_cap,
     variant.status,
+    variant.is_default,
     variant.id
   );
 };
@@ -105,7 +124,7 @@ const addVariant = (productId, variant) => {
     INSERT INTO variants (
       product_id, name, sku, price, cost_price, profit_margin, stock, stock_alert_cap, is_default, status
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) -- ⭐ **Change:** Added a tenth placeholder
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return stmt.run(
     productId,
@@ -121,39 +140,9 @@ const addVariant = (productId, variant) => {
   );
 };
 
-const updateProductWithVariants = (productId, { name, description, category_id, status, product_tax, image_path, variants }) => {
-  const transaction = db.transaction(() => {
-    const productChanges = updateProduct(productId, { name, description, category_id, status, product_tax, image_path });
-
-    const existingVariants = db.prepare('SELECT id FROM variants WHERE product_id = ?').all(productId);
-    const existingVariantIds = existingVariants.map(v => v.id);
-
-    const submittedVariantIds = variants.filter(v => v.id).map(v => v.id);
-
-    const variantsToDelete = existingVariantIds.filter(id => !submittedVariantIds.includes(id));
-    if (variantsToDelete.length > 0) {
-      const placeholders = variantsToDelete.map(() => '?').join(',');
-      db.prepare(`UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`).run(...variantsToDelete);
-    }
-
-    const newVariants = variants.filter(v => !v.id);
-    const updatedVariants = variants.filter(v => v.id);
-
-    let variantChanges = { changes: 0 };
-    for (const variant of newVariants) {
-      addVariant(productId, variant);
-      variantChanges.changes += 1;
-    }
-
-    for (const variant of updatedVariants) {
-      const changes = updateVariant({ ...variant, id: variant.id });
-      variantChanges.changes += changes.changes;
-    }
-
-    return { productChanges, variantChanges };
-  });
-
-  return transaction();
+const deleteVariant = (id) => {
+  const stmt = db.prepare('UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
+  return stmt.run(id);
 };
 
 const deleteProduct = (id) => {
@@ -255,7 +244,10 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
 export {
   addProductWithVariants,
   getProductWithAllVariants,
-  updateProductWithVariants,
+  updateProduct,
+  updateVariant,
+  addVariant,
+  deleteVariant,
   deleteProduct,
   getProducts
 };

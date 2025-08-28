@@ -30,7 +30,7 @@ export default function AddOrEditProductPage() {
       description: 'Could not load product or categories. Please try again later.',
       duration: 5000,
     });
-    navigate('/products');
+    navigate(-1);
     return null;
   }
   
@@ -47,6 +47,22 @@ export default function AddOrEditProductPage() {
       category_id: matchingCategory ? String(matchingCategory.id) : '',
     };
   }
+
+  const handleSuccess = (productName) => {
+    toast.success('Product saved successfully!', {
+      description: `${productName} has been saved.`,
+      duration: 5000,
+    });
+    navigate(-1);
+  };
+
+  const handleFailure = (err) => {
+    console.error('Failed to save product:', err);
+    toast.error('Error saving product', {
+      description: 'An error occurred while saving. Please try again later.',
+      duration: 5000,
+    });
+  };
 
   const handleSubmit = async (productData) => {
     try {
@@ -87,7 +103,8 @@ export default function AddOrEditProductPage() {
       <ProductForm
         initialData={initialData}
         categories={categories}
-        onSubmit={handleSubmit}
+        onSuccess={handleSuccess}
+        onFailure={handleFailure}
         isEditMode={isEditMode}
         isSaving={isSaving}
       />

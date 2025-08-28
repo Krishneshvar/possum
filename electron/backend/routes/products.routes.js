@@ -5,7 +5,10 @@ import {
   getProductDetails,
   createProductController,
   updateProductController,
-  deleteProductController
+  deleteProductController,
+  addVariantController,
+  updateVariantController,
+  deleteVariantController
 } from '../controllers/products.controller.js';
 import path from 'path';
 import fs from 'fs';
@@ -41,5 +44,9 @@ router.put('/:id', upload.single('image'), (req, res, next) => {
 router.get('/', getProductsController);
 router.get('/:id', getProductDetails);
 router.delete('/:id', deleteProductController);
+
+router.post('/variants', addVariantController);
+router.put('/variants/:id', updateVariantController);
+router.delete('/variants/:id', deleteVariantController);
 
 export default router;

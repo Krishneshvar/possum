@@ -1,12 +1,16 @@
 import {
   addProductWithVariants,
   getProductWithAllVariants,
-  updateProductWithVariants,
-  deleteProduct,
-  getProducts
+  getProducts,
+  updateProduct,
+  updateVariant,
+  addVariant,
+  deleteVariant,
+  deleteProduct
 } from '../models/products.model.js';
 import path from 'path';
 import fs from 'fs';
+import { __dirname } from '../server.js';
 
 const buildImageUrl = (imagePath) => {
   if (!imagePath) {
@@ -139,7 +143,7 @@ const deleteProductController = async (req, res) => {
 
 const updateProductController = async (req, res) => {
   const { id } = req.params;
-  const { name, category_id, description, status, product_tax, variants } = req.body;
+  const { name, category_id, description, status, product_tax } = req.body;
   const image_path = req.file ? `/uploads/${req.file.filename}` : undefined;
 
   if (image_path) {
@@ -152,22 +156,19 @@ const updateProductController = async (req, res) => {
     }
   }
 
-  const parsedVariants = JSON.parse(variants);
-  const productData = { name, category_id, description, status, product_tax, variants: parsedVariants };
+  const productData = { name, category_id, description, status, product_tax };
   if (image_path) {
     productData.image_path = image_path;
   }
 
   try {
-    const changes = updateProductWithVariants(parseInt(id, 10), productData);
-
-    if (changes.productChanges.changes === 0 && changes.variantChanges.changes === 0) {
+    const changes = updateProduct(parseInt(id, 10), productData);
+    if (changes.changes === 0) {
       if (image_path) {
         fs.unlinkSync(path.join(__dirname, '..', image_path));
       }
       return res.status(404).json({ error: 'Product not found or no changes made.' });
     }
-
     res.status(200).json({ message: 'Product updated successfully.' });
   } catch (err) {
     console.error(err);
@@ -178,4 +179,65 @@ const updateProductController = async (req, res) => {
   }
 };
 
-export { getProductsController, createProductController, getProductDetails, updateProductController, deleteProductController };
+const addVariantController = async (req, res) => {
+  const { productId } = req.body;
+  const variantData = req.body;
+  if (!productId || !variantData.name) {
+    return res.status(400).json({ error: 'Product ID and variant name are required.' });
+  }
+
+  try {
+    const newVariant = addVariant(productId, variantData);
+    if (newVariant.changes === 0) {
+      return res.status(400).json({ error: 'Failed to add variant.' });
+    }
+    res.status(201).json({ id: newVariant.lastInsertRowid });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to add variant.' });
+  }
+};
+
+const updateVariantController = async (req, res) => {
+  const { id } = req.params;
+  const variantData = req.body;
+  if (!variantData.name) {
+    return res.status(400).json({ error: 'Variant name is required.' });
+  }
+
+  try {
+    const changes = updateVariant({ ...variantData, id: parseInt(id, 10) });
+    if (changes.changes === 0) {
+      return res.status(404).json({ error: 'Variant not found or no changes made.' });
+    }
+    res.status(200).json({ message: 'Variant updated successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update variant.' });
+  }
+};
+
+const deleteVariantController = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const changes = deleteVariant(parseInt(id, 10));
+    if (changes.changes === 0) {
+      return res.status(404).json({ error: 'Variant not found.' });
+    }
+    res.status(204).end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete variant.' });
+  }
+};
+
+export {
+  getProductsController,
+  createProductController,
+  getProductDetails,
+  updateProductController,
+  deleteProductController,
+  addVariantController,
+  updateVariantController,
+  deleteVariantController
+};

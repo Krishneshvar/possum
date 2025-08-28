@@ -28,7 +28,7 @@ const buildCategoryTree = (categories) => {
   return categoryTree
 }
 
-export default function CategoryDropdown({ categories = [], value, onChange }) {
+export default function CategorySelector({ categories = [], value, onChange }) {
   const [open, setOpen] = useState(false)
   const [currentCategories, setCurrentCategories] = useState([])
   const [history, setHistory] = useState([])
@@ -90,7 +90,7 @@ export default function CategoryDropdown({ categories = [], value, onChange }) {
       setSearchQuery("")
       setIsSearching(false)
     } else {
-      onChange({ target: { name: 'category_id', value: String(category.id) } });
+      onChange("category_id", String(category.id));
       setOpen(false)
     }
   }
@@ -111,7 +111,7 @@ export default function CategoryDropdown({ categories = [], value, onChange }) {
   }
 
   const handleSearchResultClick = (category) => {
-    onChange({ target: { name: 'category_id', value: String(category.id) } });
+    onChange("category_id", String(category.id));
     setOpen(false)
   }
 

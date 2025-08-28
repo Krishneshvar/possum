@@ -7,34 +7,46 @@ import ProductInformation from "./ProductInformation";
 import VariantForm from "./VariantForm";
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
-export default function ProductForm({ initialData, categories, onSubmit, isEditMode, isSaving }) {
+export default function ProductForm({ initialData, categories, onSuccess, onFailure, isEditMode, isSaving }) {
   const {
     formData,
     handleProductChange,
-    handleProductSelectChange,
     handleVariantChange,
     handleFileChange,
     handleRemoveImage,
     clearPriceFields,
-    addVariant,
-    removeVariant,
-    handleSetDefaultVariant,
-    getCleanData,
+    addVariantLocally,
+    removeVariantLocally,
+    handleSetDefaultVariantLocally,
+    saveProductAndVariants,
+    deleteVariantFromApi,
   } = useProductAndVariantForm(initialData);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const productData = getCleanData();
-    console.log("Form data being sent:", productData);
-    onSubmit(productData);
+    const { success, error } = await saveProductAndVariants(isEditMode, initialData?.id);
+    
+    if (success) {
+      onSuccess(formData.name);
+    } else {
+      onFailure(error);
+      console.error("Submission failed:", error);
+    }
   };
 
+  const handleRemoveVariant = (variantId) => {
+    const variantToRemove = formData.variants.find(v => v._tempId === variantId);
+    if (variantToRemove && variantToRemove.id) {
+      deleteVariantFromApi(variantToRemove.id, initialData.id);
+    }
+    removeVariantLocally(variantId);
+  };
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-8 mb-6">
       <ProductInformation
         formData={formData}
         categories={categories}
-        handleSelectChange={handleProductSelectChange}
         handleChange={handleProductChange}
         handleFileChange={handleFileChange}
         handleRemoveImage={handleRemoveImage}
@@ -64,9 +76,9 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
               isEditMode={isEditMode}
               onVariantChange={handleVariantChange}
               onClearPriceFields={clearPriceFields}
-              onRemoveVariant={removeVariant}
+              onRemoveVariant={handleRemoveVariant}
               showRemoveButton={formData.variants.length > 1}
-              onSetDefaultVariant={handleSetDefaultVariant}
+              onSetDefaultVariant={handleSetDefaultVariantLocally}
             />
           ))}
         </div>
@@ -75,7 +87,7 @@ export default function ProductForm({ initialData, categories, onSubmit, isEditM
             type="button"
             variant="outline"
             className="mx-auto bg-black text-white hover:bg-gray-700 hover:text-white cursor-pointer"
-            onClick={addVariant}
+            onClick={addVariantLocally}
           >
             <Plus />
             Add variant

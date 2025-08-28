@@ -1,6 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import { nanoid } from '@reduxjs/toolkit';
 
+import { 
+  useAddProductMutation,
+  useUpdateProductMutation,
+  useAddVariantMutation,
+  useUpdateVariantMutation,
+  useDeleteVariantMutation
+} from '@/services/productsApi';
+
 const calculateProfitMargin = (priceInCents, costPriceInCents) => {
   if (costPriceInCents > 0) {
     return ((priceInCents - costPriceInCents) / costPriceInCents) * 100;
@@ -89,17 +97,19 @@ const getInitialFormData = (data) => {
 export const useProductAndVariantForm = (initialState = {}) => {
   const [formData, setFormData] = useState(() => getInitialFormData(initialState));
 
+  const [addProduct] = useAddProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
+  const [addVariant] = useAddVariantMutation();
+  const [updateVariant] = useUpdateVariantMutation();
+  const [deleteVariant] = useDeleteVariantMutation();
+  
   useEffect(() => {
     setFormData(getInitialFormData(initialState));
+    console.log("PD: ", formData);
   }, [initialState]);
 
-  const handleProductChange = useCallback((e) => {
-    const { name, value } = e.target;
+  const handleProductChange = useCallback((name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
-
-  const handleProductSelectChange = useCallback((name, value) => {
-    setFormData(prevState => ({ ...prevState, [name]: value }));
   }, []);
 
   const handleFileChange = useCallback((e) => {
@@ -147,14 +157,14 @@ export const useProductAndVariantForm = (initialState = {}) => {
     });
   }, []);
 
-  const addVariant = useCallback(() => {
+  const addVariantLocally = useCallback(() => {
     setFormData(prev => ({
       ...prev,
       variants: [...prev.variants, getDefaultVariant()],
     }));
   }, []);
 
-  const removeVariant = useCallback((variantId) => {
+  const removeVariantLocally = useCallback((variantId) => {
     const isDefault = formData.variants.find(v => v._tempId === variantId)?.is_default === 1;
     const filteredVariants = formData.variants.filter(v => v._tempId !== variantId);
 
@@ -169,7 +179,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
     }));
   }, [formData.variants]);
 
-  const handleSetDefaultVariant = useCallback((variantId) => {
+  const handleSetDefaultVariantLocally = useCallback((variantId) => {
     setFormData(prev => {
       const newVariants = prev.variants.map(v => ({
         ...v,
@@ -180,36 +190,86 @@ export const useProductAndVariantForm = (initialState = {}) => {
     });
   }, []);
 
-  const getCleanData = useCallback(() => {
-    const { product_tax, ...rest } = formData;
+  const getProductData = useCallback(() => {
+    const { variants, ...rest } = formData;
     const cleanData = {
       ...rest,
       category_id: formData.category_id ? Number.parseInt(formData.category_id, 10) : null,
-      product_tax: product_tax ? Number.parseFloat(product_tax) : 0,
-      variants: formData.variants.map(v => ({
-        ...v,
-        id: v.id,
-        price: v.price ? Number.parseFloat(v.price) : 0,
-        cost_price: v.cost_price ? Number.parseFloat(v.cost_price) : 0,
-        stock: v.stock ? Number.parseInt(v.stock) : 0,
-        stock_alert_cap: v.stock_alert_cap ? Number.parseInt(v.stock_alert_cap) : 0,
-      }))
+      product_tax: formData.product_tax ? Number.parseFloat(formData.product_tax) : 0,
     };
-    cleanData.variants = cleanData.variants.map(({ _tempId, lastChangedField, ...rest }) => rest);
+
+    if (formData.imageFile) {
+    cleanData.imageFile = formData.imageFile;
+  } else if (formData.image_path) {
+    cleanData.image_path = formData.image_path;
+  }
+
     return cleanData;
   }, [formData]);
+
+  const getVariantData = useCallback((variant) => {
+    const { _tempId, lastChangedField, ...rest } = variant;
+    const cleanData = {
+      ...rest,
+      price: variant.price ? Number.parseFloat(variant.price) : 0,
+      cost_price: variant.cost_price ? Number.parseFloat(variant.cost_price) : 0,
+      stock: variant.stock ? Number.parseInt(variant.stock) : 0,
+      stock_alert_cap: variant.stock_alert_cap ? Number.parseInt(variant.stock_alert_cap) : 0,
+      is_default: variant.is_default,
+    };
+    return cleanData;
+  }, []);
+
+  const saveProductAndVariants = useCallback(async (isEditMode, id) => {
+    try {
+      const productData = getProductData();
+      const variantData = formData.variants.map(getVariantData);
+
+      if (isEditMode) {
+        const newVariants = variantData.filter(v => !v.id);
+        const existingVariants = variantData.filter(v => v.id);
+
+        await updateProduct({ id, ...productData }).unwrap();
+
+        for (const variant of existingVariants) {
+          await updateVariant({ id: variant.id, productId: id, ...variant }).unwrap();
+        }
+
+        for (const variant of newVariants) {
+          await addVariant({ ...variant, productId: id }).unwrap();
+        }
+
+      } else {
+        await addProduct({ ...productData, variants: variantData }).unwrap();
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to save product or variants:', error);
+      return { success: false, error };
+    }
+  }, [formData, addProduct, updateProduct, addVariant, updateVariant, getProductData, getVariantData]);
+
+  const deleteVariantFromApi = useCallback(async (variantId, productId) => {
+    try {
+      await deleteVariant({ id: variantId, productId }).unwrap();
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to delete variant:', error);
+      return { success: false, error };
+    }
+  }, [deleteVariant]);
 
   return {
     formData,
     handleProductChange,
-    handleProductSelectChange,
-    handleVariantChange,
     handleFileChange,
     handleRemoveImage,
+    handleVariantChange,
     clearPriceFields,
-    addVariant,
-    removeVariant,
-    handleSetDefaultVariant,
-    getCleanData,
+    addVariantLocally,
+    removeVariantLocally,
+    handleSetDefaultVariantLocally,
+    saveProductAndVariants,
+    deleteVariantFromApi,
   };
 };

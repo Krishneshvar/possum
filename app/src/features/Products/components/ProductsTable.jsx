@@ -20,7 +20,7 @@ import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./productsTableContents.jsx"
 import GenericFilter from "@/components/common/GenericFilter"
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
-import { stockStatusFilter, statusFilter, categoryFilter } from "../data/productsFiltersConfig"
+import { statusFilter, categoryFilter } from "../data/productsFiltersConfig"
 
 export default function ProductsTable() {
   const dispatch = useDispatch()
@@ -132,7 +132,6 @@ export default function ProductsTable() {
 
   const filtersConfig = useMemo(() => {
     return [
-      stockStatusFilter,
       statusFilter,
       categoryFilter(categories),
     ];
