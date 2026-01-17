@@ -5,7 +5,7 @@
   "main": "electron/main.js",
   "type": "module",
   "scripts": {
-    "dev": "npm rebuild --runtime=electron --target=37.2.3 && concurrently \"npm run watch:preload\" \"npm run dev:react\" \"npm run dev:electron\"",
+    "dev": "npm run init-db && npm rebuild --runtime=electron --target=37.2.3 && concurrently \"npm run watch:preload\" \"npm run dev:react\" \"npm run dev:electron\"",
     "dev:react": "cd app && npm run dev",
     "dev:electron": "wait-on tcp:5173 && electron .",
     "build": "cd app && vite build && cd .. && npm run build:preload && electron-builder",
@@ -28,9 +28,9 @@
     "wait-on": "^8.0.4"
   },
   "devDependencies": {
-    "@electron/rebuild": "^4.0.1",
+    "@electron/rebuild": "^4.0.2",
     "electron": "^37.2.3",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.4.0",
     "vite": "^7.1.0"
   },
   "engines": {
