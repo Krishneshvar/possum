@@ -39,7 +39,11 @@ export default function DisplayVariants({ product, getProductStatus, getVariantS
                   </div>
                   <div className="flex gap-1">
                     <p>Margin: </p>
-                    <p className="">{variant.profit_margin}%</p>
+                    <p className="">
+                      {variant.cost_price > 0
+                        ? (((variant.price - variant.cost_price) / variant.cost_price) * 100).toFixed(2)
+                        : '0.00'}%
+                    </p>
                   </div>
                 </div>
               </div>

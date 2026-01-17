@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS inventory_adjustments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   lot_id INTEGER,
   quantity_change INTEGER NOT NULL,
-  reason TEXT NOT NULL CHECK(reason IN ('spoilage', 'theft', 'damage', 'correction', 'returned')),
+  reason TEXT NOT NULL CHECK(reason IN ('sold', 'spoilage', 'theft', 'damage', 'correction', 'returned')),
   variant_id INTEGER,
   user_id INTEGER NOT NULL,
   adjustment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
