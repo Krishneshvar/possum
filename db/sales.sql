@@ -1,6 +1,8 @@
 CREATE TABLE IF NOT EXISTS payment_methods (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL UNIQUE
+  name TEXT NOT NULL UNIQUE,
+  is_active INTEGER DEFAULT 1 CHECK(is_active IN (0, 1)),
+  sort_order INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS sales (
@@ -14,7 +16,9 @@ CREATE TABLE IF NOT EXISTS sales (
   customer_id INTEGER,
   user_id INTEGER NOT NULL,
   note TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'partially paid', 'refunded', 'cancelled')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'partially_paid', 'refunded', 'cancelled')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
   FOREIGN KEY (customer_id) REFERENCES customers(id),
   FOREIGN KEY (user_id) REFERENCES users(id)
@@ -35,6 +39,7 @@ CREATE TABLE IF NOT EXISTS sale_items (
   price_per_unit INTEGER NOT NULL,
   cost_per_unit INTEGER NOT NULL,
   total_price INTEGER NOT NULL,
+  tax_amount INTEGER DEFAULT 0,
   FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
   FOREIGN KEY (product_variant_id) REFERENCES variants(id) ON DELETE SET NULL
@@ -51,6 +56,8 @@ CREATE TABLE IF NOT EXISTS transactions (
   amount INTEGER NOT NULL,
   type TEXT NOT NULL CHECK(type IN ('payment', 'refund')),
   payment_method_id INTEGER NOT NULL,
+  status TEXT DEFAULT 'completed' CHECK(status IN ('completed', 'pending', 'failed', 'voided')),
+  reference_id TEXT,
   transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (sale_id) REFERENCES sales(id),
   FOREIGN KEY (user_id) REFERENCES users(id),
@@ -59,3 +66,5 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 CREATE INDEX IF NOT EXISTS idx_transactions_sale_id ON transactions(sale_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_payment_method_id ON transactions(payment_method_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_transaction_date ON transactions(transaction_date);

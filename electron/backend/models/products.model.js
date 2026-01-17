@@ -16,9 +16,9 @@ const addProductWithVariants = ({ name, description, category_id, status, produc
 
     const insertVariant = db.prepare(`
       INSERT INTO variants (
-        product_id, name, sku, price, cost_price, profit_margin, stock, stock_alert_cap, is_default, status
+        product_id, name, sku, price, cost_price, stock, stock_alert_cap, is_default, status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const variant of variants) {
@@ -28,7 +28,6 @@ const addProductWithVariants = ({ name, description, category_id, status, produc
         variant.sku,
         variant.price,
         variant.cost_price,
-        variant.profit_margin,
         variant.stock,
         variant.stock_alert_cap,
         variant.is_default ? 1 : 0,
@@ -122,9 +121,9 @@ const updateVariant = (variant) => {
 const addVariant = (productId, variant) => {
   const stmt = db.prepare(`
     INSERT INTO variants (
-      product_id, name, sku, price, cost_price, profit_margin, stock, stock_alert_cap, is_default, status
+      product_id, name, sku, price, cost_price, stock, stock_alert_cap, is_default, status
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return stmt.run(
     productId,
@@ -132,7 +131,6 @@ const addVariant = (productId, variant) => {
     variant.sku,
     variant.price,
     variant.cost_price,
-    variant.profit_margin,
     variant.stock,
     variant.stock_alert_cap,
     variant.is_default ? 1 : 0,
@@ -163,7 +161,7 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
   const filterParams = [];
 
   filterClauses.push(`p.deleted_at IS NULL`);
-  
+
   if (searchTerm) {
     filterClauses.push(`(p.name LIKE ?)`);
     filterParams.push(`%${searchTerm}%`);
@@ -231,7 +229,7 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
   const paginatedParams = [...filterParams, itemsPerPage, startIndex];
 
   const paginatedProducts = db.prepare(paginatedQuery).all(...paginatedParams);
-  
+
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return {

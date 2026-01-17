@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS categories (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
-  FOREIGN KEY (parent_id) REFERENCES categories(id)
+  FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT,
   category_id INTEGER,
   status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'discontinued')),
-  product_tax REAL DEFAULT 0,
+  product_tax REAL NOT NULL DEFAULT 0,
   image_path TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS variants (
   name TEXT NOT NULL,
   sku TEXT UNIQUE,
   price REAL NOT NULL,
-  cost_price REAL,
-  profit_margin REAL,
+  cost_price REAL NOT NULL DEFAULT 0,
+  profit_margin REAL GENERATED ALWAYS AS (price - cost_price) STORED,
   stock INTEGER DEFAULT 0,
   stock_alert_cap INTEGER DEFAULT 10,
   status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'discontinued')),
@@ -49,3 +49,4 @@ CREATE TABLE IF NOT EXISTS variants (
 CREATE INDEX IF NOT EXISTS idx_variants_product_id ON variants(product_id);
 CREATE INDEX IF NOT EXISTS idx_variants_sku ON variants(sku);
 CREATE INDEX IF NOT EXISTS idx_variants_status ON variants(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_variants_one_default ON variants(product_id) WHERE is_default = 1;

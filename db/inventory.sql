@@ -19,10 +19,12 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
   actual_delivery_date DATETIME,
   status TEXT NOT NULL CHECK(status IN ('pending', 'received', 'cancelled')),
   note TEXT,
+  ordered_by INTEGER,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
-  FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+  FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+  FOREIGN KEY (ordered_by) REFERENCES users(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_purchase_orders_supplier_id ON purchase_orders(supplier_id);
@@ -49,6 +51,7 @@ CREATE TABLE IF NOT EXISTS inventory_lots (
   expiry_date DATETIME,
   purchase_order_item_id INTEGER,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (variant_id) REFERENCES variants(id) ON DELETE CASCADE,
   FOREIGN KEY (purchase_order_item_id) REFERENCES purchase_order_items(id) ON DELETE SET NULL
 );
@@ -61,9 +64,11 @@ CREATE TABLE IF NOT EXISTS inventory_adjustments (
   lot_id INTEGER,
   quantity_change INTEGER NOT NULL,
   reason TEXT NOT NULL CHECK(reason IN ('spoilage', 'theft', 'damage', 'correction', 'returned')),
+  variant_id INTEGER,
   user_id INTEGER NOT NULL,
   adjustment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (lot_id) REFERENCES inventory_lots(id) ON DELETE CASCADE,
+  FOREIGN KEY (lot_id) REFERENCES inventory_lots(id) ON DELETE SET NULL,
+  FOREIGN KEY (variant_id) REFERENCES variants(id),
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
