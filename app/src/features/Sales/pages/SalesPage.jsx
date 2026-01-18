@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
+import { cn } from "@/lib/utils";
 import SalesTable from '../components/SalesTable';
 import SalesControls from '../components/SalesControls';
 import BillPreview from '../components/BillPreview';
-import ProductSelector from '../components/ProductSelector';
+
 
 // Mock Data for initial view
 const MOCK_PRODUCT = {
@@ -31,6 +32,7 @@ const INITIAL_BILLS = Array(9).fill(null).map((_, i) => ({
 export default function SalesPage() {
   const [bills, setBills] = useState(INITIAL_BILLS);
   const [activeTab, setActiveTab] = useState(0);
+  const [showPreview, setShowPreview] = useState(true);
 
   const currentBill = bills[activeTab];
 
@@ -75,20 +77,25 @@ export default function SalesPage() {
 
   return (
     <div className="h-[calc(100vh-6rem)] w-full flex flex-col gap-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+      <div className={cn(
+        "grid gap-4 h-full transition-all duration-300",
+        showPreview ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
+      )}>
         {/* Left Section: Table + Controls */}
-        <div className="lg:col-span-2 flex flex-col gap-4 h-full">
-          {/* Top: Product Selector */}
-          <div className="flex-none z-30">
-            <ProductSelector onProductSelect={addProductToBill} />
-          </div>
+        <div className={cn(
+          "flex flex-col gap-4 h-full",
+          showPreview ? "lg:col-span-2" : "col-span-full"
+        )}>
 
-          {/* Top Left: Dynamic Table */}
-          <div className="flex-1 min-h-0">
+
+          <div className="flex-1 min-h-0 relative">
             <SalesTable
               items={currentBill.items}
               updateQuantity={updateQuantity}
               removeItem={removeItem}
+              onProductSelect={addProductToBill}
+              showPreview={showPreview}
+              setShowPreview={setShowPreview}
             />
           </div>
 
@@ -102,20 +109,23 @@ export default function SalesPage() {
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               tabsCount={9}
+              bills={bills}
             />
           </div>
         </div>
 
         {/* Right Section: Bill Preview */}
-        <div className="h-full min-h-0 z-0">
-          <BillPreview
-            items={currentBill.items}
-            customerName={currentBill.customerName}
-            paymentMethod={currentBill.paymentMethod}
-            total={0} // Calculated inside component
-            date={new Date()}
-          />
-        </div>
+        {showPreview && (
+          <div className="h-full min-h-0 z-0">
+            <BillPreview
+              items={currentBill.items}
+              customerName={currentBill.customerName}
+              paymentMethod={currentBill.paymentMethod}
+              total={0} // Calculated inside component
+              date={new Date()}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

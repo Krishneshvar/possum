@@ -20,7 +20,8 @@ export default function SalesControls({
     setCustomerName,
     activeTab,
     setActiveTab,
-    tabsCount = 9
+    tabsCount = 9,
+    bills = []
 }) {
     return (
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-slate-200 dark:border-zinc-800 p-5 space-y-6">
@@ -87,20 +88,27 @@ export default function SalesControls({
                     </span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                    {Array.from({ length: tabsCount }).map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setActiveTab(idx)}
-                            className={cn(
-                                "flex items-center justify-center w-10 h-10 rounded-lg text-sm font-bold transition-all duration-200",
-                                activeTab === idx
-                                    ? "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/20 scale-105"
-                                    : "bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-700 hover:scale-105"
-                            )}
-                        >
-                            {idx + 1}
-                        </button>
-                    ))}
+                    {Array.from({ length: tabsCount }).map((_, idx) => {
+                        const hasItems = bills[idx]?.items?.length > 0;
+                        const isActive = activeTab === idx;
+
+                        return (
+                            <button
+                                key={idx}
+                                onClick={() => setActiveTab(idx)}
+                                className={cn(
+                                    "flex items-center justify-center w-10 h-10 rounded-lg text-sm font-bold transition-all duration-200",
+                                    isActive
+                                        ? "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/20 scale-105"
+                                        : hasItems
+                                            ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 hover:bg-amber-200 dark:hover:bg-amber-900/60"
+                                            : "bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-700 hover:scale-105"
+                                )}
+                            >
+                                {idx + 1}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

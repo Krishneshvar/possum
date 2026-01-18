@@ -6,7 +6,8 @@ import {
   updateVariant,
   addVariant,
   deleteVariant,
-  deleteProduct
+  deleteProduct,
+  getVariants
 } from '../models/products.model.js';
 import path from 'path';
 import fs from 'fs';
@@ -231,6 +232,23 @@ const deleteVariantController = async (req, res) => {
   }
 };
 
+const getVariantsController = async (req, res) => {
+  try {
+    const { query } = req.query;
+    const variants = getVariants({ query });
+
+    const variantsWithImageUrls = variants.map(variant => ({
+      ...variant,
+      imageUrl: buildImageUrl(variant.image_path)
+    }));
+
+    res.json(variantsWithImageUrls);
+  } catch (err) {
+    console.error('Error in getVariantsController:', err);
+    res.status(500).json({ error: 'Failed to retrieve variants.' });
+  }
+};
+
 export {
   getProductsController,
   createProductController,
@@ -239,5 +257,6 @@ export {
   deleteProductController,
   addVariantController,
   updateVariantController,
-  deleteVariantController
+  deleteVariantController,
+  getVariantsController
 };

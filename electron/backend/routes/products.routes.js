@@ -8,7 +8,8 @@ import {
   deleteProductController,
   addVariantController,
   updateVariantController,
-  deleteVariantController
+  deleteVariantController,
+  getVariantsController
 } from '../controllers/products.controller.js';
 import path from 'path';
 import fs from 'fs';
@@ -33,20 +34,22 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.post('/', upload.single('image'), (req, res, next) => {
-  createProductController(req, res, next);
-});
+// ==============================================
+// IMPORTANT: Order matters in Express routing!
+// More specific routes MUST come BEFORE generic :id routes
+// ==============================================
 
-router.put('/:id', upload.single('image'), (req, res, next) => {
-  updateProductController(req, res, next);
-});
-
-router.get('/', getProductsController);
-router.get('/:id', getProductDetails);
-router.delete('/:id', deleteProductController);
-
+// Variant routes (MUST be before /:id routes)
+router.get('/variants/search', getVariantsController);
 router.post('/variants', addVariantController);
 router.put('/variants/:id', updateVariantController);
 router.delete('/variants/:id', deleteVariantController);
+
+// Product routes
+router.post('/', upload.single('image'), createProductController);
+router.put('/:id', upload.single('image'), updateProductController);
+router.get('/', getProductsController);
+router.get('/:id', getProductDetails);
+router.delete('/:id', deleteProductController);
 
 export default router;

@@ -47,9 +47,9 @@ export const productsApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.products.map(({ id }) => ({ type: 'Product', id })),
-              { type: 'Product', id: 'LIST' },
-            ]
+            ...result.products.map(({ id }) => ({ type: 'Product', id })),
+            { type: 'Product', id: 'LIST' },
+          ]
           : [{ type: 'Product', id: 'LIST' }],
     }),
     getProduct: builder.query({
@@ -155,6 +155,24 @@ export const productsApi = createApi({
         { type: 'Product', id: 'LIST' },
       ],
     }),
+    getVariants: builder.query({
+      query: (params) => {
+        const query = new URLSearchParams();
+        for (const key in params) {
+          if (params[key] !== null && params[key] !== '') {
+            query.append(key, params[key]);
+          }
+        }
+        return `/products/variants/search?${query.toString()}`;
+      },
+      providesTags: (result) =>
+        result
+          ? [
+            ...result.map(({ id }) => ({ type: 'Variant', id })),
+            { type: 'Variant', id: 'LIST' },
+          ]
+          : [{ type: 'Variant', id: 'LIST' }],
+    }),
   }),
 });
 
@@ -167,4 +185,5 @@ export const {
   useAddVariantMutation,
   useUpdateVariantMutation,
   useDeleteVariantMutation,
+  useGetVariantsQuery,
 } = productsApi;

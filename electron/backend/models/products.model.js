@@ -239,6 +239,34 @@ const getProducts = ({ searchTerm, stockStatus, status, categories, currentPage,
   };
 };
 
+const getVariants = ({ query }) => {
+  const filterClauses = [];
+  const filterParams = [];
+
+  filterClauses.push(`v.deleted_at IS NULL`);
+  filterClauses.push(`p.deleted_at IS NULL`);
+
+  if (query) {
+    // Search by Product Name, Variant Name, or Variant SKU
+    filterClauses.push(`(p.name LIKE ? OR v.name LIKE ? OR v.sku LIKE ?)`);
+    filterParams.push(`%${query}%`, `%${query}%`, `%${query}%`);
+  }
+
+  const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
+
+  const sql = `
+    SELECT 
+      v.*, p.name as product_name, p.image_path
+    FROM variants v
+    JOIN products p ON v.product_id = p.id
+    ${whereClause}
+    ORDER BY p.name ASC, v.name ASC
+    LIMIT 50
+  `;
+
+  return db.prepare(sql).all(...filterParams);
+};
+
 export {
   addProductWithVariants,
   getProductWithAllVariants,
@@ -247,5 +275,6 @@ export {
   addVariant,
   deleteVariant,
   deleteProduct,
-  getProducts
+  getProducts,
+  getVariants
 };
