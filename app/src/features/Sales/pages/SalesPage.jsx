@@ -12,6 +12,8 @@ const MOCK_PRODUCT = {
   name: 'Wireless Headphones',
   quantity: 1,
   price: 2499.00,
+  mrp: 2499.00,
+  discount: 0,
   sku: 'WH-001'
 };
 
@@ -19,6 +21,8 @@ const INITIAL_TAB_STATE = {
   items: [],
   customerName: '',
   paymentMethod: 'cash',
+  overallDiscount: 0,
+  discountType: 'fixed',
 };
 
 // Initialize 9 tabs
@@ -26,7 +30,7 @@ const INITIAL_BILLS = Array(9).fill(null).map((_, i) => ({
   ...INITIAL_TAB_STATE,
   id: i,
   // Pre-fill first tab for demonstration
-  items: i === 0 ? [MOCK_PRODUCT, { ...MOCK_PRODUCT, id: 'p2', name: 'USB-C Cable', price: 499, sku: 'CBL-002', quantity: 2 }] : []
+  items: i === 0 ? [MOCK_PRODUCT, { ...MOCK_PRODUCT, id: 'p2', name: 'USB-C Cable', price: 499, mrp: 499, discount: 0, sku: 'CBL-002', quantity: 2 }] : []
 }));
 
 export default function SalesPage() {
@@ -50,6 +54,25 @@ export default function SalesPage() {
     updateBill({ items: newItems });
   };
 
+  const updatePrice = (itemId, newPrice) => {
+    const newItems = currentBill.items.map(item => {
+      if (item.id === itemId) {
+        // Enforce MRP constraint: Price cannot exceed MRP
+        const validPrice = Math.min(newPrice, item.mrp);
+        return { ...item, price: validPrice };
+      }
+      return item;
+    });
+    updateBill({ items: newItems });
+  };
+
+  const updateDiscount = (itemId, newDiscount) => {
+    const newItems = currentBill.items.map(item =>
+      item.id === itemId ? { ...item, discount: newDiscount } : item
+    );
+    updateBill({ items: newItems });
+  };
+
   const removeItem = (itemId) => {
     const newItems = currentBill.items.filter(item => item.id !== itemId);
     updateBill({ items: newItems });
@@ -68,7 +91,9 @@ export default function SalesPage() {
         id: product.id,
         name: product.name,
         quantity: 1,
-        price: parseFloat(product.price),
+        price: parseFloat(product.mrp),
+        mrp: parseFloat(product.mrp),
+        discount: 0,
         sku: product.sku
       };
       updateBill({ items: [...currentBill.items, newItem] });
@@ -76,22 +101,25 @@ export default function SalesPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-6rem)] w-full flex flex-col gap-4">
+    <div className="h-[calc(100vh-7rem)] w-full flex flex-col gap-4 overflow-hidden">
       <div className={cn(
-        "grid gap-4 h-full transition-all duration-300",
+        "grid gap-4 h-full min-h-0 transition-all duration-300",
         showPreview ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
       )}>
         {/* Left Section: Table + Controls */}
         <div className={cn(
-          "flex flex-col gap-4 h-full",
+          "flex flex-col gap-4 h-full min-h-0",
           showPreview ? "lg:col-span-2" : "col-span-full"
         )}>
 
 
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 flex flex-col">
             <SalesTable
+              className="flex-1 min-h-0"
               items={currentBill.items}
               updateQuantity={updateQuantity}
+              updatePrice={updatePrice}
+              updateDiscount={updateDiscount}
               removeItem={removeItem}
               onProductSelect={addProductToBill}
               showPreview={showPreview}
@@ -106,6 +134,10 @@ export default function SalesPage() {
               setPaymentMethod={setPaymentMethod}
               customerName={currentBill.customerName}
               setCustomerName={setCustomerName}
+              overallDiscount={currentBill.overallDiscount}
+              setOverallDiscount={(val) => updateBill({ overallDiscount: val })}
+              discountType={currentBill.discountType}
+              setDiscountType={(val) => updateBill({ discountType: val })}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               tabsCount={9}
@@ -121,6 +153,8 @@ export default function SalesPage() {
               items={currentBill.items}
               customerName={currentBill.customerName}
               paymentMethod={currentBill.paymentMethod}
+              overallDiscount={currentBill.overallDiscount}
+              discountType={currentBill.discountType}
               total={0} // Calculated inside component
               date={new Date()}
             />

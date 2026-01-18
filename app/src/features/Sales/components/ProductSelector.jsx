@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Plus, Package } from "lucide-react";
@@ -99,7 +98,7 @@ export default function ProductSelector({ onProductSelect }) {
                                         </div>
                                     </div>
                                     <div className="font-bold text-foreground">
-                                        ₹{product.price}
+                                        ₹{product.mrp}
                                     </div>
                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Plus className="h-4 w-4 text-primary" />

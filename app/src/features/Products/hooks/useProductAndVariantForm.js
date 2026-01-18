@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { nanoid } from '@reduxjs/toolkit';
 
-import { 
+import {
   useAddProductMutation,
   useUpdateProductMutation,
   useAddVariantMutation,
@@ -23,25 +23,25 @@ const calculateCostPrice = (priceInCents, profitMargin) => {
   return 0;
 };
 
-const calculatePrice = (costPriceInCents, profitMargin) => {
+const calculateMRP = (costPriceInCents, profitMargin) => {
   return costPriceInCents * (1 + (profitMargin / 100));
 };
 
 const updatePricingCalculations = (variant) => {
-  const price = Number.parseFloat(variant.price) || 0;
+  const mrp = Number.parseFloat(variant.mrp) || 0;
   const cost_price = Number.parseFloat(variant.cost_price) || 0;
   const profit_margin = Number.parseFloat(variant.profit_margin) || 0;
 
   let updatedVariant = { ...variant };
 
-  if (variant.lastChangedField === 'price' || variant.lastChangedField === 'cost_price') {
-    updatedVariant.profit_margin = calculateProfitMargin(price * 100, cost_price * 100).toFixed(2);
+  if (variant.lastChangedField === 'mrp' || variant.lastChangedField === 'cost_price') {
+    updatedVariant.profit_margin = calculateProfitMargin(mrp * 100, cost_price * 100).toFixed(2);
   }
   else if (variant.lastChangedField === 'profit_margin') {
-    if (updatedVariant.price) {
-      updatedVariant.cost_price = (calculateCostPrice(price * 100, profit_margin) / 100).toFixed(2);
+    if (updatedVariant.mrp) {
+      updatedVariant.cost_price = (calculateCostPrice(mrp * 100, profit_margin) / 100).toFixed(2);
     } else if (updatedVariant.cost_price) {
-      updatedVariant.price = (calculatePrice(cost_price * 100, profit_margin) / 100).toFixed(2);
+      updatedVariant.mrp = (calculateMRP(cost_price * 100, profit_margin) / 100).toFixed(2);
     }
   }
 
@@ -52,7 +52,7 @@ const getDefaultVariant = (isDefault = false) => ({
   _tempId: nanoid(),
   name: isDefault ? 'Default Variant' : '',
   sku: '',
-  price: '',
+  mrp: '',
   cost_price: '',
   profit_margin: '',
   stock: '0',
@@ -73,9 +73,9 @@ const getInitialFormData = (data) => {
       variants: data.variants.map(v => ({
         ...v,
         _tempId: v.id,
-        price: v.price ? String(v.price) : '',
+        mrp: v.mrp ? String(v.mrp) : '',
         cost_price: v.cost_price ? String(v.cost_price) : '',
-        profit_margin: v.cost_price && v.price ? calculateProfitMargin(v.price, v.cost_price).toFixed(2) : '0',
+        profit_margin: v.cost_price && v.mrp ? calculateProfitMargin(v.mrp, v.cost_price).toFixed(2) : '0',
         stock: v.stock ? String(v.stock) : '0',
         stock_alert_cap: v.stock_alert_cap ? String(v.stock_alert_cap) : '10',
         status: v.status ?? 'active',
@@ -102,7 +102,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
   const [addVariant] = useAddVariantMutation();
   const [updateVariant] = useUpdateVariantMutation();
   const [deleteVariant] = useDeleteVariantMutation();
-  
+
   useEffect(() => {
     setFormData(getInitialFormData(initialState));
     console.log("PD: ", formData);
@@ -129,7 +129,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
         if (variant._tempId === variantId) {
           const updatedVariant = { ...variant, [name]: value, lastChangedField: name };
 
-          if (['price', 'cost_price', 'profit_margin'].includes(name)) {
+          if (['mrp', 'cost_price', 'profit_margin'].includes(name)) {
             return updatePricingCalculations(updatedVariant);
           }
           return updatedVariant;
@@ -146,7 +146,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
         if (variant._tempId === variantId) {
           return {
             ...variant,
-            price: '',
+            mrp: '',
             cost_price: '',
             profit_margin: '',
           };
@@ -199,10 +199,10 @@ export const useProductAndVariantForm = (initialState = {}) => {
     };
 
     if (formData.imageFile) {
-    cleanData.imageFile = formData.imageFile;
-  } else if (formData.image_path) {
-    cleanData.image_path = formData.image_path;
-  }
+      cleanData.imageFile = formData.imageFile;
+    } else if (formData.image_path) {
+      cleanData.image_path = formData.image_path;
+    }
 
     return cleanData;
   }, [formData]);
@@ -211,7 +211,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
     const { _tempId, lastChangedField, ...rest } = variant;
     const cleanData = {
       ...rest,
-      price: variant.price ? Number.parseFloat(variant.price) : 0,
+      mrp: variant.mrp ? Number.parseFloat(variant.mrp) : 0,
       cost_price: variant.cost_price ? Number.parseFloat(variant.cost_price) : 0,
       stock: variant.stock ? Number.parseInt(variant.stock) : 0,
       stock_alert_cap: variant.stock_alert_cap ? Number.parseInt(variant.stock_alert_cap) : 0,

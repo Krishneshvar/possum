@@ -3,23 +3,29 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Receipt, Printer } from "lucide-react";
 
-export default function BillPreview({ items, customerName, paymentMethod, total, tax = 0, date }) {
+export default function BillPreview({ items, customerName, paymentMethod, overallDiscount = 0, discountType = 'fixed', date }) {
     const displayDate = date ? new Date(date).toLocaleString() : new Date().toLocaleString();
-    const subtotal = total; // Assuming total includes everything for now, or total is subtotal. Let's assume passed total is final.
-    // Actually, usually Total = Subtotal + Tax.
-    // I'll assume the passed 'items' contain prices.
-    // I will calculate subtotal from items to be sure.
 
-    const calculatedSubtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const calculatedTax = calculatedSubtotal * 0.18; // Mock 18% GST
-    const finalTotal = calculatedSubtotal + calculatedTax;
+    const calculatedSubtotal = items.reduce((acc, item) => {
+        const price = parseFloat(item.price) || 0;
+        const qty = parseInt(item.quantity) || 0;
+        const disc = parseFloat(item.discount) || 0;
+        return acc + (price * qty) - disc;
+    }, 0);
+    const discountAmount = discountType === 'percentage'
+        ? (calculatedSubtotal * (parseFloat(overallDiscount) || 0) / 100)
+        : (parseFloat(overallDiscount) || 0);
+
+    const totalAfterDiscount = Math.max(0, calculatedSubtotal - discountAmount);
+    const calculatedTax = totalAfterDiscount * 0.18; // Mock 18% GST
+    const finalTotal = totalAfterDiscount + calculatedTax;
 
     return (
         <div className="flex flex-col h-full bg-muted/30 p-4 rounded-xl">
             <div className="flex items-center justify-between mb-4 px-2">
                 <h2 className="font-semibold text-foreground flex items-center gap-2">
                     <Receipt className="w-5 h-5" />
-                    Bill Review
+                    Bill Preview
                 </h2>
             </div>
 
@@ -62,11 +68,12 @@ export default function BillPreview({ items, customerName, paymentMethod, total,
                                     <div className="flex-1 pr-4">
                                         <span className="text-foreground font-medium">{item.name}</span>
                                         <div className="text-xs text-muted-foreground">
-                                            {item.quantity} x ₹{item.price.toFixed(2)}
+                                            {item.quantity} x ₹{(parseFloat(item.price) || 0).toFixed(2)}
+                                            {(parseFloat(item.discount) || 0) > 0 && <span className="text-destructive ml-1">(-₹{(parseFloat(item.discount) || 0).toFixed(2)})</span>}
                                         </div>
                                     </div>
                                     <span className="text-foreground font-medium">
-                                        ₹{(item.quantity * item.price).toFixed(2)}
+                                        ₹{(((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0)) - (parseFloat(item.discount) || 0)).toFixed(2)}
                                     </span>
                                 </div>
                             ))
@@ -78,6 +85,12 @@ export default function BillPreview({ items, customerName, paymentMethod, total,
                             <span>Subtotal</span>
                             <span>₹{calculatedSubtotal.toFixed(2)}</span>
                         </div>
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between text-destructive">
+                                <span>Discount {discountType === 'percentage' ? `(${overallDiscount}%)` : ''}</span>
+                                <span>-₹{discountAmount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between text-muted-foreground">
                             <span>Tax (18%)</span>
                             <span>₹{calculatedTax.toFixed(2)}</span>

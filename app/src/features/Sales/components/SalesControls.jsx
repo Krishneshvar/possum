@@ -20,6 +20,10 @@ export default function SalesControls({
     setCustomerName,
     activeTab,
     setActiveTab,
+    overallDiscount,
+    setOverallDiscount,
+    discountType,
+    setDiscountType,
     tabsCount = 9,
     bills = []
 }) {
@@ -48,44 +52,88 @@ export default function SalesControls({
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Payment Method
                     </Label>
-                    <div className="grid grid-cols-3 gap-2">
-                        <Button
-                            variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                            className={cn("h-10 px-2", paymentMethod === 'cash' && "bg-success hover:bg-success/90 text-white")}
-                            onClick={() => setPaymentMethod('cash')}
-                        >
-                            <Banknote className="h-4 w-4 mr-1.5" />
-                            Cash
-                        </Button>
-                        <Button
-                            variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                            className="h-10 px-2"
-                            onClick={() => setPaymentMethod('card')}
-                        >
-                            <CreditCard className="h-4 w-4 mr-1.5" />
-                            Card
-                        </Button>
-                        <Button
-                            variant={paymentMethod === 'upi' ? 'default' : 'outline'}
-                            className="h-10 px-2"
-                            onClick={() => setPaymentMethod('upi')}
-                        >
-                            <Wallet className="h-4 w-4 mr-1.5" />
-                            UPI
-                        </Button>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                        <SelectTrigger className="bg-background border-border">
+                            <SelectValue placeholder="Select Payment Method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="cash">
+                                <div className="flex items-center">
+                                    <Banknote className="h-4 w-4 mr-2 text-success" />
+                                    Cash
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="card">
+                                <div className="flex items-center">
+                                    <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                                    Card
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="upi">
+                                <div className="flex items-center">
+                                    <Wallet className="h-4 w-4 mr-2 text-warning" />
+                                    UPI
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                {/* Overall Discount */}
+                <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Overall Discount
+                    </Label>
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+                                {discountType === 'fixed' ? '₹' : '%'}
+                            </div>
+                            <Input
+                                type="text"
+                                placeholder="0.00"
+                                value={overallDiscount || ''}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                        setOverallDiscount(val === "" ? 0 : parseFloat(val));
+                                    }
+                                }}
+                                className="pl-7 bg-background border-border"
+                            />
+                        </div>
+                        <div className="flex border border-border rounded-lg overflow-hidden bg-background">
+                            <button
+                                onClick={() => setDiscountType('fixed')}
+                                className={cn(
+                                    "px-3 py-2 text-xs font-bold transition-colors",
+                                    discountType === 'fixed' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                                )}
+                            >
+                                Fixed
+                            </button>
+                            <button
+                                onClick={() => setDiscountType('percentage')}
+                                className={cn(
+                                    "px-3 py-2 text-xs font-bold transition-colors",
+                                    discountType === 'percentage' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                                )}
+                            >
+                                %
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Bill Tabs */}
-            <div className="space-y-2 pt-2">
+            <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Active Bill
                     </Label>
-                    <span className="text-xs text-muted-foreground">
-                        Tab {activeTab + 1}
-                    </span>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                     {Array.from({ length: tabsCount }).map((_, idx) => {

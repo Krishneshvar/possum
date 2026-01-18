@@ -11,24 +11,24 @@ import { getDB } from '../../shared/db/index.js';
  * @returns {Object} Insert result
  */
 export function insertVariant(productId, variant) {
-    const db = getDB();
-    const stmt = db.prepare(`
+  const db = getDB();
+  const stmt = db.prepare(`
     INSERT INTO variants (
-      product_id, name, sku, price, cost_price, stock, stock_alert_cap, is_default, status
+      product_id, name, sku, mrp, cost_price, stock, stock_alert_cap, is_default, status
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-    return stmt.run(
-        productId,
-        variant.name,
-        variant.sku,
-        variant.price,
-        variant.cost_price,
-        variant.stock,
-        variant.stock_alert_cap,
-        variant.is_default ? 1 : 0,
-        variant.status
-    );
+  return stmt.run(
+    productId,
+    variant.name,
+    variant.sku,
+    variant.mrp,
+    variant.cost_price,
+    variant.stock,
+    variant.stock_alert_cap,
+    variant.is_default ? 1 : 0,
+    variant.status
+  );
 }
 
 /**
@@ -37,8 +37,8 @@ export function insertVariant(productId, variant) {
  * @returns {Array} Variants list
  */
 export function findVariantsByProductId(productId) {
-    const db = getDB();
-    return db.prepare('SELECT * FROM variants WHERE product_id = ? AND deleted_at IS NULL').all(productId);
+  const db = getDB();
+  return db.prepare('SELECT * FROM variants WHERE product_id = ? AND deleted_at IS NULL').all(productId);
 }
 
 /**
@@ -47,23 +47,23 @@ export function findVariantsByProductId(productId) {
  * @returns {Object} Update result
  */
 export function updateVariantById(variant) {
-    const db = getDB();
-    const stmt = db.prepare(`
+  const db = getDB();
+  const stmt = db.prepare(`
     UPDATE variants
-    SET name = ?, sku = ?, price = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, sku = ?, mrp = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND deleted_at IS NULL
   `);
-    return stmt.run(
-        variant.name,
-        variant.sku,
-        variant.price,
-        variant.cost_price,
-        variant.stock,
-        variant.stock_alert_cap,
-        variant.status,
-        variant.is_default,
-        variant.id
-    );
+  return stmt.run(
+    variant.name,
+    variant.sku,
+    variant.mrp,
+    variant.cost_price,
+    variant.stock,
+    variant.stock_alert_cap,
+    variant.status,
+    variant.is_default,
+    variant.id
+  );
 }
 
 /**
@@ -72,9 +72,9 @@ export function updateVariantById(variant) {
  * @returns {Object} Delete result
  */
 export function softDeleteVariant(id) {
-    const db = getDB();
-    const stmt = db.prepare('UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
-    return stmt.run(id);
+  const db = getDB();
+  const stmt = db.prepare('UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
+  return stmt.run(id);
 }
 
 /**
@@ -83,21 +83,21 @@ export function softDeleteVariant(id) {
  * @returns {Array} Matching variants
  */
 export function searchVariants({ query }) {
-    const db = getDB();
-    const filterClauses = [];
-    const filterParams = [];
+  const db = getDB();
+  const filterClauses = [];
+  const filterParams = [];
 
-    filterClauses.push(`v.deleted_at IS NULL`);
-    filterClauses.push(`p.deleted_at IS NULL`);
+  filterClauses.push(`v.deleted_at IS NULL`);
+  filterClauses.push(`p.deleted_at IS NULL`);
 
-    if (query) {
-        filterClauses.push(`(p.name LIKE ? OR v.name LIKE ? OR v.sku LIKE ?)`);
-        filterParams.push(`%${query}%`, `%${query}%`, `%${query}%`);
-    }
+  if (query) {
+    filterClauses.push(`(p.name LIKE ? OR v.name LIKE ? OR v.sku LIKE ?)`);
+    filterParams.push(`%${query}%`, `%${query}%`, `%${query}%`);
+  }
 
-    const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
+  const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
 
-    const sql = `
+  const sql = `
     SELECT 
       v.*, p.name as product_name, p.image_path
     FROM variants v
@@ -107,5 +107,5 @@ export function searchVariants({ query }) {
     LIMIT 50
   `;
 
-    return db.prepare(sql).all(...filterParams);
+  return db.prepare(sql).all(...filterParams);
 }

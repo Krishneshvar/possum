@@ -100,7 +100,7 @@ INSERT INTO products (id, name, category_id, status, product_tax) VALUES
 (10, 'All-Purpose Cleaner', 10, 'active', 50.00),
 (11, 'Headphones', 3, 'active', 50.00);
 
-INSERT INTO variants (id, product_id, name, sku, price, cost_price, stock, is_default) VALUES
+INSERT INTO variants (id, product_id, name, sku, mrp, cost_price, stock, is_default) VALUES
 (1, 1, 'Arabica', 'COF-B01-A', 1800, 900, 30, 1),
 (2, 1, 'Robusta', 'COF-B01-R', 1700, 850, 25, 0),
 (3, 2, 'Milk Chocolate', 'SNK-CHOC1-M', 250, 100, 200, 1),

@@ -28,16 +28,16 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
         <div className="space-y-3">
-          <Label htmlFor={`price-${variant._tempId}`} className="text-sm font-medium">
-            Selling Price <RequiredFieldIndicator />
+          <Label htmlFor={`mrp-${variant._tempId}`} className="text-sm font-medium">
+            MRP <RequiredFieldIndicator />
           </Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
             <Input
-              id={`price-${variant._tempId}`}
-              name="price"
+              id={`mrp-${variant._tempId}`}
+              name="mrp"
               type="number"
-              value={variant.price}
+              value={variant.mrp}
               onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
               step="0.01"
               className="h-11 pl-8"

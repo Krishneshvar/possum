@@ -30,8 +30,8 @@ export default function DisplayVariants({ product, getProductStatus, getVariantS
                 </div>
                 <div className="flex flex-col gap-1 text-sm text-muted-foreground md:flex-row md:justify-between lg:flex-row lg:gap-6">
                   <div className="flex gap-1">
-                    <p>Price: </p>
-                    <p className="text-primary">{formatPrice(variant.price)}</p>
+                    <p>MRP: </p>
+                    <p className="text-primary">{formatPrice(variant.mrp)}</p>
                   </div>
                   <div className="flex gap-1">
                     <p>Cost: </p>
@@ -41,7 +41,7 @@ export default function DisplayVariants({ product, getProductStatus, getVariantS
                     <p>Margin: </p>
                     <p className="">
                       {variant.cost_price > 0
-                        ? (((variant.price - variant.cost_price) / variant.cost_price) * 100).toFixed(2)
+                        ? (((variant.mrp - variant.cost_price) / variant.cost_price) * 100).toFixed(2)
                         : '0.00'}%
                     </p>
                   </div>
