@@ -23,20 +23,55 @@ const INITIAL_TAB_STATE = {
   paymentMethod: 'cash',
   overallDiscount: 0,
   discountType: 'fixed',
+  paymentType: 'partial',
+  amountTendered: 0,
 };
 
 // Initialize 9 tabs
 const INITIAL_BILLS = Array(9).fill(null).map((_, i) => ({
   ...INITIAL_TAB_STATE,
   id: i,
-  // Pre-fill first tab for demonstration
-  items: i === 0 ? [MOCK_PRODUCT, { ...MOCK_PRODUCT, id: 'p2', name: 'USB-C Cable', price: 499, mrp: 499, discount: 0, sku: 'CBL-002', quantity: 2 }] : []
+  items: []
 }));
+
+const DEFAULT_WIDTHS = {
+  index: 50,
+  product: 250,
+  qty: 100,
+  price: 100,
+  mrp: 100,
+  discount: 100,
+  total: 100,
+  actions: 50
+};
 
 export default function SalesPage() {
   const [bills, setBills] = useState(INITIAL_BILLS);
   const [activeTab, setActiveTab] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
+
+  // --- Column Persistence Logic ---
+  const [columnWidths, setColumnWidths] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('salesTableColumnWidths');
+      if (saved) {
+        try {
+          return { ...DEFAULT_WIDTHS, ...JSON.parse(saved) };
+        } catch (e) {
+          console.error("Failed to parse saved widths", e);
+        }
+      }
+    }
+    return DEFAULT_WIDTHS;
+  });
+
+  const handleColumnResize = (columnId, newWidth) => {
+    setColumnWidths(prev => {
+      const updated = { ...prev, [columnId]: newWidth };
+      localStorage.setItem('salesTableColumnWidths', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const currentBill = bills[activeTab];
 
@@ -74,7 +109,7 @@ export default function SalesPage() {
   };
 
   const removeItem = (itemId) => {
-    const newItems = currentBill.items.filter(item => item.id !== itemId);
+    const newItems = currentBill.items.filter(item => String(item.id) !== String(itemId));
     updateBill({ items: newItems });
   };
 
@@ -100,6 +135,24 @@ export default function SalesPage() {
     }
   };
 
+  const calculateTotal = (bill) => {
+    const calculatedSubtotal = bill.items.reduce((acc, item) => {
+      const price = parseFloat(item.price) || 0;
+      const qty = parseInt(item.quantity) || 0;
+      const disc = parseFloat(item.discount) || 0;
+      return acc + (price * qty) - disc;
+    }, 0);
+    const discountAmount = bill.discountType === 'percentage'
+      ? (calculatedSubtotal * (parseFloat(bill.overallDiscount) || 0) / 100)
+      : (parseFloat(bill.overallDiscount) || 0);
+
+    const totalAfterDiscount = Math.max(0, calculatedSubtotal - discountAmount);
+    const calculatedTax = totalAfterDiscount * 0.18; // Mock 18% GST
+    return totalAfterDiscount + calculatedTax;
+  };
+
+  const currentGrandTotal = calculateTotal(currentBill);
+
   return (
     <div className="h-[calc(100vh-7rem)] w-full flex flex-col gap-4 overflow-hidden">
       <div className={cn(
@@ -124,6 +177,10 @@ export default function SalesPage() {
               onProductSelect={addProductToBill}
               showPreview={showPreview}
               setShowPreview={setShowPreview}
+              columnWidths={columnWidths}
+              onColumnResize={handleColumnResize}
+              grandTotal={currentGrandTotal}
+              date={new Date()}
             />
           </div>
 
@@ -142,6 +199,11 @@ export default function SalesPage() {
               setActiveTab={setActiveTab}
               tabsCount={9}
               bills={bills}
+              paymentType={currentBill.paymentType}
+              setPaymentType={(val) => updateBill({ paymentType: val })}
+              amountTendered={currentBill.amountTendered}
+              setAmountTendered={(val) => updateBill({ amountTendered: val })}
+              grandTotal={currentGrandTotal}
             />
           </div>
         </div>
