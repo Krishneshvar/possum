@@ -122,41 +122,41 @@ export default function CategorySelector({ categories = [], value, onChange }) {
         type="button"
         variant="outline"
         onClick={() => handleOpenChange(!open)}
-        className="w-full justify-between h-11 text-left bg-white border-gray-300 hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        className="w-full justify-between h-11 text-left bg-background border-border hover:border-border/80 focus:border-ring focus:ring-1 focus:ring-ring"
       >
-        <span className="truncate text-gray-900">{findCategoryName(value)}</span>
+        <span className="truncate text-foreground">{findCategoryName(value)}</span>
         <ChevronDown
-          className={`ml-2 h-4 w-4 shrink-0 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
         />
       </Button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-96 overflow-hidden">
-          <div className="p-3 border-b border-gray-100">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 max-h-96 overflow-hidden">
+          <div className="p-3 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search categories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-10 h-9 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="pl-10 pr-10 h-9 border-border focus:border-ring focus:ring-1 focus:ring-ring bg-background text-foreground"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:bg-gray-100 rounded p-0.5"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:bg-muted rounded p-0.5"
                 >
-                  <X className="h-3 w-3 text-gray-400" />
+                  <X className="h-3 w-3 text-muted-foreground" />
                 </button>
               )}
             </div>
           </div>
 
           {!isSearching && history.length > 0 && (
-            <div className="border-b border-gray-100">
+            <div className="border-b border-border">
               <button
                 onClick={handleBack}
-                className="w-full flex items-center px-3 py-2.5 text-left hover:bg-gray-50 text-blue-600 text-sm font-medium"
+                className="w-full flex items-center px-3 py-2.5 text-left hover:bg-muted/50 text-primary text-sm font-medium"
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Back
@@ -171,15 +171,15 @@ export default function CategorySelector({ categories = [], value, onChange }) {
                   <button
                     key={category.id}
                     onClick={() => handleSearchResultClick(category)}
-                    className="w-full text-left px-3 py-2.5 hover:bg-gray-50 border-b border-gray-50 last:border-b-0"
+                    className="w-full text-left px-3 py-2.5 hover:bg-muted/50 border-b border-border last:border-b-0"
                   >
-                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{getCategoryPath(category.id)}</div>
+                    <div className="text-sm font-medium text-foreground">{category.name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{getCategoryPath(category.id)}</div>
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-8 text-center text-gray-500">
-                  <Search className="mx-auto h-6 w-6 text-gray-300 mb-2" />
+                <div className="px-3 py-8 text-center text-muted-foreground">
+                  <Search className="mx-auto h-6 w-6 text-muted-foreground/30 mb-2" />
                   <p className="text-sm">No categories found</p>
                 </div>
               )
@@ -188,11 +188,11 @@ export default function CategorySelector({ categories = [], value, onChange }) {
                 <button
                   key={category.id}
                   onClick={() => handleCategoryClick(category)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 border-b border-gray-50 last:border-b-0 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted/50 border-b border-border last:border-b-0 transition-colors"
                 >
-                  <span className="text-sm font-medium text-gray-900">{category.name}</span>
+                  <span className="text-sm font-medium text-foreground">{category.name}</span>
                   {category.subcategories && category.subcategories.length > 0 && (
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   )}
                 </button>
               ))

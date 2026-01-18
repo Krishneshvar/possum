@@ -3,7 +3,7 @@ import { Download, Package, Plus, Upload } from "lucide-react"
 import ProductsTable from "../components/ProductsTable"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 
-import { StatCards } from "@/components/common/stat-cards"
+import { StatCards } from "@/components/common/StatCards"
 import { productsStatsConfig } from "../data/productsStatsData.js"
 
 const productActions = {

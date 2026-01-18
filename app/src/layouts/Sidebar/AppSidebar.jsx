@@ -13,10 +13,10 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-import { NavDocuments } from "@/layouts/Sidebar/components/nav-documents"
-import { NavMain } from "@/layouts/Sidebar/components/nav-main"
-import { NavSecondary } from "@/layouts/Sidebar/components/nav-secondary"
-import { NavUser } from "@/layouts/Sidebar/components/nav-user"
+import { NavDocuments } from "@/layouts/Sidebar/components/NavDocuments"
+import { NavMain } from "@/layouts/Sidebar/components/NavMain"
+import { NavSecondary } from "@/layouts/Sidebar/components/NavSecondary"
+import { NavUser } from "@/layouts/Sidebar/components/NavUser"
 import { sidebarData } from "@/data/sidebarData.js"
 
 export function AppSidebar({
@@ -24,7 +24,7 @@ export function AppSidebar({
 }) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="bg-slate-200 rounded-t-lg">
+      <SidebarHeader className="rounded-t-lg">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -43,22 +43,22 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
 
-      <Separator className="bg-slate-50" />
+      <Separator className="" />
 
-      <SidebarContent className="bg-slate-200">
+      <SidebarContent className="">
         <NavMain items={sidebarData.navMain} />
 
-        <Separator className="bg-slate-50" />
+        <Separator className="" />
 
         <NavDocuments projects={sidebarData.documents} />
       </SidebarContent>
 
-      <Separator className="bg-slate-50" />
+      <Separator className="" />
 
-      <SidebarFooter  className="bg-slate-200 rounded-b-lg">
+      <SidebarFooter className="rounded-b-lg">
         <NavSecondary items={sidebarData.navSecondary} />
 
-        <Separator className="bg-slate-50" />
+        <Separator className="" />
 
         <NavUser user={sidebarData.user} />
       </SidebarFooter>

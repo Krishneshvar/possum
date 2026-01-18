@@ -130,7 +130,7 @@ export default function ProductInformation({
         <div className="flex flex-col sm:flex-row gap-6">
           <div className="flex flex-col space-y-3 flex-grow">
             <Label htmlFor="image">Product Image</Label>
-            <div className="flex justify-center items-center border-2 border-slate-200 border-dashed bg-slate-50 rounded-lg flex-grow relative">
+            <div className="flex justify-center items-center border-2 border-border border-dashed bg-muted/50 rounded-lg flex-grow relative">
               {imageUrl && (
                 <div className="absolute top-2 right-2 z-10">
                   <Button
@@ -138,7 +138,7 @@ export default function ProductInformation({
                     variant="ghost"
                     size="icon"
                     onClick={handleRemoveImage}
-                    className="h-6 w-6 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white text-gray-600 hover:text-red-500"
+                    className="h-6 w-6 rounded-full bg-background/70 backdrop-blur-sm hover:bg-background text-muted-foreground hover:text-destructive"
                     title="Remove image"
                   >
                     <X className="h-4 w-4" />

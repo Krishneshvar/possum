@@ -21,7 +21,7 @@ import {
 export function NavMain({ items }) {
   const [activeItem, setActiveItem] = useState(null);
   const location = useLocation();
-  
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -45,7 +45,7 @@ export function NavMain({ items }) {
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <Link to={item.url}>
-                      <SidebarMenuButton tooltip={item.title} className="hover:bg-slate-100">
+                      <SidebarMenuButton tooltip={item.title}>
                         {item.icon && <item.icon />}
                         <span>{item.title}</span>
                         <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -58,7 +58,7 @@ export function NavMain({ items }) {
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
                             <Link to={subItem.url}>
-                              {subItem.icon && <subItem.icon /> }
+                              {subItem.icon && <subItem.icon />}
                               <span>{subItem.title}</span>
                             </Link>
                           </SidebarMenuSubButton>
@@ -73,7 +73,7 @@ export function NavMain({ items }) {
 
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title} className="hover:bg-slate-100">
+              <SidebarMenuButton asChild tooltip={item.title}>
                 <Link to={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>

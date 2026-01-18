@@ -15,10 +15,10 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
 
   const renderActionButton = (action, isPrimary) => {
     const buttonClasses = isPrimary
-      ? "bg-blue-600 hover:bg-blue-700 text-white"
+      ? ""
       : action.label === 'Delete'
-        ? "bg-red-500 hover:bg-red-600 text-white shadow-sm"
-        : "bg-slate-200 hover:bg-white text-slate-800 shadow-sm";
+        ? ""
+        : "";
 
     const content = (
       <>
@@ -30,7 +30,7 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
     if (action.label === 'Delete') {
       return (
         <Button
-          size="default"
+          variant="destructive"
           onClick={action.onClick}
           className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}
         >
@@ -39,13 +39,13 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
       );
     } else if (action.url) {
       return (
-        <Button asChild size="default" className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
+        <Button asChild size="default" variant={isPrimary ? "default" : "secondary"} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
           <Link to={action.url}>{content}</Link>
         </Button>
       );
     } else {
       return (
-        <Button size="default" onClick={action.onClick} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
+        <Button size="default" variant={isPrimary ? "default" : "secondary"} onClick={action.onClick} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
           {content}
         </Button>
       );
@@ -60,19 +60,19 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions, sh
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 flex-shrink-0 hover:bg-white hover:shadow-sm cursor-pointer"
+              className="h-10 w-10 flex-shrink-0 hover:shadow-sm cursor-pointer"
               onClick={() => navigate(-1)}
             >
-              <ArrowLeft className="h-5 w-5 text-black" />
+              <ArrowLeft className="h-5 w-5 text-foreground" />
             </Button>
           )}
           {headerIcon && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/10 border border-blue-600/20 shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shrink-0">
               {headerIcon}
             </div>
           )}
           <div className="min-w-none flex flex-col">
-            <h1 className="text-[1.5rem] font-bold text-slate-900">{headerLabel}</h1>
+            <h1 className="text-[1.5rem] font-bold text-foreground">{headerLabel}</h1>
           </div>
 
           {secondaryActions.length > 0 && (

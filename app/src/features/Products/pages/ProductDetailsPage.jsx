@@ -127,14 +127,14 @@ export default function ProductDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto p-6 space-y-8">
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex items-center justify-between">
-            <div className="h-10 w-40 bg-slate-200 rounded-lg animate-pulse" />
+            <div className="h-10 w-40 bg-muted rounded-lg animate-pulse" />
             <div className="flex gap-3">
-              <div className="h-10 w-32 bg-slate-200 rounded-lg animate-pulse" />
-              <div className="h-10 w-32 bg-slate-200 rounded-lg animate-pulse" />
-              <div className="h-10 w-32 bg-slate-200 rounded-lg animate-pulse" />
+              <div className="h-10 w-32 bg-muted rounded-lg animate-pulse" />
+              <div className="h-10 w-32 bg-muted rounded-lg animate-pulse" />
+              <div className="h-10 w-32 bg-muted rounded-lg animate-pulse" />
             </div>
           </div>
 
@@ -142,12 +142,12 @@ export default function ProductDetailsPage() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-0 shadow-sm">
                 <CardHeader className="space-y-4">
-                  <div className="h-8 bg-slate-200 rounded animate-pulse" />
-                  <div className="h-4 w-48 bg-slate-200 rounded animate-pulse" />
+                  <div className="h-8 bg-muted rounded animate-pulse" />
+                  <div className="h-4 w-48 bg-muted rounded animate-pulse" />
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-24 bg-slate-100 rounded-lg animate-pulse" />
+                    <div key={i} className="h-24 bg-muted/50 rounded-lg animate-pulse" />
                   ))}
                 </CardContent>
               </Card>
@@ -156,7 +156,7 @@ export default function ProductDetailsPage() {
               <Card className="border-0 shadow-sm">
                 <CardContent className="p-6 space-y-4">
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse" />
+                    <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
                   ))}
                 </CardContent>
               </Card>
@@ -169,7 +169,7 @@ export default function ProductDetailsPage() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Alert variant="destructive" className="max-w-md border-0 shadow-lg">
           <AlertTriangle className="h-5 w-5" />
           <AlertTitle className="text-lg">Something went wrong</AlertTitle>
@@ -191,15 +191,15 @@ export default function ProductDetailsPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Card className="max-w-md border-0 shadow-lg">
           <CardContent className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
-              <Package className="h-8 w-8 text-slate-400" />
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
+              <Package className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-slate-900">Product Not Found</h3>
-              <p className="text-slate-600">The product you're looking for doesn't exist or has been removed.</p>
+              <h3 className="text-xl font-semibold text-foreground">Product Not Found</h3>
+              <p className="text-muted-foreground">The product you're looking for doesn't exist or has been removed.</p>
             </div>
             <Button onClick={() => navigate("/products")} className="w-full">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -210,93 +210,93 @@ export default function ProductDetailsPage() {
       </div>
     )
   }
-  
+
   return (
     <>
-    <div className="min-h-screen mb-6 space-y-8">
-      <GenericPageHeader
-        showBackButton
-        headerIcon={""}
-        headerLabel={product.name}
-        actions={productActions}
-      />
+      <div className="min-h-screen mb-6 space-y-8">
+        <GenericPageHeader
+          showBackButton
+          headerIcon={""}
+          headerLabel={product.name}
+          actions={productActions}
+        />
 
-      <div className="grid gap-8 grid-cols-1 lg:grid-cols-1 xl:grid-cols-3">
-        <Card className="lg:col-span-2 shadow-lg">
-          <CardContent className="w-full">
-            <div className="flex mb-4 gap-2 items-center text-lg font-medium">
-              <Package className="h-5 w-5" /> 
-              Product Information
-            </div>
-            <div className="flex flex-col gap-6 sm:flex-row md:flex-col lg:flex-row">
-              <div className="flex justify-center">
-                {product.imageUrl && (
-                  <img src={product.imageUrl} alt={product.name} className="size-32 rounded-lg object-cover" />
-                )}
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-1 xl:grid-cols-3">
+          <Card className="lg:col-span-2 shadow-lg">
+            <CardContent className="w-full">
+              <div className="flex mb-4 gap-2 items-center text-lg font-medium">
+                <Package className="h-5 w-5" />
+                Product Information
               </div>
-              <div className="flex flex-col flex-1">
-                <h2 className="text-2xl font-bold mb-2">
-                  {product.name}
-                </h2>
-                <p className="text-gray-500 mb-4">
-                  {product.description || "No description..."}
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:justify-between md:gap-2 lg:justify-start lg:gap-6 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Label className="text-slate-500 font-medium">Status:</Label>
-                    {getProductStatus(product.status)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Label className="text-slate-500 font-medium">Category:</Label>
-                    <span className="font-medium">{product.category_name}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Label className="text-slate-500 font-medium">Tax:</Label>
-                    <span className="text-slate-900 font-medium">{product.product_tax}%</span>
+              <div className="flex flex-col gap-6 sm:flex-row md:flex-col lg:flex-row">
+                <div className="flex justify-center">
+                  {product.imageUrl && (
+                    <img src={product.imageUrl} alt={product.name} className="size-32 rounded-lg object-cover" />
+                  )}
+                </div>
+                <div className="flex flex-col flex-1">
+                  <h2 className="text-2xl font-bold mb-2">
+                    {product.name}
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    {product.description || "No description..."}
+                  </p>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-between md:gap-2 lg:justify-start lg:gap-6 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Label className="text-muted-foreground font-medium">Status:</Label>
+                      {getProductStatus(product.status)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Label className="text-muted-foreground font-medium">Category:</Label>
+                      <span className="font-medium">{product.category_name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Label className="text-muted-foreground font-medium">Tax:</Label>
+                      <span className="text-foreground font-medium">{product.product_tax}%</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="lg:col-span-2 space-y-6 xl:col-span-1 border-0 shadow-lg">
-          <CardContent className="space-y-4">
-            <div className="flex gap-2 items-center font-medium">
-              <Package /> Product Overview
-            </div>
-            <div className="flex flex-col gap-2 text-md">
-              <div className="flex justify-between">
-                <h3 className="text-slate-500">Total Stock:</h3>
-                <p>{calculateTotalStock()}</p>
+          <Card className="lg:col-span-2 space-y-6 xl:col-span-1 border-0 shadow-lg">
+            <CardContent className="space-y-4">
+              <div className="flex gap-2 items-center font-medium">
+                <Package /> Product Overview
               </div>
-              <div className="flex justify-between">
-                <h3 className="text-slate-500">Total Variants:</h3>
-                <p>{product.variants.length}</p>
+              <div className="flex flex-col gap-2 text-md">
+                <div className="flex justify-between">
+                  <h3 className="text-muted-foreground">Total Stock:</h3>
+                  <p>{calculateTotalStock()}</p>
+                </div>
+                <div className="flex justify-between">
+                  <h3 className="text-muted-foreground">Total Variants:</h3>
+                  <p>{product.variants.length}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="lg:col-span-2 shadow-lg">
-          <DisplayVariants
-            product={product}
-            getProductStatus={getProductStatus}
-            getVariantStockStatus={getVariantStockStatus}
-            formatPrice={formatPrice}
-          />
-        </Card>
+          <Card className="lg:col-span-2 shadow-lg">
+            <DisplayVariants
+              product={product}
+              getProductStatus={getProductStatus}
+              getVariantStockStatus={getVariantStockStatus}
+              formatPrice={formatPrice}
+            />
+          </Card>
 
+        </div>
       </div>
-    </div>
 
-    <GenericDeleteDialog
-      dialogTitle="Delete Product?"
-      itemName={product?.name ?? "this product"}
-      open={isDeleteDialogOpen}
-      onOpenChange={handleDialogOpenChange}
-      onConfirm={handleConfirmDelete}
-    />
+      <GenericDeleteDialog
+        dialogTitle="Delete Product?"
+        itemName={product?.name ?? "this product"}
+        open={isDeleteDialogOpen}
+        onOpenChange={handleDialogOpenChange}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   )
 }

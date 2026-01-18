@@ -8,7 +8,7 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
     <TableBody className="overflow-x-auto">
       {data.length > 0 ? (
         data.map((item) => (
-          <TableRow key={item.id} className="hover:bg-slate-100 transition-colors border-b border-border">
+          <TableRow key={item.id} className="hover:bg-muted/50 transition-colors border-b border-border">
             <TableCell className="min-w-none">
               <Avatar className="rounded-lg h-10 w-10 border border-border">
                 {item.imageUrl ? (
@@ -28,7 +28,7 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
         ))
       ) : (
         <TableRow>
-          <TableCell colSpan={columnsToRender.length + 2} className="h-40 text-center hover:bg-slate-100">
+          <TableCell colSpan={columnsToRender.length + 2} className="h-40 text-center hover:bg-muted/50">
             <div className="flex flex-col items-center justify-center space-y-3">{emptyState}</div>
           </TableCell>
         </TableRow>

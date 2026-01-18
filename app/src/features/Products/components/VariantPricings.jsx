@@ -10,8 +10,8 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-          <DollarSign className="h-5 w-5 text-green-600" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+          <DollarSign className="h-5 w-5 text-success" />
         </div>
         <div className="flex w-full items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">Pricings</h3>
@@ -19,7 +19,7 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
             variant="outline"
             onClick={() => onClearPriceFields(variant._tempId)}
             type="button"
-            className="bg-black text-white hover:bg-gray-700 hover:text-white cursor-pointer"
+            className="cursor-pointer"
             title="Reset pricing fields"
           >
             Reset

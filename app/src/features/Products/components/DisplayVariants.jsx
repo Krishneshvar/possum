@@ -18,20 +18,20 @@ export default function DisplayVariants({ product, getProductStatus, getVariantS
           return (
             <div
               key={variant.id}
-              className={`flex flex-row md:flex-col lg:flex-row flex-1 flex-grow justify-between border-1 p-4 gap-2 rounded-lg ${variant.is_default ? "bg-blue-50 border-blue-500" : "border-slate-300"}`}
+              className={`flex flex-row md:flex-col lg:flex-row flex-1 flex-grow justify-between border p-4 gap-2 rounded-lg ${variant.is_default ? "bg-accent/50 border-primary" : "border-border"}`}
             >
               <div className="flex flex-col gap-4">
                 <div>
                   <div className="flex sm:items-center gap-1">
                     <h2 className="text-lg font-semibold">{variant.name}</h2>
-                    {variant.is_default ? <Badge variant="secondary" className="bg-slate-200 size-fit">Default</Badge> : null}
+                    {variant.is_default ? <Badge variant="secondary" className="size-fit">Default</Badge> : null}
                   </div>
-                  <p className="text-md text-gray-500">SKU: {variant.sku}</p>
+                  <p className="text-md text-muted-foreground">SKU: {variant.sku}</p>
                 </div>
-                <div className="flex flex-col gap-1 text-sm text-gray-500 md:flex-row md:justify-between lg:flex-row lg:gap-6">
+                <div className="flex flex-col gap-1 text-sm text-muted-foreground md:flex-row md:justify-between lg:flex-row lg:gap-6">
                   <div className="flex gap-1">
                     <p>Price: </p>
-                    <p className="text-blue-600">{formatPrice(variant.price)}</p>
+                    <p className="text-primary">{formatPrice(variant.price)}</p>
                   </div>
                   <div className="flex gap-1">
                     <p>Cost: </p>
@@ -53,14 +53,14 @@ export default function DisplayVariants({ product, getProductStatus, getVariantS
                   {getProductStatus(variant.status)}
                 </div>
                 <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
-                  <p className="flex gap-1 justify-center items-center text-xl font-bold text-slate-900">
+                  <p className="flex gap-1 justify-center items-center text-xl font-bold text-foreground">
                     <StockIcon className={`size-4 ${stockStatus.styles}`} /> {variant.stock}
                   </p>
                   <p className="text-sm hidden sm:block">units</p>
                 </div>
                 <div className="flex flex-col items-end text-sm sm:flex-row sm:gap-1">
-                  <p className="text-slate-500">Alert at:</p>
-                  <p className="text-slate-900">{variant.stock_alert_cap}</p>
+                  <p className="text-muted-foreground">Alert at:</p>
+                  <p className="text-foreground">{variant.stock_alert_cap}</p>
                 </div>
               </div>
             </div>

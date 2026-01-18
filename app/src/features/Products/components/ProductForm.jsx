@@ -27,7 +27,7 @@ export default function ProductForm({ initialData, categories, onSuccess, onFail
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { success, error } = await saveProductAndVariants(isEditMode, initialData?.id);
-    
+
     if (success) {
       onSuccess(formData.name);
     } else {
@@ -43,7 +43,7 @@ export default function ProductForm({ initialData, categories, onSuccess, onFail
     }
     removeVariantLocally(variantId);
   };
-  
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8 mb-6">
       <ProductInformation
@@ -58,8 +58,8 @@ export default function ProductForm({ initialData, categories, onSuccess, onFail
       <div className="space-y-6">
         <Card>
           <CardContent className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10">
-              <span className="h-5 w-5 text-indigo-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <span className="h-5 w-5 text-primary">
                 <Split />
               </span>
             </div>
@@ -87,8 +87,8 @@ export default function ProductForm({ initialData, categories, onSuccess, onFail
         <div className="flex">
           <Button
             type="button"
-            variant="outline"
-            className="mx-auto bg-black text-white hover:bg-gray-700 hover:text-white cursor-pointer"
+            variant="secondary"
+            className="mx-auto cursor-pointer"
             onClick={addVariantLocally}
           >
             <Plus />
@@ -101,7 +101,7 @@ export default function ProductForm({ initialData, categories, onSuccess, onFail
         <Button
           type="submit"
           disabled={isSaving}
-          className="bg-blue-600 hover:bg-blue-700 cursor-pointer"
+          className="cursor-pointer"
         >
           Save
         </Button>

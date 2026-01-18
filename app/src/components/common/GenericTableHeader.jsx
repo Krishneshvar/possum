@@ -3,7 +3,7 @@ import { TableHeader, TableRow, TableHead } from "@/components/ui/table"
 export default function GenericTableHeader({ columns, visibleColumns }) {
   return (
     <TableHeader>
-      <TableRow className="border-t border-border hover:bg-slate-100">
+      <TableRow className="border-t border-border hover:bg-muted/50">
         <TableHead></TableHead>
         {columns.map(
           (column) =>

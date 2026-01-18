@@ -22,8 +22,8 @@ const CategoryNode = ({ category, onEdit }) => {
   };
 
   return (
-    <div className="pl-4 border-l border-gray-200">
-      <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 transition-colors">
+    <div className="pl-4 border-l border-border">
+      <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
         <span className="text-sm font-medium">{category.name}</span>
         <div className="flex items-center space-x-2">
           <Button
@@ -39,7 +39,7 @@ const CategoryNode = ({ category, onEdit }) => {
             size="sm"
             onClick={handleDelete}
             title="Delete Category"
-            className="text-destructive hover:text-white"
+            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
           >
             <Trash2 className="h-4 w-4" />
           </Button>

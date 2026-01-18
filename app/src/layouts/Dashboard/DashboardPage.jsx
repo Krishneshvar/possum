@@ -4,9 +4,9 @@ import {
   Routes,
 } from 'react-router-dom';
 
-import { AppSidebar } from "@/layouts/Sidebar/app-sidebar";
-import { StatCards } from "@/components/common/stat-cards";
-import { SiteHeader } from '@/components/common/site-header';
+import { AppSidebar } from "@/layouts/Sidebar/AppSidebar";
+import { StatCards } from "@/components/common/StatCards";
+import { SiteHeader } from '@/components/common/SiteHeader';
 import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
@@ -38,11 +38,11 @@ export default function DashboardPage() {
   return (
     <HashRouter>
       <SidebarProvider
-        className="bg-slate-100"
+        className="bg-muted"
         style={{ "--sidebar-width": "min(250px, calc(100vw - 32px))" }}
       >
         <AppSidebar variant="floating" />
-        <div className="w-full bg-slate-100 p-1 sm:p-2 lg:p-4 min-h-screen">
+        <div className="w-full bg-muted p-1 sm:p-2 lg:p-4 min-h-screen">
           <div className="w-full max-w-full overflow-hidden">
             <SiteHeader />
             <Separator className="my-2 sm:my-4" />

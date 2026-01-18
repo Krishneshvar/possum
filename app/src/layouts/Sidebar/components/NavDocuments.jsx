@@ -31,11 +31,11 @@ export function NavDocuments({
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <div className="flex items-center justify-between px-2 py-2 text-sm font-semibold text-gray-500">
+      <div className="flex items-center justify-between px-2 py-2 text-sm font-semibold text-muted-foreground">
         <span>Documents</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="h-6 w-6 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center">
+            <button className="h-6 w-6 rounded-md hover:bg-muted flex items-center justify-center">
               <Ellipsis className="h-4 w-4" />
               <span className="sr-only">Add Document</span>
             </button>
@@ -59,7 +59,7 @@ export function NavDocuments({
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild className="hover:bg-slate-100">
+            <SidebarMenuButton asChild>
               <a href={item.url}>
                 <FileText />
                 <span>{item.name}</span>
