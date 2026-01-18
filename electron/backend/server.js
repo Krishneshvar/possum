@@ -1,7 +1,10 @@
+/**
+ * Express Server Bootstrap
+ * Initializes and starts the HTTP server
+ */
 import express from 'express';
-import { initDB } from './db.js';
-import productsRouter from './routes/products.routes.js';
-import categoriesRouter from './routes/categories.routes.js';
+import { initDB } from './shared/db/index.js';
+import { registerRoutes } from './routes.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
@@ -23,12 +26,12 @@ function startServer() {
 
   app.use(cors(corsOptions));
 
-  app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+  app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
   app.use(express.json());
 
-  app.use('/api/products', productsRouter);
-  app.use('/api/categories', categoriesRouter);
+  // Register all routes from modules
+  registerRoutes(app);
 
   app.listen(3001, () => {
     console.log('Backend running on http://localhost:3001');
