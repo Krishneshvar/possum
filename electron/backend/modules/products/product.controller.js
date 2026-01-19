@@ -51,7 +51,7 @@ export async function getProductsController(req, res) {
 
         res.json(productsData);
     } catch (err) {
-        console.error(err);
+        console.error('Error fetching products:', err);
         res.status(500).json({ error: 'Failed to retrieve products.' });
     }
 }
@@ -61,10 +61,25 @@ export async function getProductsController(req, res) {
  * Create a new product with variants
  */
 export async function createProductController(req, res) {
-    const { name, category_id, description, status, product_tax, variants } = req.body;
+    const { name, category_id, description, status, variants, taxIds } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const parsedVariants = JSON.parse(variants);
+    let parsedVariants;
+    try {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+    } catch (e) {
+        if (image_path) {
+            fs.unlinkSync(path.join(basePath, image_path));
+        }
+        return res.status(400).json({ error: 'Invalid variants format.' });
+    }
+
+    let parsedTaxIds;
+    try {
+        parsedTaxIds = taxIds ? (typeof taxIds === 'string' ? JSON.parse(taxIds) : taxIds) : [];
+    } catch (e) {
+        parsedTaxIds = [];
+    }
 
     if (!name || !parsedVariants || parsedVariants.length === 0) {
         if (image_path) {
@@ -75,6 +90,9 @@ export async function createProductController(req, res) {
 
     for (const variant of parsedVariants) {
         if (!variant.name) {
+            if (image_path) {
+                fs.unlinkSync(path.join(basePath, image_path));
+            }
             return res.status(400).json({ error: 'Each variant must have a name.' });
         }
     }
@@ -82,20 +100,20 @@ export async function createProductController(req, res) {
     try {
         const newProduct = productService.createProductWithVariants({
             name,
-            category_id,
-            description,
-            status,
-            product_tax,
+            category_id: category_id || null,
+            description: description || null,
+            status: status || 'active',
             image_path,
             variants: parsedVariants,
+            taxIds: parsedTaxIds,
         });
         res.status(201).json(newProduct);
     } catch (err) {
-        console.error(err);
+        console.error('Error creating product:', err);
         if (image_path) {
-            fs.unlinkSync(path.join(basePath, image_path));
+            try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
         }
-        res.status(500).json({ error: 'Failed to create product.' });
+        res.status(500).json({ error: 'Failed to create product.', details: err.message });
     }
 }
 
@@ -112,6 +130,7 @@ export async function getProductDetails(req, res) {
         }
         res.json(product);
     } catch (err) {
+        console.error('Error fetching product details:', err);
         res.status(500).json({ error: 'Failed to retrieve product details.' });
     }
 }
@@ -122,26 +141,44 @@ export async function getProductDetails(req, res) {
  */
 export async function updateProductController(req, res) {
     const { id } = req.params;
-    const { name, category_id, description, status, product_tax } = req.body;
+    const { name, category_id, description, status, variants, taxIds } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : undefined;
 
-    const productData = { name, category_id, description, status, product_tax };
+    let parsedTaxIds;
+    try {
+        parsedTaxIds = taxIds !== undefined
+            ? (typeof taxIds === 'string' ? JSON.parse(taxIds) : taxIds)
+            : undefined;
+    } catch (e) {
+        parsedTaxIds = undefined;
+    }
+
+    let parsedVariants;
+    try {
+        parsedVariants = variants !== undefined
+            ? (typeof variants === 'string' ? JSON.parse(variants) : variants)
+            : undefined;
+    } catch (e) {
+        parsedVariants = undefined;
+    }
+
+    const productData = { name, category_id, description, status, variants: parsedVariants, taxIds: parsedTaxIds };
 
     try {
         const changes = productService.updateProduct(parseInt(id, 10), productData, image_path);
         if (changes.changes === 0) {
             if (image_path) {
-                fs.unlinkSync(path.join(basePath, image_path));
+                try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
             }
             return res.status(404).json({ error: 'Product not found or no changes made.' });
         }
         res.status(200).json({ message: 'Product updated successfully.' });
     } catch (err) {
-        console.error(err);
+        console.error('Error updating product:', err);
         if (image_path) {
-            fs.unlinkSync(path.join(basePath, image_path));
+            try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
         }
-        res.status(500).json({ error: 'Failed to update product.' });
+        res.status(500).json({ error: 'Failed to update product.', details: err.message });
     }
 }
 
@@ -163,6 +200,7 @@ export async function deleteProductController(req, res) {
         }
         res.status(204).end();
     } catch (err) {
+        console.error('Error deleting product:', err);
         res.status(500).json({ error: 'Failed to delete product.' });
     }
 }

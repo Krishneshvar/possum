@@ -1,5 +1,5 @@
 import { Package, Upload, X } from "lucide-react";
-import { useRef } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 import CategorySelector from "./CategorySelector";
+import TaxSelector from "./TaxSelector";
 
 export default function ProductInformation({
   formData,
@@ -27,7 +28,24 @@ export default function ProductInformation({
 }) {
   const fileInputRef = useRef(null);
 
-  const imageUrl = formData.imageFile ? URL.createObjectURL(formData.imageFile) : (formData.image_path ? `http://localhost:3001${formData.image_path}` : null);
+  const imageUrl = useMemo(() => {
+    if (formData.imageFile) {
+      return URL.createObjectURL(formData.imageFile);
+    }
+    if (formData.image_path) {
+      return `http://localhost:3001${formData.image_path}`;
+    }
+    return null;
+  }, [formData.imageFile, formData.image_path]);
+
+  // Clean up object URL to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (imageUrl && imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    };
+  }, [imageUrl]);
 
   const handleButtonClick = () => {
     fileInputRef.current.click();
@@ -107,23 +125,14 @@ export default function ProductInformation({
             />
           </div>
 
-          <div className="space-y-3">
-            <Label htmlFor="product_tax" className="text-sm font-medium">
-              Product Tax (%)
+          <div className="space-y-3 lg:col-span-2">
+            <Label className="text-sm font-medium">
+              Tax Configuration
             </Label>
-            <div className="relative">
-              <Input
-                id="product_tax"
-                name="product_tax"
-                type="number"
-                value={formData.product_tax}
-                onChange={(e) => handleChange(e.target.name, e.target.value)}
-                step="0.01"
-                className="h-11 pr-8"
-                placeholder="0.00"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-            </div>
+            <TaxSelector
+              selectedTaxIds={formData.taxIds}
+              onChange={handleChange}
+            />
           </div>
         </div>
 

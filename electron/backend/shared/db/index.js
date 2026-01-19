@@ -53,4 +53,16 @@ function closeDB() {
     }
 }
 
-export { initDB, getDB, closeDB };
+/**
+ * Execute a function within a database transaction
+ * @param {Function} fn - Function to execute within transaction
+ * @returns {*} Result of the function
+ * @throws {Error} Rolls back and rethrows any error
+ */
+function transaction(fn) {
+    const db = getDB();
+    const runTransaction = db.transaction(fn);
+    return runTransaction();
+}
+
+export { initDB, getDB, closeDB, transaction };

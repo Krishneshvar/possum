@@ -64,19 +64,20 @@ const getDefaultVariant = (isDefault = false) => ({
 const getInitialFormData = (data) => {
   if (data?.variants?.length > 0) {
     return {
+      id: data.id,
       name: data.name ?? '',
       description: data.description ?? '',
       image_path: data.image_path ?? null,
       category_id: data.category_id ? String(data.category_id) : '',
       status: data.status ?? 'active',
-      product_tax: data.product_tax ? String(data.product_tax) : '0',
+      taxIds: data.taxes?.map(t => t.id) ?? [],
       variants: data.variants.map(v => ({
         ...v,
         _tempId: v.id,
         mrp: v.mrp ? String(v.mrp) : '',
         cost_price: v.cost_price ? String(v.cost_price) : '',
         profit_margin: v.cost_price && v.mrp ? calculateProfitMargin(v.mrp, v.cost_price).toFixed(2) : '0',
-        stock: v.stock ? String(v.stock) : '0',
+        stock: v.stock ?? 0, // Read-only, computed from inventory
         stock_alert_cap: v.stock_alert_cap ? String(v.stock_alert_cap) : '10',
         status: v.status ?? 'active',
       })),
@@ -89,7 +90,7 @@ const getInitialFormData = (data) => {
     imageFile: null,
     category_id: '',
     status: 'active',
-    product_tax: '0',
+    taxIds: [],
     variants: [getDefaultVariant(true)],
   };
 };
@@ -104,9 +105,12 @@ export const useProductAndVariantForm = (initialState = {}) => {
   const [deleteVariant] = useDeleteVariantMutation();
 
   useEffect(() => {
-    setFormData(getInitialFormData(initialState));
-    console.log("PD: ", formData);
-  }, [initialState]);
+    // Only reset if the product ID changes (e.g., switching between products in edit mode)
+    // or when we transition from no data (add mode) to having data (edit mode loaded).
+    if (initialState?.id !== formData.id) {
+      setFormData(getInitialFormData(initialState));
+    }
+  }, [initialState?.id, formData.id]);
 
   const handleProductChange = useCallback((name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -195,7 +199,8 @@ export const useProductAndVariantForm = (initialState = {}) => {
     const cleanData = {
       ...rest,
       category_id: formData.category_id ? Number.parseInt(formData.category_id, 10) : null,
-      product_tax: formData.product_tax ? Number.parseFloat(formData.product_tax) : 0,
+      taxIds: formData.taxIds || [],
+      variants: variants.map(getVariantData),
     };
 
     if (formData.imageFile) {
@@ -213,8 +218,8 @@ export const useProductAndVariantForm = (initialState = {}) => {
       ...rest,
       mrp: variant.mrp ? Number.parseFloat(variant.mrp) : 0,
       cost_price: variant.cost_price ? Number.parseFloat(variant.cost_price) : 0,
-      stock: variant.stock ? Number.parseInt(variant.stock) : 0,
-      stock_alert_cap: variant.stock_alert_cap ? Number.parseInt(variant.stock_alert_cap) : 0,
+      stock_alert_cap: variant.stock_alert_cap ? Number.parseInt(variant.stock_alert_cap) : 10,
+      stock: variant.stock ? Number.parseInt(variant.stock, 10) : 0,
       is_default: variant.is_default,
     };
     return cleanData;
@@ -223,31 +228,18 @@ export const useProductAndVariantForm = (initialState = {}) => {
   const saveProductAndVariants = useCallback(async (isEditMode, id) => {
     try {
       const productData = getProductData();
-      const variantData = formData.variants.map(getVariantData);
 
       if (isEditMode) {
-        const newVariants = variantData.filter(v => !v.id);
-        const existingVariants = variantData.filter(v => v.id);
-
         await updateProduct({ id, ...productData }).unwrap();
-
-        for (const variant of existingVariants) {
-          await updateVariant({ id: variant.id, productId: id, ...variant }).unwrap();
-        }
-
-        for (const variant of newVariants) {
-          await addVariant({ ...variant, productId: id }).unwrap();
-        }
-
       } else {
-        await addProduct({ ...productData, variants: variantData }).unwrap();
+        await addProduct(productData).unwrap();
       }
       return { success: true };
     } catch (error) {
       console.error('Failed to save product or variants:', error);
       return { success: false, error };
     }
-  }, [formData, addProduct, updateProduct, addVariant, updateVariant, getProductData, getVariantData]);
+  }, [addProduct, updateProduct, getProductData]);
 
   const deleteVariantFromApi = useCallback(async (variantId, productId) => {
     try {

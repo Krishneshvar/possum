@@ -1,9 +1,9 @@
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Info } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function VariantInventory({ variant, onVariantChange }) {
+export default function VariantInventory({ variant, onVariantChange, isEditing = false }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -12,25 +12,31 @@ export default function VariantInventory({ variant, onVariantChange }) {
         </div>
         <h3 className="text-lg font-semibold text-foreground">Inventory</h3>
       </div>
+
+      {/* Stock is read-only - derived from inventory_lots + inventory_adjustments */}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-3">
           <Label htmlFor={`stock-${variant._tempId}`} className="text-sm font-medium">
-            Current Stock
+            Stock Quantity
           </Label>
           <Input
             id={`stock-${variant._tempId}`}
             name="stock"
             type="number"
-            value={variant.stock}
+            value={variant.stock ?? 0}
             onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
             placeholder="0"
             className="h-11"
             min="0"
           />
+          <p className="text-xs text-muted-foreground">
+            {isEditing ? "Entering a different value will create an inventory adjustment." : "Initial stock level."}
+          </p>
         </div>
         <div className="space-y-3">
           <Label htmlFor={`stock_alert_cap-${variant._tempId}`} className="text-sm font-medium">
-            Low Stock Alert
+            Low Stock Alert Threshold
           </Label>
           <Input
             id={`stock_alert_cap-${variant._tempId}`}

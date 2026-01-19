@@ -8,9 +8,9 @@ const createFormData = (body, isUpdate = false) => {
       if (key === 'imageFile') {
         formData.append('image', body[key]);
       } else if (key === 'variants') {
-        if (!isUpdate) {
-          formData.append('variants', JSON.stringify(body[key]));
-        }
+        formData.append('variants', JSON.stringify(body[key]));
+      } else if (key === 'taxIds' && Array.isArray(body[key])) {
+        formData.append('taxIds', JSON.stringify(body[key]));
       } else {
         formData.append(key, body[key]);
       }

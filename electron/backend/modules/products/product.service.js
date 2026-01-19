@@ -4,7 +4,9 @@
  */
 import * as productRepository from './product.repository.js';
 import * as variantRepository from '../variants/variant.repository.js';
-import { getDB } from '../../shared/db/index.js';
+import * as variantService from '../variants/variant.service.js';
+import * as inventoryService from '../inventory/inventory.service.js';
+import { transaction } from '../../shared/db/index.js';
 import { buildImageUrl } from '../../shared/utils/index.js';
 import path from 'path';
 import fs from 'fs';
@@ -19,39 +21,54 @@ const basePath = path.join(__dirname, '../../../..');
  * @param {Object} productData - Product and variants data
  * @returns {Object} The created product ID
  */
-export function createProductWithVariants({ name, description, category_id, status, product_tax, image_path, variants }) {
-    const db = getDB();
-
-    const transaction = db.transaction(() => {
+export function createProductWithVariants({ name, description, category_id, status, image_path, variants, taxIds }) {
+    return transaction(() => {
         const productInfo = productRepository.insertProduct({
-            name, description, category_id, status, product_tax, image_path
+            name, description, category_id, status, image_path
         });
 
-        const newProductId = productInfo.lastInsertRowid;
+        const newProductId = Number(productInfo.lastInsertRowid);
 
         for (const variant of variants) {
-            variantRepository.insertVariant(newProductId, variant);
+            const variantResult = variantRepository.insertVariant(newProductId, variant);
+            const variantId = Number(variantResult.lastInsertRowid);
+
+            // If initial stock is provided, receive it
+            if (variant.stock && variant.stock > 0) {
+                inventoryService.receiveInventory({
+                    variantId,
+                    quantity: parseInt(variant.stock, 10),
+                    unitCost: parseFloat(variant.cost_price || 0),
+                    userId: variant.userId || 1 // Fallback to user 1
+                });
+            }
+        }
+
+        // Set product taxes if provided
+        if (taxIds && taxIds.length > 0) {
+            productRepository.setProductTaxes(newProductId, taxIds);
         }
 
         return { id: newProductId };
     });
-
-    return transaction();
 }
 
 /**
- * Get a product with all its variants
+ * Get a product with all its variants and taxes
  * @param {number} id - Product ID
- * @returns {Object|null} Product with variants or null
+ * @returns {Object|null} Product with variants and taxes or null
  */
 export function getProductWithVariants(id) {
     const product = productRepository.findProductById(id);
     if (!product) return null;
 
     const variants = variantRepository.findVariantsByProductId(id);
+    const taxes = productRepository.findProductTaxes(id);
+
     return {
         ...product,
         variants,
+        taxes,
         imageUrl: buildImageUrl(product.image_path)
     };
 }
@@ -83,19 +100,41 @@ export function getProducts(params) {
  * @returns {Object} Update result
  */
 export function updateProduct(productId, productData, newImagePath) {
-    // If new image is provided, delete old one
-    if (newImagePath) {
-        const oldProduct = productRepository.findProductById(productId);
-        if (oldProduct && oldProduct.image_path) {
-            const oldImagePath = path.join(basePath, oldProduct.image_path);
-            if (fs.existsSync(oldImagePath)) {
-                fs.unlinkSync(oldImagePath);
+    return transaction(() => {
+        // If new image is provided, delete old one
+        if (newImagePath) {
+            const oldProduct = productRepository.findProductById(productId);
+            if (oldProduct && oldProduct.image_path) {
+                const oldImagePath = path.join(basePath, oldProduct.image_path);
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
             }
+            productData.image_path = newImagePath;
         }
-        productData.image_path = newImagePath;
-    }
 
-    return productRepository.updateProductById(productId, productData);
+        // Update product taxes if provided
+        if (productData.taxIds !== undefined) {
+            productRepository.setProductTaxes(productId, productData.taxIds || []);
+            delete productData.taxIds;
+        }
+
+        // Update variants if provided
+        if (productData.variants && Array.isArray(productData.variants)) {
+            for (const variant of productData.variants) {
+                if (variant.id) {
+                    // Update existing variant (including stock adjustment in variantService)
+                    variantService.updateVariant(variant);
+                } else {
+                    // Add new variant
+                    variantService.addVariant(productId, variant);
+                }
+            }
+            delete productData.variants;
+        }
+
+        return productRepository.updateProductById(productId, productData);
+    });
 }
 
 /**

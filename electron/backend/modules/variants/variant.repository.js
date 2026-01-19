@@ -1,11 +1,13 @@
 /**
  * Variant Repository
  * Handles all database operations for variants
+ * Note: Stock is NEVER stored directly - it is derived from inventory_lots + inventory_adjustments
  */
 import { getDB } from '../../shared/db/index.js';
+import { getComputedStock, getComputedStockBatch } from '../../shared/utils/inventoryHelpers.js';
 
 /**
- * Insert a new variant
+ * Insert a new variant (without stock - stock comes from inventory operations)
  * @param {number} productId - Parent product ID
  * @param {Object} variant - Variant data
  * @returns {Object} Insert result
@@ -14,9 +16,9 @@ export function insertVariant(productId, variant) {
   const db = getDB();
   const stmt = db.prepare(`
     INSERT INTO variants (
-      product_id, name, sku, mrp, cost_price, stock, stock_alert_cap, is_default, status
+      product_id, name, sku, mrp, cost_price, stock_alert_cap, is_default, status
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
   return stmt.run(
     productId,
@@ -24,25 +26,55 @@ export function insertVariant(productId, variant) {
     variant.sku,
     variant.mrp,
     variant.cost_price,
-    variant.stock,
-    variant.stock_alert_cap,
+    variant.stock_alert_cap ?? 10,
     variant.is_default ? 1 : 0,
-    variant.status
+    variant.status ?? 'active'
   );
 }
 
 /**
- * Find all variants for a product
+ * Find all variants for a product with computed stock
  * @param {number} productId - Product ID
- * @returns {Array} Variants list
+ * @returns {Array} Variants list with stock
  */
 export function findVariantsByProductId(productId) {
   const db = getDB();
-  return db.prepare('SELECT * FROM variants WHERE product_id = ? AND deleted_at IS NULL').all(productId);
+  const variants = db.prepare('SELECT * FROM variants WHERE product_id = ? AND deleted_at IS NULL').all(productId);
+
+  if (variants.length === 0) {
+    return [];
+  }
+
+  const variantIds = variants.map(v => v.id);
+  const stockMap = getComputedStockBatch(variantIds);
+
+  return variants.map(variant => ({
+    ...variant,
+    stock: stockMap[variant.id] ?? 0
+  }));
 }
 
 /**
- * Update a variant
+ * Find a single variant by ID with computed stock
+ * @param {number} id - Variant ID
+ * @returns {Object|null} Variant with stock or null
+ */
+export function findVariantById(id) {
+  const db = getDB();
+  const variant = db.prepare('SELECT * FROM variants WHERE id = ? AND deleted_at IS NULL').get(id);
+
+  if (!variant) {
+    return null;
+  }
+
+  return {
+    ...variant,
+    stock: getComputedStock(id)
+  };
+}
+
+/**
+ * Update a variant (without stock - stock is derived)
  * @param {Object} variant - Variant data with id
  * @returns {Object} Update result
  */
@@ -50,7 +82,7 @@ export function updateVariantById(variant) {
   const db = getDB();
   const stmt = db.prepare(`
     UPDATE variants
-    SET name = ?, sku = ?, mrp = ?, cost_price = ?, stock = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
+    SET name = ?, sku = ?, mrp = ?, cost_price = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND deleted_at IS NULL
   `);
   return stmt.run(
@@ -58,10 +90,9 @@ export function updateVariantById(variant) {
     variant.sku,
     variant.mrp,
     variant.cost_price,
-    variant.stock,
-    variant.stock_alert_cap,
+    variant.stock_alert_cap ?? 10,
     variant.status,
-    variant.is_default,
+    variant.is_default ? 1 : 0,
     variant.id
   );
 }
@@ -78,9 +109,9 @@ export function softDeleteVariant(id) {
 }
 
 /**
- * Search variants with product info
+ * Search variants with product info and computed stock
  * @param {Object} params - Search params
- * @returns {Array} Matching variants
+ * @returns {Array} Matching variants with stock
  */
 export function searchVariants({ query }) {
   const db = getDB();
@@ -99,7 +130,9 @@ export function searchVariants({ query }) {
 
   const sql = `
     SELECT 
-      v.*, p.name as product_name, p.image_path
+      v.id, v.product_id, v.name, v.sku, v.mrp, v.cost_price, 
+      v.stock_alert_cap, v.is_default, v.status, v.created_at,
+      p.name as product_name, p.image_path
     FROM variants v
     JOIN products p ON v.product_id = p.id
     ${whereClause}
@@ -107,5 +140,17 @@ export function searchVariants({ query }) {
     LIMIT 50
   `;
 
-  return db.prepare(sql).all(...filterParams);
+  const variants = db.prepare(sql).all(...filterParams);
+
+  if (variants.length === 0) {
+    return [];
+  }
+
+  const variantIds = variants.map(v => v.id);
+  const stockMap = getComputedStockBatch(variantIds);
+
+  return variants.map(variant => ({
+    ...variant,
+    stock: stockMap[variant.id] ?? 0
+  }));
 }

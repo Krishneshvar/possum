@@ -105,6 +105,11 @@ INSERT INTO payment_methods (name) VALUES
 ('UPI'),
 ('Gift Card');
 
+INSERT INTO taxes (name, rate, type) VALUES
+('VAT 5%', 5, 'inclusive'),
+('GST 12%', 12, 'exclusive'),
+('GST 18%', 18, 'exclusive');
+
 INSERT INTO products (id, name, category_id, status) VALUES
 (1, 'Coffee Beans', 1, 'active'),
 (2, 'Chocolate Bar', 2, 'active'),

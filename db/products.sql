@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS products (
   status TEXT CHECK(status IN ('active','inactive','discontinued')) DEFAULT 'active',
   image_path TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
@@ -30,6 +31,7 @@ CREATE TABLE IF NOT EXISTS variants (
   is_default INTEGER DEFAULT 0 CHECK(is_default IN (0,1)),
   stock_alert_cap INTEGER DEFAULT 10,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );

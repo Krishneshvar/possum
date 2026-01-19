@@ -3,6 +3,9 @@
  * Contains business logic for variant operations
  */
 import * as variantRepository from './variant.repository.js';
+import * as inventoryService from '../inventory/inventory.service.js';
+import * as inventoryRepository from '../inventory/inventory.repository.js';
+import { transaction } from '../../shared/db/index.js';
 import { buildImageUrl } from '../../shared/utils/index.js';
 
 /**
@@ -12,7 +15,20 @@ import { buildImageUrl } from '../../shared/utils/index.js';
  * @returns {Object} Insert result
  */
 export function addVariant(productId, variantData) {
-    return variantRepository.insertVariant(productId, variantData);
+    return transaction(() => {
+        const result = variantRepository.insertVariant(productId, variantData);
+        const variantId = Number(result.lastInsertRowid);
+
+        if (variantData.stock && variantData.stock > 0) {
+            inventoryService.receiveInventory({
+                variantId,
+                quantity: parseInt(variantData.stock, 10),
+                unitCost: parseFloat(variantData.cost_price || 0),
+                userId: variantData.userId || 1
+            });
+        }
+        return result;
+    });
 }
 
 /**
@@ -21,7 +37,27 @@ export function addVariant(productId, variantData) {
  * @returns {Object} Update result
  */
 export function updateVariant(variantData) {
-    return variantRepository.updateVariantById(variantData);
+    return transaction(() => {
+        const result = variantRepository.updateVariantById(variantData);
+
+        if (variantData.stock !== undefined) {
+            const targetStock = parseInt(variantData.stock, 10);
+            if (!isNaN(targetStock)) {
+                const currentStock = inventoryRepository.getStockByVariantId(variantData.id);
+                const diff = targetStock - currentStock;
+
+                if (diff !== 0) {
+                    inventoryService.adjustInventory({
+                        variantId: variantData.id,
+                        quantityChange: diff,
+                        reason: 'correction',
+                        userId: variantData.userId || 1
+                    });
+                }
+            }
+        }
+        return result;
+    });
 }
 
 /**

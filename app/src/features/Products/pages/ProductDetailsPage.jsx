@@ -250,9 +250,19 @@ export default function ProductDetailsPage() {
                       <Label className="text-muted-foreground font-medium">Category:</Label>
                       <span className="font-medium">{product.category_name}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Label className="text-muted-foreground font-medium">Tax:</Label>
-                      <span className="text-foreground font-medium">{product.product_tax}%</span>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Label className="text-muted-foreground font-medium mr-1">Taxes:</Label>
+                      {product.taxes && product.taxes.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {product.taxes.map((tax) => (
+                            <Badge key={tax.id} variant="outline" className="text-xs">
+                              {tax.name} ({tax.rate}%)
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground italic">None</span>
+                      )}
                     </div>
                   </div>
                 </div>

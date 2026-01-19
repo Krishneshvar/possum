@@ -22,6 +22,19 @@ export default function AddOrEditProductPage() {
 
   const categories = useMemo(() => categoriesData || [], [categoriesData]);
 
+  const initialData = useMemo(() => {
+    if (isEditMode && product) {
+      const flatCategories = flattenCategories(categories);
+      const matchingCategory = flatCategories?.find(cat => cat.name === product.category_name);
+
+      return {
+        ...product,
+        category_id: matchingCategory ? String(matchingCategory.id) : '',
+      };
+    }
+    return null;
+  }, [isEditMode, product, categories]);
+
   const isSaving = false;
   const isFormLoading = isEditMode && isProductLoading;
   const hasError = productError || categoriesError;
@@ -34,20 +47,9 @@ export default function AddOrEditProductPage() {
     navigate(-1);
     return null;
   }
-  
+
   if (isFormLoading || isCategoriesLoading) {
     return <div className="p-6">Loading product data...</div>;
-  }
-
-  let initialData = null;
-  if (isEditMode && product) {
-    const flatCategories = flattenCategories(categories);
-    const matchingCategory = flatCategories?.find(cat => cat.name === product.category_name);
-
-    initialData = {
-      ...product,
-      category_id: matchingCategory ? String(matchingCategory.id) : '',
-    };
   }
 
   const handleSuccess = (productName) => {
