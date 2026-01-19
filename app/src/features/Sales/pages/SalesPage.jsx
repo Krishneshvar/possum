@@ -1,21 +1,8 @@
-
 import { useState } from 'react';
 import { cn } from "@/lib/utils";
 import SalesTable from '../components/SalesTable';
 import SalesControls from '../components/SalesControls';
 import BillPreview from '../components/BillPreview';
-
-
-// Mock Data for initial view
-const MOCK_PRODUCT = {
-  id: 'p1',
-  name: 'Wireless Headphones',
-  quantity: 1,
-  price: 2499.00,
-  mrp: 2499.00,
-  discount: 0,
-  sku: 'WH-001'
-};
 
 const INITIAL_TAB_STATE = {
   items: [],
@@ -23,7 +10,7 @@ const INITIAL_TAB_STATE = {
   paymentMethod: 'cash',
   overallDiscount: 0,
   discountType: 'fixed',
-  paymentType: 'partial',
+  paymentType: 'full',
   amountTendered: 0,
 };
 

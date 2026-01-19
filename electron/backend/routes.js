@@ -4,6 +4,7 @@
  */
 import productsRouter from './modules/products/product.routes.js';
 import categoriesRouter from './modules/categories/category.routes.js';
+import customersRouter from './modules/customers/customer.routes.js';
 
 /**
  * Register all routes on the Express app
@@ -12,4 +13,5 @@ import categoriesRouter from './modules/categories/category.routes.js';
 export function registerRoutes(app) {
     app.use('/api/products', productsRouter);
     app.use('/api/categories', categoriesRouter);
+    app.use('/api/customers', customersRouter);
 }

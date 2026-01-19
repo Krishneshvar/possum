@@ -1,4 +1,4 @@
-
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,19 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 // Tabs imports removed as we use custom buttons for bill switching
-import { CreditCard, Wallet, Banknote, User } from "lucide-react";
+import { CreditCard, Wallet, Banknote, User, Search, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useGetCustomersQuery } from "@/services/customersApi";
+
+// Helper hook for debouncing
+function useLocalDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(handler);
+    }, [value, delay]);
+    return debouncedValue;
+}
 
 export default function SalesControls({
     paymentMethod,
@@ -32,6 +43,66 @@ export default function SalesControls({
     setAmountTendered,
     grandTotal = 0
 }) {
+    // --- Customer Search Logic ---
+    const [searchTerm, setSearchTerm] = useState(customerName || "");
+    const [isOpen, setIsOpen] = useState(false);
+    const [focusedIndex, setFocusedIndex] = useState(-1);
+    const wrapperRef = useRef(null);
+    const inputRef = useRef(null);
+
+    const debouncedSearch = useLocalDebounce(searchTerm, 300);
+
+    const { data, isLoading, isFetching } = useGetCustomersQuery(
+        { searchTerm: debouncedSearch },
+        { skip: !debouncedSearch || debouncedSearch.length < 2 }
+    );
+
+    const customers = data?.customers || [];
+
+    // Sync searchTerm with customerName prop (when switching tabs)
+    useEffect(() => {
+        setSearchTerm(customerName || "");
+    }, [customerName, activeTab]);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleSelect = (customer) => {
+        setCustomerName(customer.name);
+        setSearchTerm(customer.name);
+        setIsOpen(false);
+        setFocusedIndex(-1);
+    };
+
+    const handleKeyDown = (e) => {
+        if (!isOpen) {
+            if (e.key === 'ArrowDown') setIsOpen(true);
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setFocusedIndex(prev => Math.min(prev + 1, customers.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setFocusedIndex(prev => Math.max(prev - 1, -1));
+        } else if (e.key === 'Enter') {
+            if (focusedIndex >= 0 && customers[focusedIndex]) {
+                e.preventDefault();
+                handleSelect(customers[focusedIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+        }
+    };
+
     // Switching payment types now defaults to 0 as per request
     const handlePaymentTypeChange = (type) => {
         setPaymentType(type);
@@ -61,15 +132,57 @@ export default function SalesControls({
                     <Label htmlFor="customer" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Customer Details
                     </Label>
-                    <div className="relative">
-                        <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <div className="relative" ref={wrapperRef}>
+                        <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
                         <Input
                             id="customer"
+                            ref={inputRef}
                             placeholder="Walk-in Customer"
-                            value={customerName}
-                            onChange={(e) => setCustomerName(e.target.value)}
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCustomerName(e.target.value); // Keep sync for walk-in
+                                setIsOpen(true);
+                            }}
+                            onFocus={() => setIsOpen(true)}
+                            onKeyDown={handleKeyDown}
                             className="pl-9 bg-background border-border"
                         />
+                        {(isLoading || isFetching) && (
+                            <div className="absolute right-3 top-2.5">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            </div>
+                        )}
+
+                        {/* Dropdown Results */}
+                        {isOpen && (searchTerm.length >= 2) && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-popover rounded-md shadow-xl border border-border max-h-[250px] overflow-auto z-50 p-1">
+                                {customers.length === 0 && !isLoading && !isFetching ? (
+                                    <div className="p-3 text-center text-sm text-muted-foreground">
+                                        No customers found.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-1">
+                                        {customers.map((c, index) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={() => handleSelect(c)}
+                                                className={cn(
+                                                    "w-full flex items-center justify-between p-2 rounded-md transition-colors text-left outline-none",
+                                                    index === focusedIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent"
+                                                )}
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-sm text-foreground truncate">{c.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{c.phone || c.email || 'No contact info'}</div>
+                                                </div>
+                                                {c.id && <div className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground ml-2">ID: {c.id}</div>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
