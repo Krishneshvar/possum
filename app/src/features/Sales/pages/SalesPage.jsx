@@ -3,15 +3,19 @@ import { cn } from "@/lib/utils";
 import SalesTable from '../components/SalesTable';
 import SalesControls from '../components/SalesControls';
 import BillPreview from '../components/BillPreview';
+import { useCreateSaleMutation } from '@/services/salesApi';
+import { toast } from "sonner";
 
 const INITIAL_TAB_STATE = {
   items: [],
   customerName: '',
+  customerId: null,
   paymentMethod: 'cash',
   overallDiscount: 0,
   discountType: 'fixed',
   paymentType: 'full',
   amountTendered: 0,
+  // paymentMethod is string ID in component, ensure it's synced with actual IDs or handle 'cash' default mapping
 };
 
 // Initialize 9 tabs
@@ -36,6 +40,9 @@ export default function SalesPage() {
   const [bills, setBills] = useState(INITIAL_BILLS);
   const [activeTab, setActiveTab] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
+
+  // API Mutation
+  const [createSale, { isLoading }] = useCreateSaleMutation();
 
   // --- Column Persistence Logic ---
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -102,6 +109,7 @@ export default function SalesPage() {
 
   const setPaymentMethod = (method) => updateBill({ paymentMethod: method });
   const setCustomerName = (name) => updateBill({ customerName: name });
+  const setCustomerId = (id) => updateBill({ customerId: id });
 
   const addProductToBill = (product) => {
     const existingItem = currentBill.items.find(item => item.id === product.id);
@@ -139,6 +147,69 @@ export default function SalesPage() {
   };
 
   const currentGrandTotal = calculateTotal(currentBill);
+
+  const handleCompleteSale = async () => {
+    if (currentBill.items.length === 0) {
+      toast.error("Cannot complete sale with no items.");
+      return;
+    }
+
+    // Determine Payment Amount
+    let paymentAmount = 0;
+    if (currentBill.paymentType === 'full') {
+      paymentAmount = currentGrandTotal;
+    } else {
+      paymentAmount = parseFloat(currentBill.amountTendered) || 0;
+    }
+
+    if (paymentAmount <= 0 && currentGrandTotal > 0) {
+      toast.error("Payment amount must be greater than 0");
+      return;
+    }
+
+    // Calculate Discount Amount for Payload
+    const calculatedSubtotal = currentBill.items.reduce((acc, item) => {
+      const price = parseFloat(item.price) || 0;
+      const qty = parseInt(item.quantity) || 0;
+      const disc = parseFloat(item.discount) || 0;
+      return acc + (price * qty) - disc;
+    }, 0);
+
+    const discountAmount = currentBill.discountType === 'percentage'
+      ? (calculatedSubtotal * (parseFloat(currentBill.overallDiscount) || 0) / 100)
+      : (parseFloat(currentBill.overallDiscount) || 0);
+
+    const payload = {
+      items: currentBill.items.map(item => ({
+        variantId: item.id,
+        quantity: parseInt(item.quantity),
+        pricePerUnit: parseFloat(item.price),
+        discount: parseFloat(item.discount) || 0
+      })),
+      customerId: currentBill.customerId,
+      discount: discountAmount,
+      payments: [
+        {
+          amount: paymentAmount,
+          paymentMethodId: currentBill.paymentMethod // Should be ID string/number
+        }
+      ],
+      // temporary hardcoded userId, backend defaults to 1 if not provided, but good to be explicit if we had it
+    };
+
+    try {
+      await createSale(payload).unwrap();
+      toast.success("Sale completed successfully!");
+
+      // Reset the current bill
+      setBills(prev => prev.map((bill, index) =>
+        index === activeTab ? { ...INITIAL_TAB_STATE, id: index, items: [] } : bill
+      ));
+    } catch (err) {
+      console.error("Sale failed", err);
+      toast.error(err?.data?.error || "Failed to complete sale.");
+    }
+  };
 
   return (
     <div className="h-[calc(100vh-7rem)] w-full flex flex-col gap-4 overflow-hidden">
@@ -178,6 +249,7 @@ export default function SalesPage() {
               setPaymentMethod={setPaymentMethod}
               customerName={currentBill.customerName}
               setCustomerName={setCustomerName}
+              setCustomerId={setCustomerId}
               overallDiscount={currentBill.overallDiscount}
               setOverallDiscount={(val) => updateBill({ overallDiscount: val })}
               discountType={currentBill.discountType}
@@ -191,6 +263,7 @@ export default function SalesPage() {
               amountTendered={currentBill.amountTendered}
               setAmountTendered={(val) => updateBill({ amountTendered: val })}
               grandTotal={currentGrandTotal}
+              onCompleteSale={handleCompleteSale}
             />
           </div>
         </div>

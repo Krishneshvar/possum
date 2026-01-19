@@ -13,6 +13,7 @@ import {
 import { CreditCard, Wallet, Banknote, User, Search, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGetCustomersQuery } from "@/services/customersApi";
+import { useGetPaymentMethodsQuery } from "@/services/salesApi";
 
 // Helper hook for debouncing
 function useLocalDebounce(value, delay) {
@@ -29,6 +30,7 @@ export default function SalesControls({
     setPaymentMethod,
     customerName,
     setCustomerName,
+    setCustomerId,
     activeTab,
     setActiveTab,
     overallDiscount,
@@ -41,7 +43,8 @@ export default function SalesControls({
     setPaymentType,
     amountTendered,
     setAmountTendered,
-    grandTotal = 0
+    grandTotal = 0,
+    onCompleteSale
 }) {
     // --- Customer Search Logic ---
     const [searchTerm, setSearchTerm] = useState(customerName || "");
@@ -76,6 +79,7 @@ export default function SalesControls({
 
     const handleSelect = (customer) => {
         setCustomerName(customer.name);
+        if (setCustomerId) setCustomerId(customer.id);
         setSearchTerm(customer.name);
         setIsOpen(false);
         setFocusedIndex(-1);
@@ -123,6 +127,19 @@ export default function SalesControls({
             setAmountTendered(numVal);
         }
     };
+
+    // --- Payment Methods Logic ---
+    const { data: paymentMethodsData } = useGetPaymentMethodsQuery();
+    const paymentMethods = paymentMethodsData || [];
+
+    // Set default payment method if not set
+    useEffect(() => {
+        if (!paymentMethod && paymentMethods.length > 0) {
+            // Default to Cash if available, otherwise first one
+            const cashMethod = paymentMethods.find(m => m.name.toLowerCase() === 'cash');
+            setPaymentMethod(cashMethod ? String(cashMethod.id) : String(paymentMethods[0].id));
+        }
+    }, [paymentMethods, paymentMethod, setPaymentMethod]);
 
     return (
         <div className="bg-card rounded-xl shadow-sm border border-border p-5 space-y-6">
@@ -197,24 +214,16 @@ export default function SalesControls({
                                 <SelectValue placeholder="Method" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="cash">
-                                    <div className="flex items-center">
-                                        <Banknote className="h-4 w-4 mr-2 text-success" />
-                                        Cash
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="card">
-                                    <div className="flex items-center">
-                                        <CreditCard className="h-4 w-4 mr-2 text-primary" />
-                                        Card
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="upi">
-                                    <div className="flex items-center">
-                                        <Wallet className="h-4 w-4 mr-2 text-warning" />
-                                        UPI
-                                    </div>
-                                </SelectItem>
+                                {paymentMethods.map((method) => (
+                                    <SelectItem key={method.id} value={String(method.id)}>
+                                        <div className="flex items-center capitalize">
+                                            {method.name.toLowerCase() === 'cash' && <Banknote className="h-4 w-4 mr-2 text-success" />}
+                                            {method.name.toLowerCase() === 'card' && <CreditCard className="h-4 w-4 mr-2 text-primary" />}
+                                            {method.name.toLowerCase() === 'upi' && <Wallet className="h-4 w-4 mr-2 text-warning" />}
+                                            {method.name}
+                                        </div>
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
 
@@ -290,9 +299,9 @@ export default function SalesControls({
                 </div>
             </div>
 
-            {/* Amount Tendered & Balance (Always Visible) */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-dashed border-border">
-                <div className="space-y-2">
+            {/* Amount Tendered, Balance & COMPLETE ACTION */}
+            <div className="grid grid-cols-12 gap-4 pt-4 border-t border-dashed border-border items-end">
+                <div className="col-span-4 space-y-2">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Amount Tendered
                     </Label>
@@ -307,7 +316,7 @@ export default function SalesControls({
                         />
                     </div>
                 </div>
-                <div className="space-y-2">
+                <div className="col-span-4 space-y-2">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         {parseFloat(amountTendered || 0) >= parseFloat(grandTotal) ? "Change" : "Balance Due"}
                     </Label>
@@ -320,6 +329,16 @@ export default function SalesControls({
                         <span className="text-xs opacity-70">₹</span>
                         <span>{Math.abs(parseFloat(grandTotal) - parseFloat(amountTendered || 0)).toFixed(2)}</span>
                     </div>
+                </div>
+                <div className="col-span-4">
+                    {/* Complete Sale Button */}
+                    <Button
+                        onClick={onCompleteSale}
+                        className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shadow-primary/20"
+                        disabled={grandTotal <= 0}
+                    >
+                        Complete Sale
+                    </Button>
                 </div>
             </div>
 
