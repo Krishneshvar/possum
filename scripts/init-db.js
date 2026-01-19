@@ -10,10 +10,17 @@ const dbPath = path.join(__dirname, '../possum.db');
 const schemaDir = path.join(__dirname, '../db');
 
 const schemaFiles = [
+  'schema_meta.sql',
   'users_and_settings.sql',
+  'customers.sql',
   'products.sql',
-  'sales.sql',
+  'pricing_and_tax.sql',
   'inventory.sql',
+  'sales.sql',
+  'payments.sql',
+  'returns_and_refunds.sql',
+  'reporting.sql',
+  'audit.sql',
   'dummy_data.sql',
 ];
 
