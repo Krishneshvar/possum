@@ -37,7 +37,7 @@ export function SiteHeader() {
       <div className="flex w-full items-center">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" />
-        <h1 className="text-base font-medium">
+        <h1 className="text-base font-medium text-foreground">
           {pageTitle}
         </h1>
         <div className="ml-auto flex items-center gap-2">

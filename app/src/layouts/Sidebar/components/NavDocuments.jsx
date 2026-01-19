@@ -85,8 +85,8 @@ export function NavDocuments({
                   <span>Move to</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-500">
-                  <Trash2 className="text-red-500" />
+                <DropdownMenuItem className="text-destructive">
+                  <Trash2 className="text-destructive" />
                   <span>Delete</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

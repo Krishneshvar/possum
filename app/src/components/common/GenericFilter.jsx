@@ -99,7 +99,7 @@ export default function GenericFilter({ filtersConfig, activeFilters, onFilterCh
               <span className="truncate max-w-[120px] sm:max-w-none">{option.label}</span>
               <button
                 onClick={() => onFilterChange(key, activeValues.filter((v) => v !== value))}
-                className="ml-1.5 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                className="ml-1.5 hover:bg-foreground/10 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-2.5 w-2.5" />
               </button>

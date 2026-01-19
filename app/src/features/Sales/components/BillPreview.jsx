@@ -21,7 +21,7 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
     const finalTotal = totalAfterDiscount + calculatedTax;
 
     return (
-        <div className="flex flex-col h-full bg-muted/30 p-4 rounded-xl">
+        <div className="flex flex-col h-full border bg-muted/30 p-4 rounded-xl">
             <div className="flex items-center justify-between mb-4 px-2">
                 <h2 className="font-semibold text-foreground flex items-center gap-2">
                     <Receipt className="w-5 h-5" />

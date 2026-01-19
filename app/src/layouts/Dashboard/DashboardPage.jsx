@@ -42,7 +42,7 @@ export default function DashboardPage() {
         style={{ "--sidebar-width": "min(250px, calc(100vw - 32px))" }}
       >
         <AppSidebar variant="floating" />
-        <div className="w-full bg-muted p-1 sm:p-2 lg:p-4 min-h-screen">
+        <div className="w-full bg-background p-1 sm:p-2 lg:p-4 min-h-screen">
           <div className="w-full max-w-full overflow-hidden">
             <SiteHeader />
             <Separator className="my-2 sm:my-4" />

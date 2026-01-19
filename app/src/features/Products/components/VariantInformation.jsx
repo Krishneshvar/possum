@@ -39,7 +39,7 @@ export default function VariantInformation({ variant, onVariantChange }) {
             </SelectItem>
             <SelectItem value="discontinued">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-red-500" />
+                <div className="h-2 w-2 rounded-full bg-destructive" />
                 Discontinued
               </div>
             </SelectItem>

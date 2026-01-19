@@ -1,32 +1,32 @@
 export const productStatusBadges = {
   active: {
     text: "Active",
-    className: "text-emerald-50 bg-emerald-600",
+    className: "text-white bg-success",
   },
   inactive: {
     text: "Inactive",
-    className: "text-amber-50 bg-amber-600",
+    className: "text-white bg-warning",
   },
   discontinued: {
     text: "Discontinued",
-    className: "text-red-50 bg-red-600",
+    className: "text-white bg-destructive",
   },
 };
 
 export const stockStatusBadges = {
   "out-of-stock": {
     text: "Out of Stock",
-    className: "text-red-50 bg-red-600",
+    className: "text-white bg-destructive",
     icon: "XCircle",
   },
   "low-stock": {
     text: "Low Stock",
-    className: "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200",
+    className: "bg-warning/10 text-warning border-warning/20 hover:bg-warning/20",
     icon: "AlertTriangle",
   },
   "in-stock": {
     text: "In Stock",
-    className: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200",
+    className: "bg-success/10 text-success border-success/20 hover:bg-success/20",
     icon: "CheckCircle",
   },
 };

@@ -3,9 +3,9 @@ import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 
-export default function GenericDeleteDialog({ 
-  open, 
-  onOpenChange, 
+export default function GenericDeleteDialog({
+  open,
+  onOpenChange,
   onConfirm,
   dialogTitle = "Confirm Deletion",
   itemName = "this item",
@@ -15,7 +15,7 @@ export default function GenericDeleteDialog({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="bg-card rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex p-2 items-center justify-center rounded-lg bg-destructive/10">
             <AlertTriangle className="h-5 w-5 text-destructive" />

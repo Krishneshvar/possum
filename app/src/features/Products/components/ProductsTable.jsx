@@ -59,7 +59,7 @@ export default function ProductsTable() {
   const handleClearAllFilters = () => {
     dispatch(clearAllFilters())
   }
-  
+
   const handlePageChange = (page) => {
     dispatch(setCurrentPage(page))
   }
@@ -181,7 +181,7 @@ export default function ProductsTable() {
 
                 {isDataLoading ? (
                   <TableBody>
-                    <TableRow className="hover:bg-slate-50">
+                    <TableRow className="hover:bg-muted/50">
                       <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-32 sm:h-40 text-center">
                         <div className="flex flex-col items-center justify-center space-y-3 py-4">
                           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -192,7 +192,7 @@ export default function ProductsTable() {
                   </TableBody>
                 ) : error ? (
                   <TableBody>
-                    <TableRow className="hover:bg-slate-50">
+                    <TableRow className="hover:bg-muted/50">
                       <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-32 sm:h-40 text-center">
                         <div className="flex flex-col items-center justify-center space-y-3 py-4 px-4">
                           <AlertCircle className="h-5 w-5 text-destructive" />

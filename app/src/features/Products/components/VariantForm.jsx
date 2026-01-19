@@ -22,11 +22,11 @@ export default function VariantForm({
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between py-2 bg-slate-50 border-1 border-slate-100">
+      <CardHeader className="flex flex-row items-center justify-between py-2 bg-muted/30 border-b border-border">
         <div className="flex items-center gap-2">
           <h4 className="font-semibold">Variant {index + 1}</h4>
           {isDefaultVariant && (
-            <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+            <Badge variant="secondary" className="bg-accent text-accent-foreground">
               Default
             </Badge>
           )}
@@ -45,7 +45,7 @@ export default function VariantForm({
             <Button
               size="icon"
               onClick={() => onRemoveVariant(variant._tempId)}
-              className="bg-red-600 hover:bg-red-500 cursor-pointer"
+              className="bg-destructive hover:bg-destructive/90 cursor-pointer text-destructive-foreground"
               title="Remove variant"
             >
               <Trash2 className="h-4 w-4" />

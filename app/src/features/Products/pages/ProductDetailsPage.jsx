@@ -109,11 +109,11 @@ export default function ProductDetailsPage() {
 
   const getVariantStockStatus = (variant) => {
     if (variant.stock <= 0) {
-      return { label: "Out of Stock", icon: XCircle, styles: "text-red-600" }
+      return { label: "Out of Stock", icon: XCircle, styles: "text-destructive" }
     } else if (variant.stock <= variant.stock_alert_cap) {
-      return { label: "Low Stock", icon: AlertTriangle, styles: "text-amber-600" }
+      return { label: "Low Stock", icon: AlertTriangle, styles: "text-warning" }
     } else {
-      return { label: "In Stock", icon: CheckCircle, styles: "text-emerald-600" }
+      return { label: "In Stock", icon: CheckCircle, styles: "text-success" }
     }
   }
 
