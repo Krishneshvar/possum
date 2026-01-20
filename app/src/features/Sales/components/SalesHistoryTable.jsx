@@ -73,6 +73,7 @@ export default function SalesHistoryTable({
                 <TableBody>
                     {sales.map((sale) => (
                         <TableRow key={sale.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="w-[50px]"></TableCell>
                             <TableCell className="font-medium">{sale.invoice_number}</TableCell>
                             <TableCell className="text-muted-foreground whitespace-nowrap">{formatDate(sale.sale_date)}</TableCell>
                             <TableCell>

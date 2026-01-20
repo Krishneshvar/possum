@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGetSalesQuery } from "@/services/salesApi";
 import SalesHistoryTable from "../components/SalesHistoryTable";
 import { Input } from "@/components/ui/input";
@@ -15,8 +16,9 @@ import GenericFilter from "@/components/common/GenericFilter";
 import GenericPagination from "@/components/common/GenericPagination";
 
 export default function SalesHistoryPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [limit] = useState(10);
   const [activeFilters, setActiveFilters] = useState({
     status: [],
   });
@@ -77,7 +79,7 @@ export default function SalesHistoryPage() {
   };
 
   const handleView = (sale) => {
-    console.log("View Sale", sale);
+    navigate(`/sales/history/${sale.id}`);
   };
 
   const handlePrint = (sale) => {
@@ -156,23 +158,6 @@ export default function SalesHistoryPage() {
             onClearAll={handleClearFilters}
           />
 
-          <div className="flex items-center gap-2 border-l pl-4 ml-2">
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Show</span>
-            <Select value={limit.toString()} onValueChange={(val) => {
-              setLimit(parseInt(val, 10));
-              setPage(1);
-            }}>
-              <SelectTrigger className="w-[70px] h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
 

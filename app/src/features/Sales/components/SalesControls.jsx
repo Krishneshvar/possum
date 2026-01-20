@@ -56,8 +56,7 @@ export default function SalesControls({
     const debouncedSearch = useLocalDebounce(searchTerm, 300);
 
     const { data, isLoading, isFetching } = useGetCustomersQuery(
-        { searchTerm: debouncedSearch },
-        { skip: !debouncedSearch || debouncedSearch.length < 2 }
+        { searchTerm: debouncedSearch || "" }
     );
 
     const customers = data?.customers || [];
@@ -172,7 +171,7 @@ export default function SalesControls({
                         )}
 
                         {/* Dropdown Results */}
-                        {isOpen && (searchTerm.length >= 2) && (
+                        {isOpen && (customers.length > 0 || searchTerm.length > 0) && (
                             <div className="absolute top-full left-0 right-0 mt-1 bg-popover rounded-md shadow-xl border border-border max-h-[250px] overflow-auto z-50 p-1">
                                 {customers.length === 0 && !isLoading && !isFetching ? (
                                     <div className="p-3 text-center text-sm text-muted-foreground">

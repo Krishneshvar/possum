@@ -115,9 +115,10 @@ export default function SalesTable({
     // We only want to search when the user types something
     const debouncedSearch = useLocalDebounce(searchTerm, 300);
 
-    const { data: variants = [], isLoading, isFetching } = useGetVariantsQuery(
-        { query: debouncedSearch || "" }
+    const { data, isLoading, isFetching } = useGetVariantsQuery(
+        { searchTerm: debouncedSearch || "" }
     );
+    const variants = data?.variants || [];
 
     // Close dropdown when clicking outside or pressing Escape
     useEffect(() => {
@@ -544,7 +545,7 @@ export default function SalesTable({
                                 )}
 
                                 {/* Dropdown Results */}
-                                {isOpen && variants.length > 0 && (
+                                {isOpen && (variants.length > 0 || searchTerm.length > 0) && (
                                     <div className="fixed mt-1 w-[400px] bg-popover rounded-md shadow-xl border border-border max-h-[300px] overflow-auto z-[100] p-1"
                                         style={{
                                             left: wrapperRef.current?.getBoundingClientRect().left,
