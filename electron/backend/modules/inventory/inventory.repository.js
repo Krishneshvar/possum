@@ -151,22 +151,25 @@ export function findLotById(id) {
 export function findLowStockVariants() {
     const db = getDB();
     return db.prepare(`
-        SELECT 
-            v.id,
-            v.name as variant_name,
-            v.sku,
-            v.stock_alert_cap,
-            p.id as product_id,
-            p.name as product_name,
-            p.image_path,
-            (
-                COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
-                + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND reason != 'confirm_receive'), 0)
-            ) AS current_stock
-        FROM variants v
-        JOIN products p ON v.product_id = p.id
-        WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
-        HAVING current_stock <= v.stock_alert_cap
+        WITH VariantStock AS (
+            SELECT 
+                v.id,
+                v.name as variant_name,
+                v.sku,
+                v.stock_alert_cap,
+                p.id as product_id,
+                p.name as product_name,
+                p.image_path,
+                (
+                    COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+                    + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND reason != 'confirm_receive'), 0)
+                ) AS current_stock
+            FROM variants v
+            JOIN products p ON v.product_id = p.id
+            WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
+        )
+        SELECT * FROM VariantStock
+        WHERE current_stock <= stock_alert_cap
         ORDER BY current_stock ASC
     `).all();
 }

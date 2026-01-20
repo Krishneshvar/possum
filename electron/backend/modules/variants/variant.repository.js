@@ -147,9 +147,11 @@ export function findVariants({ searchTerm, sortBy = 'p.name', sortOrder = 'ASC',
     SELECT 
       v.id, v.product_id, v.name, v.sku, v.mrp, v.cost_price, 
       v.stock_alert_cap, v.is_default, v.status, v.created_at,
-      p.name as product_name, p.image_path
+      p.name as product_name, p.image_path,
+      c.name as category_name
     FROM variants v
     JOIN products p ON v.product_id = p.id
+    LEFT JOIN categories c ON p.category_id = c.id
     ${whereClause}
     ORDER BY ${safeSortBy} ${safeSortOrder}
     LIMIT ? OFFSET ?

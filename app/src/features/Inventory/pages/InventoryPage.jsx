@@ -21,7 +21,7 @@ import {
   useGetLowStockAlertsQuery,
   useGetExpiringLotsQuery
 } from '@/services/inventoryApi';
-import { useGetProductsQuery } from '@/services/productsApi';
+import { useGetProductsQuery, useGetVariantsQuery } from '@/services/productsApi';
 import { InventoryAdjustmentForm } from '../components/InventoryAdjustmentForm';
 import {
   AlertTriangle,
@@ -43,22 +43,26 @@ export default function InventoryPage() {
   // Fetch data
   const { data: alerts = [], isLoading: alertsLoading } = useGetLowStockAlertsQuery();
   const { data: expiring = [], isLoading: expiringLoading } = useGetExpiringLotsQuery(30);
-  const { data: productsData, isLoading: productsLoading } = useGetProductsQuery({ page: 1, limit: 100 });
+  const { data: variantsData, isLoading: variantsLoading } = useGetVariantsQuery({
+    page: 1,
+    limit: 1000,
+    searchTerm
+  });
+  const variants = variantsData?.variants || [];
 
-  const products = productsData?.products || [];
+  // If we still need total product count for the stat card
+  const { data: productsData } = useGetProductsQuery({ page: 1, limit: 1 });
+  const totalProducts = productsData?.totalCount || 0;
 
-  // Filter products based on search term (name or SKU)
-  const filteredProducts = products.flatMap(p =>
-    p.variants.map(v => ({
-      ...v,
-      productName: p.name,
-      categoryId: p.category_id,
-      categoryName: p.category_name
-    }))
-  ).filter(v =>
-    v.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // The API already handles the search/filtering if we pass searchTerm
+  // but we can keep local filtering if desired or rely on the API.
+  // Given the existing code, let's adapt it to use the flat variants list.
+  const displayVariants = variants.map(v => ({
+    ...v,
+    // The variant object from useGetVariantsQuery already has product_name
+    productName: v.product_name,
+    categoryName: v.category_name // if available
+  }));
 
   const handleAdjustSuccess = () => {
     setIsAdjustOpen(false);
@@ -138,7 +142,7 @@ export default function InventoryPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{products.length}</div>
+            <div className="text-2xl font-bold">{totalProducts}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Total active products
             </p>
@@ -181,7 +185,7 @@ export default function InventoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {productsLoading ? (
+                {variantsLoading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center h-32 text-muted-foreground">
                       <div className="flex items-center justify-center gap-2">
@@ -189,14 +193,14 @@ export default function InventoryPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredProducts.length === 0 ? (
+                ) : displayVariants.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center h-32 text-muted-foreground">
                       No matching products found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredProducts.map((v) => {
+                  displayVariants.map((v) => {
                     const stock = v.stock ?? 0;
                     const threshold = v.stock_alert_cap ?? 10;
                     const isLow = stock <= threshold;
