@@ -9,6 +9,8 @@ import { productFlowApi } from '@/services/productFlowApi';
 import { reportsApi } from '@/services/reportsApi';
 import { taxesApi } from '@/services/taxesApi';
 import { usersApi } from '@/services/usersApi';
+import { suppliersApi } from '@/services/suppliersApi';
+import { purchaseApi } from '@/services/purchaseApi';
 import productsReducer from '@/features/Products/productsSlice';
 import variantsReducer from '@/features/Variants/variantsSlice';
 
@@ -24,6 +26,8 @@ export const store = configureStore({
         [reportsApi.reducerPath]: reportsApi.reducer,
         [taxesApi.reducerPath]: taxesApi.reducer,
         [usersApi.reducerPath]: usersApi.reducer,
+        [suppliersApi.reducerPath]: suppliersApi.reducer,
+        [purchaseApi.reducerPath]: purchaseApi.reducer,
         products: productsReducer,
         variants: variantsReducer,
     },
@@ -38,6 +42,8 @@ export const store = configureStore({
             productFlowApi.middleware,
             reportsApi.middleware,
             taxesApi.middleware,
-            usersApi.middleware
+            usersApi.middleware,
+            suppliersApi.middleware,
+            purchaseApi.middleware,
         ),
 });

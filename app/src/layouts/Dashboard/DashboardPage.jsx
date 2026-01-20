@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   HashRouter,
   Route,
@@ -7,9 +8,7 @@ import {
 import { AppSidebar } from "@/layouts/Sidebar/AppSidebar";
 import { StatCards } from "@/components/common/StatCards";
 import { SiteHeader } from '@/components/common/SiteHeader';
-import {
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from '@/components/ui/separator';
 
 import { cardData } from './dashboardStatsData';
@@ -37,50 +36,44 @@ import EmployeesPage from '@/features/People/pages/EmployeesPage';
 export default function DashboardPage() {
   return (
     <HashRouter>
-      <SidebarProvider
-        className="bg-muted"
-        style={{ "--sidebar-width": "min(250px, calc(100vw - 32px))" }}
-      >
+      <SidebarProvider className="bg-muted" style={{ "--sidebar-width": "250px" }}>
         <AppSidebar variant="floating" />
-        <div className="w-full bg-background p-1 sm:p-2 lg:p-4 min-h-screen">
-          <div className="w-full max-w-full overflow-hidden">
-            <SiteHeader />
-            <Separator className="my-2 sm:my-4" />
-            <div className="flex flex-1 flex-col px-1 lg:px-4 sm:px-2">
-              <Routes>
-                <Route path="/" element={<StatCards cardData={cardData} />} />
-                <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
+        <main className="w-full bg-background p-4 min-h-screen">
+          <SiteHeader />
+          <Separator className="my-4" />
+          <div className="flex flex-col">
+            <Routes>
+              <Route path="/" element={<StatCards cardData={cardData} />} />
+              <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
 
-                <Route path="/sales" element={<SalesPage />} />
-                <Route path="/sales/orders" element={<OrdersPage />} />
-                <Route path="/sales/history" element={<SalesHistoryPage />} />
-                <Route path="/sales/transactions" element={<TransactionsPage />} />
+              <Route path="/sales" element={<SalesPage />} />
+              <Route path="/sales/orders" element={<OrdersPage />} />
+              <Route path="/sales/history" element={<SalesHistoryPage />} />
+              <Route path="/sales/transactions" element={<TransactionsPage />} />
 
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/products/add" element={<AddOrEditProductPage />} />
-                <Route path="/products/edit/:productId" element={<AddOrEditProductPage />} />
-                <Route path="/products/:productId" element={<ProductDetailsPage />} />
-                <Route path="/products/inventory" element={<InventoryPage />} />
-                <Route path="/products/variants" element={<VariantsPage />} />
-                <Route path="/products/categories" element={<CategoriesPage />} />
+              <Route path="/products" element={<ProductsPage />} />
+              <Route path="/products/add" element={<AddOrEditProductPage />} />
+              <Route path="/products/edit/:productId" element={<AddOrEditProductPage />} />
+              <Route path="/products/:productId" element={<ProductDetailsPage />} />
+              <Route path="/products/inventory" element={<InventoryPage />} />
+              <Route path="/products/variants" element={<VariantsPage />} />
+              <Route path="/products/categories" element={<CategoriesPage />} />
 
-                <Route path="/purchase" element={<PurchasePage />} />
-                <Route path="/purchase/orders" element={<PurchaseOrdersPage />} />
-                <Route path="/suppliers" element={<SuppliersPage />} />
+              <Route path="/purchase" element={<PurchasePage />} />
+              <Route path="/purchase/orders" element={<PurchaseOrdersPage />} />
+              <Route path="/suppliers" element={<SuppliersPage />} />
 
-                <Route path="/people" element={<PeoplePage />} />
-                <Route path="/customers" element={<CustomersPage />} />
-                <Route path="/employees" element={<EmployeesPage />} />
+              <Route path="/people" element={<PeoplePage />} />
+              <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/employees" element={<EmployeesPage />} />
 
-                <Route path="/plugins" element={<PluginsPage />} />
-
-                <Route path="/help" element={<HelpPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Routes>
-            </div>
+              <Route path="/plugins" element={<PluginsPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
           </div>
-        </div>
+        </main>
       </SidebarProvider>
     </HashRouter>
   );
-};
+}
