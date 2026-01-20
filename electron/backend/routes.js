@@ -12,6 +12,7 @@ import productFlowRouter from './modules/productFlow/productFlow.routes.js';
 import reportsRouter from './modules/reports/reports.routes.js';
 import taxesRouter from './modules/taxes/tax.routes.js';
 import variantsRouter from './modules/variants/variant.routes.js';
+import usersRouter from './modules/users/user.routes.js';
 import { getSaleReturnsController } from './modules/returns/return.controller.js';
 
 /**
@@ -49,4 +50,7 @@ export function registerRoutes(app) {
 
     // Variants
     app.use('/api/variants', variantsRouter);
+
+    // Users
+    app.use('/api/users', usersRouter);
 }

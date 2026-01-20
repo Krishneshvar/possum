@@ -51,3 +51,31 @@ export async function createCustomer(req, res) {
         res.status(500).json({ error: 'Failed to create customer' });
     }
 }
+
+/**
+ * Update a customer
+ */
+export async function updateCustomer(req, res) {
+    try {
+        const { id } = req.params;
+        const customer = await CustomerService.updateCustomer(parseInt(id), req.body);
+        res.json(customer);
+    } catch (error) {
+        console.error('Error updating customer:', error);
+        res.status(error.message.includes('not found') ? 404 : 500).json({ error: error.message });
+    }
+}
+
+/**
+ * Delete a customer
+ */
+export async function deleteCustomer(req, res) {
+    try {
+        const { id } = req.params;
+        await CustomerService.deleteCustomer(parseInt(id));
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error deleting customer:', error);
+        res.status(500).json({ error: 'Failed to delete customer' });
+    }
+}

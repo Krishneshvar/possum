@@ -27,5 +27,22 @@ export async function getCustomerById(id) {
  */
 export async function createCustomer(data) {
     // Basic validation can be added here
+    // Basic validation can be added here
     return CustomerRepository.insertCustomer(data);
+}
+
+/**
+ * Update a customer
+ */
+export async function updateCustomer(id, data) {
+    const customer = await getCustomerById(id); // Ensure exists
+    return CustomerRepository.updateCustomerById(id, data);
+}
+
+/**
+ * Delete a customer
+ */
+export async function deleteCustomer(id) {
+    const customer = await getCustomerById(id); // Ensure exists
+    return CustomerRepository.softDeleteCustomer(id);
 }

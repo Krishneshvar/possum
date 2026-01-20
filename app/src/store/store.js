@@ -8,6 +8,7 @@ import { returnsApi } from '@/services/returnsApi';
 import { productFlowApi } from '@/services/productFlowApi';
 import { reportsApi } from '@/services/reportsApi';
 import { taxesApi } from '@/services/taxesApi';
+import { usersApi } from '@/services/usersApi';
 import productsReducer from '@/features/Products/productsSlice';
 import variantsReducer from '@/features/Variants/variantsSlice';
 
@@ -22,6 +23,7 @@ export const store = configureStore({
         [productFlowApi.reducerPath]: productFlowApi.reducer,
         [reportsApi.reducerPath]: reportsApi.reducer,
         [taxesApi.reducerPath]: taxesApi.reducer,
+        [usersApi.reducerPath]: usersApi.reducer,
         products: productsReducer,
         variants: variantsReducer,
     },
@@ -35,6 +37,7 @@ export const store = configureStore({
             returnsApi.middleware,
             productFlowApi.middleware,
             reportsApi.middleware,
-            taxesApi.middleware
+            taxesApi.middleware,
+            usersApi.middleware
         ),
 });

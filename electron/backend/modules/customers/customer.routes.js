@@ -15,4 +15,10 @@ router.get('/:id', CustomerController.getCustomerById);
 // POST /api/customers - Create a new customer
 router.post('/', CustomerController.createCustomer);
 
+// PUT /api/customers/:id - Update a customer
+router.put('/:id', CustomerController.updateCustomer);
+
+// DELETE /api/customers/:id - Delete a customer
+router.delete('/:id', CustomerController.deleteCustomer);
+
 export default router;

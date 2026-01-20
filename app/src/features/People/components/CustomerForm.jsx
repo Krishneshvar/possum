@@ -1,16 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { flattenCategories } from '@/utils/categories.utils.js';
 
-export function CategoryForm({ defaultValues, categories, onSave, isLoading }) {
+export function CustomerForm({ defaultValues, onSave, isLoading }) {
     const [formData, setFormData] = useState({
         name: "",
-        parentId: "none"
+        phone: "",
+        email: "",
+        address: ""
     });
     const [errors, setErrors] = useState({});
 
@@ -18,20 +19,20 @@ export function CategoryForm({ defaultValues, categories, onSave, isLoading }) {
         if (defaultValues) {
             setFormData({
                 name: defaultValues.name || "",
-                parentId: defaultValues.parent_id ? String(defaultValues.parent_id) : "none"
+                phone: defaultValues.phone || "",
+                email: defaultValues.email || "",
+                address: defaultValues.address || ""
             });
         } else {
             setFormData({
                 name: "",
-                parentId: "none"
+                phone: "",
+                email: "",
+                address: ""
             });
         }
         setErrors({});
     }, [defaultValues]);
-
-    const flatCategories = useMemo(() => {
-        return flattenCategories(categories).filter(c => c.id !== defaultValues?.id);
-    }, [categories, defaultValues]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -41,14 +42,10 @@ export function CategoryForm({ defaultValues, categories, onSave, isLoading }) {
         }
     };
 
-    const handleSelectChange = (value) => {
-        setFormData(prev => ({ ...prev, parentId: value }));
-    };
-
     const validate = () => {
         const newErrors = {};
         if (!formData.name || formData.name.length < 2) {
-            newErrors.name = "Category name must be at least 2 characters.";
+            newErrors.name = "Name must be at least 2 characters.";
         }
         return newErrors;
     };
@@ -60,49 +57,61 @@ export function CategoryForm({ defaultValues, categories, onSave, isLoading }) {
             setErrors(newErrors);
             return;
         }
-
-        const payload = {
-            name: formData.name,
-            parentId: formData.parentId === "none" ? null : Number(formData.parentId)
-        };
-        onSave(payload);
+        onSave(formData);
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="name">Category Name</Label>
+                <Label htmlFor="name">Name</Label>
                 <Input
                     id="name"
                     name="name"
-                    placeholder="e.g. Beverages"
+                    placeholder="John Doe"
                     value={formData.name}
                     onChange={handleChange}
                 />
                 {errors.name && <p className="text-sm font-medium text-destructive">{errors.name}</p>}
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                        id="phone"
+                        name="phone"
+                        placeholder="+1 ..."
+                        value={formData.phone}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                        id="email"
+                        name="email"
+                        placeholder="john@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                    />
+                </div>
+            </div>
+
             <div className="space-y-2">
-                <Label>Parent Category</Label>
-                <Select onValueChange={handleSelectChange} value={formData.parentId}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a parent category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">None (Root Category)</SelectItem>
-                        {flatCategories.map((category) => (
-                            <SelectItem key={category.id} value={String(category.id)}>
-                                {category.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <Label htmlFor="address">Address</Label>
+                <Textarea
+                    id="address"
+                    name="address"
+                    placeholder="123 Main St"
+                    value={formData.address}
+                    onChange={handleChange}
+                />
             </div>
 
             <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {defaultValues ? "Update Category" : "Add Category"}
+                    {defaultValues ? "Update Customer" : "Add Customer"}
                 </Button>
             </div>
         </form>
