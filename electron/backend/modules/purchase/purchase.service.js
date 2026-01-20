@@ -4,8 +4,8 @@
  */
 import * as purchaseRepo from './purchase.repository.js';
 
-export function getAllPurchaseOrders() {
-    return purchaseRepo.getAllPurchaseOrders();
+export function getAllPurchaseOrders(options) {
+    return purchaseRepo.getAllPurchaseOrders(options);
 }
 
 export function getPurchaseOrderById(id) {

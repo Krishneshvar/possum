@@ -7,8 +7,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export default function PurchasePage() {
-  const { data: pos = [] } = useGetPurchaseOrdersQuery();
-  const { data: suppliers = [] } = useGetSuppliersQuery();
+  const { data: posData } = useGetPurchaseOrdersQuery({ limit: 1000 }); // Increase limit for overview stats or handle via totalCount
+  const { data: suppliersData } = useGetSuppliersQuery({ limit: 1000 });
+
+  const pos = posData?.purchaseOrders || [];
+  const suppliers = suppliersData?.suppliers || [];
+  const totalPOCount = posData?.totalCount || 0;
+  const totalSupplierCount = suppliersData?.totalCount || 0;
 
   const pendingPOs = pos.filter(po => po.status === 'pending');
   const receivedPOs = pos.filter(po => po.status === 'received');
@@ -28,7 +33,7 @@ export default function PurchasePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pos.length}</div>
+            <div className="text-2xl font-bold">{totalPOCount}</div>
           </CardContent>
         </Card>
 
@@ -50,7 +55,7 @@ export default function PurchasePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{suppliers.length}</div>
+            <div className="text-2xl font-bold">{totalSupplierCount}</div>
           </CardContent>
         </Card>
 

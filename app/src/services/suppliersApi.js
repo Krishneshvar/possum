@@ -7,7 +7,10 @@ export const suppliersApi = createApi({
     tagTypes: ['Suppliers'],
     endpoints: (builder) => ({
         getSuppliers: builder.query({
-            query: () => '/suppliers',
+            query: (params) => ({
+                url: '/suppliers',
+                params: params,
+            }),
             providesTags: ['Suppliers'],
         }),
         createSupplier: builder.mutation({

@@ -40,6 +40,8 @@ import SuppliersPage from '@/features/Suppliers/pages/SuppliersPage';
 import PeoplePage from '@/features/People/pages/PeoplePage';
 import CustomersPage from '@/features/People/pages/CustomersPage';
 import EmployeesPage from '@/features/People/pages/EmployeesPage';
+import PurchaseOrderDetailPage from '@/features/Purchase/pages/PurchaseOrderDetailPage';
+
 
 const MainLayout = () => {
   return (
@@ -113,6 +115,7 @@ export default function DashboardPage() {
 
           <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchasePage /></ProtectedRoute>} />
           <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
+          <Route path="/purchase/orders/:id" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrderDetailPage /></ProtectedRoute>} />
           <Route path="/purchase/orders/create" element={<ProtectedRoute requiredPermissions="purchase.manage"><CreatePurchaseOrderPage /></ProtectedRoute>} />
           <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
 

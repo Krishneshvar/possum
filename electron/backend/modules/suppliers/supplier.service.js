@@ -4,8 +4,8 @@
  */
 import * as supplierRepo from './supplier.repository.js';
 
-export function getAllSuppliers() {
-    return supplierRepo.getAllSuppliers();
+export function getAllSuppliers(options) {
+    return supplierRepo.getAllSuppliers(options);
 }
 
 export function getSupplierById(id) {

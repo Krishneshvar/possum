@@ -9,13 +9,14 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,17 +33,33 @@ import {
   useCancelPurchaseOrderMutation
 } from '@/services/purchaseApi';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Eye, CheckCircle, XCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate();
-  const { data: purchaseOrders = [], isLoading } = useGetPurchaseOrdersQuery();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [sortBy, setSortBy] = useState('order_date');
+  const [sortOrder, setSortOrder] = useState('DESC');
+
+  const { data, isLoading } = useGetPurchaseOrdersQuery({
+    page,
+    limit,
+    searchTerm,
+    status: status === 'all' ? undefined : status,
+    sortBy,
+    sortOrder
+  });
+
+  const purchaseOrders = data?.purchaseOrders || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = data?.totalPages || 0;
+
   const [receivePurchaseOrder] = useReceivePurchaseOrderMutation();
   const [cancelPurchaseOrder] = useCancelPurchaseOrderMutation();
-
-  const [selectedPo, setSelectedPo] = useState(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [poToCancel, setPoToCancel] = useState(null);
 
   const handleReceive = async (id) => {
@@ -67,14 +84,19 @@ export default function PurchaseOrdersPage() {
     }
   };
 
-  const handleViewDetails = (po) => {
-    // Ideally fetch full details including items here if not already loaded
-    // But for this list view, items count is shown. We might need a separate endpoint for details
-    // or include items in list. The repo `getAllPurchaseOrders` returns summary.
-    // For now we just show what we have.
-    // TODO: Fetch items for the details view if needed.
-    setSelectedPo(po);
-    setIsDetailsOpen(true);
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+      setSortBy(column);
+      setSortOrder('ASC');
+    }
+    setPage(1);
+  };
+
+  const getSortIcon = (column) => {
+    if (sortBy !== column) return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
+    return sortOrder === 'ASC' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
   };
 
   return (
@@ -89,16 +111,60 @@ export default function PurchaseOrdersPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-1 items-center gap-4 w-full md:max-w-sm">
+          <div className="relative w-full">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by ID or supplier..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+              className="pl-8"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Select value={status} onValueChange={(val) => { setStatus(val); setPage(1); }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="received">Received</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          {(searchTerm || status !== 'all') && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setStatus('all'); setPage(1); }}>
+              Clear Filters
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-md border bg-card overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead>Order #</TableHead>
-              <TableHead>Supplier</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Items</TableHead>
-              <TableHead className="text-right">Total Cost</TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('id')}>
+                <div className="flex items-center">Order # {getSortIcon('id')}</div>
+              </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('supplier_name')}>
+                <div className="flex items-center">Supplier {getSortIcon('supplier_name')}</div>
+              </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('order_date')}>
+                <div className="flex items-center">Date {getSortIcon('order_date')}</div>
+              </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('status')}>
+                <div className="flex items-center">Status {getSortIcon('status')}</div>
+              </TableHead>
+              <TableHead className="text-right cursor-pointer hover:bg-muted/70" onClick={() => handleSort('item_count')}>
+                <div className="flex items-center justify-end">Items {getSortIcon('item_count')}</div>
+              </TableHead>
+              <TableHead className="text-right cursor-pointer hover:bg-muted/70" onClick={() => handleSort('total_cost')}>
+                <div className="flex items-center justify-end">Total Cost {getSortIcon('total_cost')}</div>
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -116,7 +182,7 @@ export default function PurchaseOrdersPage() {
                 <TableRow key={po.id}>
                   <TableCell className="font-mono">PO-{po.id}</TableCell>
                   <TableCell className="font-medium">{po.supplier_name}</TableCell>
-                  <TableCell>{po.order_date ? new Date(po.order_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}</TableCell>
+                  <TableCell>{po.order_date ? new Date(po.order_date).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>
                     <Badge variant={
                       po.status === 'received' ? 'default' :
@@ -129,9 +195,9 @@ export default function PurchaseOrdersPage() {
                   <TableCell className="text-right">${po.total_cost?.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      {/* <Button variant="ghost" size="sm" onClick={() => handleViewDetails(po)}>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/purchase/orders/${po.id}`)}>
                         <Eye className="h-4 w-4" />
-                      </Button> */}
+                      </Button>
                       {po.status === 'pending' && (
                         <>
                           <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700" onClick={() => handleReceive(po.id)}>
@@ -149,6 +215,36 @@ export default function PurchaseOrdersPage() {
             )}
           </TableBody>
         </Table>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
+          <div className="text-sm text-muted-foreground">
+            Showing <span className="font-medium">{totalCount === 0 ? 0 : (page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(page * limit, totalCount)}</span> of <span className="font-medium">{totalCount}</span> results
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center justify-center min-w-[32px] text-sm font-medium">
+              {page} / {totalPages || 1}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || totalPages === 0}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Cancellation Confirmation Modal */}
@@ -169,14 +265,6 @@ export default function PurchaseOrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Details Modal Placeholder */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Order Details</DialogTitle></DialogHeader>
-          <p>Details for PO-{selectedPo?.id}...</p>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

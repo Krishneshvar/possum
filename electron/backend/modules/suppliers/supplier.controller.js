@@ -6,7 +6,14 @@ import * as supplierService from './supplier.service.js';
 
 export function getSuppliers(req, res) {
     try {
-        const suppliers = supplierService.getAllSuppliers();
+        const { page, limit, searchTerm, sortBy, sortOrder } = req.query;
+        const suppliers = supplierService.getAllSuppliers({
+            page: parseInt(page) || 1,
+            limit: parseInt(limit) || 10,
+            searchTerm,
+            sortBy,
+            sortOrder
+        });
         res.json(suppliers);
     } catch (error) {
         console.error('Error fetching suppliers:', error);

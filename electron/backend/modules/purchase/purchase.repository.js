@@ -5,12 +5,46 @@
 import { getDB } from '../../shared/db/index.js';
 
 /**
- * Get all purchase orders
- * @returns {Array} List of POs with supplier details
+ * Get all purchase orders with pagination, search, status filter and sorting
  */
-export function getAllPurchaseOrders() {
+export function getAllPurchaseOrders({ page = 1, limit = 10, searchTerm = '', status = '', sortBy = 'order_date', sortOrder = 'DESC' } = {}) {
     const db = getDB();
-    return db.prepare(`
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+
+    if (searchTerm) {
+        whereClause += ` AND (s.name LIKE ? OR po.id LIKE ?)`;
+        params.push(`%${searchTerm}%`, `%${searchTerm}%`);
+    }
+
+    if (status && status !== 'all') {
+        whereClause += ` AND po.status = ?`;
+        params.push(status);
+    }
+
+    // Map sort fields to actual columns
+    const sortFieldMap = {
+        'id': 'po.id',
+        'supplier_name': 'supplier_name',
+        'order_date': 'po.order_date',
+        'status': 'po.status',
+        'item_count': 'item_count',
+        'total_cost': 'total_cost'
+    };
+    const sortColumn = sortFieldMap[sortBy] || 'po.order_date';
+    const direction = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    const countQuery = `
+        SELECT COUNT(*) as count 
+        FROM purchase_orders po
+        LEFT JOIN suppliers s ON po.supplier_id = s.id
+        ${whereClause}
+    `;
+    const totalCount = db.prepare(countQuery).get(...params).count;
+
+    const dataQuery = `
         SELECT 
             po.*,
             s.name as supplier_name,
@@ -20,8 +54,19 @@ export function getAllPurchaseOrders() {
         FROM purchase_orders po
         LEFT JOIN suppliers s ON po.supplier_id = s.id
         LEFT JOIN users u ON po.created_by = u.id
-        ORDER BY po.order_date DESC
-    `).all();
+        ${whereClause}
+        ORDER BY ${sortColumn} ${direction}
+        LIMIT ? OFFSET ?
+    `;
+    const purchaseOrders = db.prepare(dataQuery).all(...params, limit, offset);
+
+    return {
+        purchaseOrders,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        page,
+        limit
+    };
 }
 
 /**

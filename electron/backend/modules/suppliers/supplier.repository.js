@@ -5,12 +5,47 @@
 import { getDB } from '../../shared/db/index.js';
 
 /**
- * Get all suppliers
- * @returns {Array} List of all suppliers
+ * Get all suppliers with pagination, search and sorting
  */
-export function getAllSuppliers() {
+export function getAllSuppliers({ page = 1, limit = 10, searchTerm = '', sortBy = 'name', sortOrder = 'ASC' } = {}) {
     const db = getDB();
-    return db.prepare('SELECT * FROM suppliers WHERE deleted_at IS NULL ORDER BY name ASC').all();
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE deleted_at IS NULL';
+    const params = [];
+
+    if (searchTerm) {
+        whereClause += ` AND (name LIKE ? OR contact_person LIKE ? OR email LIKE ?)`;
+        params.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+    }
+
+    const sortFieldMap = {
+        'name': 'name',
+        'contact_person': 'contact_person',
+        'phone': 'phone',
+        'email': 'email'
+    };
+    const sortColumn = sortFieldMap[sortBy] || 'name';
+    const direction = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    const countQuery = `SELECT COUNT(*) as count FROM suppliers ${whereClause}`;
+    const totalCount = db.prepare(countQuery).get(...params).count;
+
+    const dataQuery = `
+        SELECT * FROM suppliers 
+        ${whereClause} 
+        ORDER BY ${sortColumn} ${direction} 
+        LIMIT ? OFFSET ?
+    `;
+    const suppliers = db.prepare(dataQuery).all(...params, limit, offset);
+
+    return {
+        suppliers,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        page,
+        limit
+    };
 }
 
 /**

@@ -6,7 +6,15 @@ import * as purchaseService from './purchase.service.js';
 
 export function getPurchaseOrders(req, res) {
     try {
-        const pos = purchaseService.getAllPurchaseOrders();
+        const { page, limit, searchTerm, status, sortBy, sortOrder } = req.query;
+        const pos = purchaseService.getAllPurchaseOrders({
+            page: parseInt(page) || 1,
+            limit: parseInt(limit) || 10,
+            searchTerm,
+            status,
+            sortBy,
+            sortOrder
+        });
         res.json(pos);
     } catch (error) {
         console.error('Error fetching POs:', error);

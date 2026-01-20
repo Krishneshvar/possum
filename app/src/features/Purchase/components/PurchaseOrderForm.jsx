@@ -24,7 +24,8 @@ import { toast } from 'sonner';
 import { Trash2, Plus } from 'lucide-react';
 
 export function PurchaseOrderForm({ onSuccess }) {
-    const { data: suppliers = [] } = useGetSuppliersQuery();
+    const { data: suppliersData } = useGetSuppliersQuery({ limit: 1000 });
+    const suppliers = suppliersData?.suppliers || [];
     const { data: variantsData } = useGetVariantsQuery({ page: 1, limit: 1000 });
     const variants = variantsData?.variants || [];
 

@@ -7,7 +7,10 @@ export const purchaseApi = createApi({
     tagTypes: ['PurchaseOrders', 'Products', 'Inventory'],
     endpoints: (builder) => ({
         getPurchaseOrders: builder.query({
-            query: () => '/purchase',
+            query: (params) => ({
+                url: '/purchase',
+                params: params,
+            }),
             providesTags: ['PurchaseOrders'],
         }),
         getPurchaseOrderById: builder.query({
