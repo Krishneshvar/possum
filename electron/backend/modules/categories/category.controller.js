@@ -31,6 +31,7 @@ export function createCategoryController(req, res) {
         const newCategory = categoryService.createCategory(name, parentId);
         res.status(201).json(newCategory);
     } catch (err) {
+        console.error(err);
         if (err.message.includes('UNIQUE constraint failed')) {
             return res.status(409).json({ error: 'A category with this name already exists.' });
         }
@@ -53,6 +54,7 @@ export function updateCategoryController(req, res) {
         }
         res.status(200).json({ message: 'Category updated successfully.' });
     } catch (err) {
+        console.error(err);
         if (err.message.includes('UNIQUE constraint failed')) {
             return res.status(409).json({ error: 'A category with this name already exists.' });
         }

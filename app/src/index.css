@@ -93,8 +93,8 @@
   --secondary-foreground: #2d2f3f;
 
   /* Accent highlights */
-  --accent: #dce0e8;
-  /* Crust - subtle hover */
+  --accent: #f1f3f6;
+  /* Lightened from #dce0e8 for a more subtle hover */
   --accent-foreground: #2d2f3f;
 
   /* States */
@@ -183,8 +183,8 @@
   --sidebar-ring: #2F81F7;
 
   /* Global Accent - Dropdowns & Menus */
-  --accent: #1F242B;
-  /* Subtle hover for dropdown items */
+  --accent: #252a33;
+  /* Lightened from #1F242B for better visibility */
   --accent-foreground: #F0F6FC;
 }
 

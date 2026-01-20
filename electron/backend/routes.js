@@ -11,6 +11,7 @@ import returnsRouter from './modules/returns/return.routes.js';
 import productFlowRouter from './modules/productFlow/productFlow.routes.js';
 import reportsRouter from './modules/reports/reports.routes.js';
 import taxesRouter from './modules/taxes/tax.routes.js';
+import variantsRouter from './modules/variants/variant.routes.js';
 import { getSaleReturnsController } from './modules/returns/return.controller.js';
 
 /**
@@ -45,4 +46,7 @@ export function registerRoutes(app) {
 
     // Taxes
     app.use('/api/taxes', taxesRouter);
+
+    // Variants
+    app.use('/api/variants', variantsRouter);
 }

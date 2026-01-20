@@ -8,9 +8,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function GenericPageHeader({ headerIcon, headerLabel, actions, showBackButton = false }) {
-  const primaryAction = actions.primary;
-  const secondaryActions = actions.secondary || [];
+export default function GenericPageHeader({ headerIcon, headerLabel, actions = {}, showBackButton = false }) {
+  const primaryAction = actions?.primary;
+  const secondaryActions = actions?.secondary || [];
   const navigate = useNavigate();
 
   const renderActionButton = (action, isPrimary) => {

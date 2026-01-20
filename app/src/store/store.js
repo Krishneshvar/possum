@@ -9,6 +9,7 @@ import { productFlowApi } from '@/services/productFlowApi';
 import { reportsApi } from '@/services/reportsApi';
 import { taxesApi } from '@/services/taxesApi';
 import productsReducer from '@/features/Products/productsSlice';
+import variantsReducer from '@/features/Variants/variantsSlice';
 
 export const store = configureStore({
     reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
         [reportsApi.reducerPath]: reportsApi.reducer,
         [taxesApi.reducerPath]: taxesApi.reducer,
         products: productsReducer,
+        variants: variantsReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(

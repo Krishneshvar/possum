@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,21 +6,32 @@ import { Edit, Trash2 } from 'lucide-react';
 import { useDeleteCategoryMutation } from '@/services/categoriesApi.js';
 import { toast } from 'sonner';
 import { flattenCategories } from '@/utils/categories.utils';
+import GenericDeleteDialog from '@/components/common/GenericDeleteDialog';
 
 export default function CategoriesTableView({ categories, onEdit }) {
   const [deleteCategory] = useDeleteCategoryMutation();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
 
-  const handleDelete = async (categoryId, categoryName) => {
-    if (window.confirm(`Are you sure you want to delete "${categoryName}"?`)) {
-      try {
-        await deleteCategory(categoryId).unwrap();
-        toast.success(`"${categoryName}" deleted successfully.`);
-      } catch (err) {
-        const errorMsg = err.data?.error || 'An unexpected error occurred.';
-        toast.error(errorMsg);
-      }
+  const handleDeleteClick = (category) => {
+    setCategoryToDelete(category);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      await deleteCategory(categoryToDelete.id).unwrap();
+      toast.success(`"${categoryToDelete.name}" deleted successfully.`);
+    } catch (err) {
+      const errorMsg = err.data?.error || 'An unexpected error occurred.';
+      toast.error(errorMsg);
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setCategoryToDelete(null);
     }
   };
 
@@ -58,7 +69,7 @@ export default function CategoriesTableView({ categories, onEdit }) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(category.id, category.name)}
+                      onClick={() => handleDeleteClick(category)}
                       className="text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -70,6 +81,14 @@ export default function CategoriesTableView({ categories, onEdit }) {
           )}
         </TableBody>
       </Table>
+
+      <GenericDeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        itemName={categoryToDelete?.name}
+        dialogTitle="Delete Category"
+      />
     </div>
   );
 }

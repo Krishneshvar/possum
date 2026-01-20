@@ -1,24 +1,15 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit, Trash2 } from 'lucide-react';
 import { useDeleteCategoryMutation } from '@/services/categoriesApi.js';
 import { toast } from 'sonner';
+import GenericDeleteDialog from '@/components/common/GenericDeleteDialog';
 
 // Recursive component to render the category tree
-const CategoryNode = ({ category, onEdit }) => {
-  const [deleteCategory] = useDeleteCategoryMutation();
-
-  const handleDelete = async () => {
-    if (window.confirm(`Are you sure you want to delete "${category.name}"?`)) {
-      try {
-        await deleteCategory(category.id).unwrap();
-        toast.success(`"${category.name}" deleted successfully.`);
-      } catch (err) {
-        const errorMsg = err.data?.error || 'An unexpected error occurred.';
-        toast.error(errorMsg);
-      }
-    }
+const CategoryNode = ({ category, onEdit, onDelete }) => {
+  const handleDelete = () => {
+    onDelete(category);
   };
 
   return (
@@ -48,7 +39,7 @@ const CategoryNode = ({ category, onEdit }) => {
       {category.subcategories && category.subcategories.length > 0 && (
         <div className="mt-2">
           {category.subcategories.map(subcat => (
-            <CategoryNode key={subcat.id} category={subcat} onEdit={onEdit} />
+            <CategoryNode key={subcat.id} category={subcat} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>
       )}
@@ -57,6 +48,30 @@ const CategoryNode = ({ category, onEdit }) => {
 };
 
 export default function CategoriesTreeView({ categories, onEdit }) {
+  const [deleteCategory] = useDeleteCategoryMutation();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+
+  const handleDeleteClick = (category) => {
+    setCategoryToDelete(category);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      await deleteCategory(categoryToDelete.id).unwrap();
+      toast.success(`"${categoryToDelete.name}" deleted successfully.`);
+    } catch (err) {
+      const errorMsg = err.data?.error || 'An unexpected error occurred.';
+      toast.error(errorMsg);
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+    }
+  };
+
   if (categories.length === 0) {
     return (
       <Card>
@@ -70,8 +85,21 @@ export default function CategoriesTreeView({ categories, onEdit }) {
   return (
     <div className="space-y-4">
       {categories.map(category => (
-        <CategoryNode key={category.id} category={category} onEdit={onEdit} />
+        <CategoryNode
+          key={category.id}
+          category={category}
+          onEdit={onEdit}
+          onDelete={handleDeleteClick}
+        />
       ))}
+
+      <GenericDeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        itemName={categoryToDelete?.name}
+        dialogTitle="Delete Category"
+      />
     </div>
   );
 }

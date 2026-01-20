@@ -72,14 +72,28 @@ export async function deleteVariantController(req, res) {
 }
 
 /**
- * GET /api/products/variants/search
- * Search variants
+ * GET /api/variants
+ * Get variants with filtering, pagination, and sorting
  */
 export async function getVariantsController(req, res) {
     try {
-        const { query } = req.query;
-        const variants = variantService.searchVariants({ query });
-        res.json(variants);
+        const {
+            searchTerm = '',
+            sortBy = 'p.name',
+            sortOrder = 'ASC',
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        const result = variantService.getVariants({
+            searchTerm,
+            sortBy,
+            sortOrder,
+            currentPage: parseInt(page, 10),
+            itemsPerPage: parseInt(limit, 10)
+        });
+
+        res.json(result);
     } catch (err) {
         console.error('Error in getVariantsController:', err);
         res.status(500).json({ error: 'Failed to retrieve variants.' });

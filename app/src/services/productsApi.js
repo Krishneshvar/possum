@@ -163,12 +163,12 @@ export const productsApi = createApi({
             query.append(key, params[key]);
           }
         }
-        return `/products/variants/search?${query.toString()}`;
+        return `/variants?${query.toString()}`;
       },
       providesTags: (result) =>
         result
           ? [
-            ...result.map(({ id }) => ({ type: 'Variant', id })),
+            ...result.variants.map(({ id }) => ({ type: 'Variant', id })),
             { type: 'Variant', id: 'LIST' },
           ]
           : [{ type: 'Variant', id: 'LIST' }],

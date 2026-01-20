@@ -109,11 +109,11 @@ export function softDeleteVariant(id) {
 }
 
 /**
- * Search variants with product info and computed stock
- * @param {Object} params - Search params
- * @returns {Array} Matching variants with stock
+ * Find variants with filtering, pagination, and sorting
+ * @param {Object} params - Query parameters
+ * @returns {Object} Paginated variants data
  */
-export function searchVariants({ query }) {
+export function findVariants({ searchTerm, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }) {
   const db = getDB();
   const filterClauses = [];
   const filterParams = [];
@@ -121,13 +121,28 @@ export function searchVariants({ query }) {
   filterClauses.push(`v.deleted_at IS NULL`);
   filterClauses.push(`p.deleted_at IS NULL`);
 
-  if (query) {
+  if (searchTerm) {
     filterClauses.push(`(p.name LIKE ? OR v.name LIKE ? OR v.sku LIKE ?)`);
-    filterParams.push(`%${query}%`, `%${query}%`, `%${query}%`);
+    filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
   }
 
   const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
 
+  // Get total count
+  const countSql = `
+    SELECT COUNT(*) as total
+    FROM variants v
+    JOIN products p ON v.product_id = p.id
+    ${whereClause}
+  `;
+  const totalCount = db.prepare(countSql).get(...filterParams).total;
+
+  // Validate sort parameters to prevent SQL injection
+  const allowSortColumns = ['p.name', 'v.name', 'v.sku', 'v.mrp', 'v.cost_price', 'v.status', 'v.created_at'];
+  const safeSortBy = allowSortColumns.includes(sortBy) ? sortBy : 'p.name';
+  const safeSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
   const sql = `
     SELECT 
       v.id, v.product_id, v.name, v.sku, v.mrp, v.cost_price, 
@@ -136,21 +151,31 @@ export function searchVariants({ query }) {
     FROM variants v
     JOIN products p ON v.product_id = p.id
     ${whereClause}
-    ORDER BY p.name ASC, v.name ASC
-    LIMIT 50
+    ORDER BY ${safeSortBy} ${safeSortOrder}
+    LIMIT ? OFFSET ?
   `;
 
-  const variants = db.prepare(sql).all(...filterParams);
+  const variants = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
 
   if (variants.length === 0) {
-    return [];
+    return {
+      variants: [],
+      totalCount: 0,
+      totalPages: 0
+    };
   }
 
   const variantIds = variants.map(v => v.id);
   const stockMap = getComputedStockBatch(variantIds);
 
-  return variants.map(variant => ({
+  const paginatedVariants = variants.map(variant => ({
     ...variant,
     stock: stockMap[variant.id] ?? 0
   }));
+
+  return {
+    variants: paginatedVariants,
+    totalCount,
+    totalPages: Math.ceil(totalCount / itemsPerPage)
+  };
 }

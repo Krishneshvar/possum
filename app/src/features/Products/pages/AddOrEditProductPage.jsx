@@ -57,7 +57,7 @@ export default function AddOrEditProductPage() {
       description: `${productName} has been saved.`,
       duration: 5000,
     });
-    navigate(-1);
+    navigate('/products');
   };
 
   const handleFailure = (err) => {
@@ -66,31 +66,6 @@ export default function AddOrEditProductPage() {
       description: 'An error occurred while saving. Please try again later.',
       duration: 5000,
     });
-  };
-
-  const handleSubmit = async (productData) => {
-    try {
-      if (isEditMode) {
-        await updateProduct({ id: Number(productId), ...productData }).unwrap();
-        toast.success('Product updated successfully!', {
-          description: `${productData.name} has been updated.`,
-          duration: 5000,
-        });
-      } else {
-        await addProduct(productData).unwrap();
-        toast.success('Product added successfully!', {
-          description: `${productData.name} has been added to your inventory.`,
-          duration: 5000,
-        });
-      }
-      navigate('/products');
-    } catch (err) {
-      console.error('Failed to save product:', err);
-      toast.error('Error saving product', {
-        description: 'An error occurred while saving. Please try again later.',
-        duration: 5000,
-      });
-    }
   };
 
   return (

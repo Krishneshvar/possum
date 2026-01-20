@@ -70,15 +70,18 @@ export function deleteVariant(id) {
 }
 
 /**
- * Search variants
- * @param {Object} params - Search params
- * @returns {Array} Variants with image URLs
+ * Get variants with filtering, pagination and sorting
+ * @param {Object} params - Query parameters
+ * @returns {Object} Paginated variants with image URLs
  */
-export function searchVariants(params) {
-    const variants = variantRepository.searchVariants(params);
+export function getVariants(params) {
+    const result = variantRepository.findVariants(params);
 
-    return variants.map(variant => ({
-        ...variant,
-        imageUrl: buildImageUrl(variant.image_path)
-    }));
+    return {
+        ...result,
+        variants: result.variants.map(variant => ({
+            ...variant,
+            imageUrl: buildImageUrl(variant.image_path)
+        }))
+    };
 }
