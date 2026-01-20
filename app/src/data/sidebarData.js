@@ -62,17 +62,17 @@ export const sidebarData = {
       items: [
         {
           title: "Inventory",
-          url: "/products/inventory",
+          url: "/inventory",
           icon: Boxes,
         },
         {
           title: "Variants",
-          url: "/products/variants",
+          url: "/variants",
           icon: Split,
         },
         {
           title: "Categories",
-          url: "/products/categories",
+          url: "/categories",
           icon: Layers,
         },
       ]

@@ -2,9 +2,9 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     user: null,
-    token: localStorage.getItem('possum_token') || null,
-    isAuthenticated: !!localStorage.getItem('possum_token'),
-    isLoading: true,
+    token: sessionStorage.getItem('possum_token') || null,
+    isAuthenticated: false,
+    isLoading: !!sessionStorage.getItem('possum_token'),
 };
 
 const authSlice = createSlice({
@@ -16,14 +16,14 @@ const authSlice = createSlice({
             state.token = token;
             state.isAuthenticated = true;
             state.isLoading = false;
-            localStorage.setItem('possum_token', token);
+            sessionStorage.setItem('possum_token', token);
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
             state.isLoading = false;
-            localStorage.removeItem('possum_token');
+            sessionStorage.removeItem('possum_token');
         },
         setLoading: (state, { payload }) => {
             state.isLoading = payload;

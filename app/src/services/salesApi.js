@@ -30,6 +30,8 @@ export const salesApi = createApi({
                 if (params.startDate) query.append('startDate', params.startDate);
                 if (params.endDate) query.append('endDate', params.endDate);
                 if (params.searchTerm) query.append('searchTerm', params.searchTerm);
+                if (params.sortBy) query.append('sortBy', params.sortBy);
+                if (params.sortOrder) query.append('sortOrder', params.sortOrder);
                 return `/sales?${query.toString()}`;
             },
             providesTags: (result) =>

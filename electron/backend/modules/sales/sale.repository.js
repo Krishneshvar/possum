@@ -139,7 +139,9 @@ export function findSales({
     endDate,
     searchTerm,
     currentPage = 1,
-    itemsPerPage = 20
+    itemsPerPage = 20,
+    sortBy = 'sale_date',
+    sortOrder = 'DESC'
 }) {
     const db = getDB();
     const filterClauses = [];
@@ -162,12 +164,12 @@ export function findSales({
     }
 
     if (startDate) {
-        filterClauses.push('s.sale_date >= ?');
+        filterClauses.push('date(s.sale_date) >= date(?)');
         filterParams.push(startDate);
     }
 
     if (endDate) {
-        filterClauses.push('s.sale_date <= ?');
+        filterClauses.push('date(s.sale_date) <= date(?)');
         filterParams.push(endDate);
     }
 
@@ -189,6 +191,11 @@ export function findSales({
 
     const totalCount = countResult?.total_count ?? 0;
 
+    // Validate sortBy to prevent SQL injection
+    const allowedSortFields = ['sale_date', 'total_amount', 'invoice_number', 'paid_amount', 'status'];
+    const finalSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'sale_date';
+    const finalSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
     const offset = (currentPage - 1) * itemsPerPage;
     const sales = db.prepare(`
         SELECT 
@@ -199,7 +206,7 @@ export function findSales({
         LEFT JOIN customers c ON s.customer_id = c.id
         LEFT JOIN users u ON s.user_id = u.id
         ${whereClause}
-        ORDER BY s.sale_date DESC
+        ORDER BY s.${finalSortBy} ${finalSortOrder}
         LIMIT ? OFFSET ?
     `).all(...filterParams, itemsPerPage, offset);
 

@@ -1,7 +1,11 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { logout } from "@/features/Auth/authSlice";
 
 import { sidebarData } from "@/data/sidebarData";
 
@@ -30,7 +34,14 @@ const getPageTitle = (pathname, data) => {
 
 export function SiteHeader() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const pageTitle = getPageTitle(location.pathname, sidebarData);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login");
+  };
 
   return (
     <header>
@@ -42,6 +53,15 @@ export function SiteHeader() {
         </h1>
         <div className="ml-auto flex items-center gap-2">
           <ModeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-destructive"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </header>

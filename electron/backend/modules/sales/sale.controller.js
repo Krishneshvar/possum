@@ -58,7 +58,9 @@ export async function getSalesController(req, res) {
             userId,
             startDate,
             endDate,
-            searchTerm
+            searchTerm,
+            sortBy = 'sale_date',
+            sortOrder = 'DESC'
         } = req.query;
 
         const statusArray = status
@@ -73,7 +75,9 @@ export async function getSalesController(req, res) {
             endDate: endDate || null,
             searchTerm: searchTerm || null,
             currentPage: parseInt(page, 10),
-            itemsPerPage: parseInt(limit, 10)
+            itemsPerPage: parseInt(limit, 10),
+            sortBy,
+            sortOrder
         });
 
         res.json(sales);

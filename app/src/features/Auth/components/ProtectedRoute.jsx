@@ -32,8 +32,13 @@ export default function ProtectedRoute({ children, requiredPermissions = [], req
 
     // Check permissions if required
     if (requiredPermissions.length > 0) {
+        // Allow admin role to bypass permission checks
+        if (user?.roles && user.roles.includes('admin')) {
+            return children;
+        }
+
         const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-        const hasPermission = permissions.every(p => user?.permissions?.includes(p));
+        const hasPermission = user?.permissions && permissions.every(p => user.permissions.includes(p));
 
         if (!hasPermission) {
             return <Navigate to="/" replace />; // Or a custom 403 Forbidden page
@@ -42,8 +47,13 @@ export default function ProtectedRoute({ children, requiredPermissions = [], req
 
     // Check roles if required
     if (requiredRoles.length > 0) {
+        // Admin also bypasses role checks
+        if (user?.roles && user.roles.includes('admin')) {
+            return children;
+        }
+
         const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
-        const hasRole = roles.some(r => user?.roles?.includes(r));
+        const hasRole = user?.roles && roles.some(r => user.roles.includes(r));
 
         if (!hasRole) {
             return <Navigate to="/" replace />;
