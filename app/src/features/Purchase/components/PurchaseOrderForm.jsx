@@ -189,7 +189,7 @@ export function PurchaseOrderForm({ onSuccess }) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Product / Variant</TableHead>
+                            <TableHead>Product | Variant</TableHead>
                             <TableHead className="text-right">Qty</TableHead>
                             <TableHead className="text-right">Cost</TableHead>
                             <TableHead className="text-right">Total</TableHead>

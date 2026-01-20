@@ -18,7 +18,7 @@ export function getStockByVariantId(variantId) {
                 (SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = ?),
                 0
             ) + COALESCE(
-                (SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = ? AND reason != 'confirm_receive'),
+                (SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = ? AND (reason != 'confirm_receive' OR lot_id IS NULL)),
                 0
             ) AS stock
     `).get(variantId, variantId);
@@ -162,7 +162,7 @@ export function findLowStockVariants() {
                 p.image_path,
                 (
                     COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
-                    + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND reason != 'confirm_receive'), 0)
+                    + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
                 ) AS current_stock
             FROM variants v
             JOIN products p ON v.product_id = p.id
@@ -196,4 +196,31 @@ export function findExpiringLots(days = 30) {
           AND v.deleted_at IS NULL
         ORDER BY il.expiry_date ASC
     `).all(days);
+}
+
+/**
+ * Get aggregate inventory stats
+ * @returns {Object} Inventory stats
+ */
+export function getInventoryStats() {
+    const db = getDB();
+    return db.prepare(`
+        WITH VariantStock AS(
+        SELECT 
+                v.id,
+        v.stock_alert_cap,
+        (
+            COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+        + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
+    ) AS current_stock
+            FROM variants v
+            JOIN products p ON v.product_id = p.id
+            WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
+        )
+    SELECT
+    COALESCE(SUM(current_stock), 0) as totalItemsInStock,
+        COUNT(CASE WHEN current_stock = 0 THEN 1 END) as productsWithNoStock,
+        COUNT(CASE WHEN current_stock <= stock_alert_cap THEN 1 END) as productsWithLowStock
+        FROM VariantStock
+        `).get();
 }

@@ -25,20 +25,6 @@ export const inventoryApi = createApi({
             providesTags: (result, error, { variantId }) => [{ type: 'Adjustment', id: variantId }],
         }),
 
-        // Create manual adjustment
-        createAdjustment: builder.mutation({
-            query: (body) => ({
-                url: '/inventory/adjustments',
-                method: 'POST',
-                body,
-            }),
-            invalidatesTags: (result, error, { variantId }) => [
-                { type: 'Stock', id: variantId },
-                { type: 'Adjustment', id: variantId },
-                'LowStock',
-            ],
-        }),
-
         // Get low stock alerts
         getLowStockAlerts: builder.query({
             query: () => '/inventory/alerts/low-stock',
@@ -71,7 +57,6 @@ export const {
     useGetVariantStockQuery,
     useGetVariantLotsQuery,
     useGetVariantAdjustmentsQuery,
-    useCreateAdjustmentMutation,
     useGetLowStockAlertsQuery,
     useGetExpiringLotsQuery,
     useReceiveInventoryMutation,

@@ -16,13 +16,6 @@ export const allColumns = [
         sortField: 'p.name',
     },
     {
-        key: "sku",
-        label: "SKU",
-        renderCell: (row) => row.sku,
-        sortable: true,
-        sortField: 'v.sku',
-    },
-    {
         key: "mrp",
         label: "MRP",
         renderCell: (row) => `₹${Number(row.mrp).toFixed(2)}`,

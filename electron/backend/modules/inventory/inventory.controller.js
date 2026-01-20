@@ -78,6 +78,8 @@ export async function createAdjustmentController(req, res) {
             reason
         } = req.body;
 
+
+
         if (!variantId || quantityChange === undefined || !reason) {
             return res.status(400).json({
                 error: 'variantId, quantityChange, and reason are required.'
@@ -176,5 +178,19 @@ export async function receiveInventoryController(req, res) {
     } catch (err) {
         console.error('Error receiving inventory:', err);
         res.status(500).json({ error: 'Failed to receive inventory.' });
+    }
+}
+
+/**
+ * GET /api/inventory/stats
+ * Get aggregate inventory statistics
+ */
+export async function getInventoryStatsController(req, res) {
+    try {
+        const stats = inventoryService.getInventoryStats();
+        res.json(stats);
+    } catch (err) {
+        console.error('Error fetching inventory stats:', err);
+        res.status(500).json({ error: 'Failed to retrieve inventory stats.' });
     }
 }

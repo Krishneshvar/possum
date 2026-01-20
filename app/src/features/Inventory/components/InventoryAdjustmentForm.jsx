@@ -9,8 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useGetProductsQuery } from '@/services/productsApi';
-import { useCreateAdjustmentMutation } from '@/services/inventoryApi';
+import { useGetProductsQuery, useCreateAdjustmentMutation } from '@/services/productsApi';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 

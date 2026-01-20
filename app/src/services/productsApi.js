@@ -163,7 +163,7 @@ export const productsApi = createApi({
       query: (params) => {
         const query = new URLSearchParams();
         for (const key in params) {
-          if (params[key] !== null && params[key] !== '') {
+          if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
             query.append(key, params[key]);
           }
         }
@@ -174,8 +174,26 @@ export const productsApi = createApi({
           ? [
             ...result.variants.map(({ id }) => ({ type: 'Variant', id })),
             { type: 'Variant', id: 'LIST' },
+            { type: 'Stock', id: 'LIST' },
           ]
-          : [{ type: 'Variant', id: 'LIST' }],
+          : [{ type: 'Variant', id: 'LIST' }, { type: 'Stock', id: 'LIST' }],
+    }),
+    getInventoryStats: builder.query({
+      query: () => '/inventory/stats',
+      providesTags: ['Stock', 'Variant'],
+    }),
+    createAdjustment: builder.mutation({
+      query: (body) => ({
+        url: '/inventory/adjustments',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { variantId }) => [
+        { type: 'Variant', id: variantId },
+        { type: 'Variant', id: 'LIST' },
+        'Variant',
+        'Stock',
+      ],
     }),
   }),
 });
@@ -190,4 +208,6 @@ export const {
   useUpdateVariantMutation,
   useDeleteVariantMutation,
   useGetVariantsQuery,
+  useGetInventoryStatsQuery,
+  useCreateAdjustmentMutation,
 } = productsApi;

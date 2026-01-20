@@ -113,7 +113,7 @@ export function softDeleteVariant(id) {
  * @param {Object} params - Query parameters
  * @returns {Object} Paginated variants data
  */
-export function findVariants({ searchTerm, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }) {
+export function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }) {
   const db = getDB();
   const filterClauses = [];
   const filterParams = [];
@@ -126,34 +126,75 @@ export function findVariants({ searchTerm, sortBy = 'p.name', sortOrder = 'ASC',
     filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
   }
 
+  if (categoryId) {
+    filterClauses.push(`p.category_id = ?`);
+    filterParams.push(categoryId);
+  }
+
   const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
 
-  // Get total count
+  // For stockStatus filtering, we need to apply it after computing stock or use a HAVING/subquery
+  // Given the structure, using a subquery for the count and main query is better
+
+  let stockFilterClause = '';
+  if (stockStatus === 'low') {
+    stockFilterClause = 'WHERE current_stock <= stock_alert_cap AND current_stock > 0';
+  } else if (stockStatus === 'out') {
+    stockFilterClause = 'WHERE current_stock = 0';
+  } else if (stockStatus === 'ok') {
+    stockFilterClause = 'WHERE current_stock > stock_alert_cap';
+  }
+
   const countSql = `
-    SELECT COUNT(*) as total
-    FROM variants v
-    JOIN products p ON v.product_id = p.id
-    ${whereClause}
+    SELECT COUNT(*) as total FROM (
+      SELECT 
+        v.id,
+        (
+            COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+            + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
+        ) AS current_stock,
+        v.stock_alert_cap
+      FROM variants v
+      JOIN products p ON v.product_id = p.id
+      ${whereClause}
+    ) ${stockFilterClause}
   `;
   const totalCount = db.prepare(countSql).get(...filterParams).total;
 
-  // Validate sort parameters to prevent SQL injection
-  const allowSortColumns = ['p.name', 'v.name', 'v.sku', 'v.mrp', 'v.cost_price', 'v.status', 'v.created_at'];
-  const safeSortBy = allowSortColumns.includes(sortBy) ? sortBy : 'p.name';
+  // Validate sort parameters to prevent SQL injection and handle outer query aliases
+  const allowSortColumns = ['p.name', 'v.name', 'v.sku', 'v.mrp', 'v.cost_price', 'v.status', 'v.created_at', 'stock'];
+  const sortMap = {
+    'p.name': 'product_name',
+    'v.name': 'name',
+    'v.sku': 'sku',
+    'v.mrp': 'mrp',
+    'v.cost_price': 'cost_price',
+    'v.status': 'status',
+    'v.created_at': 'created_at',
+    'stock': 'stock'
+  };
+
+  const safeSortBy = sortMap[sortBy] || 'product_name';
   const safeSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const sql = `
-    SELECT 
-      v.id, v.product_id, v.name, v.sku, v.mrp, v.cost_price, 
-      v.stock_alert_cap, v.is_default, v.status, v.created_at,
-      p.name as product_name, p.image_path,
-      c.name as category_name
-    FROM variants v
-    JOIN products p ON v.product_id = p.id
-    LEFT JOIN categories c ON p.category_id = c.id
-    ${whereClause}
-    ORDER BY ${safeSortBy} ${safeSortOrder}
+    SELECT * FROM (
+      SELECT 
+        v.id, v.product_id, v.name, v.sku, v.mrp, v.cost_price, 
+        v.stock_alert_cap, v.is_default, v.status, v.created_at,
+        p.name as product_name, p.image_path,
+        c.name as category_name,
+        (
+            COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+            + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
+        ) AS stock
+      FROM variants v
+      JOIN products p ON v.product_id = p.id
+      LEFT JOIN categories c ON p.category_id = c.id
+      ${whereClause}
+    ) ${stockFilterClause === '' ? '' : stockFilterClause.replace(/current_stock/g, 'stock')}
+    ORDER BY ${safeSortBy === 'stock' ? 'stock' : safeSortBy} ${safeSortOrder}
     LIMIT ? OFFSET ?
   `;
 
@@ -167,16 +208,8 @@ export function findVariants({ searchTerm, sortBy = 'p.name', sortOrder = 'ASC',
     };
   }
 
-  const variantIds = variants.map(v => v.id);
-  const stockMap = getComputedStockBatch(variantIds);
-
-  const paginatedVariants = variants.map(variant => ({
-    ...variant,
-    stock: stockMap[variant.id] ?? 0
-  }));
-
   return {
-    variants: paginatedVariants,
+    variants,
     totalCount,
     totalPages: Math.ceil(totalCount / itemsPerPage)
   };

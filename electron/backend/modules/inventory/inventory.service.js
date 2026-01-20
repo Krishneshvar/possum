@@ -77,20 +77,19 @@ export function adjustInventory({
             adjusted_by: userId
         });
 
-        // Log to product flow (except for confirm_receive, which is logged during purchase receipt)
-        if (reason !== 'confirm_receive') {
-            const eventType = reason === 'sale' ? 'sale'
-                : reason === 'return' ? 'return'
+        // Log to product flow
+        const eventType = reason === 'sale' ? 'sale'
+            : reason === 'return' ? 'return'
+                : reason === 'confirm_receive' ? 'adjustment' // or 'purchase' map? 'adjustment' is safer for manual
                     : 'adjustment';
 
-            productFlowRepository.insertProductFlow({
-                variant_id: variantId,
-                event_type: eventType,
-                quantity: quantityChange,
-                reference_type: referenceType || 'adjustment',
-                reference_id: referenceId || adjustmentResult.lastInsertRowid
-            });
-        }
+        productFlowRepository.insertProductFlow({
+            variant_id: variantId,
+            event_type: eventType,
+            quantity: quantityChange,
+            reference_type: referenceType || 'adjustment',
+            reference_id: referenceId || adjustmentResult.lastInsertRowid
+        });
 
         return {
             id: adjustmentResult.lastInsertRowid,
@@ -176,4 +175,12 @@ export function receiveInventory({
             newStock: inventoryRepository.getStockByVariantId(variantId)
         };
     });
+}
+
+/**
+ * Get aggregate inventory stats
+ * @returns {Object} Inventory stats
+ */
+export function getInventoryStats() {
+    return inventoryRepository.getInventoryStats();
 }

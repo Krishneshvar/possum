@@ -79,6 +79,8 @@ export async function getVariantsController(req, res) {
     try {
         const {
             searchTerm = '',
+            categoryId,
+            stockStatus,
             sortBy = 'p.name',
             sortOrder = 'ASC',
             page = 1,
@@ -87,6 +89,8 @@ export async function getVariantsController(req, res) {
 
         const result = variantService.getVariants({
             searchTerm,
+            categoryId,
+            stockStatus,
             sortBy,
             sortOrder,
             currentPage: parseInt(page, 10),

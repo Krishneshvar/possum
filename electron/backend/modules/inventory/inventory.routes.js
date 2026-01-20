@@ -10,7 +10,8 @@ import {
     createAdjustmentController,
     getLowStockAlertsController,
     getExpiringLotsController,
-    receiveInventoryController
+    receiveInventoryController,
+    getInventoryStatsController
 } from './inventory.controller.js';
 
 const router = Router();
@@ -29,5 +30,8 @@ router.get('/alerts/expiring', getExpiringLotsController);
 
 // Receive inventory endpoint
 router.post('/receive', receiveInventoryController);
+
+// Stats endpoint
+router.get('/stats', getInventoryStatsController);
 
 export default router;
