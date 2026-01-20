@@ -1,9 +1,9 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { API_BASE } from '@/lib/api-client';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQuery } from '@/lib/api-client';
 
 export const purchaseApi = createApi({
     reducerPath: 'purchaseApi',
-    baseQuery: fetchBaseQuery({ baseUrl: API_BASE }),
+    baseQuery,
     tagTypes: ['PurchaseOrders', 'Products', 'Inventory'],
     endpoints: (builder) => ({
         getPurchaseOrders: builder.query({

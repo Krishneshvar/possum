@@ -15,13 +15,21 @@ import variantsRouter from './modules/variants/variant.routes.js';
 import usersRouter from './modules/users/user.routes.js';
 import suppliersRouter from './modules/suppliers/supplier.routes.js';
 import purchaseRouter from './modules/purchase/purchase.routes.js';
+import authRouter from './modules/auth/auth.routes.js';
 import { getSaleReturnsController } from './modules/returns/return.controller.js';
+import { authenticate } from './shared/middleware/auth.middleware.js';
 
 /**
  * Register all routes on the Express app
  * @param {Express} app - Express application instance
  */
 export function registerRoutes(app) {
+    // Auth
+    app.use('/api/auth', authRouter);
+
+    // Everything below requires authentication
+    app.use('/api', authenticate);
+
     // Products & Categories
     app.use('/api/products', productsRouter);
     app.use('/api/categories', categoriesRouter);

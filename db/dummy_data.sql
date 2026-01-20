@@ -67,36 +67,31 @@ INSERT INTO customers (name, phone, email, address) VALUES
 ('Judy Taylor', '555-2010', 'judy.t@email.com', '707 Spruce St, Hillside'),
 ('Kevin Rodriguez', '555-2011', 'family.r@email.com', '808 Aspen Rd, Lakeview');
 
-INSERT INTO users (id, name, username, password_hash) VALUES
-(1, 'Admin User', 'admin', 'pass123'),
-(2, 'Manager One', 'manager1', 'pass123'),
-(3, 'Cashier A', 'cashierA', 'pass123'),
-(4, 'Cashier B', 'cashierB', 'pass123'),
-(5, 'Cashier C', 'cashierC', 'pass123'),
-(6, 'Stock Manager', 'stockm', 'pass123'),
-(7, 'Jane Smith', 'janes', 'pass123'),
-(8, 'Peter Jones', 'peterj', 'pass123'),
-(9, 'Laura Miller', 'lauram', 'pass123'),
-(10, 'Daniel White', 'danielw', 'pass123'),
-(11, 'Sophia Brown', 'sophiab', 'pass123');
+INSERT OR IGNORE INTO users (name, username, password_hash) VALUES
+('Admin User', 'admin_demo', 'pass123'),
+('Manager One', 'manager1', 'pass123'),
+('Cashier A', 'cashierA', 'pass123'),
+('Cashier B', 'cashierB', 'pass123'),
+('Cashier C', 'cashierC', 'pass123'),
+('Stock Manager', 'stockm', 'pass123'),
+('Jane Smith', 'janes', 'pass123'),
+('Peter Jones', 'peterj', 'pass123'),
+('Laura Miller', 'lauram', 'pass123'),
+('Daniel White', 'danielw', 'pass123'),
+('Sophia Brown', 'sophiab', 'pass123');
 
-INSERT INTO roles (id, name) VALUES
-(1, 'admin'),
-(2, 'manager'),
-(3, 'cashier');
+-- Assign roles using subqueries to avoid ID clashes
+INSERT OR IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'admin_demo' AND r.name = 'admin';
 
-INSERT INTO user_roles (user_id, role_id) VALUES
-(1, 1),
-(2, 2),
-(3, 3),
-(4, 3),
-(5, 3),
-(6, 2),
-(7, 3),
-(8, 3),
-(9, 3),
-(10, 3),
-(11, 3);
+INSERT OR IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'manager1' AND r.name = 'manager';
+
+INSERT OR IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.username IN ('cashierA', 'cashierB', 'cashierC', 'janes', 'peterj', 'lauram', 'danielw', 'sophiab') AND r.name = 'cashier';
+
+INSERT OR IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'stockm' AND r.name = 'manager';
 
 INSERT INTO payment_methods (name) VALUES
 ('Cash'),

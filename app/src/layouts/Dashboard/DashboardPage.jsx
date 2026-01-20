@@ -12,7 +12,12 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from '@/components/ui/separator';
 
 import { cardData } from './dashboardStatsData';
+import { useDispatch, useSelector } from 'react-redux';
+import { useGetMeQuery } from '@/services/authApi';
+import { setUser, setLoading, selectIsAuthenticated } from '@/features/Auth/authSlice';
 
+import LoginPage from '@/features/Auth/pages/LoginPage';
+import ProtectedRoute from '@/features/Auth/components/ProtectedRoute';
 import HelpPage from '@/features/Misc/HelpPage';
 import PluginsPage from '@/features/Misc/PluginsPage';
 import ProductDetailsPage from '@/features/Products/pages/ProductDetailsPage';
@@ -34,46 +39,77 @@ import CustomersPage from '@/features/People/pages/CustomersPage';
 import EmployeesPage from '@/features/People/pages/EmployeesPage';
 
 export default function DashboardPage() {
+  const dispatch = useDispatch();
+  const token = localStorage.getItem('possum_token');
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  // Try to load user if token exists but not authenticated in state
+  const { data: user, isLoading, isError } = useGetMeQuery(undefined, {
+    skip: !token || isAuthenticated
+  });
+
+  React.useEffect(() => {
+    if (user) {
+      dispatch(setUser(user));
+    } else if (isError) {
+      dispatch(setUser(null));
+      localStorage.removeItem('possum_token');
+    }
+
+    if (!isLoading) {
+      dispatch(setLoading(false));
+    }
+  }, [user, isError, isLoading, dispatch]);
+
   return (
     <HashRouter>
-      <SidebarProvider className="bg-muted" style={{ "--sidebar-width": "250px" }}>
-        <AppSidebar variant="floating" />
-        <main className="w-full bg-background p-4 min-h-screen">
-          <SiteHeader />
-          <Separator className="my-4" />
-          <div className="flex flex-col">
-            <Routes>
-              <Route path="/" element={<StatCards cardData={cardData} />} />
-              <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
 
-              <Route path="/sales" element={<SalesPage />} />
-              <Route path="/sales/orders" element={<OrdersPage />} />
-              <Route path="/sales/history" element={<SalesHistoryPage />} />
-              <Route path="/sales/transactions" element={<TransactionsPage />} />
+        <Route path="*" element={
+          <SidebarProvider
+            className="bg-muted"
+            style={{ "--sidebar-width": "250px" }}
+          >
+            <AppSidebar variant="floating" />
+            <main className="w-full bg-background p-4 min-h-screen">
+              <SiteHeader />
+              <Separator className="my-4" />
+              <div className="flex flex-col">
+                <Routes>
+                  <Route path="/" element={<ProtectedRoute><StatCards cardData={cardData} /></ProtectedRoute>} />
+                  <Route path="/dashboard" element={<ProtectedRoute><StatCards cardData={cardData} /></ProtectedRoute>} />
 
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/products/add" element={<AddOrEditProductPage />} />
-              <Route path="/products/edit/:productId" element={<AddOrEditProductPage />} />
-              <Route path="/products/:productId" element={<ProductDetailsPage />} />
-              <Route path="/products/inventory" element={<InventoryPage />} />
-              <Route path="/products/variants" element={<VariantsPage />} />
-              <Route path="/products/categories" element={<CategoriesPage />} />
+                  <Route path="/sales" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
+                  <Route path="/sales/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+                  <Route path="/sales/history" element={<ProtectedRoute><SalesHistoryPage /></ProtectedRoute>} />
+                  <Route path="/sales/transactions" element={<ProtectedRoute><TransactionsPage /></ProtectedRoute>} />
 
-              <Route path="/purchase" element={<PurchasePage />} />
-              <Route path="/purchase/orders" element={<PurchaseOrdersPage />} />
-              <Route path="/suppliers" element={<SuppliersPage />} />
+                  <Route path="/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
+                  <Route path="/products/add" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
+                  <Route path="/products/edit/:productId" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
+                  <Route path="/products/:productId" element={<ProtectedRoute><ProductDetailsPage /></ProtectedRoute>} />
+                  <Route path="/products/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
+                  <Route path="/products/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
+                  <Route path="/products/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
 
-              <Route path="/people" element={<PeoplePage />} />
-              <Route path="/customers" element={<CustomersPage />} />
-              <Route path="/employees" element={<EmployeesPage />} />
+                  <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchasePage /></ProtectedRoute>} />
+                  <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
+                  <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
 
-              <Route path="/plugins" element={<PluginsPage />} />
-              <Route path="/help" element={<HelpPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </div>
-        </main>
-      </SidebarProvider>
+                  <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />
+                  <Route path="/customers" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
+                  <Route path="/employees" element={<ProtectedRoute requiredPermissions="users.manage"><EmployeesPage /></ProtectedRoute>} />
+
+                  <Route path="/plugins" element={<ProtectedRoute requiredPermissions="admin"><PluginsPage /></ProtectedRoute>} />
+                  <Route path="/help" element={<ProtectedRoute><HelpPage /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                </Routes>
+              </div>
+            </main>
+          </SidebarProvider>
+        } />
+      </Routes>
     </HashRouter>
   );
 }

@@ -24,6 +24,10 @@ export const productsApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE,
     prepareHeaders: (headers, { getState, endpoint }) => {
+      const token = getState().auth?.token || localStorage.getItem('possum_token');
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
       if (['addProduct', 'updateProduct'].includes(endpoint)) {
         headers.delete('Content-Type');
       }

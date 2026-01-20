@@ -119,3 +119,58 @@ export function softDeleteUser(id) {
     const result = stmt.run(id);
     return result.changes > 0;
 }
+
+/**
+ * Get roles for a user
+ */
+export function getUserRoles(userId) {
+    const db = getDB();
+    const query = `
+        SELECT r.id, r.name
+        FROM roles r
+        JOIN user_roles ur ON r.id = ur.role_id
+        WHERE ur.user_id = ?
+    `;
+    return db.prepare(query).all(userId);
+}
+
+/**
+ * Get all permissions for a user (via their roles)
+ */
+export function getUserPermissions(userId) {
+    const db = getDB();
+    const query = `
+        SELECT DISTINCT p.key
+        FROM permissions p
+        JOIN role_permissions rp ON p.id = rp.permission_id
+        JOIN user_roles ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = ?
+    `;
+    return db.prepare(query).all(userId).map(p => p.key);
+}
+
+/**
+ * Assign roles to a user
+ */
+export function assignUserRoles(userId, roleIds) {
+    const db = getDB();
+    const deleteStmt = db.prepare('DELETE FROM user_roles WHERE user_id = ?');
+    const insertStmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
+
+    const transaction = db.transaction((uId, rIds) => {
+        deleteStmt.run(uId);
+        for (const roleId of rIds) {
+            insertStmt.run(uId, roleId);
+        }
+    });
+
+    transaction(userId, roleIds);
+}
+
+/**
+ * Get all available roles
+ */
+export function getAllRoles() {
+    const db = getDB();
+    return db.prepare('SELECT * FROM roles ORDER BY name ASC').all();
+}

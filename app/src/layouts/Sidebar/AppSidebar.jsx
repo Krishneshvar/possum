@@ -60,7 +60,7 @@ export function AppSidebar({
 
         <Separator className="" />
 
-        <NavUser user={sidebarData.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
