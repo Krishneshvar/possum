@@ -97,12 +97,14 @@ export function createPurchaseOrder({ supplier_id, created_by, items }) {
  */
 export function receivePurchaseOrder(poId, userId = 1) {
     const db = getDB();
+    const numericPoId = Number(poId);
+    const numericUserId = Number(userId);
 
     // 1. Get PO Items
-    const items = db.prepare('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?').all(poId);
+    const items = db.prepare('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?').all(numericPoId);
 
     if (items.length === 0) {
-        throw new Error('Purchase Order has no items');
+        throw new Error(`Purchase Order ${numericPoId} has no items`);
     }
 
     const updatePoParams = db.prepare(`
@@ -134,9 +136,9 @@ export function receivePurchaseOrder(poId, userId = 1) {
     `);
 
     const transaction = db.transaction(() => {
-        const result = updatePoParams.run(poId);
+        const result = updatePoParams.run(numericPoId);
         if (result.changes === 0) {
-            throw new Error('Purchase Order not found or already received');
+            throw new Error(`Purchase Order ${numericPoId} not found or already received`);
         }
 
         for (const item of items) {
@@ -155,7 +157,7 @@ export function receivePurchaseOrder(poId, userId = 1) {
                 lotId,
                 item.quantity,
                 item.id,
-                userId
+                numericUserId
             );
 
             // Log to product flow
@@ -165,6 +167,7 @@ export function receivePurchaseOrder(poId, userId = 1) {
                 item.id
             );
         }
+        return true;
     });
 
     return transaction();

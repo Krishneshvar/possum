@@ -18,15 +18,15 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useGetSuppliersQuery } from '@/services/suppliersApi';
-import { useGetProductsQuery } from '@/services/productsApi';
+import { useGetVariantsQuery } from '@/services/productsApi';
 import { useCreatePurchaseOrderMutation } from '@/services/purchaseApi';
 import { toast } from 'sonner';
 import { Trash2, Plus } from 'lucide-react';
 
 export function PurchaseOrderForm({ onSuccess }) {
     const { data: suppliers = [] } = useGetSuppliersQuery();
-    const { data: productsData } = useGetProductsQuery({ page: 1, limit: 1000 }); // Getting all for selector (TODO: Optimize with search)
-    const products = productsData?.products || [];
+    const { data: variantsData } = useGetVariantsQuery({ page: 1, limit: 1000 });
+    const variants = variantsData?.variants || [];
 
     const [createPurchaseOrder, { isLoading }] = useCreatePurchaseOrderMutation();
 
@@ -34,19 +34,13 @@ export function PurchaseOrderForm({ onSuccess }) {
     const [items, setItems] = useState([]);
 
     // Item entry state
-    const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedVariantId, setSelectedVariantId] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [unitCost, setUnitCost] = useState(0);
 
-    const selectedProduct = useMemo(() =>
-        products.find(p => p.id === parseInt(selectedProductId)),
-        [products, selectedProductId]
-    );
-
     const selectedVariant = useMemo(() =>
-        selectedProduct?.variants?.find(v => v.id === parseInt(selectedVariantId)),
-        [selectedProduct, selectedVariantId]
+        variants.find(v => v.id === parseInt(selectedVariantId)),
+        [variants, selectedVariantId]
     );
 
     const addItem = () => {
@@ -54,7 +48,7 @@ export function PurchaseOrderForm({ onSuccess }) {
 
         const newItem = {
             variantId: selectedVariant.id,
-            productName: selectedProduct.name,
+            productName: selectedVariant.product_name,
             variantSku: selectedVariant.sku,
             variantName: selectedVariant.name,
             quantity: parseInt(quantity),
@@ -121,40 +115,27 @@ export function PurchaseOrderForm({ onSuccess }) {
 
             <div className="border p-4 rounded-md space-y-4">
                 <h3 className="font-semibold text-sm">Add Items</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label>Product</Label>
-                        <Select value={selectedProductId} onValueChange={(val) => { setSelectedProductId(val); setSelectedVariantId(''); }}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Product" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {products.map(p => (
-                                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Variant</Label>
-                        <Select
-                            value={selectedVariantId}
-                            onValueChange={setSelectedVariantId}
-                            disabled={!selectedProduct}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Variant" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {selectedProduct?.variants?.map(v => (
-                                    <SelectItem key={v.id} value={String(v.id)}>
-                                        {v.sku} - {v.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className="space-y-2">
+                    <Label>Select Variant</Label>
+                    <Select
+                        value={selectedVariantId}
+                        onValueChange={(val) => {
+                            setSelectedVariantId(val);
+                            const variant = variants.find(v => v.id === parseInt(val));
+                            if (variant) setUnitCost(variant.cost_price || 0);
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Search SKU or Product Name" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {variants.map(v => (
+                                <SelectItem key={v.id} value={String(v.id)}>
+                                    {v.product_name} - {v.name} ({v.sku})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">

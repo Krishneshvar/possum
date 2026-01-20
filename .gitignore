@@ -13,8 +13,10 @@ out
 .env
 ./app/.env
 
-# Database
+# Database files
 *.db
+*.db-shm
+*.db-wal
 
 # Product images
 uploads

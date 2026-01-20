@@ -35,6 +35,7 @@ import SettingsPage from '@/features/Settings/pages/SettingsPage';
 import TransactionsPage from '@/features/Transactions/pages/TransactionsPage';
 import PurchasePage from '@/features/Purchase/pages/PurchasePage';
 import PurchaseOrdersPage from '@/features/Purchase/pages/PurchaseOrderPage';
+import CreatePurchaseOrderPage from '@/features/Purchase/pages/CreatePurchaseOrderPage';
 import SuppliersPage from '@/features/Suppliers/pages/SuppliersPage';
 import PeoplePage from '@/features/People/pages/PeoplePage';
 import CustomersPage from '@/features/People/pages/CustomersPage';
@@ -112,6 +113,7 @@ export default function DashboardPage() {
 
           <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchasePage /></ProtectedRoute>} />
           <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
+          <Route path="/purchase/orders/create" element={<ProtectedRoute requiredPermissions="purchase.manage"><CreatePurchaseOrderPage /></ProtectedRoute>} />
           <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
 
           <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />

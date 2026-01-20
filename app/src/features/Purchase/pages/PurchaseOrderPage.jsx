@@ -17,23 +17,33 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   useGetPurchaseOrdersQuery,
   useReceivePurchaseOrderMutation,
   useCancelPurchaseOrderMutation
 } from '@/services/purchaseApi';
-import { PurchaseOrderForm } from '../components/PurchaseOrderForm';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-// import { format } from 'date-fns';
 
 export default function PurchaseOrdersPage() {
+  const navigate = useNavigate();
   const { data: purchaseOrders = [], isLoading } = useGetPurchaseOrdersQuery();
   const [receivePurchaseOrder] = useReceivePurchaseOrderMutation();
   const [cancelPurchaseOrder] = useCancelPurchaseOrderMutation();
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedPo, setSelectedPo] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [poToCancel, setPoToCancel] = useState(null);
 
   const handleReceive = async (id) => {
     try {
@@ -41,15 +51,16 @@ export default function PurchaseOrdersPage() {
       toast.success('Purchase Order received. Stock updated.');
     } catch (error) {
       console.error('Failed to receive PO:', error);
-      toast.error('Failed to receive Purchase Order');
+      toast.error(error?.data?.error || 'Failed to receive Purchase Order');
     }
   };
 
-  const handleCancel = async (id) => {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
+  const handleCancel = async () => {
+    if (!poToCancel) return;
     try {
-      await cancelPurchaseOrder(id).unwrap();
+      await cancelPurchaseOrder(poToCancel.id).unwrap();
       toast.success('Purchase Order cancelled.');
+      setPoToCancel(null);
     } catch (error) {
       console.error('Failed to cancel PO:', error);
       toast.error('Failed to cancel Purchase Order');
@@ -66,10 +77,6 @@ export default function PurchaseOrdersPage() {
     setIsDetailsOpen(true);
   };
 
-  const handleCreateSuccess = () => {
-    setIsCreateOpen(false);
-  };
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -77,19 +84,9 @@ export default function PurchaseOrdersPage() {
           <h1 className="text-3xl font-bold tracking-tight">Purchase Orders</h1>
           <p className="text-muted-foreground">Manage orders to suppliers.</p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Create Order
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>New Purchase Order</DialogTitle>
-            </DialogHeader>
-            <PurchaseOrderForm onSuccess={handleCreateSuccess} />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => navigate('/purchase/orders/create')}>
+          <Plus className="mr-2 h-4 w-4" /> Create Order
+        </Button>
       </div>
 
       <div className="rounded-md border bg-card">
@@ -140,7 +137,7 @@ export default function PurchaseOrdersPage() {
                           <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700" onClick={() => handleReceive(po.id)}>
                             <CheckCircle className="mr-2 h-4 w-4" /> Receive
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => handleCancel(po.id)}>
+                          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => setPoToCancel(po)}>
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </>
@@ -153,6 +150,25 @@ export default function PurchaseOrdersPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Cancellation Confirmation Modal */}
+      <AlertDialog open={!!poToCancel} onOpenChange={(open) => !open && setPoToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will cancel Purchase Order <span className="font-mono font-bold">PO-{poToCancel?.id}</span>.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancel} className="bg-red-600 hover:bg-red-700">
+              Confirm Cancellation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Details Modal Placeholder */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>

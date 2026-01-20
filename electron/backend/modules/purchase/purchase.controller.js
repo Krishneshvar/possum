@@ -32,8 +32,8 @@ export function createPurchaseOrder(req, res) {
         // req.body should include supplier_id, items, created_by (if user auth is strict, getting from token is better)
         // For now taking from body or defaulting
         const poData = {
-            ...req.body,
-            created_by: req.body.created_by || 1 // Default to admin if not sent (TODO: Fix with Auth)
+            ...(req.body || {}),
+            created_by: (req.body && req.body.created_by) || 1 // Default to admin if not sent (TODO: Fix with Auth)
         };
         const newPo = purchaseService.createPurchaseOrder(poData);
         res.status(201).json(newPo);
@@ -45,7 +45,7 @@ export function createPurchaseOrder(req, res) {
 
 export function receivePurchaseOrder(req, res) {
     try {
-        const userId = req.body.userId || 1;
+        const userId = (req.body && req.body.userId) || 1;
         const updatedPo = purchaseService.receivePurchaseOrder(req.params.id, userId);
         res.json(updatedPo);
     } catch (error) {
