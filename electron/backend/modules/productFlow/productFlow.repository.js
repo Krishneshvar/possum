@@ -39,18 +39,36 @@ export function insertProductFlow({
  * @param {Object} options - Query options
  * @returns {Array} Flow events
  */
-export function findFlowByVariantId(variantId, { limit = 100, offset = 0, startDate, endDate } = {}) {
+export function findFlowByVariantId(variantId, {
+    limit = 100,
+    offset = 0,
+    startDate,
+    endDate,
+    paymentMethods
+} = {}) {
     const db = getDB();
+
+    // Base columns
     let sql = `
         SELECT 
             pf.*,
             v.name as variant_name,
-            p.name as product_name
+            p.name as product_name,
+            -- Payment method aggregation for sale events
+            GROUP_CONCAT(DISTINCT pm.name) as payment_method_names
         FROM product_flow pf
         JOIN variants v ON pf.variant_id = v.id
         JOIN products p ON v.product_id = p.id
+        
+        -- Joins to reach payment info (only relevant for 'sale' events pointing to sale_items)
+        LEFT JOIN sale_items si ON (pf.reference_type = 'sale_item' AND pf.reference_id = si.id)
+        LEFT JOIN sales s ON si.sale_id = s.id
+        LEFT JOIN transactions t ON (s.id = t.sale_id AND t.type = 'payment' AND t.status = 'completed')
+        LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+        
         WHERE pf.variant_id = ?
     `;
+
     const params = [variantId];
 
     if (startDate) {
@@ -62,7 +80,29 @@ export function findFlowByVariantId(variantId, { limit = 100, offset = 0, startD
         params.push(endDate);
     }
 
-    sql += ` ORDER BY pf.event_date DESC LIMIT ? OFFSET ?`;
+    if (paymentMethods && paymentMethods.length > 0) {
+        // If filtering by payment method, we only care about 'sale' events that match,
+        // OR non-sale events if we want to include them? 
+        // Requirement said "view between specific ... type of payment ... for the bill in which the variant was billed"
+        // This implies filtering is primarily for sales. 
+        // If we filter by payment method X, should we hide purchases/returns?
+        // Usually, filtering implies narrowing down to matching rows. If a purchase doesn't have a payment method context here, it might be excluded.
+        // Let's assume strict filtering: only show rows matching the criterion. 
+        // Since only sales have this payment info linked this way, this will naturally exclude non-sales unless we handle them.
+        // HOWEVER, logical "OR" behavior (show me sales with Card OR purchases) isn't requested.
+        // "options to view ... type of payment that was done for the bill"
+        // Logic: specific filter active -> must match.
+
+        const placeholders = paymentMethods.map(() => '?').join(',');
+        sql += ` AND pm.name IN (${placeholders})`;
+        params.push(...paymentMethods);
+    }
+
+    sql += ` 
+        GROUP BY pf.id
+        ORDER BY pf.event_date DESC 
+        LIMIT ? OFFSET ?
+    `;
     params.push(limit, offset);
 
     return db.prepare(sql).all(...params);

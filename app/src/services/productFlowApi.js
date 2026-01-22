@@ -8,12 +8,15 @@ export const productFlowApi = createApi({
     endpoints: (builder) => ({
         // Get flow timeline for a variant
         getVariantFlow: builder.query({
-            query: ({ variantId, limit = 100, offset = 0, startDate, endDate }) => {
+            query: ({ variantId, limit = 100, offset = 0, startDate, endDate, paymentMethods }) => {
                 const query = new URLSearchParams();
                 query.append('limit', limit);
                 query.append('offset', offset);
                 if (startDate) query.append('startDate', startDate);
                 if (endDate) query.append('endDate', endDate);
+                if (paymentMethods && paymentMethods.length > 0) {
+                    query.append('paymentMethods', paymentMethods.join(','));
+                }
                 return `/product-flow/variants/${variantId}?${query.toString()}`;
             },
             providesTags: (result, error, { variantId }) => [{ type: 'ProductFlow', id: variantId }],

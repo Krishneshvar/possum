@@ -15,13 +15,24 @@ export async function getVariantFlowController(req, res) {
             return res.status(400).json({ error: 'Invalid variant ID.' });
         }
 
-        const { limit = 100, offset = 0, startDate, endDate } = req.query;
+        const { limit = 100, offset = 0, startDate, endDate, paymentMethods } = req.query;
+
+        let parsedPaymentMethods = [];
+        if (paymentMethods) {
+            // Handle both array (multiple params) and string (single param or CSV)
+            if (Array.isArray(paymentMethods)) {
+                parsedPaymentMethods = paymentMethods;
+            } else {
+                parsedPaymentMethods = paymentMethods.split(',').map(s => s.trim());
+            }
+        }
 
         const timeline = productFlowService.getVariantTimeline(variantId, {
             limit: parseInt(limit, 10),
             offset: parseInt(offset, 10),
             startDate: startDate || null,
-            endDate: endDate || null
+            endDate: endDate || null,
+            paymentMethods: parsedPaymentMethods
         });
 
         res.json(timeline);

@@ -1,4 +1,5 @@
 import {
+  Activity,
   ArrowLeftRight,
   BarChart,
   Boxes,
@@ -69,6 +70,11 @@ export const sidebarData = {
           title: "Variants",
           url: "/variants",
           icon: Split,
+        },
+        {
+          title: "Product Flow",
+          url: "/products/flow",
+          icon: Activity,
         },
         {
           title: "Categories",

@@ -195,9 +195,6 @@ export default function PurchaseOrdersPage() {
                   <TableCell className="text-right">${po.total_cost?.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/purchase/orders/${po.id}`)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
                       {po.status === 'pending' && (
                         <>
                           <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700" onClick={() => handleReceive(po.id)}>
@@ -208,6 +205,9 @@ export default function PurchaseOrdersPage() {
                           </Button>
                         </>
                       )}
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/purchase/orders/${po.id}`)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

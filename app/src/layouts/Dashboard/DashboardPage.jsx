@@ -41,6 +41,7 @@ import PeoplePage from '@/features/People/pages/PeoplePage';
 import CustomersPage from '@/features/People/pages/CustomersPage';
 import EmployeesPage from '@/features/People/pages/EmployeesPage';
 import PurchaseOrderDetailPage from '@/features/Purchase/pages/PurchaseOrderDetailPage';
+import ProductFlowPage from '@/features/Products/pages/ProductFlowPage';
 
 
 const MainLayout = () => {
@@ -111,6 +112,7 @@ export default function DashboardPage() {
 
           <Route path="/products/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
           <Route path="/products/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
+          <Route path="/products/flow" element={<ProtectedRoute requiredPermissions="products.manage"><ProductFlowPage /></ProtectedRoute>} />
           <Route path="/products/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
 
           <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchasePage /></ProtectedRoute>} />
