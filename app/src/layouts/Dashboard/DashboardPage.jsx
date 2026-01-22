@@ -41,7 +41,10 @@ import PeoplePage from '@/features/People/pages/PeoplePage';
 import CustomersPage from '@/features/People/pages/CustomersPage';
 import EmployeesPage from '@/features/People/pages/EmployeesPage';
 import PurchaseOrderDetailPage from '@/features/Purchase/pages/PurchaseOrderDetailPage';
+
 import ProductFlowPage from '@/features/Products/pages/ProductFlowPage';
+import SalesReportPage from '@/features/Reports/pages/SalesReportPage';
+import ReportsPage from '@/features/Reports/pages/ReportsPage';
 
 
 const MainLayout = () => {
@@ -100,6 +103,9 @@ export default function DashboardPage() {
           <Route path="/sales/history" element={<SalesHistoryPage />} />
           <Route path="/sales/history/:saleId" element={<SaleDetailsPage />} />
           <Route path="/sales/transactions" element={<TransactionsPage />} />
+
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/reports/sales" element={<SalesReportPage />} />
 
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/add" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />

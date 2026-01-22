@@ -31,7 +31,10 @@ export async function createSaleController(req, res) {
             customerId: customerId ? parseInt(customerId, 10) : null,
             userId,
             discount: parseFloat(discount) || 0,
-            payments: payments || []
+            payments: (payments || []).map(p => ({
+                ...p,
+                paymentMethodId: parseInt(p.paymentMethodId, 10)
+            }))
         });
 
         res.status(201).json(sale);

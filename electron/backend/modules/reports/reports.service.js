@@ -66,6 +66,16 @@ export function getTopProducts(startDate, endDate, limit = 10) {
 }
 
 /**
+ * Get sales by payment method
+ * @param {string} startDate - Start date
+ * @param {string} endDate - End date
+ * @returns {Array} Sales by payment method
+ */
+export function getSalesByPaymentMethod(startDate, endDate) {
+    return reportsRepository.getSalesByPaymentMethod(startDate, endDate);
+}
+
+/**
  * Cache a report for faster retrieval
  * @param {string} reportType - Report type (daily/monthly/yearly)
  * @param {string} periodStart - Period start date

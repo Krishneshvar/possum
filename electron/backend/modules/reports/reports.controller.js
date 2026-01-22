@@ -79,3 +79,23 @@ export async function getTopProductsController(req, res) {
         res.status(500).json({ error: 'Failed to retrieve top products.' });
     }
 }
+
+
+/**
+ * GET /api/reports/payment-methods
+ * Get sales by payment method
+ */
+export async function getSalesByPaymentMethodController(req, res) {
+    try {
+        const { startDate, endDate } = req.query;
+        if (!startDate || !endDate) {
+            return res.status(400).json({ error: 'startDate and endDate parameters are required.' });
+        }
+
+        const data = reportsService.getSalesByPaymentMethod(startDate, endDate);
+        res.json(data);
+    } catch (err) {
+        console.error('Error fetching sales by payment method:', err);
+        res.status(500).json({ error: 'Failed to retrieve sales by payment method.' });
+    }
+}

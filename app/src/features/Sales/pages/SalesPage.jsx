@@ -10,7 +10,7 @@ const INITIAL_TAB_STATE = {
   items: [],
   customerName: '',
   customerId: null,
-  paymentMethod: 'cash',
+  paymentMethod: null,
   overallDiscount: 0,
   discountType: 'fixed',
   paymentType: 'full',

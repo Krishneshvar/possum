@@ -30,6 +30,13 @@ export const reportsApi = createApi({
                 `/reports/top-products?startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
             providesTags: ['Report'],
         }),
+
+        // Get sales by payment method
+        getSalesByPaymentMethod: builder.query({
+            query: ({ startDate, endDate }) =>
+                `/reports/payment-methods?startDate=${startDate}&endDate=${endDate}`,
+            providesTags: ['Report'],
+        }),
     }),
 });
 
@@ -38,4 +45,5 @@ export const {
     useGetMonthlyReportQuery,
     useGetYearlyReportQuery,
     useGetTopProductsQuery,
+    useGetSalesByPaymentMethodQuery,
 } = reportsApi;

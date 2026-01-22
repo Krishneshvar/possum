@@ -123,6 +123,11 @@ export const sidebarData = {
       icon: BarChart,
       items: [
         {
+          title: "Sales Report",
+          url: "/reports/sales",
+          icon: BarChart,
+        },
+        {
           title: "Audit Log",
           url: "/audit-log",
           icon: ClipboardCheck,

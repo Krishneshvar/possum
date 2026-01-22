@@ -142,6 +142,28 @@ export function getTopSellingProducts(startDate, endDate, limit = 10) {
 }
 
 /**
+ * Get sales by payment method
+ * @param {string} startDate - Start date
+ * @param {string} endDate - End date
+ * @returns {Array} Sales by payment method
+ */
+export function getSalesByPaymentMethod(startDate, endDate) {
+    const db = getDB();
+    return db.prepare(`
+        SELECT 
+            pm.name as payment_method,
+            COUNT(t.id) as total_transactions,
+            COALESCE(SUM(t.amount), 0) as total_amount
+        FROM transactions t
+        JOIN payment_methods pm ON t.payment_method_id = pm.id
+        WHERE date(t.transaction_date) >= ? AND date(t.transaction_date) <= ?
+          AND t.status = 'completed'
+          AND t.type = 'payment'
+        GROUP BY pm.name
+    `).all(startDate, endDate);
+}
+
+/**
  * Cache a report in sales_reports table
  * @param {Object} reportData - Report data
  * @returns {Object} Insert result
