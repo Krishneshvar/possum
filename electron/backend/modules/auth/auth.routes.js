@@ -8,6 +8,7 @@ import { authenticate } from '../../shared/middleware/auth.middleware.js';
 const router = express.Router();
 
 router.post('/login', AuthController.login);
+router.post('/logout', authenticate, AuthController.logout);
 router.get('/me', authenticate, AuthController.me);
 
 export default router;

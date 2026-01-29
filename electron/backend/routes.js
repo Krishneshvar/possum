@@ -16,6 +16,7 @@ import usersRouter from './modules/users/user.routes.js';
 import suppliersRouter from './modules/suppliers/supplier.routes.js';
 import purchaseRouter from './modules/purchase/purchase.routes.js';
 import authRouter from './modules/auth/auth.routes.js';
+import auditRouter from './modules/audit/audit.routes.js';
 import { getSaleReturnsController } from './modules/returns/return.controller.js';
 import { authenticate } from './shared/middleware/auth.middleware.js';
 
@@ -69,4 +70,7 @@ export function registerRoutes(app) {
 
     // Purchase Orders
     app.use('/api/purchase', purchaseRouter);
+
+    // Audit Logs
+    app.use('/api/audit', auditRouter);
 }

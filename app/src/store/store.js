@@ -12,9 +12,11 @@ import { usersApi } from '@/services/usersApi';
 import { suppliersApi } from '@/services/suppliersApi';
 import { purchaseApi } from '@/services/purchaseApi';
 import { authApi } from '@/services/authApi';
+import { auditLogApi } from '@/services/auditLogApi';
 import authReducer from '@/features/Auth/authSlice';
 import productsReducer from '@/features/Products/productsSlice';
 import variantsReducer from '@/features/Variants/variantsSlice';
+import auditLogReducer from '@/features/AuditLog/auditLogSlice';
 
 export const store = configureStore({
     reducer: {
@@ -34,6 +36,8 @@ export const store = configureStore({
         auth: authReducer,
         products: productsReducer,
         variants: variantsReducer,
+        auditLog: auditLogReducer,
+        [auditLogApi.reducerPath]: auditLogApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(
@@ -50,5 +54,6 @@ export const store = configureStore({
             suppliersApi.middleware,
             purchaseApi.middleware,
             authApi.middleware,
+            auditLogApi.middleware,
         ),
 });

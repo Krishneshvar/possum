@@ -28,7 +28,8 @@ export async function getUserById(req, res) {
 
 export async function createUser(req, res) {
     try {
-        const user = await UserService.createUser(req.body);
+        const userData = { ...req.body, createdBy: req.userId || 1 };
+        const user = await UserService.createUser(userData);
         res.status(201).json(user);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -37,7 +38,8 @@ export async function createUser(req, res) {
 
 export async function updateUser(req, res) {
     try {
-        const user = await UserService.updateUser(parseInt(req.params.id), req.body);
+        const userData = { ...req.body, updatedBy: req.userId || 1 };
+        const user = await UserService.updateUser(parseInt(req.params.id), userData);
         res.json(user);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -46,7 +48,7 @@ export async function updateUser(req, res) {
 
 export async function deleteUser(req, res) {
     try {
-        await UserService.deleteUser(parseInt(req.params.id));
+        await UserService.deleteUser(parseInt(req.params.id), req.userId || 1);
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ error: error.message });

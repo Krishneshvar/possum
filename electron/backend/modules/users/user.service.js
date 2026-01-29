@@ -3,6 +3,7 @@
  */
 import crypto from 'crypto';
 import * as UserRepository from './user.repository.js';
+import * as auditService from '../audit/audit.service.js';
 
 function hashPassword(password) {
     // Simple SHA256 hash for demonstration (In prod: use bcrypt/scrypt/argon2)
@@ -26,16 +27,24 @@ export async function createUser(data) {
 
     const password_hash = hashPassword(data.password);
 
-    return UserRepository.insertUser({
+    const result = UserRepository.insertUser({
         ...data,
         password_hash
     });
+
+    const userId = result.lastInsertRowid;
+
+    // Log user creation (exclude password)
+    const { password, password_hash: _, ...logData } = { ...data, id: userId };
+    auditService.logCreate(data.createdBy || 1, 'users', userId, logData);
+
+    return result;
 }
 
 export async function updateUser(id, data) {
-    const user = await getUserById(id); // Ensure exists
+    const oldUser = await getUserById(id); // Ensure exists
 
-    if (data.username && data.username !== user.username) {
+    if (data.username && data.username !== oldUser.username) {
         const existing = UserRepository.findUserByUsername(data.username);
         if (existing) throw new Error('Username already taken');
     }
@@ -46,10 +55,28 @@ export async function updateUser(id, data) {
         delete updateData.password;
     }
 
-    return UserRepository.updateUserById(id, updateData);
+    const result = UserRepository.updateUserById(id, updateData);
+
+    // Log user update (exclude password)
+    if (result.changes > 0) {
+        const newUser = UserRepository.findUserById(id);
+        const { password_hash: _old, ...oldData } = oldUser;
+        const { password_hash: _new, ...newData } = newUser;
+        auditService.logUpdate(data.updatedBy || 1, 'users', id, oldData, newData);
+    }
+
+    return result;
 }
 
-export async function deleteUser(id) {
+export async function deleteUser(id, deletedBy) {
     const user = await getUserById(id);
-    return UserRepository.softDeleteUser(id);
+    const result = UserRepository.softDeleteUser(id);
+
+    // Log user deletion (exclude password)
+    if (result.changes > 0) {
+        const { password_hash, ...userData } = user;
+        auditService.logDelete(deletedBy || 1, 'users', id, userData);
+    }
+
+    return result;
 }

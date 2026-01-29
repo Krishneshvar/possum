@@ -23,7 +23,8 @@ export function getSuppliers(req, res) {
 
 export function createSupplier(req, res) {
     try {
-        const newSupplier = supplierService.createSupplier(req.body);
+        const supplierData = { ...req.body, userId: req.userId || 1 };
+        const newSupplier = supplierService.createSupplier(supplierData);
         res.status(201).json(newSupplier);
     } catch (error) {
         console.error('Error creating supplier:', error);
@@ -37,7 +38,8 @@ export function createSupplier(req, res) {
 export function updateSupplier(req, res) {
     try {
         const { id } = req.params;
-        const updatedSupplier = supplierService.updateSupplier(id, req.body);
+        const supplierData = { ...req.body, userId: req.userId || 1 };
+        const updatedSupplier = supplierService.updateSupplier(id, supplierData);
         res.json(updatedSupplier);
     } catch (error) {
         console.error('Error updating supplier:', error);
@@ -51,7 +53,7 @@ export function updateSupplier(req, res) {
 export function deleteSupplier(req, res) {
     try {
         const { id } = req.params;
-        supplierService.deleteSupplier(id);
+        supplierService.deleteSupplier(id, req.userId || 1);
         res.json({ message: 'Supplier deleted successfully' });
     } catch (error) {
         console.error('Error deleting supplier:', error);

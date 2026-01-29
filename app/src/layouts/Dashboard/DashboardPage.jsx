@@ -41,6 +41,7 @@ import PeoplePage from '@/features/People/pages/PeoplePage';
 import CustomersPage from '@/features/People/pages/CustomersPage';
 import EmployeesPage from '@/features/People/pages/EmployeesPage';
 import PurchaseOrderDetailPage from '@/features/Purchase/pages/PurchaseOrderDetailPage';
+import AuditLogPage from '@/features/AuditLog/pages/AuditLogPage';
 
 import ProductFlowPage from '@/features/Products/pages/ProductFlowPage';
 import SalesReportPage from '@/features/Reports/pages/SalesReportPage';
@@ -134,6 +135,7 @@ export default function DashboardPage() {
           <Route path="/plugins" element={<ProtectedRoute requiredPermissions="admin"><PluginsPage /></ProtectedRoute>} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/audit-log" element={<ProtectedRoute requiredPermissions="admin"><AuditLogPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </HashRouter>

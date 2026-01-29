@@ -6,6 +6,7 @@ import * as returnRepository from './return.repository.js';
 import * as saleRepository from '../sales/sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
+import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
 
 /**
@@ -128,6 +129,14 @@ export function createReturn({ saleId, items, reason, userId }) {
         if (newPaidAmount <= 0 && sale.total_amount > 0) {
             saleRepository.updateSaleStatus(saleId, 'refunded');
         }
+
+        // Log return creation
+        auditService.logCreate(userId, 'returns', returnId, {
+            sale_id: saleId,
+            total_refund: totalRefund,
+            item_count: processedItems.length,
+            reason
+        });
 
         return {
             id: returnId,

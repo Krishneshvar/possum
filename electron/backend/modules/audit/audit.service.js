@@ -7,22 +7,76 @@ import * as auditRepository from './audit.repository.js';
 /**
  * Log an action to the audit trail
  * @param {number} userId - User who performed the action
- * @param {string} action - Action type (create, update, delete)
- * @param {string} tableName - Affected table
- * @param {number} rowId - Affected row ID
+ * @param {string} action - Action type (create, update, delete, login, logout)
+ * @param {string} tableName - Affected table (optional for login/logout)
+ * @param {number} rowId - Affected row ID (optional for login/logout)
  * @param {Object} oldData - Previous data (for updates/deletes)
  * @param {Object} newData - New data (for creates/updates)
+ * @param {Object} eventDetails - Additional event context
  * @returns {Object} Insert result
  */
-export function logAction(userId, action, tableName, rowId, oldData = null, newData = null) {
+export function logAction(userId, action, tableName = null, rowId = null, oldData = null, newData = null, eventDetails = null) {
     return auditRepository.insertAuditLog({
         user_id: userId,
         action,
         table_name: tableName,
         row_id: rowId,
         old_data: oldData,
-        new_data: newData
+        new_data: newData,
+        event_details: eventDetails
     });
+}
+
+/**
+ * Log a login event
+ * @param {number} userId - User who logged in
+ * @param {Object} details - Login details (IP, user agent, etc.)
+ */
+export function logLogin(userId, details = {}) {
+    return logAction(userId, 'login', null, null, null, null, details);
+}
+
+/**
+ * Log a logout event
+ * @param {number} userId - User who logged out
+ * @param {Object} details - Logout details
+ */
+export function logLogout(userId, details = {}) {
+    return logAction(userId, 'logout', null, null, null, null, details);
+}
+
+/**
+ * Log a create operation
+ * @param {number} userId - User who created the record
+ * @param {string} tableName - Table name
+ * @param {number} rowId - Created row ID
+ * @param {Object} newData - Created data
+ */
+export function logCreate(userId, tableName, rowId, newData) {
+    return logAction(userId, 'create', tableName, rowId, null, newData);
+}
+
+/**
+ * Log an update operation
+ * @param {number} userId - User who updated the record
+ * @param {string} tableName - Table name
+ * @param {number} rowId - Updated row ID
+ * @param {Object} oldData - Previous data
+ * @param {Object} newData - Updated data
+ */
+export function logUpdate(userId, tableName, rowId, oldData, newData) {
+    return logAction(userId, 'update', tableName, rowId, oldData, newData);
+}
+
+/**
+ * Log a delete operation
+ * @param {number} userId - User who deleted the record
+ * @param {string} tableName - Table name
+ * @param {number} rowId - Deleted row ID
+ * @param {Object} oldData - Deleted data
+ */
+export function logDelete(userId, tableName, rowId, oldData) {
+    return logAction(userId, 'delete', tableName, rowId, oldData, null);
 }
 
 /**

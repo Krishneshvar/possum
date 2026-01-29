@@ -15,20 +15,22 @@ export function insertAuditLog({
     table_name,
     row_id,
     old_data,
-    new_data
+    new_data,
+    event_details
 }) {
     const db = getDB();
     const stmt = db.prepare(`
-        INSERT INTO audit_log (user_id, action, table_name, row_id, old_data, new_data)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO audit_log (user_id, action, table_name, row_id, old_data, new_data, event_details)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     return stmt.run(
         user_id,
         action,
-        table_name,
-        row_id,
+        table_name || null,
+        row_id || null,
         old_data ? JSON.stringify(old_data) : null,
-        new_data ? JSON.stringify(new_data) : null
+        new_data ? JSON.stringify(new_data) : null,
+        event_details ? JSON.stringify(event_details) : null
     );
 }
 
@@ -44,6 +46,9 @@ export function findAuditLogs({
     action,
     startDate,
     endDate,
+    searchTerm,
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
     currentPage = 1,
     itemsPerPage = 50
 }) {
@@ -81,17 +86,31 @@ export function findAuditLogs({
         filterParams.push(endDate);
     }
 
+    if (searchTerm) {
+        filterClauses.push('(al.action LIKE ? OR al.table_name LIKE ? OR u.name LIKE ?)');
+        const likeParam = `%${searchTerm}%`;
+        filterParams.push(likeParam, likeParam, likeParam);
+    }
+
     const whereClause = filterClauses.length > 0
         ? `WHERE ${filterClauses.join(' AND ')}`
         : '';
 
     const countResult = db.prepare(`
-        SELECT COUNT(*) as total_count FROM audit_log al ${whereClause}
+        SELECT COUNT(*) as total_count FROM audit_log al 
+        LEFT JOIN users u ON al.user_id = u.id
+        ${whereClause}
     `).get(...filterParams);
 
     const totalCount = countResult?.total_count ?? 0;
 
     const offset = (currentPage - 1) * itemsPerPage;
+
+    // Validate sortBy to prevent SQL injection
+    const allowedSortColumns = ['created_at', 'action', 'table_name', 'user_name'];
+    const validSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const validSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
     const logs = db.prepare(`
         SELECT 
             al.*,
@@ -99,7 +118,7 @@ export function findAuditLogs({
         FROM audit_log al
         LEFT JOIN users u ON al.user_id = u.id
         ${whereClause}
-        ORDER BY al.created_at DESC
+        ORDER BY ${validSortBy === 'user_name' ? 'u.name' : `al.${validSortBy}`} ${validSortOrder}
         LIMIT ? OFFSET ?
     `).all(...filterParams, itemsPerPage, offset);
 

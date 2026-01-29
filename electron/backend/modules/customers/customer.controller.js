@@ -44,7 +44,8 @@ export async function getCustomerById(req, res) {
  */
 export async function createCustomer(req, res) {
     try {
-        const customer = await CustomerService.createCustomer(req.body);
+        const customerData = { ...req.body, userId: req.userId || 1 };
+        const customer = await CustomerService.createCustomer(customerData);
         res.status(201).json(customer);
     } catch (error) {
         console.error('Error creating customer:', error);
@@ -58,7 +59,8 @@ export async function createCustomer(req, res) {
 export async function updateCustomer(req, res) {
     try {
         const { id } = req.params;
-        const customer = await CustomerService.updateCustomer(parseInt(id), req.body);
+        const customerData = { ...req.body, userId: req.userId || 1 };
+        const customer = await CustomerService.updateCustomer(parseInt(id), customerData);
         res.json(customer);
     } catch (error) {
         console.error('Error updating customer:', error);
@@ -72,7 +74,7 @@ export async function updateCustomer(req, res) {
 export async function deleteCustomer(req, res) {
     try {
         const { id } = req.params;
-        await CustomerService.deleteCustomer(parseInt(id));
+        await CustomerService.deleteCustomer(parseInt(id), req.userId || 1);
         res.status(204).send();
     } catch (error) {
         console.error('Error deleting customer:', error);

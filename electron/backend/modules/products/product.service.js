@@ -6,6 +6,7 @@ import * as productRepository from './product.repository.js';
 import * as variantRepository from '../variants/variant.repository.js';
 import * as variantService from '../variants/variant.service.js';
 import * as inventoryService from '../inventory/inventory.service.js';
+import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
 import { buildImageUrl } from '../../shared/utils/index.js';
 import path from 'path';
@@ -21,7 +22,7 @@ const basePath = path.join(__dirname, '../../../..');
  * @param {Object} productData - Product and variants data
  * @returns {Object} The created product ID
  */
-export function createProductWithVariants({ name, description, category_id, status, image_path, variants, taxIds }) {
+export function createProductWithVariants({ name, description, category_id, status, image_path, variants, taxIds, userId }) {
     return transaction(() => {
         const productInfo = productRepository.insertProduct({
             name, description, category_id, status, image_path
@@ -39,7 +40,7 @@ export function createProductWithVariants({ name, description, category_id, stat
                     variantId,
                     quantity: parseInt(variant.stock, 10),
                     unitCost: parseFloat(variant.cost_price || 0),
-                    userId: variant.userId || 1 // Fallback to user 1
+                    userId: userId || 1
                 });
             }
         }
@@ -48,6 +49,11 @@ export function createProductWithVariants({ name, description, category_id, stat
         if (taxIds && taxIds.length > 0) {
             productRepository.setProductTaxes(newProductId, taxIds);
         }
+
+        // Log product creation
+        auditService.logCreate(userId || 1, 'products', newProductId, {
+            name, description, category_id, status, image_path
+        });
 
         return { id: newProductId };
     });
@@ -99,11 +105,13 @@ export function getProducts(params) {
  * @param {string|undefined} newImagePath - New image path if uploaded
  * @returns {Object} Update result
  */
-export function updateProduct(productId, productData, newImagePath) {
+export function updateProduct(productId, productData, newImagePath, userId) {
     return transaction(() => {
+        // Get old product data for audit log
+        const oldProduct = productRepository.findProductById(productId);
+
         // If new image is provided, delete old one
         if (newImagePath) {
-            const oldProduct = productRepository.findProductById(productId);
             if (oldProduct && oldProduct.image_path) {
                 const oldImagePath = path.join(basePath, oldProduct.image_path);
                 if (fs.existsSync(oldImagePath)) {
@@ -133,7 +141,15 @@ export function updateProduct(productId, productData, newImagePath) {
             delete productData.variants;
         }
 
-        return productRepository.updateProductById(productId, productData);
+        const result = productRepository.updateProductById(productId, productData);
+
+        // Log product update
+        if (result.changes > 0) {
+            const newProduct = productRepository.findProductById(productId);
+            auditService.logUpdate(userId || 1, 'products', productId, oldProduct, newProduct);
+        }
+
+        return result;
     });
 }
 
@@ -142,8 +158,10 @@ export function updateProduct(productId, productData, newImagePath) {
  * @param {number} id - Product ID
  * @returns {Object} Delete result
  */
-export function deleteProduct(id) {
+export function deleteProduct(id, userId) {
     const product = productRepository.findProductImagePath(id);
+    const oldProduct = productRepository.findProductById(id);
+
     if (product && product.image_path) {
         const filePath = path.join(basePath, product.image_path);
         if (fs.existsSync(filePath)) {
@@ -151,5 +169,12 @@ export function deleteProduct(id) {
         }
     }
 
-    return productRepository.softDeleteProduct(id);
+    const result = productRepository.softDeleteProduct(id);
+
+    // Log product deletion
+    if (result.changes > 0) {
+        auditService.logDelete(userId || 1, 'products', id, oldProduct);
+    }
+
+    return result;
 }

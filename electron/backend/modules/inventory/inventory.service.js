@@ -4,6 +4,7 @@
  */
 import * as inventoryRepository from './inventory.repository.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
+import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
 
 /**
@@ -91,12 +92,23 @@ export function adjustInventory({
             reference_id: referenceId || adjustmentResult.lastInsertRowid
         });
 
+        const adjustmentId = adjustmentResult.lastInsertRowid;
+        const newStock = inventoryRepository.getStockByVariantId(variantId);
+
+        // Log inventory adjustment
+        auditService.logCreate(userId, 'inventory_adjustments', adjustmentId, {
+            variant_id: variantId,
+            quantity_change: quantityChange,
+            reason,
+            new_stock: newStock
+        });
+
         return {
-            id: adjustmentResult.lastInsertRowid,
+            id: adjustmentId,
             variantId,
             quantityChange,
             reason,
-            newStock: inventoryRepository.getStockByVariantId(variantId)
+            newStock
         };
     });
 }
@@ -168,11 +180,22 @@ export function receiveInventory({
             reference_id: purchaseOrderItemId
         });
 
+        const newStock = inventoryRepository.getStockByVariantId(variantId);
+
+        // Log inventory receipt
+        auditService.logCreate(userId, 'inventory_lots', lotId, {
+            variant_id: variantId,
+            quantity,
+            unit_cost: unitCost,
+            batch_number: batchNumber,
+            new_stock: newStock
+        });
+
         return {
             lotId,
             variantId,
             quantity,
-            newStock: inventoryRepository.getStockByVariantId(variantId)
+            newStock
         };
     });
 }

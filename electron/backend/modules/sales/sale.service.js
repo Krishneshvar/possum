@@ -6,6 +6,7 @@ import * as saleRepository from './sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
 import * as productRepository from '../products/product.repository.js';
+import * as auditService from '../audit/audit.service.js';
 import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
 import { getComputedStock } from '../../shared/utils/inventoryHelpers.js';
@@ -139,6 +140,17 @@ export function createSale({
             });
         }
 
+        // Log sale creation
+        auditService.logCreate(userId, 'sales', saleId, {
+            invoice_number: invoiceNumber,
+            total_amount: totalAmount,
+            paid_amount: paidAmount,
+            discount,
+            status,
+            customer_id: customerId,
+            items_count: processedItems.length
+        });
+
         return {
             id: saleId,
             invoiceNumber,
@@ -203,12 +215,19 @@ export function addPayment({ saleId, amount, paymentMethodId, userId }) {
         saleRepository.updateSalePaidAmount(saleId, newPaidAmount);
 
         // Update status if fully paid
+        let newStatus = sale.status;
         if (newPaidAmount >= sale.total_amount && sale.status !== 'paid') {
             saleRepository.updateSaleStatus(saleId, 'paid');
-            return { newPaidAmount, status: 'paid' };
+            newStatus = 'paid';
         }
 
-        return { newPaidAmount, status: sale.status };
+        // Log payment addition
+        auditService.logUpdate(userId, 'sales', saleId,
+            { paid_amount: sale.paid_amount, status: sale.status },
+            { paid_amount: newPaidAmount, status: newStatus }
+        );
+
+        return { newPaidAmount, status: newStatus };
     });
 }
 
@@ -257,6 +276,12 @@ export function cancelSale(saleId, userId) {
 
         // Update sale status
         saleRepository.updateSaleStatus(saleId, 'cancelled');
+
+        // Log sale cancellation
+        auditService.logUpdate(userId, 'sales', saleId,
+            { status: sale.status },
+            { status: 'cancelled' }
+        );
 
         return { success: true, message: 'Sale cancelled successfully' };
     });

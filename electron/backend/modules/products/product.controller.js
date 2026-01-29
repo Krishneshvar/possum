@@ -106,6 +106,7 @@ export async function createProductController(req, res) {
             image_path,
             variants: parsedVariants,
             taxIds: parsedTaxIds,
+            userId: req.userId || 1 // Get from auth middleware
         });
         res.status(201).json(newProduct);
     } catch (err) {
@@ -165,7 +166,7 @@ export async function updateProductController(req, res) {
     const productData = { name, category_id, description, status, variants: parsedVariants, taxIds: parsedTaxIds };
 
     try {
-        const changes = productService.updateProduct(parseInt(id, 10), productData, image_path);
+        const changes = productService.updateProduct(parseInt(id, 10), productData, image_path, req.userId || 1);
         if (changes.changes === 0) {
             if (image_path) {
                 try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
@@ -194,7 +195,7 @@ export async function deleteProductController(req, res) {
     }
 
     try {
-        const changes = productService.deleteProduct(productId);
+        const changes = productService.deleteProduct(productId, req.userId || 1);
         if (changes.changes === 0) {
             return res.status(404).json({ error: 'Product not found.' });
         }

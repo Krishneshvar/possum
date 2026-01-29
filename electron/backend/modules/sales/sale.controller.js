@@ -23,8 +23,8 @@ export async function createSaleController(req, res) {
             }
         }
 
-        // TODO: Get userId from auth context
-        const userId = req.body.userId || 1;
+        // Get userId from auth context
+        const userId = req.userId || 1;
 
         const sale = saleService.createSale({
             items,
@@ -129,8 +129,8 @@ export async function addPaymentController(req, res) {
             return res.status(400).json({ error: 'amount and paymentMethodId are required.' });
         }
 
-        // TODO: Get userId from auth context
-        const userId = req.body.userId || 1;
+        // Get userId from auth context
+        const userId = req.userId || 1;
 
         const result = saleService.addPayment({
             saleId,
@@ -157,8 +157,8 @@ export async function cancelSaleController(req, res) {
             return res.status(400).json({ error: 'Invalid sale ID.' });
         }
 
-        // TODO: Get userId from auth context
-        const userId = req.body.userId || 1;
+        // Get userId from auth context
+        const userId = req.userId || 1;
 
         const result = saleService.cancelSale(saleId, userId);
         res.json(result);
