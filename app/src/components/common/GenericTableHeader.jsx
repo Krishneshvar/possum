@@ -13,14 +13,14 @@ export default function GenericTableHeader({ columns, visibleColumns, onSort, so
   return (
     <TableHeader>
       <TableRow className="border-t border-border hover:bg-muted/50">
-        <TableHead className="w-[50px]"></TableHead>
+        <TableHead className="w-[50px] border-r border-border last:border-r-0"></TableHead>
         {columns.map(
           (column) =>
             visibleColumns[column.key] && (
               <TableHead
                 key={column.key}
                 className={cn(
-                  "font-semibold text-foreground py-3 sm:py-4 text-xs sm:text-sm px-2 sm:px-4",
+                  "font-semibold text-foreground py-3 sm:py-4 text-xs sm:text-sm px-2 sm:px-4 border-r border-border last:border-r-0",
                   column.sortable && "cursor-pointer select-none hover:bg-muted/80 transition-colors"
                 )}
                 onClick={() => handleSort(column)}

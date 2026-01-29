@@ -1,36 +1,18 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 
 import GenericPageHeader from '@/components/common/GenericPageHeader';
+import DataTable from "@/components/common/DataTable";
+import GenericDeleteDialog from "@/components/common/GenericDeleteDialog";
 import { CustomerForm } from '../components/CustomerForm';
 import {
   useGetCustomersQuery,
@@ -44,11 +26,18 @@ export default function CustomersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const { data, isLoading } = useGetCustomersQuery({ searchTerm, currentPage, itemsPerPage: 10 });
+  const { data, isLoading, error, refetch } = useGetCustomersQuery({ searchTerm, currentPage, itemsPerPage });
   const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: isUpdating }] = useUpdateCustomerMutation();
   const [deleteCustomer] = useDeleteCustomerMutation();
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+
+  const customers = data?.customers || [];
+  const totalPages = data?.totalPages || 1;
 
   const handleOpenAddDialog = () => {
     setEditingCustomer(null);
@@ -58,6 +47,11 @@ export default function CustomersPage() {
   const handleOpenEditDialog = (customer) => {
     setEditingCustomer(customer);
     setIsDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (customer) => {
+    setCustomerToDelete(customer);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleSave = async (values) => {
@@ -76,15 +70,48 @@ export default function CustomersPage() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
+    if (!customerToDelete) return;
     try {
-      await deleteCustomer(id).unwrap();
+      await deleteCustomer(customerToDelete.id).unwrap();
       toast.success("Customer deleted successfully");
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete customer");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setCustomerToDelete(null);
     }
   };
+
+  const columns = [
+    { key: 'name', label: 'Name', renderCell: (c) => <span className="font-medium">{c.name}</span> },
+    { key: 'phone', label: 'Phone', renderCell: (c) => c.phone || '-' },
+    { key: 'email', label: 'Email', renderCell: (c) => c.email || '-' },
+    { key: 'address', label: 'Address', renderCell: (c) => <div className="max-w-[200px] truncate">{c.address || '-'}</div> },
+  ];
+
+  const renderActions = (customer) => (
+    <div className="flex items-center gap-2 justify-end">
+      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(customer)}>
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={() => handleOpenDeleteDialog(customer)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
+  const emptyState = (
+    <div className="text-center p-8 text-muted-foreground">
+      No customers found.
+    </div>
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
@@ -102,81 +129,25 @@ export default function CustomersPage() {
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search customers..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
+      <DataTable
+        data={customers}
+        columns={columns}
+        isLoading={isLoading}
+        error={error}
+        onRetry={refetch}
 
-      <div className="border rounded-md bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">Loading...</TableCell>
-              </TableRow>
-            ) : data?.customers?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No customers found.</TableCell>
-              </TableRow>
-            ) : (
-              data?.customers?.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.phone || '-'}</TableCell>
-                  <TableCell>{customer.email || '-'}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{customer.address || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(customer)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Customer?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the customer "{customer.name}".
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(customer.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search customers..."
 
-      {/* Pagination could go here */}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+
+        emptyState={emptyState}
+        renderActions={renderActions}
+        avatarIcon={<User className="h-4 w-4 text-primary" />}
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
@@ -190,6 +161,14 @@ export default function CustomersPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <GenericDeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDelete}
+        itemName={customerToDelete?.name}
+        dialogTitle="Delete Customer?"
+      />
     </div>
   );
 }

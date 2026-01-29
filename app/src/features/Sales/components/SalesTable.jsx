@@ -503,7 +503,7 @@ export default function SalesTable({
                             <TableCell
                                 tabIndex={0}
                                 data-grid-cell
-                                className="text-right font-bold text-foreground border-r border-border focus:ring-2 focus:ring-inset focus:ring-primary focus:z-50 focus:outline-none"
+                                className="text-right font-bold text-foreground focus:ring-2 focus:ring-inset focus:ring-primary focus:z-50 focus:outline-none"
                             >
                                 ₹{(((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0)) - (parseFloat(item.discount) || 0)).toFixed(2)}
                             </TableCell>
@@ -608,7 +608,7 @@ export default function SalesTable({
                             tabIndex={0}
                             data-grid-cell
                             colSpan={6}
-                            className="bg-muted/10 border-r border-border focus:ring-2 focus:ring-inset focus:ring-primary focus:z-50 focus:outline-none"
+                            className="bg-muted/10 focus:ring-2 focus:ring-inset focus:ring-primary focus:z-50 focus:outline-none"
                         />
                     </TableRow>
                 </TableBody>

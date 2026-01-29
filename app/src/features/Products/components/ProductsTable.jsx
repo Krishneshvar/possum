@@ -1,27 +1,18 @@
-import { Eye, Trash2, Package, Edit, Search, Loader2, RefreshCw, AlertCircle } from "lucide-react"
+import { Eye, Trash2, Package, Edit } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useMemo } from "react"
 import { useSelector, useDispatch } from "react-redux"
-import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Input } from "@/components/ui/input"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
-import ColumnVisibilityDropdown from "@/components/common/ColumnVisibilityDropdown"
 import { setSearchTerm, setCurrentPage, setFilter, clearAllFilters } from "../productsSlice"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
-import { Separator } from "@/components/ui/separator"
-import GenericTableHeader from "@/components/common/GenericTableHeader"
-import GenericTableBody from "@/components/common/GenericTableBody"
-import GenericPagination from "@/components/common/GenericPagination"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./productsTableContents.jsx"
-import GenericFilter from "@/components/common/GenericFilter"
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
 import { statusFilter, categoryFilter } from "../data/productsFiltersConfig"
 import { flattenCategories } from "@/utils/categories.utils"
+import DataTable from "@/components/common/DataTable"
 
 export default function ProductsTable() {
   const dispatch = useDispatch()
@@ -38,18 +29,11 @@ export default function ProductsTable() {
 
   const products = data?.products || []
   const totalPages = data?.totalPages || 1;
-  const totalCount = data?.totalCount || 0;
   const isDataLoading = isLoading || isFetching
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [deleteProduct] = useDeleteProductMutation()
-  const [visibleColumns, setVisibleColumns] = useState(
-    allColumns.reduce((acc, col) => {
-      acc[col.key] = true
-      return acc
-    }, {})
-  )
   const { data: categories = [] } = useGetCategoriesQuery()
 
   const handleFilterChange = (key, value) => {
@@ -142,93 +126,30 @@ export default function ProductsTable() {
 
   return (
     <>
-      <Card className="border-border/50 shadow-sm w-full overflow-hidden">
-        <CardContent className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col gap-3">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search products by name or SKU..."
-                className="pl-10 h-10 sm:h-11 focus:border-border bg-background text-sm sm:text-base w-full"
-                value={searchTerm}
-                onChange={(e) => dispatch(setSearchTerm(e.target.value))}
-              />
-            </div>
+      <DataTable
+        data={products}
+        columns={allColumns}
+        isLoading={isDataLoading}
+        error={error}
+        onRetry={refetch}
 
-            <div className="flex flex-col flex-wrap md:flex-col sm:flex-row gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex-1 min-w-none">
-                <GenericFilter
-                  filtersConfig={filtersConfig}
-                  activeFilters={filters}
-                  onFilterChange={handleFilterChange}
-                  onClearAll={handleClearAllFilters}
-                />
-              </div>
+        searchTerm={searchTerm}
+        onSearchChange={(value) => dispatch(setSearchTerm(value))}
+        searchPlaceholder="Search products by name or SKU..."
 
-              <div className="flex items-end">
-                <ColumnVisibilityDropdown
-                  columns={allColumns}
-                  onChange={setVisibleColumns}
-                />
-              </div>
-            </div>
-          </div>
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
 
-          <div className="w-full">
-            <div className="overflow-x-auto mb-2">
-              <Table className="overflow-x-auto">
-                <GenericTableHeader columns={allColumns} visibleColumns={visibleColumns} />
+        filtersConfig={filtersConfig}
+        activeFilters={filters}
+        onFilterChange={handleFilterChange}
+        onClearAllFilters={handleClearAllFilters}
 
-                {isDataLoading ? (
-                  <TableBody>
-                    <TableRow className="hover:bg-muted/50">
-                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-32 sm:h-40 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3 py-4">
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">Loading products...</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                ) : error ? (
-                  <TableBody>
-                    <TableRow className="hover:bg-muted/50">
-                      <TableCell colSpan={allColumns.filter(col => visibleColumns[col.key]).length + 2} className="h-32 sm:h-40 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3 py-4 px-4">
-                          <AlertCircle className="h-5 w-5 text-destructive" />
-                          <p className="text-sm text-destructive text-center">Failed to load products. Please try again.</p>
-                          <Button variant="outline" size="sm" onClick={refetch} className="w-full sm:w-auto">
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Retry
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                ) : (
-                  <GenericTableBody
-                    data={products}
-                    allColumns={allColumns}
-                    visibleColumns={visibleColumns}
-                    emptyState={emptyState}
-                    renderActions={renderProductActions}
-                    avatarIcon={<Package className="h-4 w-4 text-primary" />}
-                  />
-                )}
-              </Table>
-              <Separator />
-            </div>
-
-            <div className="flex justify-center">
-              <GenericPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        emptyState={emptyState}
+        renderActions={renderProductActions}
+        avatarIcon={<Package className="h-4 w-4 text-primary" />}
+      />
 
       <GenericDeleteDialog
         dialogTitle="Delete Product?"

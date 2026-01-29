@@ -163,7 +163,9 @@ export const productsApi = createApi({
       query: (params) => {
         const query = new URLSearchParams();
         for (const key in params) {
-          if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+          if (Array.isArray(params[key])) {
+            params[key].forEach(item => query.append(key, item));
+          } else if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
             query.append(key, params[key]);
           }
         }

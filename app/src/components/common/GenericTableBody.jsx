@@ -9,7 +9,7 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
       {data.length > 0 ? (
         data.map((item) => (
           <TableRow key={item.id} className="hover:bg-muted/50 transition-colors border-b border-border">
-            <TableCell className="min-w-none">
+            <TableCell className="min-w-none border-r border-border last:border-r-0">
               <Avatar className="rounded-lg h-10 w-10 border border-border">
                 {item.imageUrl ? (
                   <AvatarImage src={item.imageUrl} alt={item.name} className="object-cover" />
@@ -19,7 +19,7 @@ export default function GenericTableBody({ data, allColumns, visibleColumns, emp
               </Avatar>
             </TableCell>
             {columnsToRender.map((column) => (
-              <TableCell key={column.key} className="text-sm min-w-none">
+              <TableCell key={column.key} className="text-sm min-w-none border-r border-border last:border-r-0">
                 {column.renderCell(item)}
               </TableCell>
             ))}

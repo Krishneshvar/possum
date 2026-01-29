@@ -1,37 +1,19 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search, UserCog } from 'lucide-react';
+import { Plus, Pencil, Trash2, UserCog, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 
 import GenericPageHeader from '@/components/common/GenericPageHeader';
+import DataTable from "@/components/common/DataTable";
+import GenericDeleteDialog from "@/components/common/GenericDeleteDialog";
 import { EmployeeForm } from '../components/EmployeeForm';
 import {
   useGetUsersQuery,
@@ -45,11 +27,18 @@ export default function EmployeesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const { data, isLoading } = useGetUsersQuery({ searchTerm, currentPage, itemsPerPage: 10 });
+  const { data, isLoading, error, refetch } = useGetUsersQuery({ searchTerm, currentPage, itemsPerPage });
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
+  const users = data?.users || [];
+  const totalPages = data?.totalPages || 1;
 
   const handleOpenAddDialog = () => {
     setEditingUser(null);
@@ -59,6 +48,11 @@ export default function EmployeesPage() {
   const handleOpenEditDialog = (user) => {
     setEditingUser(user);
     setIsDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (user) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleSave = async (values) => {
@@ -77,15 +71,60 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
+    if (!userToDelete) return;
     try {
-      await deleteUser(id).unwrap();
+      await deleteUser(userToDelete.id).unwrap();
       toast.success("Employee deleted successfully");
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete employee");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
   };
+
+  const columns = [
+    { key: 'name', label: 'Name', renderCell: (u) => <span className="font-medium">{u.name}</span> },
+    { key: 'username', label: 'Username', renderCell: (u) => u.username },
+    {
+      key: 'is_active',
+      label: 'Status',
+      renderCell: (u) => (
+        <Badge variant={u.is_active ? "default" : "secondary"}>
+          {u.is_active ? "Active" : "Inactive"}
+        </Badge>
+      )
+    },
+    {
+      key: 'created_at',
+      label: 'Created At',
+      renderCell: (u) => <span className="text-muted-foreground text-sm">{new Date(u.created_at).toLocaleDateString()}</span>
+    },
+  ];
+
+  const renderActions = (user) => (
+    <div className="flex items-center gap-2 justify-end">
+      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(user)}>
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={() => handleOpenDeleteDialog(user)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
+  const emptyState = (
+    <div className="text-center p-8 text-muted-foreground">
+      No employees found.
+    </div>
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
@@ -103,87 +142,25 @@ export default function EmployeesPage() {
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search employees..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
+      <DataTable
+        data={users}
+        columns={columns}
+        isLoading={isLoading}
+        error={error}
+        onRetry={refetch}
 
-      <div className="border rounded-md bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">Loading...</TableCell>
-              </TableRow>
-            ) : data?.users?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No employees found.</TableCell>
-              </TableRow>
-            ) : (
-              data?.users?.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.is_active ? "default" : "secondary"}>
-                      {user.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(user)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Employee?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete "{user.username}".
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(user.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search employees..."
 
-      {/* Pagination could go here */}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+
+        emptyState={emptyState}
+        renderActions={renderActions}
+        avatarIcon={<User className="h-4 w-4 text-primary" />}
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
@@ -197,6 +174,14 @@ export default function EmployeesPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <GenericDeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDelete}
+        itemName={userToDelete?.username}
+        dialogTitle="Delete Employee?"
+      />
     </div>
   );
 }
