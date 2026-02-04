@@ -33,6 +33,32 @@ ipcMain.handle('ping', async () => {
   return 'pong';
 });
 
+import { printBillHtml } from './print/printController.js';
+import fs from 'fs/promises';
+
+ipcMain.handle('print-bill', printBillHtml);
+
+ipcMain.handle('save-bill-settings', async (event, settings) => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'bill-settings.json');
+    await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('get-bill-settings', async () => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'bill-settings.json');
+    const data = await fs.readFile(settingsPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return null; // Return null if no settings saved yet
+  }
+});
+
 app.whenReady().then(() => {
   startServer();
   createWindow();
