@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import BillPreview from './BillPreview';
 import SectionEditor from './SectionEditor';
 import { DEFAULT_BILL_SCHEMA } from '../../../render/billRenderer';
@@ -47,31 +47,66 @@ export default function BillSettings() {
         if (window.electronAPI) {
             try {
                 await window.electronAPI.saveBillSettings(schema);
+                toast.success('Settings saved successfully!');
             } catch (error) {
                 console.error("Failed to save settings via IPC", error);
+                toast.error('Failed to save settings');
             }
         }
         setHasUnsavedChanges(false);
-        alert('Settings saved!');
+    };
+
+    const handleFormatChange = (field, value) => {
+        updateSchema({ ...schema, [field]: value });
     };
 
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Bill Structure & Layout</h2>
-                <div className="flex gap-4 items-center">
-                    <select
-                        value={schema.paperWidth}
-                        onChange={(e) => handlePaperWidthChange(e.target.value)}
-                        className="border rounded p-2 bg-white dark:bg-gray-800"
-                    >
-                        <option value="58mm">58mm (2 inch)</option>
-                        <option value="80mm">80mm (3 inch)</option>
-                    </select>
+                <div className="flex gap-4 items-center flex-wrap">
+                    <div className="flex flex-col">
+                        <label className="text-xs text-gray-500">Paper Width</label>
+                        <select
+                            value={schema.paperWidth}
+                            onChange={(e) => handlePaperWidthChange(e.target.value)}
+                            className="border rounded p-1 text-sm bg-white dark:bg-gray-800"
+                        >
+                            <option value="58mm">58mm (2 inch)</option>
+                            <option value="80mm">80mm (3 inch)</option>
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-xs text-gray-500">Date Format</label>
+                        <select
+                            value={schema.dateFormat || 'standard'}
+                            onChange={(e) => handleFormatChange('dateFormat', e.target.value)}
+                            className="border rounded p-1 text-sm bg-white dark:bg-gray-800"
+                        >
+                            <option value="standard">Standard (Local)</option>
+                            <option value="ISO">ISO (YYYY-MM-DD)</option>
+                            <option value="short">Short (MM/DD/YY)</option>
+                            <option value="long">Long (Month DD, YYYY)</option>
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-xs text-gray-500">Time Format</label>
+                        <select
+                            value={schema.timeFormat || '12h'}
+                            onChange={(e) => handleFormatChange('timeFormat', e.target.value)}
+                            className="border rounded p-1 text-sm bg-white dark:bg-gray-800"
+                        >
+                            <option value="12h">12 Hour (AM/PM)</option>
+                            <option value="24h">24 Hour</option>
+                        </select>
+                    </div>
+
                     <button
                         onClick={handleSave}
                         disabled={!hasUnsavedChanges}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed self-end"
                     >
                         Save Changes
                     </button>

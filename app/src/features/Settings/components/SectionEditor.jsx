@@ -79,17 +79,97 @@ export default function SectionEditor({ section, isFirst, isLast, onUpdate, onMo
                         </div>
                     )}
 
+                    {section.id === 'storeHeader' && (
+                        <div className="col-span-2 space-y-3">
+                            <div>
+                                <label className="block text-gray-500 mb-1">Store Name</label>
+                                <input
+                                    type="text"
+                                    value={section.options.storeName || ''}
+                                    onChange={(e) => handleOptionChange('storeName', e.target.value)}
+                                    className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-500 mb-1">Store Details (Address, etc.)</label>
+                                <textarea
+                                    value={section.options.storeDetails || ''}
+                                    onChange={(e) => handleOptionChange('storeDetails', e.target.value)}
+                                    rows={2}
+                                    className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-gray-500 mb-1">Phone</label>
+                                    <input
+                                        type="text"
+                                        value={section.options.phone || ''}
+                                        onChange={(e) => handleOptionChange('phone', e.target.value)}
+                                        className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-gray-500 mb-1">GSTIN</label>
+                                    <input
+                                        type="text"
+                                        value={section.options.gst || ''}
+                                        onChange={(e) => handleOptionChange('gst', e.target.value)}
+                                        className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="showLogo"
+                                    checked={section.options.showLogo}
+                                    onChange={(e) => handleOptionChange('showLogo', e.target.checked)}
+                                />
+                                <label htmlFor="showLogo" className="text-gray-500">Show Logo</label>
+                            </div>
+                            {section.options.showLogo && (
+                                <div>
+                                    <label className="block text-gray-500 mb-1">Logo URL / Base64</label>
+                                    <input
+                                        type="text"
+                                        placeholder="data:image/png;base64,..."
+                                        value={section.options.logoUrl || ''}
+                                        onChange={(e) => handleOptionChange('logoUrl', e.target.value)}
+                                        className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                    />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => handleOptionChange('logoUrl', reader.result);
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                        className="mt-1 text-xs"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+
+
                     {section.id === 'footer' && (
                         <div className="col-span-2">
                             <label className="block text-gray-500 mb-1">Footer Text</label>
-                            <input
-                                type="text"
+                            <textarea
                                 value={section.options.text || ''}
                                 onChange={(e) => handleOptionChange('text', e.target.value)}
+                                rows={3}
                                 className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                             />
                         </div>
                     )}
+
                 </div>
             )}
         </div>
