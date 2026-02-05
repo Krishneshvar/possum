@@ -101,9 +101,11 @@ export function renderBill(data, schema = DEFAULT_BILL_SCHEMA) {
     data.store = { ...data.store, ...headerSection.options };
   }
 
+  const currency = schema.currency || data.currency || '₹';
+
   const sectionsHtml = sections
     .filter(s => s.visible)
-    .map(section => renderSection(section, data, dateFormat, timeFormat))
+    .map(section => renderSection(section, data, dateFormat, timeFormat, currency))
     .join('');
 
   return `
@@ -140,7 +142,7 @@ function formatDate(dateStr, dateFormat, timeFormat) {
   return `${datePart} ${timePart}`;
 }
 
-function renderSection(section, data, dateFormat, timeFormat) {
+function renderSection(section, data, dateFormat, timeFormat, currency) {
   const { options } = section;
   const alignClass = `text-${options.alignment || 'left'}`;
   const sizeClass = `text-${options.fontSize || 'medium'}`;
@@ -182,8 +184,8 @@ function renderSection(section, data, dateFormat, timeFormat) {
         <tr>
           <td class="col-item">${item.name}</td>
           <td class="col-qty">${item.qty}</td>
-          <td class="col-rate">${formatCurrency(item.price || (item.total / item.qty))}</td>
-          <td class="col-amount">${formatCurrency(item.total)}</td>
+          <td class="col-rate">${formatCurrency(item.price || (item.total / item.qty), currency)}</td>
+          <td class="col-amount">${formatCurrency(item.total, currency)}</td>
         </tr>
       `).join('');
 
@@ -210,12 +212,12 @@ function renderSection(section, data, dateFormat, timeFormat) {
       return `
         <div class="${commonClasses}">
           <table style="width: 100%">
-            <tr><td>Subtotal:</td><td class="text-right">${formatCurrency(data.bill.subtotal)}</td></tr>
-            ${data.bill.tax ? `<tr><td>Tax:</td><td class="text-right">${formatCurrency(data.bill.tax)}</td></tr>` : ''}
-            ${data.bill.discount ? `<tr><td>Discount:</td><td class="text-right">-${formatCurrency(data.bill.discount)}</td></tr>` : ''}
+            <tr><td>Subtotal:</td><td class="text-right">${formatCurrency(data.bill.subtotal, currency)}</td></tr>
+            ${data.bill.tax ? `<tr><td>Tax:</td><td class="text-right">${formatCurrency(data.bill.tax, currency)}</td></tr>` : ''}
+            ${data.bill.discount ? `<tr><td>Discount:</td><td class="text-right">-${formatCurrency(data.bill.discount, currency)}</td></tr>` : ''}
             <tr class="text-large" style="border-top: 1px dashed black;">
               <td style="padding-top: 5px;">Total:</td>
-              <td class="text-right" style="padding-top: 5px;">${formatCurrency(data.bill.total)}</td>
+              <td class="text-right" style="padding-top: 5px;">${formatCurrency(data.bill.total, currency)}</td>
             </tr>
           </table>
           <div class="text-small text-left" style="margin-top: 5px;">Items: ${data.bill.totalItems}</div>
@@ -235,7 +237,7 @@ function renderSection(section, data, dateFormat, timeFormat) {
   }
 }
 
-function formatCurrency(amount) {
-  if (amount === undefined || amount === null) return '0.00';
-  return Number(amount).toFixed(2);
+function formatCurrency(amount, currency = '₹') {
+  if (amount === undefined || amount === null) return `${currency}0.00`;
+  return `${currency}${Number(amount).toFixed(2)}`;
 }

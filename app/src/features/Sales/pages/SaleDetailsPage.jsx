@@ -14,11 +14,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function SaleDetailsPage() {
     const { saleId } = useParams();
     const navigate = useNavigate();
     const { data: sale, isLoading, error } = useGetSaleQuery(saleId);
+    const currency = useCurrency();
 
     if (isLoading) {
         return (
@@ -133,8 +135,8 @@ export default function SaleDetailsPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-center font-medium">{item.quantity}</TableCell>
-                                        <TableCell className="text-right text-muted-foreground">₹{item.price_per_unit.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right font-bold pr-6">₹{(item.quantity * item.price_per_unit).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right text-muted-foreground">{currency}{item.price_per_unit.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-bold pr-6">{currency}{(item.quantity * item.price_per_unit).toFixed(2)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -180,31 +182,31 @@ export default function SaleDetailsPage() {
                         <CardContent className="pt-4 space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Subtotal</span>
-                                <span className="font-medium">₹{(sale.total_amount + sale.discount - sale.total_tax).toFixed(2)}</span>
+                                <span className="font-medium">{currency}{(sale.total_amount + sale.discount - sale.total_tax).toFixed(2)}</span>
                             </div>
                             {sale.discount > 0 && (
                                 <div className="flex justify-between text-sm text-destructive">
                                     <span>Discount</span>
-                                    <span>-₹{sale.discount.toFixed(2)}</span>
+                                    <span>-{currency}{sale.discount.toFixed(2)}</span>
                                 </div>
                             )}
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Tax</span>
-                                <span className="font-medium">₹{sale.total_tax.toFixed(2)}</span>
+                                <span className="font-medium">{currency}{sale.total_tax.toFixed(2)}</span>
                             </div>
                             <Separator className="bg-border/50 my-2" />
                             <div className="flex justify-between items-center">
                                 <span className="text-base font-bold">Total Amount</span>
-                                <span className="text-xl font-bold text-primary">₹{sale.total_amount.toFixed(2)}</span>
+                                <span className="text-xl font-bold text-primary">{currency}{sale.total_amount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm pt-2">
                                 <span className="text-muted-foreground">Paid Amount</span>
-                                <span className="font-bold text-success">₹{sale.paid_amount.toFixed(2)}</span>
+                                <span className="font-bold text-success">{currency}{sale.paid_amount.toFixed(2)}</span>
                             </div>
                             {sale.total_amount > sale.paid_amount && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Balance Due</span>
-                                    <span className="font-bold text-destructive">₹{(sale.total_amount - sale.paid_amount).toFixed(2)}</span>
+                                    <span className="font-bold text-destructive">{currency}{(sale.total_amount - sale.paid_amount).toFixed(2)}</span>
                                 </div>
                             )}
                         </CardContent>
@@ -228,7 +230,7 @@ export default function SaleDetailsPage() {
                                                     <div className="font-medium">{t.payment_method_name}</div>
                                                     <div className="text-[10px] text-muted-foreground">{new Date(t.transaction_date).toLocaleTimeString()}</div>
                                                 </TableCell>
-                                                <TableCell className="text-right text-xs py-2 font-bold pr-4">₹{t.amount.toFixed(2)}</TableCell>
+                                                <TableCell className="text-right text-xs py-2 font-bold pr-4">{currency}{t.amount.toFixed(2)}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

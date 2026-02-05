@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Printer, ShoppingBag } from "lucide-react";
 import DataTable from "@/components/common/DataTable";
+import CurrencyText from "@/components/common/CurrencyText";
 
 export default function SalesHistoryTable({
     sales,
@@ -68,7 +69,11 @@ export default function SalesHistoryTable({
             sortable: true,
             sortField: 'total_amount',
             className: 'text-right',
-            renderCell: (sale) => <div className="text-right font-bold text-primary">₹{sale.total_amount.toFixed(2)}</div>
+            renderCell: (sale) => (
+                <div className="text-right font-bold text-primary">
+                    <CurrencyText value={sale.total_amount} />
+                </div>
+            )
         },
         {
             key: 'paid_amount',
@@ -76,7 +81,11 @@ export default function SalesHistoryTable({
             sortable: true,
             sortField: 'paid_amount',
             className: 'text-right',
-            renderCell: (sale) => <div className="text-right text-muted-foreground">₹{sale.paid_amount.toFixed(2)}</div>
+            renderCell: (sale) => (
+                <div className="text-right text-muted-foreground">
+                    <CurrencyText value={sale.paid_amount} />
+                </div>
+            )
         },
         {
             key: 'status',

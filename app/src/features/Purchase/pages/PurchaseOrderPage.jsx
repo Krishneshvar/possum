@@ -35,9 +35,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, CheckCircle, XCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate();
+  const currency = useCurrency();
   const [searchTerm, setSearchTerm] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
@@ -192,7 +194,7 @@ export default function PurchaseOrdersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{po.item_count}</TableCell>
-                  <TableCell className="text-right">${po.total_cost?.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">{currency}{po.total_cost?.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       {po.status === 'pending' && (

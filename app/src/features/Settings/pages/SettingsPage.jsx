@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import BillSettings from '../components/BillSettings';
+import GeneralSettings from '../components/GeneralSettings';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('bill');
+  const [activeTab, setActiveTab] = useState('general');
 
   return (
     <div className="h-full flex flex-col p-6 overflow-hidden">
@@ -33,12 +34,7 @@ export default function SettingsPage() {
 
         {/* Content Area */}
         <div className="flex-1 bg-white dark:bg-gray-900 rounded-lg shadow-sm border p-6 overflow-auto">
-          {activeTab === 'general' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">General Settings</h2>
-              <p className="text-gray-500">General application settings will go here.</p>
-            </div>
-          )}
+          {activeTab === 'general' && <GeneralSettings />}
 
           {activeTab === 'bill' && <BillSettings />}
 

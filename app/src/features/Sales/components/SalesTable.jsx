@@ -12,6 +12,7 @@ import {
 import { Search, Loader2, Package, Eye, EyeOff, Calendar } from "lucide-react";
 import { useGetVariantsQuery } from "@/services/productsApi";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/hooks/useCurrency";
 
 // Helper hook for debouncing
 function useLocalDebounce(value, delay) {
@@ -97,6 +98,7 @@ export default function SalesTable({
     grandTotal = 0,
     date = new Date()
 }) {
+    const currency = useCurrency();
     // --- Product Search Logic ---
     const [searchTerm, setSearchTerm] = useState("");
     const [isOpen, setIsOpen] = useState(false);
@@ -331,7 +333,7 @@ export default function SalesTable({
                 <div className="flex items-center gap-4">
                     <div className="bg-background px-4 py-2 rounded-md border border-border shadow-sm flex items-center gap-3">
                         <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Grand Total</span>
-                        <span className="text-xl font-bold text-primary">₹{grandTotal.toFixed(2)}</span>
+                        <span className="text-xl font-bold text-primary">{currency}{grandTotal.toFixed(2)}</span>
                     </div>
 
                     <Button
@@ -455,7 +457,7 @@ export default function SalesTable({
                                 className="text-right font-medium border-r border-border focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary focus-within:z-50 focus-within:outline-none p-0"
                             >
                                 <div className="flex items-center justify-end h-full w-full px-2 gap-1">
-                                    <span className="text-muted-foreground text-xs">₹</span>
+                                    <span className="text-muted-foreground text-xs">{currency}</span>
                                     <Input
                                         ref={(el) => (priceRefs.current[item.id] = el)}
                                         data-row-id={item.id}
@@ -477,13 +479,13 @@ export default function SalesTable({
                                 data-grid-cell
                                 className="text-right font-medium text-muted-foreground border-r border-border focus:ring-2 focus:ring-inset focus:ring-primary focus:z-50 focus:outline-none"
                             >
-                                ₹{(parseFloat(item.mrp) || 0).toFixed(2)}
+                                {currency}{(parseFloat(item.mrp) || 0).toFixed(2)}
                             </TableCell>
                             <TableCell
                                 className="text-right font-medium border-r border-border focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary focus-within:z-50 focus-within:outline-none p-0"
                             >
                                 <div className="flex items-center justify-end h-full w-full px-2 gap-1">
-                                    <span className="text-muted-foreground text-xs">₹</span>
+                                    <span className="text-muted-foreground text-xs">{currency}</span>
                                     <Input
                                         ref={(el) => (discountRefs.current[item.id] = el)}
                                         data-row-id={item.id}
@@ -505,7 +507,7 @@ export default function SalesTable({
                                 data-grid-cell
                                 className="text-right font-bold text-foreground focus:ring-2 focus:ring-inset focus:ring-primary focus:z-50 focus:outline-none"
                             >
-                                ₹{(((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0)) - (parseFloat(item.discount) || 0)).toFixed(2)}
+                                {currency}{(((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0)) - (parseFloat(item.discount) || 0)).toFixed(2)}
                             </TableCell>
                         </TableRow>
                     ))}
@@ -594,7 +596,7 @@ export default function SalesTable({
                                                             </div>
                                                         </div>
                                                         <div className="font-bold text-sm text-foreground whitespace-nowrap">
-                                                            ₹{variant.mrp}
+                                                            {currency}{variant.mrp}
                                                         </div>
                                                     </button>
                                                 ))}

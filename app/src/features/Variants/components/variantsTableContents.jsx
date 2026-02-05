@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import CurrencyText from "@/components/common/CurrencyText";
 
 export const allColumns = [
     {
@@ -18,14 +19,14 @@ export const allColumns = [
     {
         key: "mrp",
         label: "MRP",
-        renderCell: (row) => `₹${Number(row.mrp).toFixed(2)}`,
+        renderCell: (row) => <CurrencyText value={row.mrp} />,
         sortable: true,
         sortField: 'v.mrp',
     },
     {
         key: "cost_price",
         label: "Cost",
-        renderCell: (row) => `₹${Number(row.cost_price).toFixed(2)}`,
+        renderCell: (row) => <CurrencyText value={row.cost_price} />,
         sortable: true,
         sortField: 'v.cost_price',
     },

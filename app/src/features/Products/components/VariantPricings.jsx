@@ -1,17 +1,19 @@
-import { DollarSign } from "lucide-react";
+import { Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCurrency } from "@/hooks/useCurrency";
 
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
 export default function VariantPricings({ variant, onVariantChange, onClearPriceFields }) {
+  const currency = useCurrency();
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-          <DollarSign className="h-5 w-5 text-success" />
+          <Wallet className="h-5 w-5 text-success" />
         </div>
         <div className="flex w-full items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">Pricings</h3>
@@ -32,7 +34,7 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
             MRP <RequiredFieldIndicator />
           </Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currency}</span>
             <Input
               id={`mrp-${variant._tempId}`}
               name="mrp"
@@ -51,7 +53,7 @@ export default function VariantPricings({ variant, onVariantChange, onClearPrice
             Cost Price
           </Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currency}</span>
             <Input
               id={`cost_price-${variant._tempId}`}
               name="cost_price"

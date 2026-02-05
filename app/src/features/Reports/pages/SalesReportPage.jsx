@@ -16,10 +16,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function SalesReportPage() {
+    const currency = useCurrency();
     const [reportType, setReportType] = useState('daily');
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
@@ -87,7 +89,7 @@ export default function SalesReportPage() {
     }
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+        return `${currency}${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
     return (
@@ -239,7 +241,7 @@ export default function SalesReportPage() {
                                 <BarChart data={chartData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${currency}${value}`} />
                                     <Tooltip formatter={(value) => formatCurrency(value)} />
                                     <Bar dataKey="sales" fill="#adfa1d" radius={[4, 4, 0, 0]} />
                                 </BarChart>

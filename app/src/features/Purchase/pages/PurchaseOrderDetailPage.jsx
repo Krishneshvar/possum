@@ -15,6 +15,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { toast } from 'sonner';
+import { useCurrency } from '@/hooks/useCurrency';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -28,8 +29,9 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function PurchaseOrderDetailPage() {
-    const { id } = useParams();
+    const id = useParams().id;
     const navigate = useNavigate();
+    const currency = useCurrency();
     const { data: po, isLoading, error } = useGetPurchaseOrderByIdQuery(id);
     const [receivePurchaseOrder, { isLoading: isReceiving }] = useReceivePurchaseOrderMutation();
     const [cancelPurchaseOrder, { isLoading: isCancelling }] = useCancelPurchaseOrderMutation();
@@ -195,8 +197,8 @@ export default function PurchaseOrderDetailPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-center font-medium">{item.quantity}</TableCell>
-                                        <TableCell className="text-right text-muted-foreground">${item.unit_cost.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right font-bold pr-6">${(item.quantity * item.unit_cost).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right text-muted-foreground">{currency}{item.unit_cost.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-bold pr-6">{currency}{(item.quantity * item.unit_cost).toFixed(2)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -259,7 +261,7 @@ export default function PurchaseOrderDetailPage() {
                             <Separator className="bg-border/50 my-2" />
                             <div className="flex justify-between items-center">
                                 <span className="text-base font-bold">Total Cost</span>
-                                <span className="text-xl font-bold text-primary">${totalCost.toFixed(2)}</span>
+                                <span className="text-xl font-bold text-primary">{currency}{totalCost.toFixed(2)}</span>
                             </div>
                         </CardContent>
                     </Card>

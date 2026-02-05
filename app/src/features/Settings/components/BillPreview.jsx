@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { renderBill } from '../../../render/billRenderer';
 
 const MOCK_DATA = {
@@ -29,10 +30,11 @@ const MOCK_DATA = {
 
 export default function BillPreview({ schema }) {
     const iframeRef = useRef(null);
+    const currency = useSelector(state => state.settings.currency);
 
     useEffect(() => {
         if (iframeRef.current && schema) {
-            const htmlContent = renderBill(MOCK_DATA, schema);
+            const htmlContent = renderBill(MOCK_DATA, { ...schema, currency });
             const doc = iframeRef.current.contentDocument;
             doc.open();
             doc.write(htmlContent);

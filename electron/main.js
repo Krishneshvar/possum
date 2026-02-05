@@ -59,6 +59,27 @@ ipcMain.handle('get-bill-settings', async () => {
   }
 });
 
+ipcMain.handle('save-general-settings', async (event, settings) => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'general-settings.json');
+    await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to save general settings:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('get-general-settings', async () => {
+  try {
+    const settingsPath = path.join(app.getPath('userData'), 'general-settings.json');
+    const data = await fs.readFile(settingsPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return null;
+  }
+});
+
 app.whenReady().then(() => {
   startServer();
   createWindow();

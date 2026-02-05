@@ -22,8 +22,10 @@ import { useGetVariantsQuery } from '@/services/productsApi';
 import { useCreatePurchaseOrderMutation } from '@/services/purchaseApi';
 import { toast } from 'sonner';
 import { Trash2, Plus } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export function PurchaseOrderForm({ onSuccess }) {
+    const currency = useCurrency();
     const { data: suppliersData } = useGetSuppliersQuery({ limit: 1000 });
     const suppliers = suppliersData?.suppliers || [];
     const { data: variantsData } = useGetVariantsQuery({ page: 1, limit: 1000 });
@@ -193,8 +195,8 @@ export function PurchaseOrderForm({ onSuccess }) {
                                         <div className="text-xs text-muted-foreground">{item.variantSku} ({item.variantName})</div>
                                     </TableCell>
                                     <TableCell className="text-right">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">${item.unitCost.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">${(item.quantity * item.unitCost).toFixed(2)}</TableCell>
+                                    <TableCell className="text-right">{currency}{item.unitCost.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right">{currency}{(item.quantity * item.unitCost).toFixed(2)}</TableCell>
                                     <TableCell>
                                         <Button variant="ghost" size="sm" onClick={() => removeItem(idx)} className="text-red-500">
                                             <Trash2 className="h-4 w-4" />
@@ -206,7 +208,7 @@ export function PurchaseOrderForm({ onSuccess }) {
                         {items.length > 0 && (
                             <TableRow className="bg-muted/50 font-bold">
                                 <TableCell colSpan={3} className="text-right">Total Order Cost:</TableCell>
-                                <TableCell className="text-right text-lg">${calculateTotal()}</TableCell>
+                                <TableCell className="text-right text-lg">{currency}{calculateTotal()}</TableCell>
                                 <TableCell></TableCell>
                             </TableRow>
                         )}

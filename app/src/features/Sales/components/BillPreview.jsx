@@ -2,8 +2,10 @@
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Receipt, Printer } from "lucide-react";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function BillPreview({ items, customerName, paymentMethod, overallDiscount = 0, discountType = 'fixed', date }) {
+    const currency = useCurrency();
     const displayDate = date ? new Date(date).toLocaleString() : new Date().toLocaleString();
 
     const calculatedSubtotal = items.reduce((acc, item) => {
@@ -68,12 +70,12 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
                                     <div className="flex-1 pr-4">
                                         <span className="text-foreground font-medium">{item.name}</span>
                                         <div className="text-xs text-muted-foreground">
-                                            {item.quantity} x ₹{(parseFloat(item.price) || 0).toFixed(2)}
-                                            {(parseFloat(item.discount) || 0) > 0 && <span className="text-destructive ml-1">(-₹{(parseFloat(item.discount) || 0).toFixed(2)})</span>}
+                                            {item.quantity} x {currency}{(parseFloat(item.price) || 0).toFixed(2)}
+                                            {(parseFloat(item.discount) || 0) > 0 && <span className="text-destructive ml-1">(-{currency}{(parseFloat(item.discount) || 0).toFixed(2)})</span>}
                                         </div>
                                     </div>
                                     <span className="text-foreground font-medium">
-                                        ₹{(((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0)) - (parseFloat(item.discount) || 0)).toFixed(2)}
+                                        {currency}{(((parseFloat(item.price) || 0) * (parseInt(item.quantity) || 0)) - (parseFloat(item.discount) || 0)).toFixed(2)}
                                     </span>
                                 </div>
                             ))
@@ -83,17 +85,17 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
                     <div className="border-t border-dashed border-border pt-4 space-y-2">
                         <div className="flex justify-between text-muted-foreground">
                             <span>Subtotal</span>
-                            <span>₹{calculatedSubtotal.toFixed(2)}</span>
+                            <span>{currency}{calculatedSubtotal.toFixed(2)}</span>
                         </div>
                         {discountAmount > 0 && (
                             <div className="flex justify-between text-destructive">
                                 <span>Discount {discountType === 'percentage' ? `(${overallDiscount}%)` : ''}</span>
-                                <span>-₹{discountAmount.toFixed(2)}</span>
+                                <span>-{currency}{discountAmount.toFixed(2)}</span>
                             </div>
                         )}
                         <div className="flex justify-between text-muted-foreground">
                             <span>Tax (18%)</span>
-                            <span>₹{calculatedTax.toFixed(2)}</span>
+                            <span>{currency}{calculatedTax.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -102,7 +104,7 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
                 <div className="p-6 bg-muted/50 border-t border-border">
                     <div className="flex justify-between items-center mb-4">
                         <span className="text-lg font-bold text-foreground">Total</span>
-                        <span className="text-2xl font-bold text-primary">₹{finalTotal.toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-primary">{currency}{finalTotal.toFixed(2)}</span>
                     </div>
 
                     {customerName && (

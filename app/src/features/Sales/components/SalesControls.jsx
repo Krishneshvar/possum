@@ -14,6 +14,7 @@ import { CreditCard, Wallet, Banknote, User, Search, Loader2, Plus } from "lucid
 import { cn } from "@/lib/utils";
 import { useGetCustomersQuery } from "@/services/customersApi";
 import { useGetPaymentMethodsQuery } from "@/services/salesApi";
+import { useCurrency } from "@/hooks/useCurrency";
 
 // Helper hook for debouncing
 function useLocalDebounce(value, delay) {
@@ -46,6 +47,7 @@ export default function SalesControls({
     grandTotal = 0,
     onCompleteSale
 }) {
+    const currency = useCurrency();
     // --- Customer Search Logic ---
     const [searchTerm, setSearchTerm] = useState(customerName || "");
     const [isOpen, setIsOpen] = useState(false);
@@ -259,7 +261,7 @@ export default function SalesControls({
                     <div className="flex gap-2">
                         <div className="relative flex-1">
                             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-                                {discountType === 'fixed' ? '₹' : '%'}
+                                {discountType === 'fixed' ? currency : '%'}
                             </div>
                             <Input
                                 type="text"
@@ -305,7 +307,7 @@ export default function SalesControls({
                         Amount Tendered
                     </Label>
                     <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">₹</div>
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">{currency}</div>
                         <Input
                             type="text"
                             placeholder="0.00"
@@ -325,7 +327,7 @@ export default function SalesControls({
                             ? "bg-success/10 text-success border-success/20"
                             : "bg-destructive/10 text-destructive border-destructive/20"
                     )}>
-                        <span className="text-xs opacity-70">₹</span>
+                        <span className="text-xs opacity-70">{currency}</span>
                         <span>{Math.abs(parseFloat(grandTotal) - parseFloat(amountTendered || 0)).toFixed(2)}</span>
                     </div>
                 </div>

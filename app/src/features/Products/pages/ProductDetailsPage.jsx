@@ -11,6 +11,7 @@ import {
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { useCurrency } from "@/hooks/useCurrency"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +31,7 @@ export default function ProductDetailsPage() {
   const { data: product, isLoading, isError } = useGetProductQuery(productId)
   const [deleteProduct] = useDeleteProductMutation()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const currency = useCurrency()
 
   const handleDeleteClick = () => {
     setIsDeleteDialogOpen(true)
@@ -79,7 +81,7 @@ export default function ProductDetailsPage() {
 
   const formatPrice = (price) => {
     if (price === null || isNaN(price)) return "N/A"
-    return `$${Number.parseFloat(price).toFixed(2)}`
+    return `${currency}${Number.parseFloat(price).toFixed(2)}`
   }
 
   const getProductStatus = (status) => {

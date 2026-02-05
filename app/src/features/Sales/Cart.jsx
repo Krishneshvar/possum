@@ -21,6 +21,7 @@ import {
   TableCell,
   TableRow,
 } from "@/components/ui/table";
+import { useCurrency } from "@/hooks/useCurrency";
 
 export default function Cart({
   cart,
@@ -33,6 +34,7 @@ export default function Cart({
   updateQuantity,
   removeFromCart,
 }) {
+  const currency = useCurrency();
   return (
     <Card className="col-span-1 border-0">
       <CardHeader>
@@ -57,7 +59,7 @@ export default function Cart({
                     <TableCell>
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        ₹{item.price}
+                        {currency}{item.price}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -75,7 +77,7 @@ export default function Cart({
                       />
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      ₹{(item.price * item.quantity).toFixed(2)}
+                      {currency}{(item.price * item.quantity).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -87,7 +89,7 @@ export default function Cart({
         <div className="mt-auto space-y-4 pt-4">
           <div className="flex justify-between font-bold">
             <span>Total:</span>
-            <span>₹{cartTotal.toFixed(2)}</span>
+            <span>{currency}{cartTotal.toFixed(2)}</span>
           </div>
 
           <Select value={paymentMethod} onValueChange={setPaymentMethod}>

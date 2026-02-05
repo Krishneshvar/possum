@@ -10,15 +10,17 @@ export const cardData = [
     title: 'Sales',
     icon: Coins,
     color: 'text-success',
-    todayValue: '$1,250.00',
-    overallValue: '$2,250.00'
+    todayValue: '1250.00',
+    overallValue: '2250.00',
+    isCurrency: true
   },
   {
     title: 'Profit',
     icon: Wallet,
     color: 'text-primary',
-    todayValue: '$1,234.00',
-    overallValue: '$1,789.00'
+    todayValue: '1234.00',
+    overallValue: '1789.00',
+    isCurrency: true
   },
   {
     title: 'Items Sold',
@@ -31,7 +33,8 @@ export const cardData = [
     title: 'Highest Bill',
     icon: Crown,
     color: 'text-warning',
-    todayValue: '$123.00',
-    overallValue: '$1,234.00'
+    todayValue: '123.00',
+    overallValue: '1234.00',
+    isCurrency: true
   },
 ];

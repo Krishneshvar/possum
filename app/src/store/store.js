@@ -17,6 +17,7 @@ import authReducer from '@/features/Auth/authSlice';
 import productsReducer from '@/features/Products/productsSlice';
 import variantsReducer from '@/features/Variants/variantsSlice';
 import auditLogReducer from '@/features/AuditLog/auditLogSlice';
+import settingsReducer from '@/features/Settings/settingsSlice';
 
 export const store = configureStore({
     reducer: {
@@ -37,6 +38,7 @@ export const store = configureStore({
         products: productsReducer,
         variants: variantsReducer,
         auditLog: auditLogReducer,
+        settings: settingsReducer,
         [auditLogApi.reducerPath]: auditLogApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>

@@ -4,6 +4,7 @@ import { Search, Loader2, Plus, Package } from "lucide-react";
 import { useGetProductsQuery } from "@/services/productsApi";
 // Use local debounce hook as project one might not exist
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/hooks/useCurrency";
 
 // Simple local debounce hook if not present in project
 function useLocalDebounce(value, delay) {
@@ -16,6 +17,7 @@ function useLocalDebounce(value, delay) {
 }
 
 export default function ProductSelector({ onProductSelect }) {
+    const currency = useCurrency();
     const [searchTerm, setSearchTerm] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
@@ -98,7 +100,7 @@ export default function ProductSelector({ onProductSelect }) {
                                         </div>
                                     </div>
                                     <div className="font-bold text-foreground">
-                                        ₹{product.mrp}
+                                        {currency}{product.mrp}
                                     </div>
                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Plus className="h-4 w-4 text-primary" />
