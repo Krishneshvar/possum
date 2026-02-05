@@ -124,26 +124,44 @@ export default function SalesPage() {
         price: parseFloat(product.mrp),
         mrp: parseFloat(product.mrp),
         discount: 0,
-        sku: product.sku
+        sku: product.sku,
+        taxes: product.taxes || []
       };
       updateBill({ items: [...currentBill.items, newItem] });
     }
   };
 
   const calculateTotal = (bill) => {
-    const calculatedSubtotal = bill.items.reduce((acc, item) => {
+    let totalTax = 0;
+    let totalBaseAmount = 0;
+
+    bill.items.forEach((item) => {
       const price = parseFloat(item.price) || 0;
       const qty = parseInt(item.quantity) || 0;
       const disc = parseFloat(item.discount) || 0;
-      return acc + (price * qty) - disc;
-    }, 0);
+      const itemSubtotal = (price * qty) - disc;
+
+      const inclusiveTaxRate = (item.taxes || [])
+        .filter(t => t.type === 'inclusive')
+        .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
+
+      const exclusiveTaxRate = (item.taxes || [])
+        .filter(t => t.type === 'exclusive')
+        .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
+
+      const baseAmount = itemSubtotal / (1 + inclusiveTaxRate);
+      const itemTax = (itemSubtotal - baseAmount) + (baseAmount * exclusiveTaxRate);
+
+      totalTax += itemTax;
+      totalBaseAmount += baseAmount;
+    });
+
     const discountAmount = bill.discountType === 'percentage'
-      ? (calculatedSubtotal * (parseFloat(bill.overallDiscount) || 0) / 100)
+      ? (totalBaseAmount * (parseFloat(bill.overallDiscount) || 0) / 100)
       : (parseFloat(bill.overallDiscount) || 0);
 
-    const totalAfterDiscount = Math.max(0, calculatedSubtotal - discountAmount);
-    const calculatedTax = totalAfterDiscount * 0.18; // Mock 18% GST
-    return totalAfterDiscount + calculatedTax;
+    const totalAfterDiscount = Math.max(0, (totalBaseAmount + totalTax) - discountAmount);
+    return totalAfterDiscount;
   };
 
   const currentGrandTotal = calculateTotal(currentBill);

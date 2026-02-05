@@ -8,19 +8,35 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
     const currency = useCurrency();
     const displayDate = date ? new Date(date).toLocaleString() : new Date().toLocaleString();
 
-    const calculatedSubtotal = items.reduce((acc, item) => {
+    let totalTax = 0;
+    let totalBaseAmount = 0;
+
+    items.forEach((item) => {
         const price = parseFloat(item.price) || 0;
         const qty = parseInt(item.quantity) || 0;
         const disc = parseFloat(item.discount) || 0;
-        return acc + (price * qty) - disc;
-    }, 0);
+        const itemSubtotal = (price * qty) - disc;
+
+        const inclusiveTaxRate = (item.taxes || [])
+            .filter(t => t.type === 'inclusive')
+            .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
+
+        const exclusiveTaxRate = (item.taxes || [])
+            .filter(t => t.type === 'exclusive')
+            .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
+
+        const baseAmount = itemSubtotal / (1 + inclusiveTaxRate);
+        const itemTax = (itemSubtotal - baseAmount) + (baseAmount * exclusiveTaxRate);
+
+        totalTax += itemTax;
+        totalBaseAmount += baseAmount;
+    });
+
     const discountAmount = discountType === 'percentage'
-        ? (calculatedSubtotal * (parseFloat(overallDiscount) || 0) / 100)
+        ? (totalBaseAmount * (parseFloat(overallDiscount) || 0) / 100)
         : (parseFloat(overallDiscount) || 0);
 
-    const totalAfterDiscount = Math.max(0, calculatedSubtotal - discountAmount);
-    const calculatedTax = totalAfterDiscount * 0.18; // Mock 18% GST
-    const finalTotal = totalAfterDiscount + calculatedTax;
+    const finalTotal = Math.max(0, (totalBaseAmount + totalTax) - discountAmount);
 
     return (
         <div className="flex flex-col h-full border bg-muted/30 p-4 rounded-xl">
@@ -85,7 +101,7 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
                     <div className="border-t border-dashed border-border pt-4 space-y-2">
                         <div className="flex justify-between text-muted-foreground">
                             <span>Subtotal</span>
-                            <span>{currency}{calculatedSubtotal.toFixed(2)}</span>
+                            <span>{currency}{totalBaseAmount.toFixed(2)}</span>
                         </div>
                         {discountAmount > 0 && (
                             <div className="flex justify-between text-destructive">
@@ -94,8 +110,8 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
                             </div>
                         )}
                         <div className="flex justify-between text-muted-foreground">
-                            <span>Tax (18%)</span>
-                            <span>{currency}{calculatedTax.toFixed(2)}</span>
+                            <span>Tax</span>
+                            <span>{currency}{totalTax.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>

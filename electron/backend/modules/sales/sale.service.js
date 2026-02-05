@@ -44,9 +44,16 @@ export function createSale({
                 throw new Error(`Variant not found: ${item.variantId}`);
             }
 
-            // Get tax rate for the product
+            // Get taxes for the product
             const taxes = productRepository.findProductTaxes(variant.product_id);
-            const taxRate = taxes.reduce((sum, t) => sum + t.rate, 0);
+
+            const inclusiveTaxRate = taxes
+                .filter(t => t.type === 'inclusive')
+                .reduce((sum, t) => sum + t.rate, 0) / 100;
+
+            const exclusiveTaxRate = taxes
+                .filter(t => t.type === 'exclusive')
+                .reduce((sum, t) => sum + t.rate, 0) / 100;
 
             const pricePerUnit = item.pricePerUnit ?? variant.mrp;
             const costPerUnit = variant.cost_price;
@@ -54,18 +61,20 @@ export function createSale({
             const itemDiscount = item.discount ?? 0;
 
             const subtotal = pricePerUnit * quantity - itemDiscount;
-            const taxAmount = subtotal * taxRate;
 
-            totalAmount += subtotal + taxAmount;
-            totalTax += taxAmount;
+            const baseAmount = subtotal / (1 + inclusiveTaxRate);
+            const itemTaxAmount = (subtotal - baseAmount) + (baseAmount * exclusiveTaxRate);
+
+            totalAmount += baseAmount + itemTaxAmount;
+            totalTax += itemTaxAmount;
 
             processedItems.push({
                 variant_id: item.variantId,
                 quantity,
                 price_per_unit: pricePerUnit,
                 cost_per_unit: costPerUnit,
-                tax_rate: taxRate,
-                tax_amount: taxAmount,
+                tax_rate: (inclusiveTaxRate + exclusiveTaxRate) * 100, // Storing combined rate for simplicity
+                tax_amount: itemTaxAmount,
                 discount_amount: itemDiscount
             });
         }

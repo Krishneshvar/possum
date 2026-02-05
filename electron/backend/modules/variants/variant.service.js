@@ -81,6 +81,7 @@ export function getVariants(params) {
         ...result,
         variants: result.variants.map(variant => ({
             ...variant,
+            taxes: variant.taxes ? JSON.parse(variant.taxes) : [],
             imageUrl: buildImageUrl(variant.image_path)
         }))
     };
