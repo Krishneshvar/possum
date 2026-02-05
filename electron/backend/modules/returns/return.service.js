@@ -30,7 +30,14 @@ export function createReturn({ saleId, items, reason, userId }) {
             throw new Error('Cannot return items from a draft sale');
         }
 
-        // Validate items and calculate refund amounts
+        // Calculate the "Gross Bill Total" (sum of all lines after line-level discounts, but ignoring tax additions)
+        // This matches the user's request to return the "exact amount of the unit" as seen on the bill.
+        let billItemsSubtotal = 0;
+        sale.items.forEach(si => {
+            billItemsSubtotal += (si.price_per_unit * si.quantity - si.discount_amount);
+        });
+
+        // Calculate refund amounts
         let totalRefund = 0;
         const processedItems = [];
 
@@ -51,12 +58,20 @@ export function createReturn({ saleId, items, reason, userId }) {
                 );
             }
 
-            // Calculate refund for this item
-            const pricePerUnit = saleItem.price_per_unit;
-            const taxRate = saleItem.tax_rate;
-            const itemSubtotal = pricePerUnit * item.quantity;
-            const itemTax = itemSubtotal * taxRate;
-            const refundAmount = itemSubtotal + itemTax;
+            // Calculate refund for this item:
+            // 1. Line subtotal (what the items cost after line-level discount)
+            const lineSubtotal = (saleItem.price_per_unit * saleItem.quantity - saleItem.discount_amount);
+
+            // 2. Pro-rated global discount for this line
+            const lineGlobalDiscount = billItemsSubtotal > 1e-6
+                ? (lineSubtotal / billItemsSubtotal) * sale.discount
+                : 0;
+
+            // 3. Line Net Paid (ignoring the tax field as it was causing values to exceed bill totals)
+            const lineNetPaid = lineSubtotal - lineGlobalDiscount;
+
+            // 4. Refund for the returned quantity
+            const refundAmount = (lineNetPaid / saleItem.quantity) * item.quantity;
 
             totalRefund += refundAmount;
 

@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useGetSaleQuery } from '@/services/salesApi';
+import CreateReturnDialog from '../components/CreateReturnDialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Printer, Calendar, User, CreditCard, Receipt, Package, Download } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Calendar, User, CreditCard, Receipt, Package, Download, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +21,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 export default function SaleDetailsPage() {
     const { saleId } = useParams();
     const navigate = useNavigate();
+    const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
     const { data: sale, isLoading, error } = useGetSaleQuery(saleId);
     const currency = useCurrency();
 
@@ -94,6 +97,12 @@ export default function SaleDetailsPage() {
                         <Download className="mr-2 h-4 w-4" />
                         Download
                     </Button>
+                    {sale.status !== 'cancelled' && sale.status !== 'refunded' && (
+                        <Button variant="outline" size="sm" onClick={() => setIsReturnDialogOpen(true)}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Return Items
+                        </Button>
+                    )}
                     <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
                         <Printer className="mr-2 h-4 w-4" />
                         Print Invoice
@@ -121,24 +130,33 @@ export default function SaleDetailsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {sale.items.map((item) => (
-                                    <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
-                                        <TableCell className="pl-6">
-                                            <div className="flex items-center gap-3 py-1">
-                                                <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center border border-border shrink-0">
-                                                    <Package className="h-5 w-5 text-muted-foreground" />
+                                {sale.items.map((item) => {
+                                    const lineTotal = item.price_per_unit * item.quantity - item.discount_amount;
+
+                                    return (
+                                        <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
+                                            <TableCell className="pl-6">
+                                                <div className="flex items-center gap-3 py-1">
+                                                    <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center border border-border shrink-0">
+                                                        <Package className="h-5 w-5 text-muted-foreground" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="font-medium text-sm truncate">{item.variant_name}</div>
+                                                        <div className="text-[10px] text-muted-foreground uppercase">{item.sku}</div>
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <div className="font-medium text-sm truncate">{item.variant_name}</div>
-                                                    <div className="text-[10px] text-muted-foreground uppercase">{item.sku}</div>
+                                            </TableCell>
+                                            <TableCell className="text-center font-medium">{item.quantity}</TableCell>
+                                            <TableCell className="text-right text-muted-foreground">
+                                                <div className="flex flex-col items-end">
+                                                    <span>{currency}{item.price_per_unit.toFixed(2)}</span>
+                                                    {item.discount_amount > 0 && <span className="text-[9px] text-destructive">-{currency}{(item.discount_amount / item.quantity).toFixed(2)} unit disc</span>}
                                                 </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-center font-medium">{item.quantity}</TableCell>
-                                        <TableCell className="text-right text-muted-foreground">{currency}{item.price_per_unit.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right font-bold pr-6">{currency}{(item.quantity * item.price_per_unit).toFixed(2)}</TableCell>
-                                    </TableRow>
-                                ))}
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold pr-6">{currency}{lineTotal.toFixed(2)}</TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -240,6 +258,12 @@ export default function SaleDetailsPage() {
                     )}
                 </div>
             </div>
+
+            <CreateReturnDialog
+                open={isReturnDialogOpen}
+                onOpenChange={setIsReturnDialogOpen}
+                sale={sale}
+            />
         </div>
     );
 }

@@ -21,6 +21,7 @@ import {
   Truck,
   User,
   Users,
+  RotateCcw,
 } from "lucide-react"
 
 export const sidebarData = {
@@ -54,6 +55,11 @@ export const sidebarData = {
           title: "Transactions",
           url: "/sales/transactions",
           icon: ArrowLeftRight,
+        },
+        {
+          title: "Returns",
+          url: "/sales/returns",
+          icon: RotateCcw,
         },
         {
           title: "Taxes",

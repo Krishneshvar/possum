@@ -31,6 +31,7 @@ import VariantsPage from '@/features/Variants/pages/VariantsPage';
 import SalesHistoryPage from '@/features/Sales/pages/SalesHistoryPage';
 import SaleDetailsPage from '@/features/Sales/pages/SaleDetailsPage';
 import SalesPage from '@/features/Sales/pages/SalesPage';
+import ReturnsPage from '@/features/Sales/pages/ReturnsPage';
 import TaxesPage from '@/features/Sales/pages/TaxesPage';
 import SettingsPage from '@/features/Settings/pages/SettingsPage';
 import TransactionsPage from '@/features/Transactions/pages/TransactionsPage';
@@ -105,6 +106,7 @@ export default function DashboardPage() {
           <Route path="/sales/history" element={<SalesHistoryPage />} />
           <Route path="/sales/history/:saleId" element={<SaleDetailsPage />} />
           <Route path="/sales/transactions" element={<TransactionsPage />} />
+          <Route path="/sales/returns" element={<ReturnsPage />} />
           <Route path="/sales/taxes" element={<TaxesPage />} />
 
           <Route path="/reports" element={<ReportsPage />} />
