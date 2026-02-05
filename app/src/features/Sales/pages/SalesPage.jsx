@@ -4,6 +4,7 @@ import SalesTable from '../components/SalesTable';
 import SalesControls from '../components/SalesControls';
 import BillPreview from '../components/BillPreview';
 import { useCreateSaleMutation } from '@/services/salesApi';
+import { useGetTaxesQuery } from '@/services/taxesApi';
 import { toast } from "sonner";
 
 const INITIAL_TAB_STATE = {
@@ -15,6 +16,8 @@ const INITIAL_TAB_STATE = {
   discountType: 'fixed',
   paymentType: 'full',
   amountTendered: 0,
+  taxMode: 'item',
+  billTaxIds: [],
   // paymentMethod is string ID in component, ensure it's synced with actual IDs or handle 'cash' default mapping
 };
 
@@ -43,6 +46,7 @@ export default function SalesPage() {
 
   // API Mutation
   const [createSale, { isLoading }] = useCreateSaleMutation();
+  const { data: taxes } = useGetTaxesQuery();
 
   // --- Column Persistence Logic ---
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -135,17 +139,24 @@ export default function SalesPage() {
     let totalTax = 0;
     let totalBaseAmount = 0;
 
+    let billTaxRules = [];
+    if (bill.taxMode === 'bill' && bill.billTaxIds?.length > 0 && taxes) {
+      billTaxRules = taxes.filter(t => bill.billTaxIds.includes(parseInt(t.id)));
+    }
+
     bill.items.forEach((item) => {
       const price = parseFloat(item.price) || 0;
       const qty = parseInt(item.quantity) || 0;
       const disc = parseFloat(item.discount) || 0;
       const itemSubtotal = (price * qty) - disc;
 
-      const inclusiveTaxRate = (item.taxes || [])
+      const itemTaxes = bill.taxMode === 'bill' ? billTaxRules : (item.taxes || []);
+
+      const inclusiveTaxRate = itemTaxes
         .filter(t => t.type === 'inclusive')
         .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
 
-      const exclusiveTaxRate = (item.taxes || [])
+      const exclusiveTaxRate = itemTaxes
         .filter(t => t.type === 'exclusive')
         .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
 
@@ -212,6 +223,8 @@ export default function SalesPage() {
           paymentMethodId: currentBill.paymentMethod // Should be ID string/number
         }
       ],
+      taxMode: currentBill.taxMode,
+      billTaxIds: currentBill.billTaxIds,
       // temporary hardcoded userId, backend defaults to 1 if not provided, but good to be explicit if we had it
     };
 
@@ -282,6 +295,11 @@ export default function SalesPage() {
               setAmountTendered={(val) => updateBill({ amountTendered: val })}
               grandTotal={currentGrandTotal}
               onCompleteSale={handleCompleteSale}
+              taxMode={currentBill.taxMode}
+              setTaxMode={(val) => updateBill({ taxMode: val })}
+              billTaxIds={currentBill.billTaxIds}
+              setBillTaxIds={(val) => updateBill({ billTaxIds: val })}
+              taxes={taxes}
             />
           </div>
         </div>
@@ -297,6 +315,9 @@ export default function SalesPage() {
               discountType={currentBill.discountType}
               total={0} // Calculated inside component
               date={new Date()}
+              taxMode={currentBill.taxMode}
+              billTaxIds={currentBill.billTaxIds}
+              taxes={taxes}
             />
           </div>
         )}

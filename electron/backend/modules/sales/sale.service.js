@@ -6,6 +6,7 @@ import * as saleRepository from './sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
 import * as productRepository from '../products/product.repository.js';
+import * as taxRepository from '../taxes/tax.repository.js';
 import * as auditService from '../audit/audit.service.js';
 import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
@@ -21,7 +22,9 @@ export function createSale({
     customerId,
     userId,
     discount = 0,
-    payments = []
+    payments = [],
+    taxMode = 'item', // 'item' or 'bill'
+    billTaxIds = []
 }) {
     return transaction(() => {
         // Validate stock availability for all items
@@ -38,14 +41,22 @@ export function createSale({
         let totalTax = 0;
         const processedItems = [];
 
+        // Fetch bill-level tax rules if applicable
+        let billTaxRules = [];
+        if (taxMode === 'bill' && Array.isArray(billTaxIds) && billTaxIds.length > 0) {
+            billTaxRules = billTaxIds.map(id => taxRepository.findTaxById(id)).filter(Boolean);
+        }
+
         for (const item of items) {
             const variant = findVariantById(item.variantId);
             if (!variant) {
                 throw new Error(`Variant not found: ${item.variantId}`);
             }
 
-            // Get taxes for the product
-            const taxes = productRepository.findProductTaxes(variant.product_id);
+            // Get taxes: either bill-level override OR product-level
+            const taxes = (taxMode === 'bill')
+                ? billTaxRules
+                : productRepository.findProductTaxes(variant.product_id);
 
             const inclusiveTaxRate = taxes
                 .filter(t => t.type === 'inclusive')

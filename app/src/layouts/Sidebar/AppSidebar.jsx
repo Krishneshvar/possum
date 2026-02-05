@@ -13,7 +13,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-import { NavDocuments } from "@/layouts/Sidebar/components/NavDocuments"
+
 import { NavMain } from "@/layouts/Sidebar/components/NavMain"
 import { NavSecondary } from "@/layouts/Sidebar/components/NavSecondary"
 import { NavUser } from "@/layouts/Sidebar/components/NavUser"
@@ -50,7 +50,7 @@ export function AppSidebar({
 
         <Separator className="" />
 
-        <NavDocuments projects={sidebarData.documents} />
+
       </SidebarContent>
 
       <Separator className="" />

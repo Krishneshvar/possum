@@ -12,6 +12,7 @@ import {
   Layers,
   LayoutDashboard,
   Package,
+  Percent,
   Puzzle,
   Receipt,
   Settings,
@@ -53,6 +54,11 @@ export const sidebarData = {
           title: "Transactions",
           url: "/sales/transactions",
           icon: ArrowLeftRight,
+        },
+        {
+          title: "Taxes",
+          url: "/sales/taxes",
+          icon: Percent,
         },
       ]
     },
@@ -150,20 +156,6 @@ export const sidebarData = {
       title: "Settings",
       url: "/settings",
       icon: Settings,
-    },
-  ],
-  documents: [
-    {
-      name: "Doc 1",
-      url: "#",
-    },
-    {
-      name: "Doc 2",
-      url: "#",
-    },
-    {
-      name: "Doc 3",
-      url: "#",
     },
   ],
 }

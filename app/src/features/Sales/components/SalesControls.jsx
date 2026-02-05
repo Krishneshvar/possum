@@ -9,6 +9,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 // Tabs imports removed as we use custom buttons for bill switching
 import { CreditCard, Wallet, Banknote, User, Search, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -45,7 +47,12 @@ export default function SalesControls({
     amountTendered,
     setAmountTendered,
     grandTotal = 0,
-    onCompleteSale
+    onCompleteSale,
+    taxMode,
+    setTaxMode,
+    billTaxIds = [],
+    setBillTaxIds,
+    taxes
 }) {
     const currency = useCurrency();
     // --- Customer Search Logic ---
@@ -252,6 +259,93 @@ export default function SalesControls({
                 </div>
             </div>
 
+
+            {/* Tax Configuration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Tax Application
+                    </Label>
+                    <div className="flex border border-border rounded-lg overflow-hidden bg-background">
+                        <button
+                            onClick={() => setTaxMode('item')}
+                            className={cn(
+                                "flex-1 px-3 py-2 text-xs font-bold transition-colors",
+                                taxMode === 'item' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            Per Item
+                        </button>
+                        <button
+                            onClick={() => setTaxMode('bill')}
+                            className={cn(
+                                "flex-1 px-3 py-2 text-xs font-bold transition-colors",
+                                taxMode === 'bill' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            Whole Bill
+                        </button>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Bill Tax Rule
+                    </Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-between bg-background border-border font-normal text-left"
+                                disabled={taxMode === 'item'}
+                            >
+                                <span className="truncate">
+                                    {billTaxIds?.length > 0
+                                        ? `${billTaxIds.length} Tax${billTaxIds.length > 1 ? 'es' : ''} Selected`
+                                        : "Select Taxes"}
+                                </span>
+                                <Plus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2" align="start">
+                            <div className="space-y-1">
+                                {taxes?.length === 0 && (
+                                    <p className="text-xs text-muted-foreground p-2 text-center">No taxes available</p>
+                                )}
+                                {(taxes || []).map((tax) => (
+                                    <div
+                                        key={tax.id}
+                                        className="flex items-center space-x-2 hover:bg-muted p-1.5 rounded-md transition-colors cursor-pointer"
+                                        onClick={() => {
+                                            const isChecked = billTaxIds.includes(tax.id);
+                                            if (!isChecked) {
+                                                setBillTaxIds([...billTaxIds, tax.id]);
+                                            } else {
+                                                setBillTaxIds(billTaxIds.filter(id => id !== tax.id));
+                                            }
+                                        }}
+                                    >
+                                        <Checkbox
+                                            id={`tax-${tax.id}`}
+                                            checked={billTaxIds.includes(tax.id)}
+                                            onCheckedChange={(checked) => {
+                                                // Already handled by parent div onClick, but keep for accessibility
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor={`tax-${tax.id}`}
+                                            className="text-xs font-medium cursor-pointer flex-1"
+                                        >
+                                            {tax.name} ({tax.rate}%)
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                 {/* Overall Discount */}
                 <div className="space-y-2">
@@ -374,6 +468,6 @@ export default function SalesControls({
                     })}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

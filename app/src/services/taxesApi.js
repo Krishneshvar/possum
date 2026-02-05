@@ -21,10 +21,33 @@ export const taxesApi = createApi({
             }),
             invalidatesTags: [{ type: 'Tax', id: 'LIST' }],
         }),
+        updateTax: builder.mutation({
+            query: ({ id, ...body }) => ({
+                url: `/taxes/${id}`,
+                method: 'PUT',
+                body,
+            }),
+            invalidatesTags: (result, error, { id }) => [
+                { type: 'Tax', id },
+                { type: 'Tax', id: 'LIST' },
+            ],
+        }),
+        deleteTax: builder.mutation({
+            query: (id) => ({
+                url: `/taxes/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: (result, error, id) => [
+                { type: 'Tax', id },
+                { type: 'Tax', id: 'LIST' },
+            ],
+        }),
     }),
 });
 
 export const {
     useGetTaxesQuery,
     useAddTaxMutation,
+    useUpdateTaxMutation,
+    useDeleteTaxMutation,
 } = taxesApi;

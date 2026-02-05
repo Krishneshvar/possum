@@ -33,3 +33,42 @@ export async function createTaxController(req, res) {
         res.status(500).json({ error: 'Failed to create tax.', details: err.message });
     }
 }
+
+/**
+ * PUT /api/taxes/:id
+ * Update a tax
+ */
+export async function updateTaxController(req, res) {
+    const { id } = req.params;
+    const { name, rate, type, is_active } = req.body;
+
+    try {
+        const result = taxRepository.updateTax(id, { name, rate, type, is_active });
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Tax not found or no changes made.' });
+        }
+        res.json({ message: 'Tax updated successfully.' });
+    } catch (err) {
+        console.error('Error updating tax:', err);
+        res.status(500).json({ error: 'Failed to update tax.', details: err.message });
+    }
+}
+
+/**
+ * DELETE /api/taxes/:id
+ * Soft delete a tax
+ */
+export async function deleteTaxController(req, res) {
+    const { id } = req.params;
+
+    try {
+        const result = taxRepository.softDeleteTax(id);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Tax not found.' });
+        }
+        res.status(204).end();
+    } catch (err) {
+        console.error('Error deleting tax:', err);
+        res.status(500).json({ error: 'Failed to delete tax.', details: err.message });
+    }
+}

@@ -10,7 +10,7 @@ import * as saleService from './sale.service.js';
  */
 export async function createSaleController(req, res) {
     try {
-        const { items, customerId, discount, payments } = req.body;
+        const { items, customerId, discount, payments, taxMode, billTaxIds } = req.body;
 
         if (!items || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ error: 'At least one item is required.' });
@@ -31,6 +31,8 @@ export async function createSaleController(req, res) {
             customerId: customerId ? parseInt(customerId, 10) : null,
             userId,
             discount: parseFloat(discount) || 0,
+            taxMode,
+            billTaxIds: Array.isArray(billTaxIds) ? billTaxIds.map(id => parseInt(id, 10)) : [],
             payments: (payments || []).map(p => ({
                 ...p,
                 paymentMethodId: parseInt(p.paymentMethodId, 10)
