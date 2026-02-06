@@ -17,6 +17,10 @@ import DataTable from "@/components/common/DataTable"
 export default function ProductsTable() {
   const dispatch = useDispatch()
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state) => state.products)
+  const [sort, setSort] = useState({
+    sortBy: 'name',
+    sortOrder: 'ASC',
+  });
 
   const { data, isLoading, isFetching, error, refetch } = useGetProductsQuery({
     page: currentPage,
@@ -25,6 +29,8 @@ export default function ProductsTable() {
     stockStatus: filters.stockStatus,
     status: filters.status,
     categories: filters.categories,
+    sortBy: sort.sortBy,
+    sortOrder: sort.sortOrder,
   });
 
   const products = data?.products || []
@@ -47,6 +53,10 @@ export default function ProductsTable() {
   const handlePageChange = (page) => {
     dispatch(setCurrentPage(page))
   }
+
+  const handleSort = (field, order) => {
+    setSort({ sortBy: field, sortOrder: order });
+  };
 
   const handleDeleteClick = (product) => {
     setSelectedProduct(product)
@@ -124,11 +134,28 @@ export default function ProductsTable() {
     ];
   }, [categories]);
 
+  // Update columns to include sortable properties
+  const columnsWithSort = allColumns.map(col => {
+    if (col.key === 'product') {
+      return { ...col, sortable: true, sortField: 'name' };
+    }
+    if (col.key === 'category') {
+      return { ...col, sortable: true, sortField: 'category_name' };
+    }
+    if (col.key === 'status') {
+      return { ...col, sortable: true, sortField: 'status' };
+    }
+    if (col.key === 'stock') {
+      return { ...col, sortable: true, sortField: 'stock' };
+    }
+    return col;
+  });
+
   return (
     <>
       <DataTable
         data={products}
-        columns={allColumns}
+        columns={columnsWithSort}
         isLoading={isDataLoading}
         error={error}
         onRetry={refetch}
@@ -136,6 +163,10 @@ export default function ProductsTable() {
         searchTerm={searchTerm}
         onSearchChange={(value) => dispatch(setSearchTerm(value))}
         searchPlaceholder="Search products by name or SKU..."
+
+        sortBy={sort.sortBy}
+        sortOrder={sort.sortOrder}
+        onSort={handleSort}
 
         currentPage={currentPage}
         totalPages={totalPages}

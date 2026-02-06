@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableHeader, TableRow, TableCell } from "@/components/ui/table";
@@ -59,9 +59,9 @@ export default function DataTable({
 
     return (
         <Card className="border-border/50 shadow-sm w-full overflow-hidden">
-            <CardContent className="space-y-4 sm:space-y-6">
-                <div className="flex flex-col gap-3">
-                    {/* Top Controls: Search & Column Vis (if no filters) or mixed */}
+            <CardContent className="pb-0">
+                {/* Search Bar - Top Left Corner */}
+                <div className="p-4 sm:p-6 pb-0">
                     <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
                         {onSearchChange && (
                             <div className="relative w-full sm:max-w-md">
@@ -90,82 +90,86 @@ export default function DataTable({
                             />
                         </div>
                     </div>
-
-                    {/* Filters Area */}
-                    {filtersConfig && (
-                        <div className="w-full">
-                            <GenericFilter
-                                filtersConfig={filtersConfig}
-                                activeFilters={activeFilters}
-                                onFilterChange={onFilterChange}
-                                onClearAll={onClearAllFilters}
-                            />
-                        </div>
-                    )}
                 </div>
 
-                {/* Table Area */}
-                <div className="w-full border rounded-md border-border overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <GenericTableHeader
-                                columns={columns}
-                                visibleColumns={visibleColumns}
-                                onSort={onSort}
-                                sortBy={sortBy}
-                                sortOrder={sortOrder}
-                            />
+                {/* Filters - Below Search Bar */}
+                {filtersConfig && (
+                    <div className="px-4 sm:px-6 pt-3">
+                        <GenericFilter
+                            filtersConfig={filtersConfig}
+                            activeFilters={activeFilters}
+                            onFilterChange={onFilterChange}
+                            onClearAll={onClearAllFilters}
+                        />
+                    </div>
+                )}
 
-                            {isLoading ? (
-                                <TableBody>
-                                    <TableRow className="hover:bg-muted/50">
-                                        <TableCell colSpan={getVisibleColumnCount()} className="h-32 sm:h-40 text-center">
-                                            <div className="flex flex-col items-center justify-center space-y-3 py-4">
-                                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                                                <p className="text-sm text-muted-foreground">Loading data...</p>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            ) : error ? (
-                                <TableBody>
-                                    <TableRow className="hover:bg-muted/50">
-                                        <TableCell colSpan={getVisibleColumnCount()} className="h-32 sm:h-40 text-center">
-                                            <div className="flex flex-col items-center justify-center space-y-3 py-4 px-4">
-                                                <AlertCircle className="h-5 w-5 text-destructive" />
-                                                <p className="text-sm text-destructive text-center">Failed to load data.</p>
-                                                {onRetry && (
-                                                    <Button variant="outline" size="sm" onClick={onRetry} className="w-full sm:w-auto">
-                                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                                        Retry
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            ) : (
-                                <GenericTableBody
-                                    data={data}
-                                    allColumns={columns}
+                {/* Table Area - Below Filters */}
+                <div className="p-4 sm:p-6 pt-4">
+                    <div className="w-full border rounded-md border-border overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <GenericTableHeader
+                                    columns={columns}
                                     visibleColumns={visibleColumns}
-                                    emptyState={emptyState}
-                                    renderActions={renderActions}
-                                    avatarIcon={avatarIcon}
+                                    onSort={onSort}
+                                    sortBy={sortBy}
+                                    sortOrder={sortOrder}
                                 />
-                            )}
-                        </Table>
+
+                                {isLoading ? (
+                                    <TableBody>
+                                        <TableRow className="hover:bg-muted/50">
+                                            <TableCell colSpan={getVisibleColumnCount()} className="h-32 sm:h-40 text-center">
+                                                <div className="flex flex-col items-center justify-center space-y-3 py-4">
+                                                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                                    <p className="text-sm text-muted-foreground">Loading data...</p>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                ) : error ? (
+                                    <TableBody>
+                                        <TableRow className="hover:bg-muted/50">
+                                            <TableCell colSpan={getVisibleColumnCount()} className="h-32 sm:h-40 text-center">
+                                                <div className="flex flex-col items-center justify-center space-y-3 py-4 px-4">
+                                                    <AlertCircle className="h-5 w-5 text-destructive" />
+                                                    <p className="text-sm text-destructive text-center">Failed to load data.</p>
+                                                    {onRetry && (
+                                                        <Button variant="outline" size="sm" onClick={onRetry} className="w-full sm:w-auto">
+                                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                                            Retry
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                ) : (
+                                    <GenericTableBody
+                                        data={data}
+                                        allColumns={columns}
+                                        visibleColumns={visibleColumns}
+                                        emptyState={emptyState}
+                                        renderActions={renderActions}
+                                        avatarIcon={avatarIcon}
+                                    />
+                                )}
+                            </Table>
+                        </div>
                     </div>
                 </div>
 
-                {/* Pagination */}
+                {/* Pagination - Below Table */}
                 {onPageChange && totalPages > 1 && (
-                    <div className="flex justify-center pt-2">
-                        <GenericPagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={onPageChange}
-                        />
+                    <div className="px-4 sm:px-6 pb-6 sm:pb-6 pt-0">
+                        <div className="flex justify-center pt-2">
+                            <GenericPagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={onPageChange}
+                            />
+                        </div>
                     </div>
                 )}
             </CardContent>

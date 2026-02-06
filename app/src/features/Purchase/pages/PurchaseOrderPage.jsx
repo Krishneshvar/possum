@@ -1,22 +1,6 @@
-import React, { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,25 +17,29 @@ import {
   useCancelPurchaseOrderMutation
 } from '@/services/purchaseApi';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, CheckCircle, XCircle, Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Eye, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCurrency } from '@/hooks/useCurrency';
+import CurrencyText from '@/components/common/CurrencyText';
+import DataTable from '@/components/common/DataTable';
+import ActionsDropdown from '@/components/common/ActionsDropdown';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate();
-  const currency = useCurrency();
   const [searchTerm, setSearchTerm] = useState('');
-  const [status, setStatus] = useState('all');
+  const [activeFilters, setActiveFilters] = useState({
+    status: [],
+  });
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('order_date');
   const [sortOrder, setSortOrder] = useState('DESC');
 
-  const { data, isLoading } = useGetPurchaseOrdersQuery({
+  const { data, isLoading, refetch } = useGetPurchaseOrdersQuery({
     page,
     limit,
     searchTerm,
-    status: status === 'all' ? undefined : status,
+    status: activeFilters.status.length > 0 ? activeFilters.status[0] : undefined,
     sortBy,
     sortOrder
   });
@@ -86,183 +74,192 @@ export default function PurchaseOrdersPage() {
     }
   };
 
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
-    } else {
-      setSortBy(column);
-      setSortOrder('ASC');
-    }
+  const handleSort = (field, order) => {
+    setSortBy(field);
+    setSortOrder(order);
+  };
+
+  const filtersConfig = [
+    {
+      key: "status",
+      label: "Status",
+      placeholder: "Filter by Status",
+      options: [
+        { label: "Pending", value: "pending" },
+        { label: "Received", value: "received" },
+        { label: "Cancelled", value: "cancelled" },
+      ],
+    },
+  ];
+
+  const handleFilterChange = (key, value) => {
+    setActiveFilters((prev) => ({ ...prev, [key]: value }));
     setPage(1);
   };
 
-  const getSortIcon = (column) => {
-    if (sortBy !== column) return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
-    return sortOrder === 'ASC' ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />;
+  const handleClearFilters = () => {
+    setActiveFilters({ status: [] });
+    setSearchTerm('');
+    setPage(1);
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'received': return 'default';
+      case 'cancelled': return 'destructive';
+      default: return 'secondary';
+    }
+  };
+
+  const columns = [
+    {
+      key: 'id',
+      label: 'PO Number',
+      sortable: true,
+      sortField: 'id',
+      renderCell: (po) => <span className="font-medium">#{po.id}</span>
+    },
+    {
+      key: 'order_date',
+      label: 'Order Date',
+      sortable: true,
+      sortField: 'order_date',
+      renderCell: (po) => <span className="text-muted-foreground whitespace-nowrap">{formatDate(po.order_date)}</span>
+    },
+    {
+      key: 'supplier_name',
+      label: 'Supplier',
+      sortable: false,
+      renderCell: (po) => <span className="font-medium">{po.supplier_name}</span>
+    },
+    {
+      key: 'total_cost',
+      label: 'Total Amount',
+      sortable: true,
+      sortField: 'total_cost',
+      className: 'text-right',
+      renderCell: (po) => (
+        <div className="text-right font-bold text-primary">
+          <CurrencyText value={po.total_cost} />
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      sortField: 'status',
+      className: 'text-center',
+      renderCell: (po) => (
+        <div className="flex justify-center">
+          <Badge variant={getStatusVariant(po.status)} className="capitalize">
+            {po.status}
+          </Badge>
+        </div>
+      )
+    },
+  ];
+
+  const renderActions = (po) => (
+    <ActionsDropdown>
+      <DropdownMenuItem onClick={() => navigate(`/purchase/orders/${po.id}`)} className="cursor-pointer">
+        <Eye className="mr-2 h-4 w-4" />
+        <span>View Details</span>
+      </DropdownMenuItem>
+      {po.status === 'pending' && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => handleReceive(po.id)} className="cursor-pointer text-green-600 focus:text-green-600">
+            <CheckCircle className="mr-2 h-4 w-4" />
+            <span>Mark as Received</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setPoToCancel(po)}
+            className="cursor-pointer text-destructive focus:text-destructive"
+          >
+            <XCircle className="mr-2 h-4 w-4" />
+            <span>Cancel Order</span>
+          </DropdownMenuItem>
+        </>
+      )}
+    </ActionsDropdown>
+  );
+
+  const emptyState = (
+    <div className="text-center p-8 text-muted-foreground">
+      No purchase orders found. Create your first purchase order to get started.
+    </div>
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="h-[calc(100vh-6.5rem)] flex flex-col gap-4 p-2 overflow-hidden">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Purchase Orders</h1>
-          <p className="text-muted-foreground">Manage orders to suppliers.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Purchase Orders</h1>
+          <p className="text-sm text-muted-foreground">Manage and track your purchase orders.</p>
         </div>
-        <Button onClick={() => navigate('/purchase/orders/create')}>
-          <Plus className="mr-2 h-4 w-4" /> Create Order
-        </Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="flex flex-1 items-center gap-4 w-full md:max-w-sm">
-          <div className="relative w-full">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by ID or supplier..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-              className="pl-8"
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <Select value={status} onValueChange={(val) => { setStatus(val); setPage(1); }}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="received">Received</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-          {(searchTerm || status !== 'all') && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setStatus('all'); setPage(1); }}>
-              Clear Filters
-            </Button>
-          )}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">{totalCount} Orders</span>
+          <Button onClick={() => navigate('/purchase/orders/new')}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Purchase Order
+          </Button>
         </div>
       </div>
 
-      <div className="rounded-md border bg-card overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('id')}>
-                <div className="flex items-center">Order # {getSortIcon('id')}</div>
-              </TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('supplier_name')}>
-                <div className="flex items-center">Supplier {getSortIcon('supplier_name')}</div>
-              </TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('order_date')}>
-                <div className="flex items-center">Date {getSortIcon('order_date')}</div>
-              </TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/70" onClick={() => handleSort('status')}>
-                <div className="flex items-center">Status {getSortIcon('status')}</div>
-              </TableHead>
-              <TableHead className="text-right cursor-pointer hover:bg-muted/70" onClick={() => handleSort('item_count')}>
-                <div className="flex items-center justify-end">Items {getSortIcon('item_count')}</div>
-              </TableHead>
-              <TableHead className="text-right cursor-pointer hover:bg-muted/70" onClick={() => handleSort('total_cost')}>
-                <div className="flex items-center justify-end">Total Cost {getSortIcon('total_cost')}</div>
-              </TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center h-24">Loading orders...</TableCell>
-              </TableRow>
-            ) : purchaseOrders.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No purchase orders found.</TableCell>
-              </TableRow>
-            ) : (
-              purchaseOrders.map((po) => (
-                <TableRow key={po.id}>
-                  <TableCell className="font-mono">PO-{po.id}</TableCell>
-                  <TableCell className="font-medium">{po.supplier_name}</TableCell>
-                  <TableCell>{po.order_date ? new Date(po.order_date).toLocaleDateString() : '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      po.status === 'received' ? 'default' :
-                        po.status === 'cancelled' ? 'destructive' : 'secondary'
-                    }>
-                      {po.status.toUpperCase()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{po.item_count}</TableCell>
-                  <TableCell className="text-right">{currency}{po.total_cost?.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {po.status === 'pending' && (
-                        <>
-                          <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700" onClick={() => handleReceive(po.id)}>
-                            <CheckCircle className="mr-2 h-4 w-4" /> Receive
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => setPoToCancel(po)}>
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/purchase/orders/${po.id}`)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <DataTable
+        data={purchaseOrders}
+        columns={columns}
+        isLoading={isLoading}
+        onRetry={refetch}
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
-          <div className="text-sm text-muted-foreground">
-            Showing <span className="font-medium">{totalCount === 0 ? 0 : (page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(page * limit, totalCount)}</span> of <span className="font-medium">{totalCount}</span> results
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center justify-center min-w-[32px] text-sm font-medium">
-              {page} / {totalPages || 1}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages || totalPages === 0}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+        searchTerm={searchTerm}
+        onSearchChange={(value) => {
+          setSearchTerm(value);
+          setPage(1);
+        }}
+        searchPlaceholder="Search purchase orders..."
 
-      {/* Cancellation Confirmation Modal */}
-      <AlertDialog open={!!poToCancel} onOpenChange={(open) => !open && setPoToCancel(null)}>
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+
+        filtersConfig={filtersConfig}
+        activeFilters={activeFilters}
+        onFilterChange={handleFilterChange}
+        onClearAllFilters={handleClearFilters}
+
+        emptyState={emptyState}
+        renderActions={renderActions}
+        avatarIcon={<ShoppingCart className="h-4 w-4 text-primary" />}
+      />
+
+      <AlertDialog open={!!poToCancel} onOpenChange={() => setPoToCancel(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Cancel Purchase Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will cancel Purchase Order <span className="font-mono font-bold">PO-{poToCancel?.id}</span>.
-              This action cannot be undone.
+              Are you sure you want to cancel PO #{poToCancel?.order_number}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancel} className="bg-red-600 hover:bg-red-700">
-              Confirm Cancellation
+            <AlertDialogCancel>No, Keep It</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancel} className="bg-destructive hover:bg-destructive/90">
+              Yes, Cancel Order
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

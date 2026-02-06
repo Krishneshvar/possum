@@ -1,35 +1,32 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGetTransactionsQuery } from "@/services/transactionsApi";
-import TransactionsTable from "../components/TransactionsTable";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
-import GenericFilter from "@/components/common/GenericFilter";
-import GenericPagination from "@/components/common/GenericPagination";
+import { ArrowUpRight, ArrowDownLeft, DollarSign } from "lucide-react";
+import DataTable from "@/components/common/DataTable";
+import CurrencyText from "@/components/common/CurrencyText";
 
 export default function TransactionsPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [activeFilters, setActiveFilters] = useState({
     status: [],
     type: [],
   });
-  const [dateRange, setDateRange] = useState({
-    startDate: "",
-    endDate: "",
-  });
+  const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState({
     sortBy: "transaction_date",
     sortOrder: "DESC",
   });
 
-  const { data, isLoading } = useGetTransactionsQuery({
+  const { data, isLoading, refetch } = useGetTransactionsQuery({
     page,
     limit,
     status: activeFilters.status.length > 0 ? activeFilters.status : undefined,
     type: activeFilters.type.length > 0 ? activeFilters.type : undefined,
-    startDate: dateRange.startDate || undefined,
-    endDate: dateRange.endDate || undefined,
+    searchTerm: searchTerm || undefined,
     sortBy: sort.sortBy,
     sortOrder: sort.sortOrder,
   });
@@ -67,7 +64,7 @@ export default function TransactionsPage() {
 
   const handleClearFilters = () => {
     setActiveFilters({ status: [], type: [] });
-    setDateRange({ startDate: "", endDate: "" });
+    setSearchTerm("");
     setPage(1);
   };
 
@@ -75,8 +72,122 @@ export default function TransactionsPage() {
     setSort({ sortBy: field, sortOrder: order });
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'completed': return 'default';
+      case 'pending': return 'warning';
+      case 'failed': return 'destructive';
+      case 'cancelled': return 'secondary';
+      default: return 'secondary';
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    if (type === 'payment') return <ArrowDownLeft className="h-4 w-4 text-green-500 mr-1" />;
+    if (type === 'refund') return <ArrowUpRight className="h-4 w-4 text-red-500 mr-1" />;
+    return null;
+  };
+
+  const columns = [
+    {
+      key: 'transaction_date',
+      label: 'Date',
+      sortable: true,
+      sortField: 'transaction_date',
+      renderCell: (t) => <span className="text-muted-foreground whitespace-nowrap">{formatDate(t.transaction_date)}</span>
+    },
+    {
+      key: 'id',
+      label: 'ID',
+      sortable: true,
+      sortField: 'id',
+      renderCell: (t) => <span className="font-mono text-xs">#{t.id}</span>
+    },
+    {
+      key: 'invoice_number',
+      label: 'Invoice',
+      sortable: false,
+      renderCell: (t) => (
+        <Button
+          variant="link"
+          className="p-0 h-auto font-medium"
+          onClick={() => navigate(`/sales/history/${t.sale_id}`)}
+        >
+          {t.invoice_number}
+        </Button>
+      )
+    },
+    {
+      key: 'customer_name',
+      label: 'Customer',
+      sortable: false,
+      renderCell: (t) => t.customer_name || '-'
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      sortable: true,
+      sortField: 'type',
+      renderCell: (t) => (
+        <div className="flex items-center capitalize">
+          {getTypeIcon(t.type)}
+          {t.type}
+        </div>
+      )
+    },
+    {
+      key: 'payment_method_name',
+      label: 'Method',
+      sortable: false,
+      renderCell: (t) => t.payment_method_name
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      sortField: 'amount',
+      className: 'text-right',
+      renderCell: (t) => (
+        <div className={`text-right font-bold ${t.type === 'refund' ? 'text-red-500' : 'text-green-600'}`}>
+          {t.type === 'refund' ? '-' : '+'}<CurrencyText value={t.amount} />
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      sortField: 'status',
+      className: 'text-center',
+      renderCell: (t) => (
+        <div className="flex justify-center">
+          <Badge variant={getStatusVariant(t.status)} className="capitalize px-2 py-0.5 text-[10px] font-bold">
+            {t.status}
+          </Badge>
+        </div>
+      )
+    },
+  ];
+
+  const emptyState = (
+    <div className="text-center p-8 text-muted-foreground">
+      No transactions found matching your criteria.
+    </div>
+  );
+
   return (
-    <div className="h-[calc(100vh-7rem)] flex flex-col gap-4 p-4 overflow-hidden">
+    <div className="h-[calc(100vh-6.5rem)] flex flex-col gap-4 p-2 overflow-hidden">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
         <div className="flex items-center gap-2">
@@ -84,80 +195,35 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-        <div className="md:col-span-5 lg:col-span-4 flex items-center gap-2">
-          <div className="flex-1">
-            <Input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) => {
-                setDateRange((prev) => ({ ...prev, startDate: e.target.value }));
-                setPage(1);
-              }}
-              className="h-9"
-            />
-          </div>
-          <span className="text-muted-foreground">to</span>
-          <div className="flex-1">
-            <Input
-              type="date"
-              value={dateRange.endDate}
-              onChange={(e) => {
-                setDateRange((prev) => ({ ...prev, endDate: e.target.value }));
-                setPage(1);
-              }}
-              className="h-9"
-            />
-          </div>
-          {(dateRange.startDate || dateRange.endDate) && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                setDateRange({ startDate: "", endDate: "" });
-                setPage(1);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+      <DataTable
+        data={transactions}
+        columns={columns}
+        isLoading={isLoading}
+        onRetry={refetch}
 
-        <div className="md:col-span-7 lg:col-span-8 flex justify-end items-center gap-4">
-          <GenericFilter
-            filtersConfig={filtersConfig}
-            activeFilters={activeFilters}
-            onFilterChange={handleFilterChange}
-            onClearAll={handleClearFilters}
-          />
-        </div>
-      </div>
+        searchTerm={searchTerm}
+        onSearchChange={(value) => {
+          setSearchTerm(value);
+          setPage(1);
+        }}
+        searchPlaceholder="Search transactions..."
 
-      <div className="flex-1 rounded-lg border bg-card shadow-sm overflow-hidden flex flex-col">
-        {isLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="flex-1 overflow-auto p-0">
-            <TransactionsTable
-              transactions={transactions}
-              sortBy={sort.sortBy}
-              sortOrder={sort.sortOrder}
-              onSort={handleSort}
-            />
-          </div>
-        )}
-      </div>
+        sortBy={sort.sortBy}
+        sortOrder={sort.sortOrder}
+        onSort={handleSort}
 
-      <div className="flex items-center justify-between bg-muted/20 p-2 rounded-lg border">
-        <GenericPagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
-      </div>
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+
+        filtersConfig={filtersConfig}
+        activeFilters={activeFilters}
+        onFilterChange={handleFilterChange}
+        onClearAllFilters={handleClearFilters}
+
+        emptyState={emptyState}
+        avatarIcon={<DollarSign className="h-4 w-4 text-primary" />}
+      />
     </div>
   );
 }

@@ -1,17 +1,8 @@
-
 import { useState } from 'react';
 import { useGetTaxesQuery, useAddTaxMutation, useUpdateTaxMutation, useDeleteTaxMutation } from '@/services/taxesApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import {
     Dialog,
     DialogContent,
@@ -29,12 +20,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, Plus, Pencil, Trash2, Percent } from 'lucide-react';
 import { toast } from 'sonner';
+import DataTable from '@/components/common/DataTable';
 
 export default function TaxesPage() {
-    const { data: taxes, isLoading } = useGetTaxesQuery();
+    const { data: taxes = [], isLoading, refetch } = useGetTaxesQuery();
     const [addTax, { isLoading: isAdding }] = useAddTaxMutation();
     const [updateTax, { isLoading: isUpdating }] = useUpdateTaxMutation();
     const [deleteTax, { isLoading: isDeleting }] = useDeleteTaxMutation();
@@ -42,6 +33,10 @@ export default function TaxesPage() {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [sort, setSort] = useState({
+        sortBy: 'name',
+        sortOrder: 'ASC',
+    });
 
     const [selectedTax, setSelectedTax] = useState(null);
     const [formData, setFormData] = useState({
@@ -117,30 +112,108 @@ export default function TaxesPage() {
         setIsDeleteOpen(true);
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    const handleSort = (field, order) => {
+        setSort({ sortBy: field, sortOrder: order });
+    };
+
+    // Sort taxes locally
+    const sortedTaxes = [...taxes].sort((a, b) => {
+        const { sortBy, sortOrder } = sort;
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+
+        if (typeof aVal === 'string') {
+            aVal = aVal.toLowerCase();
+            bVal = bVal.toLowerCase();
+        }
+
+        if (sortOrder === 'ASC') {
+            return aVal > bVal ? 1 : -1;
+        } else {
+            return aVal < bVal ? 1 : -1;
+        }
+    });
+
+    const columns = [
+        {
+            key: 'name',
+            label: 'Tax Name',
+            sortable: true,
+            sortField: 'name',
+            renderCell: (tax) => <span className="font-medium">{tax.name}</span>
+        },
+        {
+            key: 'rate',
+            label: 'Rate',
+            sortable: true,
+            sortField: 'rate',
+            renderCell: (tax) => (
+                <div className="flex items-center gap-1.5 font-semibold text-primary">
+                    <Percent className="h-4 w-4" />
+                    {tax.rate}%
+                </div>
+            )
+        },
+        {
+            key: 'type',
+            label: 'Type',
+            sortable: true,
+            sortField: 'type',
+            className: 'text-center',
+            renderCell: (tax) => (
+                <div className="flex justify-center">
+                    <Badge
+                        variant={tax.type === 'inclusive' ? 'secondary' : 'outline'}
+                        className={`px-2 py-0.5 text-[10px] font-bold capitalize ${tax.type === 'inclusive' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : ''}`}
+                    >
+                        {tax.type}
+                    </Badge>
+                </div>
+            )
+        },
+    ];
+
+    const renderActions = (tax) => (
+        <div className="flex justify-end gap-1">
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => openEdit(tax)}
+                title="Edit Tax"
+            >
+                <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => openDelete(tax)}
+                title="Delete Tax"
+            >
+                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
+            </Button>
+        </div>
+    );
+
+    const emptyState = (
+        <div className="text-center p-8 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center space-y-3">
+                <Percent className="h-12 w-12 opacity-50" />
+                <p className="text-lg font-medium">No taxes found</p>
+                <p className="text-sm">Click the "Add New Tax" button to get started.</p>
             </div>
-        );
-    }
+        </div>
+    );
 
     return (
-        <div className="h-full flex flex-col p-8 space-y-8 animate-in fade-in duration-500">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Percent className="h-8 w-8 text-primary" />
-                        </div>
-                        Taxes
-                    </h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Manage tax rates and types for your products and services.</p>
-                </div>
+        <div className="h-[calc(100vh-7rem)] flex flex-col gap-4 p-4 overflow-hidden">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+                <h1 className="text-2xl font-bold tracking-tight">Taxes</h1>
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogTrigger asChild>
-                        <Button size="lg" className="shadow-lg shadow-primary/20" onClick={resetForm}>
-                            <Plus className="mr-2 h-5 w-5" />
+                        <Button onClick={resetForm}>
+                            <Plus className="mr-2 h-4 w-4" />
                             Add New Tax
                         </Button>
                     </DialogTrigger>
@@ -205,79 +278,20 @@ export default function TaxesPage() {
                 </Dialog>
             </div>
 
-            <Card className="shadow-sm border-muted-foreground/10 overflow-hidden flex-1">
-                <CardHeader className="pb-0 pt-6 px-6">
-                    <CardTitle className="text-xl">Active Tax Configurations</CardTitle>
-                    <CardDescription>A list of all currently active tax rules available in the system.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0 pt-6">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="hover:bg-transparent bg-muted/30">
-                                <TableHead className="w-[40%] pl-8 py-4 text-xs uppercase font-bold tracking-widest text-muted-foreground">Tax Name</TableHead>
-                                <TableHead className="py-4 text-xs uppercase font-bold tracking-widest text-muted-foreground">Rate</TableHead>
-                                <TableHead className="py-4 text-xs uppercase font-bold tracking-widest text-muted-foreground">Type</TableHead>
-                                <TableHead className="text-right pr-8 py-4 text-xs uppercase font-bold tracking-widest text-muted-foreground">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {taxes && taxes.length > 0 ? (
-                                taxes.map((tax) => (
-                                    <TableRow key={tax.id} className="group hover:bg-muted/30 transition-colors">
-                                        <TableCell className="font-bold text-lg pl-8 py-5">{tax.name}</TableCell>
-                                        <TableCell className="py-5">
-                                            <div className="flex items-center gap-1.5 font-semibold text-primary text-base">
-                                                <Percent className="h-4 w-4" />
-                                                {tax.rate}%
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-5">
-                                            <Badge
-                                                variant={tax.type === 'inclusive' ? 'secondary' : 'outline'}
-                                                className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${tax.type === 'inclusive' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : ''}`}
-                                            >
-                                                {tax.type}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-8 py-5">
-                                            <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="icon"
-                                                    className="h-9 w-9 rounded-full shadow-sm"
-                                                    onClick={() => openEdit(tax)}
-                                                    title="Edit Tax"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    className="h-9 w-9 rounded-full shadow-sm"
-                                                    onClick={() => openDelete(tax)}
-                                                    title="Delete Tax"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="h-64 text-center">
-                                        <div className="flex flex-col items-center justify-center space-y-3 opacity-50">
-                                            <Percent className="h-12 w-12" />
-                                            <p className="text-lg font-medium">No taxes found</p>
-                                            <p className="text-sm">Click the "Add New Tax" button to get started.</p>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <DataTable
+                data={sortedTaxes}
+                columns={columns}
+                isLoading={isLoading}
+                onRetry={refetch}
+
+                sortBy={sort.sortBy}
+                sortOrder={sort.sortOrder}
+                onSort={handleSort}
+
+                emptyState={emptyState}
+                renderActions={renderActions}
+                avatarIcon={<Percent className="h-4 w-4 text-primary" />}
+            />
 
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

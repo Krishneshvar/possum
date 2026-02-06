@@ -1,35 +1,26 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGetReturnsQuery } from '@/services/returnsApi';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown } from 'lucide-react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useCurrency } from '@/hooks/useCurrency';
-import { useNavigate } from 'react-router-dom';
+import { FileDown, RotateCcw } from 'lucide-react';
+import DataTable from '@/components/common/DataTable';
+import CurrencyText from '@/components/common/CurrencyText';
 
 export default function ReturnsPage() {
     const navigate = useNavigate();
-    const currency = useCurrency();
     const [page, setPage] = useState(1);
-    const [search, setSearch] = useState('');
-    const debouncedSearch = useDebounce(search, 500);
+    const [limit] = useState(20);
+    const [searchTerm, setSearchTerm] = useState('');
 
-    // TODO: Implement advanced filtering if needed (startDate, endDate)
-    const { data, isLoading, isError } = useGetReturnsQuery({
+    const { data, isLoading, isError, refetch } = useGetReturnsQuery({
         page,
-        limit: 20,
-        // search: debouncedSearch // Backend doesn't support search by text yet, maybe add later or filter client side?
-        // Actually backend supports saleId or userId.
+        limit,
     });
+
+    const returns = data?.returns || [];
+    const totalPages = data?.totalPages || 1;
+    const totalCount = data?.totalCount || 0;
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleString('en-IN', {
@@ -41,16 +32,102 @@ export default function ReturnsPage() {
         });
     };
 
+    const columns = [
+        {
+            key: 'id',
+            label: 'Return ID',
+            sortable: false,
+            renderCell: (ret) => <span className="font-mono text-xs">#{ret.id}</span>
+        },
+        {
+            key: 'created_at',
+            label: 'Date',
+            sortable: false,
+            renderCell: (ret) => (
+                <div className="flex flex-col">
+                    <span>{formatDate(ret.created_at).split(',')[0]}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(ret.created_at).split(',')[1]}</span>
+                </div>
+            )
+        },
+        {
+            key: 'invoice_number',
+            label: 'Sale / Invoice',
+            sortable: false,
+            renderCell: (ret) => (
+                <Button
+                    variant="link"
+                    className="p-0 h-auto font-medium"
+                    onClick={() => navigate(`/sales/history/${ret.sale_id}`)}
+                >
+                    <Badge variant="outline" className="font-mono text-xs">
+                        {ret.invoice_number}
+                    </Badge>
+                </Button>
+            )
+        },
+        {
+            key: 'processed_by_name',
+            label: 'Processed By',
+            sortable: false,
+            renderCell: (ret) => (
+                <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                        {ret.processed_by_name?.charAt(0) || 'U'}
+                    </div>
+                    <span className="text-sm">{ret.processed_by_name}</span>
+                </div>
+            )
+        },
+        {
+            key: 'total_refund',
+            label: 'Refund Amount',
+            sortable: false,
+            className: 'text-right',
+            renderCell: (ret) => (
+                <div className="text-right font-bold text-destructive">
+                    -<CurrencyText value={ret.total_refund} />
+                </div>
+            )
+        },
+        {
+            key: 'reason',
+            label: 'Reason',
+            sortable: false,
+            renderCell: (ret) => (
+                <span className="max-w-[200px] truncate block" title={ret.reason}>
+                    {ret.reason || <span className="text-muted-foreground italic">No reason provided</span>}
+                </span>
+            )
+        },
+    ];
+
+    const renderActions = (ret) => (
+        <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/sales/history/${ret.sale_id}`)}
+            className="text-muted-foreground hover:text-primary"
+        >
+            View Details
+        </Button>
+    );
+
+    const emptyState = (
+        <div className="text-center p-8 text-muted-foreground">
+            No returns found.
+        </div>
+    );
+
     return (
-        <div className="flex flex-col gap-6 max-w-[1600px] mx-auto w-full">
-            <div className="flex items-center justify-between">
+        <div className="h-[calc(100vh-7rem)] flex flex-col gap-4 p-4 overflow-hidden">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Returns</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Manage and view processed returns.
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">Returns</h1>
+                    <p className="text-sm text-muted-foreground">Manage and view processed returns.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">{totalCount} Returns</span>
                     <Button variant="outline">
                         <FileDown className="mr-2 h-4 w-4" />
                         Export
@@ -58,89 +135,28 @@ export default function ReturnsPage() {
                 </div>
             </div>
 
-            <Card className="border-border/50 shadow-sm">
-                <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                        <CardTitle>Returns History</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/30">
-                                <TableHead className="pl-6">Return ID</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Sale / Invoice</TableHead>
-                                <TableHead>Processed By</TableHead>
-                                <TableHead className="text-right">Refund Amount</TableHead>
-                                <TableHead>Reason</TableHead>
-                                <TableHead className="text-right pr-6">Items</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
-                                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : isError ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center text-destructive">
-                                        Failed to load returns.
-                                    </TableCell>
-                                </TableRow>
-                            ) : data?.returns?.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                                        No returns found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                data?.returns.map((ret) => (
-                                    <TableRow
-                                        key={ret.id}
-                                        className="cursor-pointer hover:bg-muted/30 transition-colors"
-                                        onClick={() => navigate(`/sales/history/${ret.sale_id}`)}
-                                    >
-                                        <TableCell className="pl-6 font-mono text-xs">#{ret.id}</TableCell>
-                                        <TableCell className="text-sm">
-                                            <div className="flex flex-col">
-                                                <span>{formatDate(ret.created_at).split(',')[0]}</span>
-                                                <span className="text-xs text-muted-foreground">{formatDate(ret.created_at).split(',')[1]}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="font-mono text-xs">
-                                                    {ret.invoice_number}
-                                                </Badge>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                                                    {ret.processed_by_name?.charAt(0) || 'U'}
-                                                </div>
-                                                <span className="text-sm">{ret.processed_by_name}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right font-bold text-destructive">
-                                            -{currency}{ret.total_refund?.toFixed(2)}
-                                        </TableCell>
-                                        <TableCell className="max-w-[200px] truncate" title={ret.reason}>
-                                            {ret.reason || <span className="text-muted-foreground italic">No reason provided</span>}
-                                        </TableCell>
-                                        <TableCell className="text-right pr-6 text-muted-foreground">
-                                            View Details
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <DataTable
+                data={returns}
+                columns={columns}
+                isLoading={isLoading}
+                error={isError}
+                onRetry={refetch}
+
+                searchTerm={searchTerm}
+                onSearchChange={(value) => {
+                    setSearchTerm(value);
+                    setPage(1);
+                }}
+                searchPlaceholder="Search returns..."
+
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+
+                emptyState={emptyState}
+                renderActions={renderActions}
+                avatarIcon={<RotateCcw className="h-4 w-4 text-primary" />}
+            />
         </div>
     );
 }

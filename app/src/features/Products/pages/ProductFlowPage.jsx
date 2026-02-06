@@ -1,10 +1,9 @@
-
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Filter, ArrowLeft, ArrowRight } from 'lucide-react';
-
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -13,47 +12,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-
+import { TrendingUp } from 'lucide-react';
 import { useGetVariantFlowQuery, useGetVariantFlowSummaryQuery } from '@/services/productFlowApi';
 import { useGetPaymentMethodsQuery } from '@/services/salesApi';
 import { useGetVariantsQuery } from '@/services/productsApi';
+import DataTable from '@/components/common/DataTable';
 
 export default function ProductFlowPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
-
-    // Filters
-    const [selectedVariantId, setSelectedVariantId] = useState(searchParams.get('variantId') || '');
-    const [startDate, setStartDate] = useState(searchParams.get('startDate') || '');
-    const [endDate, setEndDate] = useState(searchParams.get('endDate') || '');
+    const [selectedVariantId, setSelectedVariantId] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [selectedPaymentMethods, setSelectedPaymentMethods] = useState([]);
-
-    // Pagination
     const [page, setPage] = useState(1);
     const limit = 20;
     const offset = (page - 1) * limit;
 
-    // Queries
-    // Fetch variants for selector (simple list for now, could be search-based if many)
-    const { data: variantsData } = useGetVariantsQuery({ limit: 1000 }); // Assuming reasonably small catalog for now
+    const { data: variantsData } = useGetVariantsQuery({ limit: 1000 });
     const variants = variantsData?.variants || [];
 
     const { data: paymentMethodsData } = useGetPaymentMethodsQuery();
     const paymentMethods = paymentMethodsData || [];
 
-    const { data: flowData, isLoading: isFlowLoading } = useGetVariantFlowQuery(
+    const { data: flowData, isLoading: isFlowLoading, refetch } = useGetVariantFlowQuery(
         {
             variantId: selectedVariantId,
             limit,
@@ -67,14 +47,9 @@ export default function ProductFlowPage() {
 
     const { data: summaryData } = useGetVariantFlowSummaryQuery(selectedVariantId, { skip: !selectedVariantId });
 
-    // Handlers
     const handleVariantChange = (value) => {
         setSelectedVariantId(value);
         setPage(1);
-        setSearchParams(prev => {
-            prev.set('variantId', value);
-            return prev;
-        });
     };
 
     const handlePaymentMethodToggle = (methodName) => {
@@ -94,15 +69,77 @@ export default function ProductFlowPage() {
         setPage(1);
     };
 
+    const columns = [
+        {
+            key: 'event_date',
+            label: 'Date',
+            sortable: false,
+            renderCell: (event) => (
+                <span className="text-muted-foreground whitespace-nowrap">
+                    {format(new Date(event.event_date), 'MMM d, yyyy HH:mm')}
+                </span>
+            )
+        },
+        {
+            key: 'event_type',
+            label: 'Event Type',
+            sortable: false,
+            renderCell: (event) => (
+                <Badge variant={
+                    event.event_type === 'sale' ? 'default' :
+                        event.event_type === 'purchase' ? 'secondary' :
+                            event.event_type === 'return' ? 'destructive' : 'outline'
+                }>
+                    {event.event_type.toUpperCase()}
+                </Badge>
+            )
+        },
+        {
+            key: 'quantity',
+            label: 'Quantity',
+            sortable: false,
+            renderCell: (event) => (
+                <span className={event.quantity < 0 ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
+                    {event.quantity > 0 ? `+${event.quantity}` : event.quantity}
+                </span>
+            )
+        },
+        {
+            key: 'reference',
+            label: 'Reference',
+            sortable: false,
+            renderCell: (event) => (
+                <span className="text-sm font-mono">{event.reference_type} #{event.reference_id}</span>
+            )
+        },
+        {
+            key: 'payment_method_names',
+            label: 'Payment Method',
+            sortable: false,
+            renderCell: (event) => (
+                event.payment_method_names ? (
+                    <Badge variant="outline">{event.payment_method_names}</Badge>
+                ) : '-'
+            )
+        },
+    ];
+
+    const emptyState = (
+        <div className="text-center p-8 text-muted-foreground">
+            {selectedVariantId ? "No flow history found." : "Select a variant to view history."}
+        </div>
+    );
+
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Product Flow Analysis</h1>
-                <p className="text-muted-foreground">
+        <div className="h-[calc(100vh-7rem)] flex flex-col gap-4 p-4 overflow-hidden">
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight">Product Flow Analysis</h1>
+                <p className="text-sm text-muted-foreground">
                     Track the movement history of products including sales, purchases, and returns.
                 </p>
             </div>
 
+            {/* Filters Card */}
             <Card>
                 <CardHeader>
                     <CardTitle>Filters</CardTitle>
@@ -110,7 +147,6 @@ export default function ProductFlowPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Variant Selector */}
                         <div className="space-y-2">
                             <Label>Product Variant</Label>
                             <Select value={selectedVariantId} onValueChange={handleVariantChange}>
@@ -127,7 +163,6 @@ export default function ProductFlowPage() {
                             </Select>
                         </div>
 
-                        {/* Date Range */}
                         <div className="space-y-2">
                             <Label>Date Range</Label>
                             <div className="flex gap-2">
@@ -145,7 +180,6 @@ export default function ProductFlowPage() {
                             </div>
                         </div>
 
-                        {/* Payment Methods (Only for sales) */}
                         <div className="space-y-2">
                             <Label>Payment Methods (Sales)</Label>
                             <div className="flex flex-wrap gap-2 pt-2">
@@ -170,6 +204,7 @@ export default function ProductFlowPage() {
                 </CardContent>
             </Card>
 
+            {/* Summary Cards */}
             {selectedVariantId && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Card>
@@ -199,85 +234,20 @@ export default function ProductFlowPage() {
                 </div>
             )}
 
-            <Card>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Event Type</TableHead>
-                                <TableHead>Quantity</TableHead>
-                                <TableHead>Reference</TableHead>
-                                <TableHead>Payment Method</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isFlowLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">Loading...</TableCell>
-                                </TableRow>
-                            ) : flowData?.length > 0 ? (
-                                flowData.map((event) => (
-                                    <TableRow key={event.id}>
-                                        <TableCell>{format(new Date(event.event_date), 'MMM d, yyyy HH:mm')}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={
-                                                event.event_type === 'sale' ? 'default' :
-                                                    event.event_type === 'purchase' ? 'secondary' :
-                                                        event.event_type === 'return' ? 'destructive' : 'outline'
-                                            }>
-                                                {event.event_type.toUpperCase()}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className={event.quantity < 0 ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
-                                            {event.quantity > 0 ? `+${event.quantity}` : event.quantity}
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="text-sm font-mono">{event.reference_type} #{event.reference_id}</span>
-                                        </TableCell>
-                                        <TableCell>
-                                            {event.payment_method_names ? (
-                                                <Badge variant="outline">{event.payment_method_names}</Badge>
-                                            ) : '-'}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
-                                        {selectedVariantId ? "No flow history found." : "Select a variant to view history."}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            {/* Data Table */}
+            <DataTable
+                data={flowData || []}
+                columns={columns}
+                isLoading={isFlowLoading}
+                onRetry={refetch}
 
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-end space-x-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1 || isFlowLoading}
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Previous
-                </Button>
-                <div className="text-sm font-medium">
-                    Page {page}
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => p + 1)}
-                    disabled={(!flowData || flowData.length < limit) || isFlowLoading}
-                >
-                    Next
-                    <ArrowRight className="h-4 w-4" />
-                </Button>
-            </div>
+                currentPage={page}
+                totalPages={Math.ceil((flowData?.length || 0) / limit) || 1}
+                onPageChange={setPage}
+
+                emptyState={emptyState}
+                avatarIcon={<TrendingUp className="h-4 w-4 text-primary" />}
+            />
         </div>
     );
 }
