@@ -24,7 +24,8 @@ export function createSale({
     discount = 0,
     payments = [],
     taxMode = 'item', // 'item' or 'bill'
-    billTaxIds = []
+    billTaxIds = [],
+    fulfillment_status = 'pending'
 }) {
     return transaction(() => {
         // Validate stock availability for all items
@@ -115,6 +116,7 @@ export function createSale({
             discount,
             total_tax: totalTax,
             status,
+            fulfillment_status,
             customer_id: customerId,
             user_id: userId
         });
@@ -304,6 +306,40 @@ export function cancelSale(saleId, userId) {
         );
 
         return { success: true, message: 'Sale cancelled successfully' };
+    });
+}
+
+/**
+ * Fulfill a sale/order
+ * @param {number} saleId - Sale ID
+ * @param {number} userId - User performing fulfillment
+ * @returns {Object} Fulfillment result
+ */
+export function fulfillSale(saleId, userId) {
+    return transaction(() => {
+        const sale = saleRepository.findSaleById(saleId);
+        if (!sale) {
+            throw new Error('Sale not found');
+        }
+
+        if (sale.fulfillment_status === 'fulfilled') {
+            throw new Error('Sale is already fulfilled');
+        }
+
+        if (sale.status === 'cancelled') {
+            throw new Error('Cannot fulfill a cancelled sale');
+        }
+
+        // Update fulfillment status
+        saleRepository.updateFulfillmentStatus(saleId, 'fulfilled');
+
+        // Log fulfillment
+        auditService.logUpdate(userId, 'sales', saleId,
+            { fulfillment_status: sale.fulfillment_status },
+            { fulfillment_status: 'fulfilled' }
+        );
+
+        return { success: true, message: 'Sale fulfilled successfully' };
     });
 }
 

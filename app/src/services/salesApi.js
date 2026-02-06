@@ -30,6 +30,10 @@ export const salesApi = createApi({
                 if (params.startDate) query.append('startDate', params.startDate);
                 if (params.endDate) query.append('endDate', params.endDate);
                 if (params.searchTerm) query.append('searchTerm', params.searchTerm);
+                if (params.fulfillmentStatus) {
+                    const statuses = Array.isArray(params.fulfillmentStatus) ? params.fulfillmentStatus : [params.fulfillmentStatus];
+                    statuses.forEach(s => query.append('fulfillmentStatus', s));
+                }
                 if (params.sortBy) query.append('sortBy', params.sortBy);
                 if (params.sortOrder) query.append('sortOrder', params.sortOrder);
                 return `/sales?${query.toString()}`;
@@ -74,6 +78,18 @@ export const salesApi = createApi({
             ],
         }),
 
+        // Fulfill a sale
+        fulfillSale: builder.mutation({
+            query: (saleId) => ({
+                url: `/sales/${saleId}/fulfill`,
+                method: 'PUT',
+            }),
+            invalidatesTags: (result, error, saleId) => [
+                { type: 'Sale', id: saleId },
+                { type: 'Sale', id: 'LIST' },
+            ],
+        }),
+
         // Get payment methods
         getPaymentMethods: builder.query({
             query: () => '/sales/payment-methods',
@@ -88,5 +104,6 @@ export const {
     useGetSaleQuery,
     useAddPaymentMutation,
     useCancelSaleMutation,
+    useFulfillSaleMutation,
     useGetPaymentMethodsQuery,
 } = salesApi;

@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useGetSaleQuery } from '@/services/salesApi';
+import { useGetSaleQuery, useFulfillSaleMutation } from '@/services/salesApi';
 import CreateReturnDialog from '../components/CreateReturnDialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Printer, Calendar, User, CreditCard, Receipt, Package, Download, RotateCcw } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Calendar, User, CreditCard, Receipt, Package, Download, RotateCcw, PackageCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { toast } from "sonner";
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -23,7 +24,17 @@ export default function SaleDetailsPage() {
     const navigate = useNavigate();
     const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
     const { data: sale, isLoading, error } = useGetSaleQuery(saleId);
+    const [fulfillSale, { isLoading: isFulfilling }] = useFulfillSaleMutation();
     const currency = useCurrency();
+
+    const handleFulfill = async () => {
+        try {
+            await fulfillSale(saleId).unwrap();
+            toast.success("Order fulfilled successfully!");
+        } catch (err) {
+            toast.error(err?.data?.error || "Failed to fulfill order.");
+        }
+    };
 
     if (isLoading) {
         return (
@@ -60,6 +71,15 @@ export default function SaleDetailsPage() {
         }
     };
 
+    const getFulfillmentVariant = (status) => {
+        switch (status) {
+            case 'fulfilled': return 'success';
+            case 'pending': return 'outline';
+            case 'cancelled': return 'destructive';
+            default: return 'secondary';
+        }
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleString('en-IN', {
@@ -85,6 +105,9 @@ export default function SaleDetailsPage() {
                             <Badge variant={getStatusVariant(sale.status)} className="capitalize ml-2">
                                 {sale.status.replace('_', ' ')}
                             </Badge>
+                            <Badge variant={getFulfillmentVariant(sale.fulfillment_status)} className="capitalize ml-2 border-primary/20">
+                                {sale.fulfillment_status}
+                            </Badge>
                         </h1>
                         <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                             <Calendar className="h-3.5 w-3.5" />
@@ -101,6 +124,12 @@ export default function SaleDetailsPage() {
                         <Button variant="outline" size="sm" onClick={() => setIsReturnDialogOpen(true)}>
                             <RotateCcw className="mr-2 h-4 w-4" />
                             Return Items
+                        </Button>
+                    )}
+                    {sale.fulfillment_status === 'pending' && sale.status !== 'cancelled' && (
+                        <Button size="sm" onClick={handleFulfill} disabled={isFulfilling} className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20">
+                            {isFulfilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
+                            Fulfill Order
                         </Button>
                     )}
                     <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">

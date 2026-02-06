@@ -23,9 +23,9 @@ export function insertSale({
     const stmt = db.prepare(`
         INSERT INTO sales (
             invoice_number, total_amount, paid_amount, discount, total_tax,
-            status, customer_id, user_id
+            status, fulfillment_status, customer_id, user_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     return stmt.run(
         invoice_number,
@@ -34,6 +34,7 @@ export function insertSale({
         discount,
         total_tax,
         status,
+        fulfillment_status || 'pending',
         customer_id || null,
         user_id
     );
@@ -141,7 +142,8 @@ export function findSales({
     currentPage = 1,
     itemsPerPage = 20,
     sortBy = 'sale_date',
-    sortOrder = 'DESC'
+    sortOrder = 'DESC',
+    fulfillmentStatus
 }) {
     const db = getDB();
     const filterClauses = [];
@@ -151,6 +153,13 @@ export function findSales({
         const placeholders = status.map(() => '?').join(',');
         filterClauses.push(`s.status IN (${placeholders})`);
         filterParams.push(...status);
+    }
+
+    if (fulfillmentStatus) {
+        const statuses = Array.isArray(fulfillmentStatus) ? fulfillmentStatus : [fulfillmentStatus];
+        const placeholders = statuses.map(() => '?').join(',');
+        filterClauses.push(`s.fulfillment_status IN (${placeholders})`);
+        filterParams.push(...statuses);
     }
 
     if (customerId) {
@@ -192,7 +201,7 @@ export function findSales({
     const totalCount = countResult?.total_count ?? 0;
 
     // Validate sortBy to prevent SQL injection
-    const allowedSortFields = ['sale_date', 'total_amount', 'invoice_number', 'paid_amount', 'status'];
+    const allowedSortFields = ['sale_date', 'total_amount', 'invoice_number', 'paid_amount', 'status', 'fulfillment_status'];
     const finalSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'sale_date';
     const finalSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -227,6 +236,17 @@ export function findSales({
 export function updateSaleStatus(id, status) {
     const db = getDB();
     return db.prepare('UPDATE sales SET status = ? WHERE id = ?').run(status, id);
+}
+
+/**
+ * Update sale fulfillment status
+ * @param {number} id - Sale ID
+ * @param {string} status - New fulfillment status
+ * @returns {Object} Update result
+ */
+export function updateFulfillmentStatus(id, status) {
+    const db = getDB();
+    return db.prepare('UPDATE sales SET fulfillment_status = ? WHERE id = ?').run(status, id);
 }
 
 /**

@@ -64,6 +64,7 @@ export async function getSalesController(req, res) {
             startDate,
             endDate,
             searchTerm,
+            fulfillmentStatus,
             sortBy = 'sale_date',
             sortOrder = 'DESC'
         } = req.query;
@@ -82,7 +83,8 @@ export async function getSalesController(req, res) {
             currentPage: parseInt(page, 10),
             itemsPerPage: parseInt(limit, 10),
             sortBy,
-            sortOrder
+            sortOrder,
+            fulfillmentStatus
         });
 
         res.json(sales);
@@ -181,5 +183,25 @@ export async function getPaymentMethodsController(req, res) {
     } catch (err) {
         console.error('Error fetching payment methods:', err);
         res.status(500).json({ error: 'Failed to retrieve payment methods.' });
+    }
+}
+
+/**
+ * PUT /api/sales/:id/fulfill
+ * Fulfill a sale/order
+ */
+export async function fulfillSaleController(req, res) {
+    try {
+        const saleId = parseInt(req.params.id, 10);
+        if (isNaN(saleId)) {
+            return res.status(400).json({ error: 'Invalid sale ID.' });
+        }
+
+        const userId = req.userId || 1;
+        const result = saleService.fulfillSale(saleId, userId);
+        res.json(result);
+    } catch (err) {
+        console.error('Error fulfilling sale:', err);
+        res.status(400).json({ error: err.message });
     }
 }
