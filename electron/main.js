@@ -3,6 +3,9 @@ import path from 'path';
 import { startServer } from './backend/server.js';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { printBillHtml } from './print/printController.js';
+import { printInvoice, getPrinters } from './backend/services/printService.js';
+import fs from 'fs/promises';
 
 dotenv.config();
 const isDev = !app.isPackaged;
@@ -33,10 +36,15 @@ ipcMain.handle('ping', async () => {
   return 'pong';
 });
 
-import { printBillHtml } from './print/printController.js';
-import fs from 'fs/promises';
-
 ipcMain.handle('print-bill', printBillHtml);
+
+ipcMain.handle('print-invoice', async (event, invoiceId) => {
+    return printInvoice(invoiceId);
+});
+
+ipcMain.handle('get-printers', async () => {
+    return getPrinters();
+});
 
 ipcMain.handle('save-bill-settings', async (event, settings) => {
   try {

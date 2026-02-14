@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import BillSettings from '../components/BillSettings';
 import GeneralSettings from '../components/GeneralSettings';
 import TaxManagement from '../TaxManagement/TaxManagement';
+import PrinterSettings from '../components/PrinterSettings';
 import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
@@ -42,12 +43,7 @@ export default function SettingsPage() {
           {activeTab === 'general' && <GeneralSettings />}
           {activeTab === 'bill' && <BillSettings />}
           {activeTab === 'taxes' && <TaxManagement />}
-          {activeTab === 'printers' && (
-            <div>
-              <h2 className="text-lg font-semibold mb-4">Printer Configuration</h2>
-              <p className="text-gray-500">Printer connection settings will go here.</p>
-            </div>
-          )}
+          {activeTab === 'printers' && <PrinterSettings />}
         </div>
       </div>
     </div>
