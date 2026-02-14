@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { cn } from "@/lib/utils";
 import SalesTable from '../components/SalesTable';
 import SalesControls from '../components/SalesControls';
@@ -211,7 +211,7 @@ export default function SalesPage() {
 
   const currentGrandTotal = calculateTotal(currentBill);
 
-  const handleCompleteSale = async () => {
+  const handleCompleteSale = useCallback(async () => {
     if (currentBill.items.length === 0) {
       toast.error("Cannot complete sale with no items.");
       return;
@@ -261,8 +261,14 @@ export default function SalesPage() {
     };
 
     try {
-      await createSale(payload).unwrap();
+      const result = await createSale(payload).unwrap();
       toast.success("Sale completed successfully!");
+
+      // Trigger Print
+      if (window.electronAPI && window.electronAPI.printInvoice) {
+        window.electronAPI.printInvoice(result.id)
+          .catch(err => console.error("Print failed automatically:", err));
+      }
 
       // Reset the current bill
       setBills(prev => prev.map((bill, index) =>
@@ -272,7 +278,26 @@ export default function SalesPage() {
       console.error("Sale failed", err);
       toast.error(err?.data?.error || "Failed to complete sale.");
     }
-  };
+  }, [currentBill, currentGrandTotal, activeTab, createSale]);
+
+  // F12 Shortcut
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        // Prevent default browser devtools
+
+        if (currentBill.items.length > 0) {
+             handleCompleteSale();
+        } else {
+             toast.error("Cannot complete sale with no items.");
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentBill, handleCompleteSale]);
 
   return (
     <div className="h-[calc(100vh-7rem)] w-full flex flex-col gap-4 overflow-hidden">

@@ -75,7 +75,12 @@ export default function SalesHistoryPage() {
   };
 
   const handlePrint = (sale) => {
-    console.log("Print Sale", sale);
+    if (window.electronAPI && window.electronAPI.printInvoice) {
+      window.electronAPI.printInvoice(sale.id)
+        .catch(err => console.error("Print failed:", err));
+    } else {
+      console.log("Print Sale", sale);
+    }
   };
 
   const formatDate = (dateString) => {
