@@ -12,13 +12,14 @@ import { taxEngine } from '../taxes/tax.engine.js';
 import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
 import { getComputedStock } from '../../shared/utils/inventoryHelpers.js';
+import * as AuthService from '../auth/auth.service.js';
 
 /**
  * Create a new sale with all related records
  * @param {Object} params - Sale parameters
  * @returns {Object} Created sale
  */
-export function createSale({
+export async function createSale({
     items,
     customerId,
     userId,
@@ -26,9 +27,17 @@ export function createSale({
     payments = [],
     taxMode = 'item', // Deprecated but kept for signature
     billTaxIds = [], // Deprecated
-    fulfillment_status = 'pending'
+    fulfillment_status = 'pending',
+    token // Added token for permission check
 }) {
+    if (token) {
+        AuthService.requirePermission(token, 'COMPLETE_SALE');
+    } else {
+        throw new Error('Unauthorized: Service requires token for permission check');
+    }
+
     return transaction(() => {
+        // ... (existing logic) ...
         // Validate stock availability for all items
         for (const item of items) {
             const currentStock = getComputedStock(item.variantId);
@@ -206,14 +215,16 @@ export function createSale({
         }
 
         // Log sale creation
-        auditService.logCreate(userId, 'sales', saleId, {
-            invoice_number: invoiceNumber,
-            total_amount: totalAmount,
-            paid_amount: paidAmount,
-            discount,
-            status,
-            customer_id: customerId,
-            items_count: processedItems.length
+        auditService.logAction({
+            userId,
+            action: 'COMPLETE_SALE',
+            entity: 'SALE',
+            entityId: saleId,
+            metadata: {
+                invoice_number: invoiceNumber,
+                total_amount: totalAmount,
+                items_count: processedItems.length
+            }
         });
 
         return {
@@ -251,7 +262,13 @@ export function getSales(params) {
  * @param {Object} params - Payment params
  * @returns {Object} Updated sale info
  */
-export function addPayment({ saleId, amount, paymentMethodId, userId }) {
+export function addPayment({ saleId, amount, paymentMethodId, userId, token }) {
+    if (token) {
+        AuthService.requirePermission(token, 'COMPLETE_SALE');
+    } else {
+        throw new Error('Unauthorized: Service requires token for permission check');
+    }
+
     return transaction(() => {
         const sale = saleRepository.findSaleById(saleId);
         if (!sale) {
@@ -287,10 +304,13 @@ export function addPayment({ saleId, amount, paymentMethodId, userId }) {
         }
 
         // Log payment addition
-        auditService.logUpdate(userId, 'sales', saleId,
-            { paid_amount: sale.paid_amount, status: sale.status },
-            { paid_amount: newPaidAmount, status: newStatus }
-        );
+        auditService.logAction({
+            userId,
+            action: 'ADD_PAYMENT',
+            entity: 'SALE',
+            entityId: saleId,
+            metadata: { amount, new_status: newStatus }
+        });
 
         return { newPaidAmount, status: newStatus };
     });
@@ -300,9 +320,16 @@ export function addPayment({ saleId, amount, paymentMethodId, userId }) {
  * Cancel a sale
  * @param {number} saleId - Sale ID
  * @param {number} userId - User performing cancellation
+ * @param {string} token - Auth token
  * @returns {Object} Cancellation result
  */
-export function cancelSale(saleId, userId) {
+export function cancelSale(saleId, userId, token) {
+    if (token) {
+        AuthService.requirePermission(token, 'VOID_INVOICE');
+    } else {
+        throw new Error('Unauthorized: Service requires token for permission check');
+    }
+
     return transaction(() => {
         const sale = saleRepository.findSaleById(saleId);
         if (!sale) {
@@ -343,10 +370,13 @@ export function cancelSale(saleId, userId) {
         saleRepository.updateSaleStatus(saleId, 'cancelled');
 
         // Log sale cancellation
-        auditService.logUpdate(userId, 'sales', saleId,
-            { status: sale.status },
-            { status: 'cancelled' }
-        );
+        auditService.logAction({
+            userId,
+            action: 'VOID_INVOICE',
+            entity: 'SALE',
+            entityId: saleId,
+            metadata: { reason: 'Cancellation' }
+        });
 
         return { success: true, message: 'Sale cancelled successfully' };
     });
@@ -358,7 +388,13 @@ export function cancelSale(saleId, userId) {
  * @param {number} userId - User performing fulfillment
  * @returns {Object} Fulfillment result
  */
-export function fulfillSale(saleId, userId) {
+export function fulfillSale(saleId, userId, token) {
+    if (token) {
+        AuthService.requirePermission(token, 'COMPLETE_SALE');
+    } else {
+        throw new Error('Unauthorized: Service requires token for permission check');
+    }
+
     return transaction(() => {
         const sale = saleRepository.findSaleById(saleId);
         if (!sale) {
@@ -377,10 +413,12 @@ export function fulfillSale(saleId, userId) {
         saleRepository.updateFulfillmentStatus(saleId, 'fulfilled');
 
         // Log fulfillment
-        auditService.logUpdate(userId, 'sales', saleId,
-            { fulfillment_status: sale.fulfillment_status },
-            { fulfillment_status: 'fulfilled' }
-        );
+        auditService.logAction({
+            userId,
+            action: 'FULFILL_SALE',
+            entity: 'SALE',
+            entityId: saleId
+        });
 
         return { success: true, message: 'Sale fulfilled successfully' };
     });
