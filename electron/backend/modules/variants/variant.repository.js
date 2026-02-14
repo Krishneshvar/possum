@@ -184,17 +184,12 @@ export function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.
         v.id, v.product_id, v.name, v.sku, v.mrp, v.cost_price, 
         v.stock_alert_cap, v.is_default, v.status, v.created_at,
         p.name as product_name, p.image_path,
+        p.tax_category_id,
         c.name as category_name,
         (
             COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
             + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
-        ) AS stock,
-        (
-          SELECT json_group_array(json_object('id', t.id, 'name', t.name, 'rate', t.rate, 'type', t.type))
-          FROM product_taxes pt
-          JOIN taxes t ON pt.tax_id = t.id
-          WHERE pt.product_id = v.product_id AND t.is_active = 1
-        ) AS taxes
+        ) AS stock
       FROM variants v
       JOIN products p ON v.product_id = p.id
       LEFT JOIN categories c ON p.category_id = c.id

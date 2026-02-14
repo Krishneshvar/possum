@@ -100,10 +100,17 @@ INSERT INTO payment_methods (name) VALUES
 ('UPI'),
 ('Gift Card');
 
-INSERT INTO taxes (name, rate, type) VALUES
-('VAT 5%', 5, 'inclusive'),
-('GST 12%', 12, 'exclusive'),
-('GST 18%', 18, 'exclusive');
+INSERT INTO tax_categories (name, description) VALUES
+('Standard', 'Standard tax category'),
+('Reduced', 'Reduced tax category'),
+('Zero', 'Zero rated');
+
+INSERT INTO tax_profiles (name, pricing_mode, is_active) VALUES
+('Default Profile', 'EXCLUSIVE', 1);
+
+INSERT INTO tax_rules (tax_profile_id, tax_category_id, rate_percent, priority, rule_scope) VALUES
+(1, 1, 10, 1, 'ITEM'),
+(1, 2, 5, 1, 'ITEM');
 
 INSERT INTO products (id, name, category_id, status) VALUES
 (1, 'Coffee Beans', 1, 'active'),

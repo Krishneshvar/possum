@@ -13,12 +13,14 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   description TEXT,
   category_id INTEGER,
+  tax_category_id INTEGER,
   status TEXT CHECK(status IN ('active','inactive','discontinued')) DEFAULT 'active',
   image_path TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
-  FOREIGN KEY (category_id) REFERENCES categories(id)
+  FOREIGN KEY (category_id) REFERENCES categories(id),
+  FOREIGN KEY (tax_category_id) REFERENCES tax_categories(id)
 );
 
 CREATE TABLE IF NOT EXISTS variants (
@@ -48,3 +50,4 @@ CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
 CREATE INDEX IF NOT EXISTS idx_variants_product_id ON variants(product_id);
 CREATE INDEX IF NOT EXISTS idx_variants_name ON variants(name);
 CREATE INDEX IF NOT EXISTS idx_variants_status ON variants(status);
+CREATE INDEX IF NOT EXISTS idx_products_tax_category_id ON products(tax_category_id);

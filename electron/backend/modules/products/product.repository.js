@@ -10,13 +10,13 @@ import { getDB } from '../../shared/db/index.js';
  * @param {Object} productData - Product data
  * @returns {Object} The insert result with lastInsertRowid
  */
-export function insertProduct({ name, description, category_id, status, image_path }) {
+export function insertProduct({ name, description, category_id, tax_category_id, status, image_path }) {
     const db = getDB();
     const stmt = db.prepare(`
-    INSERT INTO products (name, description, category_id, status, image_path)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO products (name, description, category_id, tax_category_id, status, image_path)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
-    return stmt.run(name, description, category_id, status ?? 'active', image_path);
+    return stmt.run(name, description, category_id, tax_category_id, status ?? 'active', image_path);
 }
 
 /**
@@ -29,7 +29,7 @@ export function findProductById(id) {
     return db.prepare(`
     SELECT
       p.id, p.name, p.description, p.status, p.image_path,
-      c.name AS category_name, p.category_id
+      c.name AS category_name, p.category_id, p.tax_category_id
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.id = ? AND p.deleted_at IS NULL
@@ -52,7 +52,7 @@ export function findProductImagePath(id) {
  * @param {Object} data - Fields to update
  * @returns {Object} The update result with changes count
  */
-export function updateProductById(productId, { name, description, category_id, status, image_path }) {
+export function updateProductById(productId, { name, description, category_id, tax_category_id, status, image_path }) {
     const db = getDB();
     let updateFields = ['updated_at = CURRENT_TIMESTAMP'];
     let params = [];
@@ -68,6 +68,10 @@ export function updateProductById(productId, { name, description, category_id, s
     if (category_id !== undefined) {
         updateFields.push('category_id = ?');
         params.push(category_id);
+    }
+    if (tax_category_id !== undefined) {
+        updateFields.push('tax_category_id = ?');
+        params.push(tax_category_id);
     }
     if (status !== undefined) {
         updateFields.push('status = ?');
@@ -182,6 +186,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
       p.status,
       p.image_path,
       c.name AS category_name,
+      p.tax_category_id,
       ${stockSubquery} AS stock,
       v.stock_alert_cap
     FROM products p

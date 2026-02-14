@@ -1,74 +1,146 @@
 import * as taxRepository from './tax.repository.js';
+import { taxEngine } from './tax.engine.js';
+import * as customerRepository from '../customers/customer.repository.js';
 
-/**
- * GET /api/taxes
- * Get all active taxes
- */
-export async function getTaxesController(req, res) {
+// --- Profiles ---
+
+export async function getTaxProfiles(req, res) {
     try {
-        const taxes = taxRepository.findAllTaxes();
-        res.json(taxes);
+        const profiles = taxRepository.getAllTaxProfiles();
+        res.json(profiles);
     } catch (err) {
-        console.error('Error fetching taxes:', err);
-        res.status(500).json({ error: 'Failed to retrieve taxes.', details: err.message });
+        res.status(500).json({ error: err.message });
     }
 }
 
-/**
- * POST /api/taxes
- * Create a new tax
- */
-export async function createTaxController(req, res) {
-    const { name, rate, type } = req.body;
-
-    if (!name || rate === undefined || !type) {
-        return res.status(400).json({ error: 'Name, rate, and type (inclusive/exclusive) are required.' });
-    }
-
+export async function createTaxProfile(req, res) {
     try {
-        const result = taxRepository.insertTax({ name, rate, type });
-        res.status(201).json({ id: result.lastInsertRowid, name, rate, type });
+        const result = taxRepository.createTaxProfile(req.body);
+        res.status(201).json({ id: result.lastInsertRowid, ...req.body });
     } catch (err) {
-        console.error('Error creating tax:', err);
-        res.status(500).json({ error: 'Failed to create tax.', details: err.message });
+        res.status(500).json({ error: err.message });
     }
 }
 
-/**
- * PUT /api/taxes/:id
- * Update a tax
- */
-export async function updateTaxController(req, res) {
-    const { id } = req.params;
-    const { name, rate, type, is_active } = req.body;
-
+export async function updateTaxProfile(req, res) {
     try {
-        const result = taxRepository.updateTax(id, { name, rate, type, is_active });
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Tax not found or no changes made.' });
+        const { id } = req.params;
+        const result = taxRepository.updateTaxProfile(id, req.body);
+        if (result.changes === 0) return res.status(404).json({ error: 'Profile not found' });
+        res.json({ message: 'Profile updated' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export async function deleteTaxProfile(req, res) {
+    try {
+        const { id } = req.params;
+        taxRepository.deleteTaxProfile(id);
+        res.json({ message: 'Profile deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// --- Categories ---
+
+export async function getTaxCategories(req, res) {
+    try {
+        const categories = taxRepository.getAllTaxCategories();
+        res.json(categories);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export async function createTaxCategory(req, res) {
+    try {
+        const result = taxRepository.createTaxCategory(req.body);
+        res.status(201).json({ id: result.lastInsertRowid, ...req.body });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export async function updateTaxCategory(req, res) {
+    try {
+        const { id } = req.params;
+        taxRepository.updateTaxCategory(id, req.body);
+        res.json({ message: 'Category updated' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export async function deleteTaxCategory(req, res) {
+    try {
+        const { id } = req.params;
+        taxRepository.deleteTaxCategory(id);
+        res.json({ message: 'Category deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// --- Rules ---
+
+export async function getTaxRules(req, res) {
+    try {
+        const { profileId } = req.query;
+        if (!profileId) return res.status(400).json({ error: 'profileId is required' });
+        const rules = taxRepository.getTaxRulesByProfileId(profileId);
+        res.json(rules);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export async function createTaxRule(req, res) {
+    try {
+        const result = taxRepository.createTaxRule(req.body);
+        res.status(201).json({ id: result.lastInsertRowid, ...req.body });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export async function updateTaxRule(req, res) {
+    try {
+        const { id } = req.params;
+        taxRepository.updateTaxRule(id, req.body);
+        res.json({ message: 'Rule updated' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+export async function deleteTaxRule(req, res) {
+    try {
+        const { id } = req.params;
+        taxRepository.deleteTaxRule(id);
+        res.json({ message: 'Rule deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// --- Calculation ---
+
+export async function calculateTax(req, res) {
+    try {
+        let { invoice, customer, customerId } = req.body;
+
+        if (customerId && !customer) {
+            customer = customerRepository.findCustomerById(customerId);
         }
-        res.json({ message: 'Tax updated successfully.' });
-    } catch (err) {
-        console.error('Error updating tax:', err);
-        res.status(500).json({ error: 'Failed to update tax.', details: err.message });
-    }
-}
 
-/**
- * DELETE /api/taxes/:id
- * Soft delete a tax
- */
-export async function deleteTaxController(req, res) {
-    const { id } = req.params;
-
-    try {
-        const result = taxRepository.softDeleteTax(id);
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Tax not found.' });
-        }
-        res.status(204).end();
+        // Re-init engine to ensure fresh rules
+        taxEngine.init();
+        const result = taxEngine.calculate(invoice, customer);
+        res.json(result);
     } catch (err) {
-        console.error('Error deleting tax:', err);
-        res.status(500).json({ error: 'Failed to delete tax.', details: err.message });
+        console.error("Tax calculation error:", err);
+        res.status(500).json({ error: err.message });
     }
 }

@@ -6,8 +6,9 @@ import * as saleRepository from './sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
 import * as productRepository from '../products/product.repository.js';
-import * as taxRepository from '../taxes/tax.repository.js';
 import * as auditService from '../audit/audit.service.js';
+import * as customerRepository from '../customers/customer.repository.js';
+import { taxEngine } from '../taxes/tax.engine.js';
 import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
 import { getComputedStock } from '../../shared/utils/inventoryHelpers.js';
@@ -23,8 +24,8 @@ export function createSale({
     userId,
     discount = 0,
     payments = [],
-    taxMode = 'item', // 'item' or 'bill'
-    billTaxIds = [],
+    taxMode = 'item', // Deprecated but kept for signature
+    billTaxIds = [], // Deprecated
     fulfillment_status = 'pending'
 }) {
     return transaction(() => {
@@ -37,62 +38,104 @@ export function createSale({
             }
         }
 
-        // Calculate totals with frozen pricing
-        let totalAmount = 0;
-        let totalTax = 0;
-        const processedItems = [];
+        // Initialize Tax Engine
+        taxEngine.init();
 
-        // Fetch bill-level tax rules if applicable
-        let billTaxRules = [];
-        if (taxMode === 'bill' && Array.isArray(billTaxIds) && billTaxIds.length > 0) {
-            billTaxRules = billTaxIds.map(id => taxRepository.findTaxById(id)).filter(Boolean);
-        }
+        // 1. Calculate Gross Total (Pre-Discount) to determine Discount Ratio if needed
+        let grossTotal = 0;
+        const tempItems = [];
+        const variantMap = new Map();
 
         for (const item of items) {
             const variant = findVariantById(item.variantId);
-            if (!variant) {
-                throw new Error(`Variant not found: ${item.variantId}`);
+            if (!variant) throw new Error(`Variant not found: ${item.variantId}`);
+            variantMap.set(item.variantId, variant);
+
+            const pricePerUnit = item.pricePerUnit ?? variant.mrp;
+            const lineTotal = pricePerUnit * item.quantity;
+            const lineDiscount = item.discount ?? 0;
+            const netLineTotal = Math.max(0, lineTotal - lineDiscount);
+
+            grossTotal += netLineTotal;
+            tempItems.push({ ...item, pricePerUnit, netLineTotal });
+        }
+
+        // 2. Distribute Global Discount proportionally to items to get True Taxable Amount
+        // Discount is applied to the Net Total (after line discounts)
+        let distributedGlobalDiscount = 0;
+        const calculationItems = [];
+
+        for (let i = 0; i < tempItems.length; i++) {
+            const item = tempItems[i];
+            const variant = variantMap.get(item.variantId);
+            const product = productRepository.findProductById(variant.product_id);
+
+            let itemGlobalDiscount = 0;
+            if (grossTotal > 0 && discount > 0) {
+                // Last item gets the remainder to avoid rounding issues
+                if (i === tempItems.length - 1) {
+                    itemGlobalDiscount = discount - distributedGlobalDiscount;
+                } else {
+                    itemGlobalDiscount = (item.netLineTotal / grossTotal) * discount;
+                    distributedGlobalDiscount += itemGlobalDiscount;
+                }
             }
 
-            // Get taxes: either bill-level override OR product-level
-            const taxes = (taxMode === 'bill')
-                ? billTaxRules
-                : productRepository.findProductTaxes(variant.product_id);
+            // Final Taxable Amount for this line
+            const finalTaxableAmount = Math.max(0, item.netLineTotal - itemGlobalDiscount);
 
-            const inclusiveTaxRate = taxes
-                .filter(t => t.type === 'inclusive')
-                .reduce((sum, t) => sum + t.rate, 0) / 100;
+            // Effective Unit Price for Tax Engine (Tax Engine expects unit price)
+            // It calculates Total = Price * Qty
+            // So Price = FinalTaxableAmount / Qty
+            const effectiveUnitPrice = item.quantity > 0 ? finalTaxableAmount / item.quantity : 0;
 
-            const exclusiveTaxRate = taxes
-                .filter(t => t.type === 'exclusive')
-                .reduce((sum, t) => sum + t.rate, 0) / 100;
+            calculationItems.push({
+                ...item,
+                price: effectiveUnitPrice,
+                quantity: item.quantity,
+                tax_category_id: product.tax_category_id
+            });
+        }
+
+        let customer = null;
+        if (customerId) {
+            customer = customerRepository.findCustomerById(customerId);
+        }
+
+        // 3. Calculate Taxes on Discounted Amounts
+        const taxResult = taxEngine.calculate({ items: calculationItems }, customer);
+
+        // 4. Process results
+        let totalAmount = 0; // Final Payable
+        let totalTax = taxResult.total_tax;
+        const processedItems = [];
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const calculatedItem = taxResult.items[i];
+            const variant = variantMap.get(item.variantId);
 
             const pricePerUnit = item.pricePerUnit ?? variant.mrp;
             const costPerUnit = variant.cost_price;
-            const quantity = item.quantity;
             const itemDiscount = item.discount ?? 0;
-
-            const subtotal = pricePerUnit * quantity - itemDiscount;
-
-            const baseAmount = subtotal / (1 + inclusiveTaxRate);
-            const itemTaxAmount = (subtotal - baseAmount) + (baseAmount * exclusiveTaxRate);
-
-            totalAmount += baseAmount + itemTaxAmount;
-            totalTax += itemTaxAmount;
 
             processedItems.push({
                 variant_id: item.variantId,
-                quantity,
+                quantity: item.quantity,
                 price_per_unit: pricePerUnit,
                 cost_per_unit: costPerUnit,
-                tax_rate: (inclusiveTaxRate + exclusiveTaxRate) * 100, // Storing combined rate for simplicity
-                tax_amount: itemTaxAmount,
+                tax_rate: calculatedItem.applied_tax_rate,
+                tax_amount: calculatedItem.tax_amount,
+                applied_tax_rate: calculatedItem.applied_tax_rate,
+                applied_tax_amount: calculatedItem.applied_tax_amount,
+                tax_rule_snapshot: calculatedItem.tax_rule_snapshot,
                 discount_amount: itemDiscount
             });
         }
 
-        // Apply overall discount
-        totalAmount = totalAmount - discount;
+        // Grand Total from tax engine is Sum(Item Total + Item Tax) (if Exclusive) or Sum(Item Total) (if Inclusive)
+        // Since we fed it "Post-Global-Discount" prices, taxResult.grand_total IS the final payable amount.
+        totalAmount = taxResult.grand_total;
 
         // Calculate paid amount from payments
         const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);

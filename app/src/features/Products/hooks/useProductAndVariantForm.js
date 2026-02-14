@@ -70,7 +70,7 @@ const getInitialFormData = (data) => {
       image_path: data.image_path ?? null,
       category_id: data.category_id ? String(data.category_id) : '',
       status: data.status ?? 'active',
-      taxIds: data.taxes?.map(t => t.id) ?? [],
+      tax_category_id: data.tax_category_id ? String(data.tax_category_id) : '',
       variants: data.variants.map(v => ({
         ...v,
         _tempId: v.id,
@@ -199,7 +199,7 @@ export const useProductAndVariantForm = (initialState = {}) => {
     const cleanData = {
       ...rest,
       category_id: formData.category_id ? Number.parseInt(formData.category_id, 10) : null,
-      taxIds: formData.taxIds || [],
+      tax_category_id: formData.tax_category_id ? Number.parseInt(formData.tax_category_id, 10) : null,
       variants: variants.map(getVariantData),
     };
 
