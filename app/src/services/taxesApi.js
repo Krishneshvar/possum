@@ -122,4 +122,10 @@ export const {
     useUpdateTaxRuleMutation,
     useDeleteTaxRuleMutation,
     useCalculateTaxMutation,
+
+    // Aliases for TaxesPage.jsx
+    useGetTaxProfilesQuery: useGetTaxesQuery,
+    useCreateTaxProfileMutation: useAddTaxMutation,
+    useUpdateTaxProfileMutation: useUpdateTaxMutation,
+    useDeleteTaxProfileMutation: useDeleteTaxMutation,
 } = taxesApi;
