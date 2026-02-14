@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useSelector } from 'react-redux';
 
 export default function SaleDetailsPage() {
     const { saleId } = useParams();
@@ -26,6 +27,11 @@ export default function SaleDetailsPage() {
     const { data: sale, isLoading, error } = useGetSaleQuery(saleId);
     const [fulfillSale, { isLoading: isFulfilling }] = useFulfillSaleMutation();
     const currency = useCurrency();
+    const permissions = useSelector((state) => state.auth.permissions);
+    const token = useSelector((state) => state.auth.token);
+
+    const canRefund = permissions.includes('COMPLETE_SALE') || permissions.includes('VOID_INVOICE');
+    const canPrint = permissions.includes('PRINT_INVOICE') || permissions.includes('COMPLETE_SALE');
 
     const handleFulfill = async () => {
         try {
@@ -33,6 +39,16 @@ export default function SaleDetailsPage() {
             toast.success("Order fulfilled successfully!");
         } catch (err) {
             toast.error(err?.data?.error || "Failed to fulfill order.");
+        }
+    };
+
+    const handlePrint = async () => {
+        try {
+             await window.electronAPI.printInvoice(sale.id, token);
+             toast.success("Printing invoice...");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to print invoice");
         }
     };
 
@@ -120,7 +136,7 @@ export default function SaleDetailsPage() {
                         <Download className="mr-2 h-4 w-4" />
                         Download
                     </Button>
-                    {sale.status !== 'cancelled' && sale.status !== 'refunded' && (
+                    {canRefund && sale.status !== 'cancelled' && sale.status !== 'refunded' && (
                         <Button variant="outline" size="sm" onClick={() => setIsReturnDialogOpen(true)}>
                             <RotateCcw className="mr-2 h-4 w-4" />
                             Return Items
@@ -132,10 +148,12 @@ export default function SaleDetailsPage() {
                             Fulfill Order
                         </Button>
                     )}
-                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
+                    {canPrint && (
+                    <Button size="sm" onClick={handlePrint} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
                         <Printer className="mr-2 h-4 w-4" />
                         Print Invoice
                     </Button>
+                    )}
                 </div>
             </div>
 

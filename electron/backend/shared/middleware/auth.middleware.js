@@ -1,50 +1,56 @@
-/**
- * Auth Middleware
- * Handles JWT verification and role/permission checks
- */
-import { verifyToken } from '../../modules/auth/auth.service.js';
+import * as AuthService from '../../modules/auth/auth.service.js';
 
 /**
- * Middleware to authenticate requests via JWT
+ * Middleware to verify session token
  */
 export function authenticate(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Authentication required' });
+    if (req.path.startsWith('/auth/')) {
+        return next();
+    }
+
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Unauthorized: No token provided' });
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-        return res.status(401).json({ error: 'Invalid or expired token' });
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid token format' });
     }
 
-    // Attach user info to request
-    req.userId = decoded.id;
-    req.username = decoded.username;
-    req.userRoles = decoded.roles || [];
-    req.userPermissions = decoded.permissions || [];
+    const session = AuthService.getSession(token);
+    if (!session) {
+        return res.status(401).json({ error: 'Unauthorized: Session expired or invalid' });
+    }
+
+    req.user = session.user;
+    req.permissions = session.permissions;
+    req.token = token;
 
     next();
 }
 
 /**
- * Middleware to check for specific permissions
- * @param {string|string[]} permissions - Required permission key(s)
+ * Middleware to require specific permission
+ * Supports single string or array of strings (OR logic)
  */
-export function authorize(permissions) {
-    const required = Array.isArray(permissions) ? permissions : [permissions];
-
+export function requirePermission(permission) {
     return (req, res, next) => {
-        if (!req.userPermissions) {
-            return res.status(403).json({ error: 'Forbidden: No permissions assigned' });
+        if (!req.user || !req.permissions) {
+            return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
         }
 
-        const hasPermission = required.every(p => req.userPermissions.includes(p));
+        const userPermissions = req.permissions;
+        let hasAccess = false;
 
-        if (!hasPermission) {
-            return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+        if (Array.isArray(permission)) {
+            hasAccess = permission.some(p => userPermissions.includes(p));
+        } else {
+            hasAccess = userPermissions.includes(permission);
+        }
+
+        if (!hasAccess) {
+            return res.status(403).json({ error: `Forbidden: Missing required permission (${Array.isArray(permission) ? permission.join(' OR ') : permission})` });
         }
 
         next();

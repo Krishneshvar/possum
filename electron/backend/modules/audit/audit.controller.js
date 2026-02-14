@@ -1,46 +1,21 @@
-/**
- * Audit Controller
- * Handles HTTP requests for audit logs
- */
-import * as auditService from './audit.service.js';
+import * as AuditService from './audit.service.js';
 
-/**
- * GET /api/audit
- * Get audit logs with filtering and pagination
- */
 export async function getAuditLogs(req, res) {
     try {
-        const {
-            tableName,
-            rowId,
-            userId,
-            action,
-            startDate,
-            endDate,
-            searchTerm,
-            sortBy,
-            sortOrder,
-            page = 1,
-            limit = 50
-        } = req.query;
+        const { userId, action, startDate, endDate, limit, offset } = req.query;
 
-        const logs = auditService.getAuditLogs({
-            tableName: tableName || null,
-            rowId: rowId ? parseInt(rowId, 10) : null,
-            userId: userId ? parseInt(userId, 10) : null,
-            action: action || null,
-            startDate: startDate || null,
-            endDate: endDate || null,
-            searchTerm: searchTerm || null,
-            sortBy: sortBy || 'created_at',
-            sortOrder: sortOrder || 'DESC',
-            currentPage: parseInt(page, 10),
-            itemsPerPage: parseInt(limit, 10)
-        });
+        const params = {
+            userId: userId ? parseInt(userId, 10) : undefined,
+            action: action || undefined,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+            limit: limit ? parseInt(limit, 10) : 100,
+            offset: offset ? parseInt(offset, 10) : 0
+        };
 
+        const logs = await AuditService.getAuditLogs(params);
         res.json(logs);
-    } catch (err) {
-        console.error('Error fetching audit logs:', err);
-        res.status(500).json({ error: 'Failed to retrieve audit logs.' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 }
