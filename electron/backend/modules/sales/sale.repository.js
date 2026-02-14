@@ -53,15 +53,19 @@ export function insertSaleItem({
     cost_per_unit,
     tax_rate,
     tax_amount,
-    discount_amount
+    discount_amount,
+    applied_tax_rate,
+    applied_tax_amount,
+    tax_rule_snapshot
 }) {
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO sale_items (
             sale_id, variant_id, quantity, price_per_unit, cost_per_unit,
-            tax_rate, tax_amount, discount_amount
+            tax_rate, tax_amount, discount_amount,
+            applied_tax_rate, applied_tax_amount, tax_rule_snapshot
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     return stmt.run(
         sale_id,
@@ -71,7 +75,10 @@ export function insertSaleItem({
         cost_per_unit,
         tax_rate,
         tax_amount,
-        discount_amount
+        discount_amount,
+        applied_tax_rate,
+        applied_tax_amount,
+        tax_rule_snapshot
     );
 }
 

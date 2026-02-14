@@ -1,53 +1,125 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
+// Assuming baseQuery is defined in api-client similarly to salesApi
+// But salesApi imported it from '@/lib/api-client'.
+// I'll check where that is.
 import { baseQuery } from '@/lib/api-client';
 
 export const taxesApi = createApi({
     reducerPath: 'taxesApi',
-    baseQuery,
-    tagTypes: ['Tax'],
+    baseQuery: baseQuery,
+    tagTypes: ['TaxProfile', 'TaxCategory', 'TaxRule'],
     endpoints: (builder) => ({
-        getTaxes: builder.query({
-            query: () => '/taxes',
-            providesTags: (result) =>
-                result
-                    ? [...result.map(({ id }) => ({ type: 'Tax', id })), { type: 'Tax', id: 'LIST' }]
-                    : [{ type: 'Tax', id: 'LIST' }],
+        // Profiles
+        getTaxProfiles: builder.query({
+            query: () => '/taxes/profiles',
+            providesTags: ['TaxProfile'],
         }),
-        addTax: builder.mutation({
+        createTaxProfile: builder.mutation({
             query: (body) => ({
-                url: '/taxes',
+                url: '/taxes/profiles',
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: [{ type: 'Tax', id: 'LIST' }],
+            invalidatesTags: ['TaxProfile'],
         }),
-        updateTax: builder.mutation({
+        updateTaxProfile: builder.mutation({
             query: ({ id, ...body }) => ({
-                url: `/taxes/${id}`,
+                url: `/taxes/profiles/${id}`,
                 method: 'PUT',
                 body,
             }),
-            invalidatesTags: (result, error, { id }) => [
-                { type: 'Tax', id },
-                { type: 'Tax', id: 'LIST' },
-            ],
+            invalidatesTags: ['TaxProfile'],
         }),
-        deleteTax: builder.mutation({
+        deleteTaxProfile: builder.mutation({
             query: (id) => ({
-                url: `/taxes/${id}`,
+                url: `/taxes/profiles/${id}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: (result, error, id) => [
-                { type: 'Tax', id },
-                { type: 'Tax', id: 'LIST' },
-            ],
+            invalidatesTags: ['TaxProfile'],
+        }),
+
+        // Categories
+        getTaxCategories: builder.query({
+            query: () => '/taxes/categories',
+            providesTags: ['TaxCategory'],
+        }),
+        createTaxCategory: builder.mutation({
+            query: (body) => ({
+                url: '/taxes/categories',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['TaxCategory'],
+        }),
+        updateTaxCategory: builder.mutation({
+            query: ({ id, ...body }) => ({
+                url: `/taxes/categories/${id}`,
+                method: 'PUT',
+                body,
+            }),
+            invalidatesTags: ['TaxCategory'],
+        }),
+        deleteTaxCategory: builder.mutation({
+            query: (id) => ({
+                url: `/taxes/categories/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['TaxCategory'],
+        }),
+
+        // Rules
+        getTaxRules: builder.query({
+            query: (profileId) => `/taxes/rules?profileId=${profileId}`,
+            providesTags: ['TaxRule'],
+        }),
+        createTaxRule: builder.mutation({
+            query: (body) => ({
+                url: '/taxes/rules',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['TaxRule'],
+        }),
+        updateTaxRule: builder.mutation({
+            query: ({ id, ...body }) => ({
+                url: `/taxes/rules/${id}`,
+                method: 'PUT',
+                body,
+            }),
+            invalidatesTags: ['TaxRule'],
+        }),
+        deleteTaxRule: builder.mutation({
+            query: (id) => ({
+                url: `/taxes/rules/${id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['TaxRule'],
+        }),
+
+        // Calculation
+        calculateTax: builder.mutation({
+            query: (body) => ({
+                url: '/taxes/calculate',
+                method: 'POST',
+                body,
+            }),
         }),
     }),
 });
 
 export const {
-    useGetTaxesQuery,
-    useAddTaxMutation,
-    useUpdateTaxMutation,
-    useDeleteTaxMutation,
+    useGetTaxProfilesQuery,
+    useCreateTaxProfileMutation,
+    useUpdateTaxProfileMutation,
+    useDeleteTaxProfileMutation,
+    useGetTaxCategoriesQuery,
+    useCreateTaxCategoryMutation,
+    useUpdateTaxCategoryMutation,
+    useDeleteTaxCategoryMutation,
+    useGetTaxRulesQuery,
+    useCreateTaxRuleMutation,
+    useUpdateTaxRuleMutation,
+    useDeleteTaxRuleMutation,
+    useCalculateTaxMutation,
 } = taxesApi;

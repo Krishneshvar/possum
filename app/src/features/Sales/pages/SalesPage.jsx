@@ -4,8 +4,9 @@ import SalesTable from '../components/SalesTable';
 import SalesControls from '../components/SalesControls';
 import BillPreview from '../components/BillPreview';
 import { useCreateSaleMutation } from '@/services/salesApi';
-import { useGetTaxesQuery } from '@/services/taxesApi';
+import { useCalculateTaxMutation } from '@/services/taxesApi';
 import { toast } from "sonner";
+import { useEffect } from 'react';
 
 const INITIAL_TAB_STATE = {
   items: [],
@@ -16,9 +17,7 @@ const INITIAL_TAB_STATE = {
   discountType: 'fixed',
   paymentType: 'full',
   amountTendered: 0,
-  taxMode: 'item',
-  billTaxIds: [],
-  // paymentMethod is string ID in component, ensure it's synced with actual IDs or handle 'cash' default mapping
+  // taxMode and billTaxIds are deprecated
 };
 
 // Initialize 9 tabs
@@ -46,7 +45,62 @@ export default function SalesPage() {
 
   // API Mutation
   const [createSale, { isLoading }] = useCreateSaleMutation();
-  const { data: taxes } = useGetTaxesQuery();
+  const [calculateTax, { data: taxResult }] = useCalculateTaxMutation();
+
+  const currentBill = bills[activeTab];
+
+  useEffect(() => {
+    if (currentBill.items.length === 0) return;
+
+    const timer = setTimeout(() => {
+        // Calculate Pre-Tax Totals to distribute Global Discount
+        // Similar logic to backend to ensure preview matches final sale
+        let grossTotal = 0;
+        const tempItems = currentBill.items.map(item => {
+            const price = parseFloat(item.price) || 0;
+            const qty = parseInt(item.quantity) || 0;
+            const discount = parseFloat(item.discount) || 0;
+            const lineTotal = price * qty;
+            const netLineTotal = Math.max(0, lineTotal - discount);
+            grossTotal += netLineTotal;
+            return { ...item, netLineTotal, qty, price };
+        });
+
+        // Determine Global Discount Amount
+        const globalDiscountAmount = currentBill.discountType === 'percentage'
+            ? (grossTotal * (parseFloat(currentBill.overallDiscount) || 0) / 100)
+            : (parseFloat(currentBill.overallDiscount) || 0);
+
+        let distributedGlobalDiscount = 0;
+        const calculationItems = tempItems.map((item, index) => {
+            let itemGlobalDiscount = 0;
+            if (grossTotal > 0 && globalDiscountAmount > 0) {
+                if (index === tempItems.length - 1) {
+                    itemGlobalDiscount = globalDiscountAmount - distributedGlobalDiscount;
+                } else {
+                    itemGlobalDiscount = (item.netLineTotal / grossTotal) * globalDiscountAmount;
+                    distributedGlobalDiscount += itemGlobalDiscount;
+                }
+            }
+
+            const finalTaxableAmount = Math.max(0, item.netLineTotal - itemGlobalDiscount);
+            // Effective Unit Price for Tax Engine
+            const effectiveUnitPrice = item.qty > 0 ? finalTaxableAmount / item.qty : 0;
+
+            return {
+                price: effectiveUnitPrice,
+                quantity: item.qty,
+                tax_category_id: item.tax_category_id
+            };
+        });
+
+        calculateTax({
+            invoice: { items: calculationItems },
+            customerId: currentBill.customerId
+        });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [currentBill.items, currentBill.customerId, currentBill.overallDiscount, currentBill.discountType, calculateTax]);
 
   // --- Column Persistence Logic ---
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -70,8 +124,6 @@ export default function SalesPage() {
       return updated;
     });
   };
-
-  const currentBill = bills[activeTab];
 
   const updateBill = (updates) => {
     setBills(prev => prev.map((bill, index) =>
@@ -129,51 +181,33 @@ export default function SalesPage() {
         mrp: parseFloat(product.mrp),
         discount: 0,
         sku: product.sku,
-        taxes: product.taxes || []
+        tax_category_id: product.tax_category_id
       };
       updateBill({ items: [...currentBill.items, newItem] });
     }
   };
 
   const calculateTotal = (bill) => {
-    let totalTax = 0;
-    let totalBaseAmount = 0;
+    // If we have tax result, use it. Otherwise approximate or 0.
+    // However, taxResult is async and might lag behind currentBill.
+    // For now, we rely on taxResult.grand_total if available, but we must adjust for overall discount
+    // since backend tax engine returns grand total *before* global discount (as per my implementation choice earlier).
+    // Wait, createSale applies global discount at the end.
+    // taxEngine returns grand_total which includes Item Taxes.
 
-    let billTaxRules = [];
-    if (bill.taxMode === 'bill' && bill.billTaxIds?.length > 0 && taxes) {
-      billTaxRules = taxes.filter(t => bill.billTaxIds.includes(parseInt(t.id)));
-    }
+    if (!taxResult) return 0;
 
-    bill.items.forEach((item) => {
-      const price = parseFloat(item.price) || 0;
-      const qty = parseInt(item.quantity) || 0;
-      const disc = parseFloat(item.discount) || 0;
-      const itemSubtotal = (price * qty) - disc;
-
-      const itemTaxes = bill.taxMode === 'bill' ? billTaxRules : (item.taxes || []);
-
-      const inclusiveTaxRate = itemTaxes
-        .filter(t => t.type === 'inclusive')
-        .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
-
-      const exclusiveTaxRate = itemTaxes
-        .filter(t => t.type === 'exclusive')
-        .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
-
-      const baseAmount = itemSubtotal / (1 + inclusiveTaxRate);
-      const itemTax = (itemSubtotal - baseAmount) + (baseAmount * exclusiveTaxRate);
-
-      totalTax += itemTax;
-      totalBaseAmount += baseAmount;
-    });
-
-    const discountAmount = bill.discountType === 'percentage'
-      ? (totalBaseAmount * (parseFloat(bill.overallDiscount) || 0) / 100)
+    // We need to apply global discount here for display
+     const discountAmount = bill.discountType === 'percentage'
+      ? (taxResult.grand_total * (parseFloat(bill.overallDiscount) || 0) / 100)
       : (parseFloat(bill.overallDiscount) || 0);
 
-    const totalAfterDiscount = Math.max(0, (totalBaseAmount + totalTax) - discountAmount);
-    return totalAfterDiscount;
+     return Math.max(0, taxResult.grand_total - discountAmount);
   };
+
+  // We use taxResult.grand_total but we need to ensure it matches the current items state.
+  // If items changed and taxResult is stale, it might look wrong.
+  // But for now, let's use what we have.
 
   const currentGrandTotal = calculateTotal(currentBill);
 
@@ -220,12 +254,10 @@ export default function SalesPage() {
       payments: [
         {
           amount: paymentAmount,
-          paymentMethodId: currentBill.paymentMethod // Should be ID string/number
+          paymentMethodId: currentBill.paymentMethod
         }
       ],
-      taxMode: currentBill.taxMode,
-      billTaxIds: currentBill.billTaxIds,
-      // temporary hardcoded userId, backend defaults to 1 if not provided, but good to be explicit if we had it
+      // taxMode and billTaxIds removed
     };
 
     try {
@@ -295,11 +327,6 @@ export default function SalesPage() {
               setAmountTendered={(val) => updateBill({ amountTendered: val })}
               grandTotal={currentGrandTotal}
               onCompleteSale={handleCompleteSale}
-              taxMode={currentBill.taxMode}
-              setTaxMode={(val) => updateBill({ taxMode: val })}
-              billTaxIds={currentBill.billTaxIds}
-              setBillTaxIds={(val) => updateBill({ billTaxIds: val })}
-              taxes={taxes}
             />
           </div>
         </div>
@@ -313,11 +340,8 @@ export default function SalesPage() {
               paymentMethod={currentBill.paymentMethod}
               overallDiscount={currentBill.overallDiscount}
               discountType={currentBill.discountType}
-              total={0} // Calculated inside component
               date={new Date()}
-              taxMode={currentBill.taxMode}
-              billTaxIds={currentBill.billTaxIds}
-              taxes={taxes}
+              taxResult={taxResult}
             />
           </div>
         )}

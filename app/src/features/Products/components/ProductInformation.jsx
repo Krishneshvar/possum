@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 import CategorySelector from "./CategorySelector";
-import TaxSelector from "./TaxSelector";
+import { useGetTaxCategoriesQuery } from "@/services/taxesApi";
 
 export default function ProductInformation({
   formData,
@@ -26,6 +26,7 @@ export default function ProductInformation({
   handleRemoveImage,
   isEditMode,
 }) {
+  const { data: taxCategories } = useGetTaxCategoriesQuery();
   const fileInputRef = useRef(null);
 
   const imageUrl = useMemo(() => {
@@ -125,14 +126,25 @@ export default function ProductInformation({
             />
           </div>
 
-          <div className="space-y-3 lg:col-span-2">
+          <div className="space-y-3">
             <Label className="text-sm font-medium">
-              Tax Configuration
+              Tax Category
             </Label>
-            <TaxSelector
-              selectedTaxIds={formData.taxIds}
-              onChange={handleChange}
-            />
+            <Select
+              value={String(formData.tax_category_id || '')}
+              onValueChange={(value) => handleChange('tax_category_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Tax Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {taxCategories?.map((tc) => (
+                  <SelectItem key={tc.id} value={String(tc.id)}>
+                    {tc.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

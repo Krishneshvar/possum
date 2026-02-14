@@ -21,8 +21,11 @@ CREATE TABLE IF NOT EXISTS sale_items (
   quantity INTEGER NOT NULL,
   price_per_unit NUMERIC(10,2) NOT NULL,
   cost_per_unit NUMERIC(10,2) NOT NULL,
-  tax_rate REAL NOT NULL,
-  tax_amount NUMERIC(10,2) NOT NULL,
+  tax_rate REAL,
+  tax_amount NUMERIC(10,2),
+  applied_tax_rate REAL,
+  applied_tax_amount NUMERIC(10,2),
+  tax_rule_snapshot TEXT,
   discount_amount NUMERIC(10,2) DEFAULT 0,
   FOREIGN KEY (sale_id) REFERENCES sales(id),
   FOREIGN KEY (variant_id) REFERENCES variants(id)

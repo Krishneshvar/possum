@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Receipt, Printer } from "lucide-react";
 import { useCurrency } from "@/hooks/useCurrency";
 
-export default function BillPreview({ items, customerName, paymentMethod, overallDiscount = 0, discountType = 'fixed', date, taxMode = 'item', billTaxIds = [], taxes }) {
+export default function BillPreview({ items, customerName, paymentMethod, overallDiscount = 0, discountType = 'fixed', date, taxResult }) {
     const currency = useCurrency();
     const displayDate = date ? new Date(date).toLocaleString() : new Date().toLocaleString();
     const [billSettings, setBillSettings] = useState(null);
@@ -19,57 +19,52 @@ export default function BillPreview({ items, customerName, paymentMethod, overal
     const headerOptions = billSettings?.sections?.find(s => s.id === 'storeHeader')?.options || {};
     const isHeaderVisible = billSettings?.sections?.find(s => s.id === 'storeHeader')?.visible !== false;
 
+    // Use taxResult if available, else approximate
     let individualTaxes = {};
     let totalTax = 0;
     let totalBaseAmount = 0;
 
-    let billTaxRules = [];
-    if (taxMode === 'bill' && billTaxIds?.length > 0 && taxes) {
-        billTaxRules = taxes.filter(t => billTaxIds.includes(parseInt(t.id)));
-    }
+    // Fallback manual calculation removed or simplified to showing 0 if no taxResult
+    // Actually, we should try to match items with taxResult items
 
-    items.forEach((item) => {
-        const price = parseFloat(item.price) || 0;
-        const qty = parseInt(item.quantity) || 0;
-        const disc = parseFloat(item.discount) || 0;
-        const itemSubtotal = (price * qty) - disc;
+    if (taxResult) {
+        // Aggregate taxes
+        totalTax = taxResult.total_tax;
 
-        const itemTaxes = taxMode === 'bill' ? billTaxRules : (item.taxes || []);
-
-        const inclusiveTaxRate = itemTaxes
-            .filter(t => t.type === 'inclusive')
-            .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
-
-        const exclusiveTaxRate = itemTaxes
-            .filter(t => t.type === 'exclusive')
-            .reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0) / 100;
-
-        const baseAmount = itemSubtotal / (1 + inclusiveTaxRate);
-
-        // Calculate each tax component for this item
-        itemTaxes.forEach(t => {
-            let taxAmt = 0;
-            if (t.type === 'inclusive') {
-                const rate = (parseFloat(t.rate) || 0) / 100;
-                // Since baseAmount = itemSubtotal / (1 + totalInclusiveRate)
-                // This specific tax's portion is (baseAmount * rate)
-                taxAmt = baseAmount * rate;
-            } else {
-                const rate = (parseFloat(t.rate) || 0) / 100;
-                taxAmt = baseAmount * rate;
+        // We can aggregate individual taxes from snapshot if needed
+        taxResult.items.forEach(item => {
+            if (item.tax_rule_snapshot) {
+                try {
+                    const rules = JSON.parse(item.tax_rule_snapshot);
+                    rules.forEach(r => {
+                        individualTaxes[r.rule_name] = (individualTaxes[r.rule_name] || 0) + r.amount;
+                    });
+                } catch(e) {}
             }
-            individualTaxes[t.name] = (individualTaxes[t.name] || 0) + taxAmt;
-            totalTax += taxAmt;
         });
 
-        totalBaseAmount += baseAmount;
-    });
+        // Base amount?
+        // taxResult.grand_total is "Price + Tax" (if exclusive) or "Price" (if inclusive)
+        // We can approximate base amount as Grand Total - Tax (if exclusive)
+        // But if inclusive, Grand Total includes Tax.
+        // So Base = Grand Total - Tax.
+        // This is generally true: Total Payable = Base + Tax.
+        totalBaseAmount = taxResult.grand_total - taxResult.total_tax;
+    } else {
+        // Fallback: sum of raw item totals
+        totalBaseAmount = items.reduce((sum, item) => {
+             const price = parseFloat(item.price) || 0;
+             const qty = parseInt(item.quantity) || 0;
+             const disc = parseFloat(item.discount) || 0;
+             return sum + (price * qty) - disc;
+        }, 0);
+    }
 
     const discountAmount = discountType === 'percentage'
-        ? (totalBaseAmount * (parseFloat(overallDiscount) || 0) / 100)
+        ? (taxResult ? taxResult.grand_total : totalBaseAmount) * (parseFloat(overallDiscount) || 0) / 100
         : (parseFloat(overallDiscount) || 0);
 
-    const finalTotal = Math.max(0, (totalBaseAmount + totalTax) - discountAmount);
+    const finalTotal = Math.max(0, (taxResult ? taxResult.grand_total : totalBaseAmount) - discountAmount);
 
     const renderSection = (section) => {
         if (!section.visible) return null;
