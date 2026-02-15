@@ -27,11 +27,12 @@ export default function SaleDetailsPage() {
     const { data: sale, isLoading, error } = useGetSaleQuery(saleId);
     const [fulfillSale, { isLoading: isFulfilling }] = useFulfillSaleMutation();
     const currency = useCurrency();
-    const permissions = useSelector((state) => state.auth.permissions);
+    const user = useSelector((state) => state.auth.user);
     const token = useSelector((state) => state.auth.token);
+    const permissions = user?.permissions || [];
 
-    const canRefund = permissions.includes('COMPLETE_SALE') || permissions.includes('VOID_INVOICE');
-    const canPrint = permissions.includes('PRINT_INVOICE') || permissions.includes('COMPLETE_SALE');
+    const canRefund = permissions.includes('sales.create') || permissions.includes('sales.refund');
+    const canPrint = permissions.includes('sales.view') || permissions.includes('sales.create');
 
     const handleFulfill = async () => {
         try {
@@ -44,8 +45,8 @@ export default function SaleDetailsPage() {
 
     const handlePrint = async () => {
         try {
-             await window.electronAPI.printInvoice(sale.id, token);
-             toast.success("Printing invoice...");
+            await window.electronAPI.printInvoice(sale.id, token);
+            toast.success("Printing invoice...");
         } catch (err) {
             console.error(err);
             toast.error("Failed to print invoice");
@@ -149,10 +150,10 @@ export default function SaleDetailsPage() {
                         </Button>
                     )}
                     {canPrint && (
-                    <Button size="sm" onClick={handlePrint} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print Invoice
-                    </Button>
+                        <Button size="sm" onClick={handlePrint} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
+                            <Printer className="mr-2 h-4 w-4" />
+                            Print Invoice
+                        </Button>
                     )}
                 </div>
             </div>

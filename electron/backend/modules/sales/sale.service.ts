@@ -51,8 +51,8 @@ export async function createSale({
     if (!session) throw new Error('Unauthorized: Invalid session');
 
     const userPermissions = session.permissions || [];
-    if (!userPermissions.includes('COMPLETE_SALE')) {
-         throw new Error('Forbidden: Missing required permission COMPLETE_SALE');
+    if (!userPermissions.includes('sales.create')) {
+        throw new Error('Forbidden: Missing required permission sales.create');
     }
 
 
@@ -243,7 +243,7 @@ export async function createSale({
         // Log sale creation
         (auditService as any).logAction(
             userId,
-            'COMPLETE_SALE',
+            'sales.create',
             'SALE',
             saleId,
             null, // oldData
@@ -295,14 +295,14 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
         throw new Error('Unauthorized: Service requires token for permission check');
     }
 
-     const session = AuthService.getSession(token);
+    const session = AuthService.getSession(token);
     if (!session) throw new Error('Unauthorized: Invalid session');
 
     const userPermissions = session.permissions || [];
-    if (!userPermissions.includes('COMPLETE_SALE')) { // Assuming ADD_PAYMENT requires same permission or similar
-         // Or 'manage_sales'
-         // Original code used COMPLETE_SALE
-         throw new Error('Forbidden: Missing required permission COMPLETE_SALE');
+    if (!userPermissions.includes('sales.create')) { // Assuming ADD_PAYMENT requires same permission or similar
+        // Or 'manage_sales'
+        // Original code used COMPLETE_SALE
+        throw new Error('Forbidden: Missing required permission sales.create');
     }
 
     return transaction(() => {
@@ -367,8 +367,8 @@ export function cancelSale(saleId: number, userId: number, token?: string): any 
     }
 
     const session = AuthService.getSession(token);
-    if (!session || !(session.permissions || []).includes('VOID_INVOICE')) {
-         throw new Error('Forbidden: Missing required permission VOID_INVOICE');
+    if (!session || !(session.permissions || []).includes('sales.refund')) {
+        throw new Error('Forbidden: Missing required permission sales.refund');
     }
 
     return transaction(() => {
@@ -413,7 +413,7 @@ export function cancelSale(saleId: number, userId: number, token?: string): any 
         // Log sale cancellation
         (auditService as any).logAction(
             userId,
-            'VOID_INVOICE',
+            'sales.refund',
             'SALE',
             saleId,
             null,
@@ -432,13 +432,13 @@ export function cancelSale(saleId: number, userId: number, token?: string): any 
  * @returns {Object} Fulfillment result
  */
 export function fulfillSale(saleId: number, userId: number, token?: string): any {
-     if (!token) {
+    if (!token) {
         throw new Error('Unauthorized: Service requires token for permission check');
     }
 
     const session = AuthService.getSession(token);
-    if (!session || !(session.permissions || []).includes('COMPLETE_SALE')) {
-         throw new Error('Forbidden: Missing required permission COMPLETE_SALE');
+    if (!session || !(session.permissions || []).includes('sales.create')) {
+        throw new Error('Forbidden: Missing required permission sales.create');
     }
 
     return transaction(() => {
@@ -459,14 +459,14 @@ export function fulfillSale(saleId: number, userId: number, token?: string): any
         saleRepository.updateFulfillmentStatus(saleId, 'fulfilled');
 
         // Log fulfillment
-         (auditService as any).logAction(
+        (auditService as any).logAction(
             userId,
-            'FULFILL_SALE',
+            'sales.create',
             'SALE',
             saleId,
             null,
             null,
-             null
+            null
         );
 
         return { success: true, message: 'Sale fulfilled successfully' };

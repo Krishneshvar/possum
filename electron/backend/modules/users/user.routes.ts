@@ -7,13 +7,13 @@ import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 
 const router = Router();
 
-router.get('/roles', requirePermission('MANAGE_USERS'), UserController.getRoles);
-router.get('/permissions', requirePermission('MANAGE_USERS'), UserController.getPermissions);
+router.get('/roles', requirePermission('users.manage'), UserController.getRoles);
+router.get('/permissions', requirePermission('users.manage'), UserController.getPermissions);
 
-router.get('/', requirePermission('MANAGE_USERS'), UserController.getUsers);
-router.get('/:id', requirePermission('MANAGE_USERS'), UserController.getUserById);
-router.post('/', requirePermission('MANAGE_USERS'), UserController.createUser);
-router.put('/:id', requirePermission('MANAGE_USERS'), UserController.updateUser);
-router.delete('/:id', requirePermission('MANAGE_USERS'), UserController.deleteUser);
+router.get('/', requirePermission('users.manage'), UserController.getUsers);
+router.get('/:id', requirePermission('users.manage'), UserController.getUserById);
+router.post('/', requirePermission('users.manage'), UserController.createUser);
+router.put('/:id', requirePermission('users.manage'), UserController.updateUser);
+router.delete('/:id', requirePermission('users.manage'), UserController.deleteUser);
 
 export default router;

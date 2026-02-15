@@ -4,6 +4,6 @@ import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 
 const router = Router();
 
-router.get('/', requirePermission('MANAGE_USERS'), AuditController.getAuditLogs);
+router.get('/', requirePermission('users.manage'), AuditController.getAuditLogs);
 
 export default router;

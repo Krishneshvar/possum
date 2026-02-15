@@ -99,16 +99,16 @@ export default function DashboardPage() {
         <Route path="/" element={<StatCards cardData={cardData} />} />
         <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
 
-        <Route path="/sales" element={<SalesPage />} />
-        <Route path="/sales/orders" element={<OrdersPage />} />
-        <Route path="/sales/history" element={<SalesHistoryPage />} />
-        <Route path="/sales/history/:saleId" element={<SaleDetailsPage />} />
-        <Route path="/sales/transactions" element={<TransactionsPage />} />
-        <Route path="/sales/returns" element={<ReturnsPage />} />
-        <Route path="/sales/taxes" element={<TaxesPage />} />
+        <Route path="/sales" element={<ProtectedRoute requiredPermissions="sales.create"><SalesPage /></ProtectedRoute>} />
+        <Route path="/sales/orders" element={<ProtectedRoute requiredPermissions="sales.view"><OrdersPage /></ProtectedRoute>} />
+        <Route path="/sales/history" element={<ProtectedRoute requiredPermissions="sales.view"><SalesHistoryPage /></ProtectedRoute>} />
+        <Route path="/sales/history/:saleId" element={<ProtectedRoute requiredPermissions="sales.view"><SaleDetailsPage /></ProtectedRoute>} />
+        <Route path="/sales/transactions" element={<ProtectedRoute requiredPermissions="sales.view"><TransactionsPage /></ProtectedRoute>} />
+        <Route path="/sales/returns" element={<ProtectedRoute requiredPermissions="sales.refund"><ReturnsPage /></ProtectedRoute>} />
+        <Route path="/sales/taxes" element={<ProtectedRoute requiredPermissions="reports.view"><TaxesPage /></ProtectedRoute>} />
 
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/reports/sales" element={<SalesReportPage />} />
+        <Route path="/reports" element={<ProtectedRoute requiredPermissions="reports.view"><ReportsPage /></ProtectedRoute>} />
+        <Route path="/reports/sales" element={<ProtectedRoute requiredPermissions="reports.view"><SalesReportPage /></ProtectedRoute>} />
 
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/add" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />

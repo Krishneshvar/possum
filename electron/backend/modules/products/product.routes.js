@@ -12,12 +12,12 @@ import { upload } from '../../shared/middleware/upload.middleware.js';
 const router = Router();
 
 // Allow anyone who can sell or view reports to see products
-router.get('/', requirePermission(['VIEW_REPORTS', 'COMPLETE_SALE', 'CREATE_PRODUCT']), getProductsController);
+router.get('/', requirePermission(['reports.view', 'sales.create', 'products.manage']), getProductsController);
 
 // Image upload handling via multer
-router.post('/', requirePermission('CREATE_PRODUCT'), upload.single('image'), createProductController);
-router.get('/:id', requirePermission(['VIEW_REPORTS', 'COMPLETE_SALE', 'CREATE_PRODUCT']), getProductDetails);
-router.put('/:id', requirePermission('EDIT_PRODUCT'), upload.single('image'), updateProductController);
-router.delete('/:id', requirePermission('DELETE_PRODUCT'), deleteProductController);
+router.post('/', requirePermission('products.manage'), upload.single('image'), createProductController);
+router.get('/:id', requirePermission(['reports.view', 'sales.create', 'products.manage']), getProductDetails);
+router.put('/:id', requirePermission('products.manage'), upload.single('image'), updateProductController);
+router.delete('/:id', requirePermission('products.manage'), deleteProductController);
 
 export default router;
