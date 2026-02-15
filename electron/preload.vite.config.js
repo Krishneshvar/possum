@@ -3,9 +3,9 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
     target: 'node18',
-    outDir: 'electron/dist',
+    outDir: 'dist/electron',
     lib: {
-      entry: 'electron/preload.js',
+      entry: 'electron/preload.ts',
       formats: ['cjs'],
     },
     rollupOptions: {

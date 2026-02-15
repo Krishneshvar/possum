@@ -2,6 +2,7 @@
  * Central Route Registration
  * All module routes are registered here
  */
+import { Express } from 'express';
 import productsRouter from './modules/products/product.routes.js';
 import categoriesRouter from './modules/categories/category.routes.js';
 import customersRouter from './modules/customers/customer.routes.js';
@@ -25,7 +26,7 @@ import { authenticate } from './shared/middleware/auth.middleware.js';
  * Register all routes on the Express app
  * @param {Express} app - Express application instance
  */
-export function registerRoutes(app) {
+export function registerRoutes(app: Express) {
     // Auth
     app.use('/api/auth', authRouter);
 

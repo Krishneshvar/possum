@@ -1,3 +1,25 @@
+export interface InventoryLot extends BaseEntity {
+  variant_id: number;
+  batch_number?: string | null;
+  manufactured_date?: string | null;
+  expiry_date?: string | null;
+  quantity: number;
+  unit_cost?: number;
+  purchase_order_item_id?: number | null;
+}
+
+export interface InventoryAdjustment extends BaseEntity {
+  variant_id: number;
+  lot_id?: number | null;
+  quantity_change: number;
+  reason: string;
+  reference_type?: string | null;
+  reference_id?: number | null;
+  adjusted_by: number;
+  adjusted_at: string;
+}
+
+import { BaseEntity } from '../../../../types/index.js';
 /**
  * Inventory Repository
  * Handles all database operations for inventory management
@@ -10,7 +32,7 @@ import { getDB } from '../../shared/db/index.js';
  * @param {number} variantId - Variant ID
  * @returns {number} Computed stock
  */
-export function getStockByVariantId(variantId) {
+export function getStockByVariantId(variantId: number): number {
     const db = getDB();
     const result = db.prepare(`
         SELECT 
@@ -21,7 +43,7 @@ export function getStockByVariantId(variantId) {
                 (SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = ? AND (reason != 'confirm_receive' OR lot_id IS NULL)),
                 0
             ) AS stock
-    `).get(variantId, variantId);
+    `).get(variantId, variantId) as { stock: number } | undefined;
 
     return result?.stock ?? 0;
 }
@@ -31,7 +53,7 @@ export function getStockByVariantId(variantId) {
  * @param {number} variantId - Variant ID
  * @returns {Array} Inventory lots with details
  */
-export function findLotsByVariantId(variantId) {
+export function findLotsByVariantId(variantId: number): any[] {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -52,7 +74,7 @@ export function findLotsByVariantId(variantId) {
  * @param {Object} options - Query options
  * @returns {Array} Inventory adjustments
  */
-export function findAdjustmentsByVariantId(variantId, { limit = 50, offset = 0 } = {}) {
+export function findAdjustmentsByVariantId(variantId: number, { limit = 50, offset = 0 } = {}): any[] {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -81,7 +103,7 @@ export function insertInventoryLot({
     quantity,
     unit_cost,
     purchase_order_item_id
-}) {
+}: Partial<InventoryLot>): { lastInsertRowid: number | bigint } {
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO inventory_lots (
@@ -114,7 +136,7 @@ export function insertInventoryAdjustment({
     reference_type,
     reference_id,
     adjusted_by
-}) {
+}: Partial<InventoryAdjustment>): { lastInsertRowid: number | bigint } {
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO inventory_adjustments (
@@ -139,16 +161,16 @@ export function insertInventoryAdjustment({
  * @param {number} id - Lot ID
  * @returns {Object|null} Lot or null
  */
-export function findLotById(id) {
+export function findLotById(id: number): InventoryLot | undefined {
     const db = getDB();
-    return db.prepare('SELECT * FROM inventory_lots WHERE id = ?').get(id);
+    return db.prepare('SELECT * FROM inventory_lots WHERE id = ?').get(id) as InventoryLot | undefined;
 }
 
 /**
  * Get all variants with low stock (stock <= stock_alert_cap)
  * @returns {Array} Variants with low stock
  */
-export function findLowStockVariants() {
+export function findLowStockVariants(): any[] {
     const db = getDB();
     return db.prepare(`
         WITH VariantStock AS (
@@ -179,7 +201,7 @@ export function findLowStockVariants() {
  * @param {number} days - Number of days to look ahead
  * @returns {Array} Expiring lots
  */
-export function findExpiringLots(days = 30) {
+export function findExpiringLots(days: number = 30): any[] {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -202,7 +224,7 @@ export function findExpiringLots(days = 30) {
  * Get aggregate inventory stats
  * @returns {Object} Inventory stats
  */
-export function getInventoryStats() {
+export function getInventoryStats(): any {
     const db = getDB();
     return db.prepare(`
         WITH VariantStock AS(

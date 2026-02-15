@@ -1,6 +1,6 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, IpcMainInvokeEvent } from 'electron';
 
-export async function printBillHtml(event, { html, printerName }) {
+export async function printBillHtml(event: IpcMainInvokeEvent | null, { html, printerName }: { html: string; printerName?: string | null }): Promise<{ success: boolean }> {
     const win = new BrowserWindow({
         show: false,
         width: 800,
@@ -16,11 +16,11 @@ export async function printBillHtml(event, { html, printerName }) {
         const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
         await win.loadURL(dataUrl);
 
-        const options = {
+        const options: Electron.WebContentsPrintOptions = {
             silent: true,
             printBackground: false,
             color: false,
-            margin: {
+            margins: {
                 marginType: 'none'
             }
         };
@@ -40,7 +40,9 @@ export async function printBillHtml(event, { html, printerName }) {
                         console.error('Print failed:', failureReason);
                         reject(new Error(failureReason));
                     }
-                    win.close();
+                    if (!win.isDestroyed()) {
+                        win.close();
+                    }
                 });
             }, 500);
         });

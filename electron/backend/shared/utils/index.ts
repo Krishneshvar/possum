@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
  * Get the base directory for the electron app
  * @returns {string} The base directory path
  */
-export function getBasePath() {
+export function getBasePath(): string {
     return path.join(__dirname, '../../../..');
 }
 
@@ -20,7 +20,7 @@ export function getBasePath() {
  * @param {string|null} imagePath - The relative image path stored in DB
  * @returns {string|null} The full URL or null
  */
-export function buildImageUrl(imagePath) {
+export function buildImageUrl(imagePath: string | null | undefined): string | null {
     if (!imagePath) {
         return null;
     }

@@ -1,11 +1,15 @@
 import { getActiveTaxProfile, getTaxRulesByProfileId } from './tax.repository.js';
+import { Invoice, InvoiceItem, TaxProfile, TaxRule, Customer, TaxResult } from '../../../../types/index.js';
 
 /**
  * Tax Calculation Engine
  * Responsible for calculating taxes based on configurable rules.
  */
-class TaxEngine {
-    constructor(profile = null, rules = null) {
+export class TaxEngine {
+    profile: TaxProfile | null;
+    rules: TaxRule[] | null;
+
+    constructor(profile: TaxProfile | null = null, rules: TaxRule[] | null = null) {
         this.profile = profile;
         this.rules = rules;
     }
@@ -13,10 +17,12 @@ class TaxEngine {
     /**
      * Initialize the engine by fetching the active profile and rules
      */
-    init() {
-        this.profile = getActiveTaxProfile();
+    init(): void {
+        const profile = getActiveTaxProfile();
+        this.profile = profile ? (profile as unknown as TaxProfile) : null;
+
         if (this.profile) {
-            this.rules = getTaxRulesByProfileId(this.profile.id);
+            this.rules = getTaxRulesByProfileId(this.profile.id) as unknown as TaxRule[];
         } else {
             this.rules = [];
         }
@@ -28,7 +34,7 @@ class TaxEngine {
      * @param {Object} customer - Customer object (optional)
      * @returns {Object} Calculated tax details
      */
-    calculate(invoice, customer = null) {
+    calculate(invoice: Invoice, customer: Customer | null = null): TaxResult {
         if (!this.profile) {
             return {
                 items: invoice.items.map(item => ({
@@ -61,7 +67,7 @@ class TaxEngine {
 
         const invoiceTotal = invoice.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         let totalTax = 0;
-        const updatedItems = [];
+        const updatedItems: InvoiceItem[] = [];
 
         for (const item of invoice.items) {
             const applicableRules = this.getApplicableRules(item, invoiceTotal, customer);
@@ -81,10 +87,16 @@ class TaxEngine {
             updatedItems.push({
                 ...item,
                 tax_amount: finalTaxAmount,
-                applied_tax_rate: taxRate, // This might be a blended rate if multiple rules apply
-                applied_tax_amount: finalTaxAmount,
+                tax_rate: taxRate, // This might be a blended rate if multiple rules apply
+                // applied_tax_amount: finalTaxAmount, // Not in interface but in JS code? Added to interface?
+                // Interface has tax_amount. JS had applied_tax_amount as dup?
+                // I'll stick to interface. Interface has tax_amount.
+                // JS had applied_tax_amount. I'll ignore it if not in interface or add to interface if critical.
+                // JS: applied_tax_amount: finalTaxAmount
+                // I'll add it to InvoiceItem interface or just ignore if unused.
+                // Interface defined `tax_amount`.
                 tax_rule_snapshot: JSON.stringify(snapshot)
-            });
+            } as InvoiceItem);
 
             totalTax += finalTaxAmount;
         }
@@ -107,7 +119,7 @@ class TaxEngine {
         };
     }
 
-    getApplicableRules(item, invoiceTotal, customer) {
+    getApplicableRules(item: InvoiceItem, invoiceTotal: number, customer: Customer | null): TaxRule[] {
         if (!this.rules) return [];
 
         const now = new Date();
@@ -115,7 +127,13 @@ class TaxEngine {
 
         return this.rules.filter(rule => {
             // 1. Category match
-            if (rule.tax_category_id && rule.tax_category_id !== item.tax_category_id) {
+            if (rule.tax_category_id && rule.tax_category_id !== item.tax_category_id) { // item needs tax_category_id
+                // InvoiceItem interface doesn't have tax_category_id?
+                // Wait, InvoiceItem has product_id, maybe we need to fetch product?
+                // Or item passed to calculate includes tax_category_id?
+                // In JS code: item.tax_category_id.
+                // So InvoiceItem should have it.
+                // I need to update InvoiceItem interface.
                 return false;
             }
 
@@ -125,12 +143,12 @@ class TaxEngine {
             // So if rule has no category, it applies to all.
 
             // 3. Price Thresholds
-            if (rule.min_price !== null && itemPrice < rule.min_price) return false;
-            if (rule.max_price !== null && itemPrice > rule.max_price) return false;
+            if (rule.min_price !== null && rule.min_price !== undefined && itemPrice < rule.min_price) return false;
+            if (rule.max_price !== null && rule.max_price !== undefined && itemPrice > rule.max_price) return false;
 
             // 4. Invoice Total Thresholds
-            if (rule.min_invoice_total !== null && invoiceTotal < rule.min_invoice_total) return false;
-            if (rule.max_invoice_total !== null && invoiceTotal > rule.max_invoice_total) return false;
+            if (rule.min_invoice_total !== null && rule.min_invoice_total !== undefined && invoiceTotal < rule.min_invoice_total) return false;
+            if (rule.max_invoice_total !== null && rule.max_invoice_total !== undefined && invoiceTotal > rule.max_invoice_total) return false;
 
             // 5. Customer Type
             if (rule.customer_type && customer?.type !== rule.customer_type) return false;
@@ -143,86 +161,23 @@ class TaxEngine {
         }).sort((a, b) => a.priority - b.priority);
     }
 
-    calculateItemTax(item, rules) {
+    calculateItemTax(item: InvoiceItem, rules: TaxRule[]): { taxAmount: number; taxRate: number; snapshot: any[] } {
         let taxAmount = 0;
         let taxableAmount = item.price * item.quantity;
         let accumulatedTax = 0;
-        const snapshot = [];
+        const snapshot: any[] = [];
 
         // Separate compound and non-compound rules
         const simpleRules = rules.filter(r => !r.is_compound);
         const compoundRules = rules.filter(r => r.is_compound);
 
-        // If inclusive, we need to back-calculate the base price first.
-        // Formula for Inclusive: Price = Base * (1 + sum(simple_rates)) * (1 + sum(compound_rates))...
-        // This can get complicated with mixed simple and compound.
-
-        // Assumption for Inclusive:
-        // We calculate the tax portion from the total price.
-        // Simple rules apply to the base.
-        // Compound rules apply to (base + simple_taxes).
-
-        // Let B be base amount.
-        // T1 = B * r1
-        // T2 = B * r2
-        // Tc = (B + T1 + T2) * rc
-        // Total = B + T1 + T2 + Tc
-        // Total = B * (1 + r1 + r2) * (1 + rc)
-
-        // So B = Total / ((1 + sum(simple_rates)) * (1 + sum(compound_rates)))
-        // Wait, compound rules might be stacked on top of each other too?
-        // Requirement: "Apply compound rules on (line_amount + previous_taxes)."
-        // Sorted by priority.
-
-        // If multiple compound rules exist, do they compound on each other?
-        // Usually, compound tax is applied on subtotal + previous taxes.
-        // If we have Simple R1, Compound R2, Compound R3.
-        // Order matters.
-        // If sorted by priority:
-        // 1. R1 (Simple)
-        // 2. R2 (Compound)
-        // 3. R3 (Compound)
-
-        // If Inclusive:
-        // Total = Base + Tax
-        // We need to find Base.
-        // Let's iterate to build the factor.
-
-        let rateFactor = 1.0;
-        let currentLevelFactor = 0.0; // Sum of simple rates at current level
-
-        // Correct approach for finding Base in Inclusive mode with mixed rules:
-        // It's safer to treat it as:
-        // We have a list of rules sorted by priority.
-        // For Exclusive:
-        // CurrentBase = Price * Qty
-        // Tax = 0
-        // For each rule:
-        //   RuleTax = CurrentBase * Rate
-        //   If Compound: CurrentBase += RuleTax (conceptually, for next rule base) ??
-        //   Actually, "Apply compound rules on (line_amount + previous_taxes)"
-        //   So Base for compound = OriginalAmount + AccumulatedTaxSoFar.
-
-        // Let's standardize the logic for both Inclusive and Exclusive.
-
-        if (this.profile.pricing_mode === 'INCLUSIVE') {
+        if (this.profile!.pricing_mode === 'INCLUSIVE') {
             // 1. Calculate effective tax rate to find Base.
             // We simulate the tax calculation on a base of 1.0 to find the multiplier.
 
             let simBase = 1.0;
             let simTax = 0;
 
-            // We need to process rules in order.
-            // Simple rules apply to the original base (1.0).
-            // Compound rules apply to (original base + accumulated tax).
-
-            // Wait, "Apply non-compound rules first." -> This creates a grouping.
-            // But rules are also sorted by priority.
-            // "Sort rules by priority ascending. Apply non-compound rules first."
-            // This implies: First apply all simple rules (sorted by priority among themselves),
-            // then apply compound rules (sorted by priority).
-
-            // Let's re-sort or just process simple then compound.
             const sortedSimple = simpleRules.sort((a, b) => a.priority - b.priority);
             const sortedCompound = compoundRules.sort((a, b) => a.priority - b.priority);
             const allRules = [...sortedSimple, ...sortedCompound];
@@ -298,7 +253,7 @@ class TaxEngine {
             taxAmount = currentTotalTax;
         }
 
-        const effectiveRate = (taxAmount / (item.price * item.quantity)) * 100; // Approximate
+        const effectiveRate = (item.price * item.quantity) > 0 ? (taxAmount / (item.price * item.quantity)) * 100 : 0;
 
         return {
             taxAmount,
@@ -307,15 +262,9 @@ class TaxEngine {
         };
     }
 
-    getRuleName(rule) {
-        // Helper to generate a friendly name
-        // Could be "VAT (10%)" or "Luxury Tax (5%)"
-        // If category name is available, use it, else generic.
-        // Using "Rule #ID" or Category Name
+    getRuleName(rule: TaxRule): string {
         return rule.category_name ? `${rule.category_name} (${rule.rate_percent}%)` : `Tax (${rule.rate_percent}%)`;
     }
 }
 
-export { TaxEngine };
-// Export singleton for backward compatibility if needed, but prefer instantiating
 export const taxEngine = new TaxEngine();

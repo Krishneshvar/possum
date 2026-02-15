@@ -1,5 +1,48 @@
 
-export const DEFAULT_BILL_SCHEMA = {
+export interface BillSection {
+  id: string;
+  type: 'header' | 'meta' | 'items' | 'totals' | 'footer';
+  visible: boolean;
+  options: Record<string, any>;
+}
+
+export interface BillSchema {
+  paperWidth: '58mm' | '80mm' | string;
+  dateFormat: string;
+  timeFormat: string;
+  sections: BillSection[];
+  currency?: string;
+}
+
+export interface RenderData {
+  store: {
+    name?: string;
+    address?: string;
+    phone?: string;
+    gst?: string;
+    [key: string]: any;
+  };
+  bill: {
+    billNo?: string;
+    date?: string | Date;
+    cashier?: string;
+    customer?: string;
+    subtotal?: number;
+    tax?: number;
+    discount?: number;
+    total?: number;
+    totalItems?: number;
+  };
+  items: Array<{
+    name: string;
+    qty: number;
+    price?: number;
+    total: number;
+  }>;
+  currency?: string;
+}
+
+export const DEFAULT_BILL_SCHEMA: BillSchema = {
   paperWidth: '80mm', // '58mm' or '80mm'
   dateFormat: 'standard', // 'standard', 'ISO', 'short', 'long'
   timeFormat: '12h', // '12h', '24h'
@@ -92,7 +135,7 @@ const STYLES = `
   .footer-text { white-space: pre-wrap; }
 `;
 
-export function renderBill(data, schema = DEFAULT_BILL_SCHEMA) {
+export function renderBill(data: RenderData, schema: BillSchema = DEFAULT_BILL_SCHEMA): string {
   const { paperWidth, sections, dateFormat, timeFormat } = schema;
 
   // Merge schema options into data if they are meant to be editable from schema
@@ -124,7 +167,7 @@ export function renderBill(data, schema = DEFAULT_BILL_SCHEMA) {
   `;
 }
 
-function formatDate(dateStr, dateFormat, timeFormat) {
+function formatDate(dateStr: string | Date | undefined, dateFormat: string, timeFormat: string): string {
   const date = dateStr ? new Date(dateStr) : new Date();
 
   let datePart = '';
@@ -142,7 +185,7 @@ function formatDate(dateStr, dateFormat, timeFormat) {
   return `${datePart} ${timePart}`;
 }
 
-function renderSection(section, data, dateFormat, timeFormat, currency) {
+function renderSection(section: BillSection, data: RenderData, dateFormat: string, timeFormat: string, currency: string): string {
   const { options } = section;
   const alignClass = `text-${options.alignment || 'left'}`;
   const sizeClass = `text-${options.fontSize || 'medium'}`;
@@ -237,7 +280,7 @@ function renderSection(section, data, dateFormat, timeFormat, currency) {
   }
 }
 
-function formatCurrency(amount, currency = '₹') {
+function formatCurrency(amount: any, currency = '₹'): string {
   if (amount === undefined || amount === null) return `${currency}0.00`;
   return `${currency}${Number(amount).toFixed(2)}`;
 }

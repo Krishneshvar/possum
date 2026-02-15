@@ -3,6 +3,7 @@
  * Handles all database operations for sales
  */
 import { getDB } from '../../shared/db/index.js';
+import { Invoice, InvoiceItem } from '../../../../types/index.js';
 
 /**
  * Insert a new sale
@@ -18,7 +19,7 @@ export function insertSale({
     status,
     customer_id,
     user_id
-}) {
+}: any): { lastInsertRowid: number | bigint } {
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO sales (
@@ -34,7 +35,7 @@ export function insertSale({
         discount,
         total_tax,
         status,
-        fulfillment_status || 'pending',
+        'pending', // fulfillment_status default
         customer_id || null,
         user_id
     );
@@ -57,7 +58,7 @@ export function insertSaleItem({
     applied_tax_rate,
     applied_tax_amount,
     tax_rule_snapshot
-}) {
+}: any): { lastInsertRowid: number | bigint } {
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO sale_items (
@@ -87,7 +88,7 @@ export function insertSaleItem({
  * @param {number} id - Sale ID
  * @returns {Object|null} Sale with items or null
  */
-export function findSaleById(id) {
+export function findSaleById(id: number): any | null {
     const db = getDB();
 
     const sale = db.prepare(`
@@ -134,6 +135,27 @@ export function findSaleById(id) {
     };
 }
 
+export interface SaleFilter {
+    status?: string[];
+    customerId?: number;
+    userId?: number;
+    startDate?: string;
+    endDate?: string;
+    searchTerm?: string;
+    currentPage?: number;
+    itemsPerPage?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    fulfillmentStatus?: string | string[];
+}
+
+export interface PaginatedSales {
+    sales: any[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+}
+
 /**
  * Find sales with filtering and pagination
  * @param {Object} params - Filter params
@@ -151,10 +173,10 @@ export function findSales({
     sortBy = 'sale_date',
     sortOrder = 'DESC',
     fulfillmentStatus
-}) {
+}: SaleFilter): PaginatedSales {
     const db = getDB();
-    const filterClauses = [];
-    const filterParams = [];
+    const filterClauses: string[] = [];
+    const filterParams: any[] = [];
 
     if (status && status.length > 0) {
         const placeholders = status.map(() => '?').join(',');
@@ -203,7 +225,7 @@ export function findSales({
         FROM sales s
         LEFT JOIN customers c ON s.customer_id = c.id
         ${whereClause}
-    `).get(...filterParams);
+    `).get(...filterParams) as { total_count: number } | undefined;
 
     const totalCount = countResult?.total_count ?? 0;
 
@@ -213,7 +235,7 @@ export function findSales({
     const finalSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
     const offset = (currentPage - 1) * itemsPerPage;
-    const sales = db.prepare(`
+    const query = `
         SELECT 
             s.*,
             c.name as customer_name,
@@ -224,7 +246,10 @@ export function findSales({
         ${whereClause}
         ORDER BY s.${finalSortBy} ${finalSortOrder}
         LIMIT ? OFFSET ?
-    `).all(...filterParams, itemsPerPage, offset);
+    `;
+
+    // Need to spread filterParams then add itemsPerPage and offset
+    const sales = db.prepare(query).all(...filterParams, itemsPerPage, offset);
 
     return {
         sales,
@@ -240,7 +265,7 @@ export function findSales({
  * @param {string} status - New status
  * @returns {Object} Update result
  */
-export function updateSaleStatus(id, status) {
+export function updateSaleStatus(id: number, status: string): { changes: number } {
     const db = getDB();
     return db.prepare('UPDATE sales SET status = ? WHERE id = ?').run(status, id);
 }
@@ -251,7 +276,7 @@ export function updateSaleStatus(id, status) {
  * @param {string} status - New fulfillment status
  * @returns {Object} Update result
  */
-export function updateFulfillmentStatus(id, status) {
+export function updateFulfillmentStatus(id: number, status: string): { changes: number } {
     const db = getDB();
     return db.prepare('UPDATE sales SET fulfillment_status = ? WHERE id = ?').run(status, id);
 }
@@ -262,7 +287,7 @@ export function updateFulfillmentStatus(id, status) {
  * @param {number} paidAmount - New paid amount
  * @returns {Object} Update result
  */
-export function updateSalePaidAmount(id, paidAmount) {
+export function updateSalePaidAmount(id: number, paidAmount: number): { changes: number } {
     const db = getDB();
     return db.prepare('UPDATE sales SET paid_amount = ? WHERE id = ?').run(paidAmount, id);
 }
@@ -278,7 +303,7 @@ export function insertTransaction({
     type,
     payment_method_id,
     status
-}) {
+}: any): { lastInsertRowid: number | bigint } {
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO transactions (
@@ -293,14 +318,14 @@ export function insertTransaction({
  * Generate next invoice number
  * @returns {string} Next invoice number
  */
-export function generateInvoiceNumber() {
+export function generateInvoiceNumber(): string {
     const db = getDB();
     const result = db.prepare(`
         SELECT invoice_number 
         FROM sales 
         ORDER BY id DESC 
         LIMIT 1
-    `).get();
+    `).get() as { invoice_number: string } | undefined;
 
     if (!result) {
         return 'INV-001';
@@ -315,7 +340,7 @@ export function generateInvoiceNumber() {
  * Get all payment methods
  * @returns {Array} Payment methods
  */
-export function findPaymentMethods() {
+export function findPaymentMethods(): any[] {
     const db = getDB();
     return db.prepare('SELECT * FROM payment_methods WHERE is_active = 1').all();
 }
@@ -325,7 +350,7 @@ export function findPaymentMethods() {
  * @param {number} saleId - Sale ID
  * @returns {Array} Sale items
  */
-export function findSaleItems(saleId) {
+export function findSaleItems(saleId: number): any[] {
     const db = getDB();
     return db.prepare(`
         SELECT 

@@ -4,13 +4,29 @@
  * Note: Stock is NEVER stored directly - it is derived from inventory_lots + inventory_adjustments
  */
 import { getDB } from '../../shared/db/index.js';
+import { Product, Variant } from '../../../../types/index.js';
+
+export interface ProductFilter {
+    searchTerm?: string;
+    stockStatus?: string[];
+    status?: string[];
+    categories?: number[];
+    currentPage: number;
+    itemsPerPage: number;
+}
+
+export interface PaginatedProducts {
+    products: Product[];
+    totalCount: number;
+    totalPages: number;
+}
 
 /**
  * Insert a new product into the database
  * @param {Object} productData - Product data
  * @returns {Object} The insert result with lastInsertRowid
  */
-export function insertProduct({ name, description, category_id, tax_category_id, status, image_path }) {
+export function insertProduct({ name, description, category_id, tax_category_id, status, image_path }: Partial<Product>): { lastInsertRowid: number | bigint } {
     const db = getDB();
     const stmt = db.prepare(`
     INSERT INTO products (name, description, category_id, tax_category_id, status, image_path)
@@ -24,7 +40,7 @@ export function insertProduct({ name, description, category_id, tax_category_id,
  * @param {number} id - Product ID
  * @returns {Object|null} Product or null
  */
-export function findProductById(id) {
+export function findProductById(id: number): Product | undefined {
     const db = getDB();
     return db.prepare(`
     SELECT
@@ -33,7 +49,7 @@ export function findProductById(id) {
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.id = ? AND p.deleted_at IS NULL
-  `).get(id);
+  `).get(id) as Product | undefined;
 }
 
 /**
@@ -41,9 +57,9 @@ export function findProductById(id) {
  * @param {number} id - Product ID
  * @returns {Object|null} Object with image_path or null
  */
-export function findProductImagePath(id) {
+export function findProductImagePath(id: number): { image_path: string | null } | undefined {
     const db = getDB();
-    return db.prepare('SELECT image_path FROM products WHERE id = ?').get(id);
+    return db.prepare('SELECT image_path FROM products WHERE id = ?').get(id) as { image_path: string | null } | undefined;
 }
 
 /**
@@ -52,10 +68,10 @@ export function findProductImagePath(id) {
  * @param {Object} data - Fields to update
  * @returns {Object} The update result with changes count
  */
-export function updateProductById(productId, { name, description, category_id, tax_category_id, status, image_path }) {
+export function updateProductById(productId: number, { name, description, category_id, tax_category_id, status, image_path }: Partial<Product>): { changes: number } {
     const db = getDB();
-    let updateFields = ['updated_at = CURRENT_TIMESTAMP'];
-    let params = [];
+    let updateFields: string[] = ['updated_at = CURRENT_TIMESTAMP'];
+    let params: any[] = [];
 
     if (name !== undefined) {
         updateFields.push('name = ?');
@@ -101,7 +117,7 @@ export function updateProductById(productId, { name, description, category_id, t
  * @param {number} id - Product ID
  * @returns {Object} The delete result with changes count
  */
-export function softDeleteProduct(id) {
+export function softDeleteProduct(id: number): { changes: number } {
     const db = getDB();
     const stmt = db.prepare('UPDATE products SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
     return stmt.run(id);
@@ -111,7 +127,7 @@ export function softDeleteProduct(id) {
  * Helper to build stock subquery for derived stock calculation
  * @returns {string} SQL subquery for stock calculation
  */
-function getStockSubquery() {
+function getStockSubquery(): string {
     return `(
         COALESCE((SELECT SUM(il.quantity) FROM inventory_lots il WHERE il.variant_id = v.id), 0)
         + COALESCE((SELECT SUM(ia.quantity_change) FROM inventory_adjustments ia WHERE ia.variant_id = v.id AND ia.reason != 'confirm_receive'), 0)
@@ -124,10 +140,10 @@ function getStockSubquery() {
  * @param {Object} params - Filter and pagination params
  * @returns {Object} Products list with pagination info
  */
-export function findProducts({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage }) {
+export function findProducts({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage }: ProductFilter): PaginatedProducts {
     const db = getDB();
-    const filterClauses = [];
-    const filterParams = [];
+    const filterClauses: string[] = [];
+    const filterParams: any[] = [];
 
     filterClauses.push(`p.deleted_at IS NULL`);
 
@@ -151,7 +167,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
     // Build stock status conditions using derived stock
     const stockSubquery = getStockSubquery();
     if (stockStatus && stockStatus.length > 0) {
-        const stockConditions = [];
+        const stockConditions: string[] = [];
         stockStatus.forEach(s => {
             if (s === 'out-of-stock') {
                 stockConditions.push(`${stockSubquery} = 0`);
@@ -176,7 +192,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
     INNER JOIN variants v ON p.id = v.product_id AND v.is_default = 1 AND v.deleted_at IS NULL
     ${whereClause}
   `;
-    const countResult = db.prepare(countQuery).get(...filterParams);
+    const countResult = db.prepare(countQuery).get(...filterParams) as { total_count: number } | undefined;
     const totalCount = countResult?.total_count ?? 0;
 
     const paginatedQuery = `
@@ -201,7 +217,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedParams = [...filterParams, itemsPerPage, startIndex];
 
-    const paginatedProducts = db.prepare(paginatedQuery).all(...paginatedParams);
+    const paginatedProducts = db.prepare(paginatedQuery).all(...paginatedParams) as Product[];
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -217,7 +233,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
  * @param {number} productId - Product ID
  * @returns {Object|null} Product with variants including stock
  */
-export function findProductWithVariants(productId) {
+export function findProductWithVariants(productId: number): Product | null {
     const db = getDB();
 
     const product = findProductById(productId);
@@ -233,7 +249,7 @@ export function findProductWithVariants(productId) {
         FROM variants v
         WHERE v.product_id = ? AND v.deleted_at IS NULL
         ORDER BY v.is_default DESC, v.name ASC
-    `).all(productId);
+    `).all(productId) as Variant[];
 
     return {
         ...product,
@@ -246,7 +262,7 @@ export function findProductWithVariants(productId) {
  * @param {number} productId - Product ID
  * @returns {Array} Array of applicable taxes
  */
-export function findProductTaxes(productId) {
+export function findProductTaxes(productId: number): any[] {
     const db = getDB();
     return db.prepare(`
         SELECT t.id, t.name, t.rate, t.type
@@ -261,7 +277,7 @@ export function findProductTaxes(productId) {
  * @param {number} productId - Product ID
  * @param {number[]} taxIds - Array of tax IDs
  */
-export function setProductTaxes(productId, taxIds) {
+export function setProductTaxes(productId: number, taxIds: number[]): void {
     const db = getDB();
 
     // Remove existing tax associations
@@ -270,8 +286,11 @@ export function setProductTaxes(productId, taxIds) {
     // Insert new associations
     if (taxIds && taxIds.length > 0) {
         const insertStmt = db.prepare('INSERT INTO product_taxes (product_id, tax_id) VALUES (?, ?)');
-        for (const taxId of taxIds) {
-            insertStmt.run(productId, taxId);
-        }
+        const transaction = db.transaction((pId: number, tIds: number[]) => {
+             for (const taxId of tIds) {
+                insertStmt.run(pId, taxId);
+            }
+        });
+        transaction(productId, taxIds);
     }
 }

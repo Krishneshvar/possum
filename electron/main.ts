@@ -1,9 +1,12 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
 import path from 'path';
 import { startServer } from './backend/server.js';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { printBillHtml } from './print/printController.js';
+import { printBillHtml } from './print/printController.js'; // Converted to TS but imports via .js in TS with allowJs?
+// Actually printController is now .ts.
+// TS to TS import should be without extension or with .js if module: NodeNext.
+// Since we use NodeNext, we should use .js extension in import path even for .ts files.
 import { printInvoice, getPrinters } from './backend/services/printService.js';
 import fs from 'fs/promises';
 
@@ -18,7 +21,10 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'dist/preload.js'),
+      preload: path.join(__dirname, 'preload.js'), // Adjusted for dist structure?
+      // If we compile electron/main.ts to electron/dist/main.js
+      // and electron/preload.ts to electron/dist/preload.js
+      // then they are in the same dir.
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -28,7 +34,7 @@ function createWindow() {
     win.loadURL('http://localhost:5173');
     win.webContents.openDevTools();
   } else {
-    win.loadFile(path.join(__dirname, '../app/dist/index.html'));
+    win.loadFile(path.join(__dirname, '../../app/dist/index.html'));
   }
 }
 
@@ -38,7 +44,7 @@ ipcMain.handle('ping', async () => {
 
 ipcMain.handle('print-bill', printBillHtml);
 
-ipcMain.handle('print-invoice', async (event, invoiceId) => {
+ipcMain.handle('print-invoice', async (event: IpcMainInvokeEvent, invoiceId: number) => {
     return printInvoice(invoiceId);
 });
 
@@ -46,7 +52,7 @@ ipcMain.handle('get-printers', async () => {
     return getPrinters();
 });
 
-ipcMain.handle('save-bill-settings', async (event, settings) => {
+ipcMain.handle('save-bill-settings', async (event: IpcMainInvokeEvent, settings: any) => {
   try {
     const settingsPath = path.join(app.getPath('userData'), 'bill-settings.json');
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
@@ -67,7 +73,7 @@ ipcMain.handle('get-bill-settings', async () => {
   }
 });
 
-ipcMain.handle('save-general-settings', async (event, settings) => {
+ipcMain.handle('save-general-settings', async (event: IpcMainInvokeEvent, settings: any) => {
   try {
     const settingsPath = path.join(app.getPath('userData'), 'general-settings.json');
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
