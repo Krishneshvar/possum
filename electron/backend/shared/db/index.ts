@@ -22,7 +22,7 @@ export function initDB(): Database.Database {
     if (dbInstance) return dbInstance;
 
     const dbPath = isDev
-        ? path.join(__dirname, '../../../../possum.db')
+        ? path.join(__dirname, '../../../../../possum.db')
         : path.join(app.getPath('userData'), 'possum.db');
 
     const db = new Database(dbPath);

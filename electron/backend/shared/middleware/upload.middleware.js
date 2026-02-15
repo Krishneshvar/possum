@@ -1,12 +1,16 @@
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { __dirname } from '../../../server.js';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure storage for product images
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '..', 'uploads'));
+        // From dist/electron/backend/shared/middleware/ to root uploads/
+        // 1: shared, 2: backend, 3: electron, 4: dist, 5: root
+        cb(null, path.join(__dirname, '..', '..', '..', '..', '..', 'uploads'));
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = `${uuidv4()}${path.extname(file.originalname)}`;

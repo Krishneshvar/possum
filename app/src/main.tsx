@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import { store } from '@/store/store';
 import App from '@/app/App';
 import './index.css';
@@ -10,11 +10,11 @@ const container = document.getElementById('root');
 if (container) {
   createRoot(container).render(
     <Provider store={store}>
-      <BrowserRouter>
+      <HashRouter>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
           <App />
         </ThemeProvider>
-      </BrowserRouter>
+      </HashRouter>
     </Provider>
   );
 } else {

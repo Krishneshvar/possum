@@ -15,7 +15,8 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const basePath = path.join(__dirname, '../../../..');
+// From dist/electron/backend/modules/products/ to root: 5 levels
+const basePath = path.join(__dirname, '../../../../..');
 
 /**
  * Create a product with its variants (transactional)

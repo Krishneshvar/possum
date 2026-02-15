@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  HashRouter,
   Route,
   Routes,
   Outlet
@@ -93,55 +92,53 @@ export default function DashboardPage() {
   }, [user, isError, isLoading, dispatch]);
 
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
 
-        <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-          <Route path="/" element={<StatCards cardData={cardData} />} />
-          <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
+      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+        <Route path="/" element={<StatCards cardData={cardData} />} />
+        <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
 
-          <Route path="/sales" element={<SalesPage />} />
-          <Route path="/sales/orders" element={<OrdersPage />} />
-          <Route path="/sales/history" element={<SalesHistoryPage />} />
-          <Route path="/sales/history/:saleId" element={<SaleDetailsPage />} />
-          <Route path="/sales/transactions" element={<TransactionsPage />} />
-          <Route path="/sales/returns" element={<ReturnsPage />} />
-          <Route path="/sales/taxes" element={<TaxesPage />} />
+        <Route path="/sales" element={<SalesPage />} />
+        <Route path="/sales/orders" element={<OrdersPage />} />
+        <Route path="/sales/history" element={<SalesHistoryPage />} />
+        <Route path="/sales/history/:saleId" element={<SaleDetailsPage />} />
+        <Route path="/sales/transactions" element={<TransactionsPage />} />
+        <Route path="/sales/returns" element={<ReturnsPage />} />
+        <Route path="/sales/taxes" element={<TaxesPage />} />
 
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/reports/sales" element={<SalesReportPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports/sales" element={<SalesReportPage />} />
 
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/products/add" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
-          <Route path="/products/edit/:productId" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
-          <Route path="/products/:productId" element={<ProductDetailsPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/products/add" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
+        <Route path="/products/edit/:productId" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
+        <Route path="/products/:productId" element={<ProductDetailsPage />} />
 
-          <Route path="/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
-          <Route path="/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
-          <Route path="/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
+        <Route path="/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
+        <Route path="/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
+        <Route path="/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
 
-          <Route path="/products/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
-          <Route path="/products/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
-          <Route path="/products/flow" element={<ProtectedRoute requiredPermissions="products.manage"><ProductFlowPage /></ProtectedRoute>} />
-          <Route path="/products/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
+        <Route path="/products/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
+        <Route path="/products/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
+        <Route path="/products/flow" element={<ProtectedRoute requiredPermissions="products.manage"><ProductFlowPage /></ProtectedRoute>} />
+        <Route path="/products/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
 
-          <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchasePage /></ProtectedRoute>} />
-          <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
-          <Route path="/purchase/orders/:id" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrderDetailPage /></ProtectedRoute>} />
-          <Route path="/purchase/orders/create" element={<ProtectedRoute requiredPermissions="purchase.manage"><CreatePurchaseOrderPage /></ProtectedRoute>} />
-          <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
+        <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchasePage /></ProtectedRoute>} />
+        <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
+        <Route path="/purchase/orders/:id" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrderDetailPage /></ProtectedRoute>} />
+        <Route path="/purchase/orders/create" element={<ProtectedRoute requiredPermissions="purchase.manage"><CreatePurchaseOrderPage /></ProtectedRoute>} />
+        <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
 
-          <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />
-          <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/employees" element={<ProtectedRoute requiredPermissions="users.manage"><EmployeesPage /></ProtectedRoute>} />
+        <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />
+        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/employees" element={<ProtectedRoute requiredPermissions="users.manage"><EmployeesPage /></ProtectedRoute>} />
 
-          <Route path="/plugins" element={<ProtectedRoute requiredPermissions="admin"><PluginsPage /></ProtectedRoute>} />
-          <Route path="/help" element={<HelpPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/audit-log" element={<ProtectedRoute requiredPermissions="admin"><AuditLogPage /></ProtectedRoute>} />
-        </Route>
-      </Routes>
-    </HashRouter>
+        <Route path="/plugins" element={<ProtectedRoute requiredPermissions="admin"><PluginsPage /></ProtectedRoute>} />
+        <Route path="/help" element={<HelpPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/audit-log" element={<ProtectedRoute requiredPermissions="admin"><AuditLogPage /></ProtectedRoute>} />
+      </Route>
+    </Routes>
   );
 }

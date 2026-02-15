@@ -37,7 +37,7 @@ export function startServer(): void {
   // Let's use getBasePath() from utils or similar if available, or relative path.
   // For now, keeping as is but aware of potential path issue in dist.
 
-  app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads'))); // Assuming dist structure adds one level?
+  app.use('/uploads', express.static(path.join(__dirname, '..', '..', '..', 'uploads'))); // Assuming dist structure is dist/electron/backend/server.js
   // Wait, if tsc preserves structure:
   // electron/backend/server.ts -> dist/electron/backend/server.js
   // Then __dirname is dist/electron/backend
