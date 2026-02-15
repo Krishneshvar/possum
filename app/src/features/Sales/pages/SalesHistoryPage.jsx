@@ -192,7 +192,7 @@ export default function SalesHistoryPage() {
   );
 
   return (
-    <div className="h-[calc(100vh-6.5rem)] flex flex-col gap-4 p-2 overflow-hidden">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold tracking-tight">Sales History</h1>
         <div className="flex items-center gap-2">
@@ -228,7 +228,6 @@ export default function SalesHistoryPage() {
 
         emptyState={emptyState}
         renderActions={renderActions}
-        avatarIcon={<ShoppingBag className="h-4 w-4 text-primary" />}
       />
     </div>
   );

@@ -45,6 +45,7 @@ export default function DataTable({
     emptyState,
     renderActions,
     avatarIcon,
+    className,
 }) {
     const [visibleColumns, setVisibleColumns] = useState(
         columns.reduce((acc, col) => {
@@ -58,7 +59,7 @@ export default function DataTable({
     };
 
     return (
-        <Card className="border-border/50 shadow-sm w-full overflow-hidden">
+        <Card className={`border-border/50 shadow-sm w-full overflow-hidden ${className || ''}`}>
             <CardContent className="pb-0">
                 {/* Search Bar - Top Left Corner */}
                 <div className="p-4 sm:p-6 pb-0">

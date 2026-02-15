@@ -186,7 +186,7 @@ export default function OrdersPage() {
   );
 
   return (
-    <div className="h-[calc(100vh-7rem)] flex flex-col gap-4 p-4 overflow-hidden">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Pending Orders</h1>
@@ -225,7 +225,6 @@ export default function OrdersPage() {
 
         emptyState={emptyState}
         renderActions={renderActions}
-        avatarIcon={<ShoppingBag className="h-4 w-4 text-primary" />}
       />
     </div>
   );

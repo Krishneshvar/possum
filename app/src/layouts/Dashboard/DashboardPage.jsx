@@ -56,10 +56,12 @@ const MainLayout = () => {
       style={{ "--sidebar-width": "250px" }}
     >
       <AppSidebar variant="floating" />
-      <main className="w-full bg-background p-4 min-h-screen">
-        <SiteHeader />
-        <Separator className="my-4" />
-        <div className="flex flex-col">
+      <main className="w-full bg-background p-4 h-screen overflow-y-auto flex flex-col">
+        <div className="flex-none">
+          <SiteHeader />
+          <Separator className="my-4" />
+        </div>
+        <div className="flex flex-col flex-1">
           <Outlet />
         </div>
       </main>

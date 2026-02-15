@@ -32,7 +32,7 @@ export async function createSale(req, res) {
     } catch (error) {
         // Check for specific errors
         if (error.message.includes('Insufficient stock')) {
-             return res.status(400).json({ error: error.message, code: 'INSUFFICIENT_STOCK' });
+            return res.status(400).json({ error: error.message, code: 'INSUFFICIENT_STOCK' });
         }
         res.status(400).json({ error: error.message });
     }
@@ -43,7 +43,34 @@ export async function createSale(req, res) {
  */
 export async function getSales(req, res) {
     try {
-        const result = await SaleService.getSales(req.query);
+        const {
+            page = 1,
+            limit = 10,
+            status,
+            customerId,
+            startDate,
+            endDate,
+            searchTerm,
+            fulfillmentStatus,
+            sortBy,
+            sortOrder
+        } = req.query;
+
+        // Convert page and limit to numbers and map to what repository expects
+        const params = {
+            status: Array.isArray(status) ? status : (status ? [status] : undefined),
+            customerId: customerId ? parseInt(customerId, 10) : undefined,
+            startDate,
+            endDate,
+            searchTerm,
+            currentPage: parseInt(page, 10),
+            itemsPerPage: parseInt(limit, 10),
+            sortBy,
+            sortOrder,
+            fulfillmentStatus: Array.isArray(fulfillmentStatus) ? fulfillmentStatus : (fulfillmentStatus ? [fulfillmentStatus] : undefined)
+        };
+
+        const result = await SaleService.getSales(params);
         res.json(result);
     } catch (error) {
         res.status(500).json({ error: error.message });
