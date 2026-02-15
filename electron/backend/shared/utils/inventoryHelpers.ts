@@ -10,9 +10,9 @@ import { getDB } from '../db/index.js';
  * @param {number} variantId - Variant ID
  * @returns {number} Computed stock quantity
  */
-export function getComputedStock(variantId) {
+export function getComputedStock(variantId: number): number {
     const db = getDB();
-    const result = db.prepare(`
+    const stmt = db.prepare(`
         SELECT 
             COALESCE(
                 (SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = ?),
@@ -21,7 +21,9 @@ export function getComputedStock(variantId) {
                 (SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = ? AND reason != 'confirm_receive'),
                 0
             ) AS stock
-    `).get(variantId, variantId);
+    `);
+
+    const result = stmt.get(variantId) as { stock: number } | undefined;
 
     return result?.stock ?? 0;
 }
@@ -31,7 +33,7 @@ export function getComputedStock(variantId) {
  * @param {number[]} variantIds - Array of variant IDs
  * @returns {Object} Map of variantId -> stock
  */
-export function getComputedStockBatch(variantIds) {
+export function getComputedStockBatch(variantIds: number[]): Record<number, number> {
     if (!variantIds || variantIds.length === 0) {
         return {};
     }
@@ -39,7 +41,7 @@ export function getComputedStockBatch(variantIds) {
     const db = getDB();
     const placeholders = variantIds.map(() => '?').join(',');
 
-    const results = db.prepare(`
+    const stmt = db.prepare(`
         SELECT 
             v.id as variant_id,
             COALESCE(
@@ -51,9 +53,11 @@ export function getComputedStockBatch(variantIds) {
             ) AS stock
         FROM variants v
         WHERE v.id IN (${placeholders})
-    `).all(...variantIds);
+    `);
 
-    const stockMap = {};
+    const results = stmt.all(...variantIds) as Array<{ variant_id: number; stock: number }>;
+
+    const stockMap: Record<number, number> = {};
     for (const row of results) {
         stockMap[row.variant_id] = row.stock;
     }
@@ -66,13 +70,13 @@ export function getComputedStockBatch(variantIds) {
  * @param {number} requiredQty - Required quantity
  * @throws {Error} If insufficient stock
  */
-export function validateStockAvailable(variantId, requiredQty) {
+export function validateStockAvailable(variantId: number, requiredQty: number): void {
     const currentStock = getComputedStock(variantId);
     if (currentStock < requiredQty) {
         const error = new Error(`Insufficient stock for variant ${variantId}. Available: ${currentStock}, Required: ${requiredQty}`);
-        error.code = 'INSUFFICIENT_STOCK';
-        error.availableStock = currentStock;
-        error.requiredQty = requiredQty;
+        (error as any).code = 'INSUFFICIENT_STOCK';
+        (error as any).availableStock = currentStock;
+        (error as any).requiredQty = requiredQty;
         throw error;
     }
 }
@@ -82,13 +86,13 @@ export function validateStockAvailable(variantId, requiredQty) {
  * @param {number} variantId - Variant ID
  * @returns {Object} Stock status with quantity and status label
  */
-export function getStockStatus(variantId) {
+export function getStockStatus(variantId: number): { stock: number; status: string; alertCap: number } {
     const db = getDB();
     const stock = getComputedStock(variantId);
 
     const variant = db.prepare(`
         SELECT stock_alert_cap FROM variants WHERE id = ?
-    `).get(variantId);
+    `).get(variantId) as { stock_alert_cap: number } | undefined;
 
     const alertCap = variant?.stock_alert_cap ?? 10;
 

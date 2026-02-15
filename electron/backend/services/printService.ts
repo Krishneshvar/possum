@@ -3,13 +3,13 @@ import { BrowserWindow, ipcMain, app } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
 import { printBillHtml } from '../../print/printController.js';
-import { renderBill, DEFAULT_BILL_SCHEMA } from '../utils/billRenderer.js';
+import { renderBill, DEFAULT_BILL_SCHEMA, RenderData, BillSchema } from '../utils/billRenderer.js';
 import * as saleService from '../modules/sales/sale.service.js';
 
 // Helper to get settings path
 const getUserDataPath = () => app.getPath('userData');
 
-export async function getPrinters() {
+export async function getPrinters(): Promise<Electron.PrinterInfo[]> {
     // We need a window to call getPrintersAsync
     // We can use the focused window or create a temp one
     const wins = BrowserWindow.getAllWindows();
@@ -26,38 +26,38 @@ export async function getPrinters() {
     return [];
 }
 
-export async function printInvoice(invoiceId) {
+export async function printInvoice(invoiceId: number): Promise<{ success: boolean }> {
     try {
         console.log(`[PrintService] Printing invoice ID: ${invoiceId}`);
 
         // 1. Fetch Invoice Data
-        const sale = saleService.getSale(invoiceId);
+        const sale: any = saleService.getSale(invoiceId); // saleService is JS/any for now
         if (!sale) {
             throw new Error(`Invoice with ID ${invoiceId} not found.`);
         }
 
         // 2. Fetch Settings
-        let billSettings = DEFAULT_BILL_SCHEMA;
+        let billSettings: BillSchema = DEFAULT_BILL_SCHEMA;
         try {
             const settingsPath = path.join(getUserDataPath(), 'bill-settings.json');
             const settingsData = await fs.readFile(settingsPath, 'utf8');
             const savedSettings = JSON.parse(settingsData);
             billSettings = { ...DEFAULT_BILL_SCHEMA, ...savedSettings };
-        } catch (err) {
+        } catch (err: any) {
             console.warn('[PrintService] Could not load bill settings, using default.', err.message);
         }
 
-        let generalSettings = { currency: '₹' };
+        let generalSettings: any = { currency: '₹' };
         try {
             const generalSettingsPath = path.join(getUserDataPath(), 'general-settings.json');
             const generalData = await fs.readFile(generalSettingsPath, 'utf8');
             generalSettings = { ...generalSettings, ...JSON.parse(generalData) };
-        } catch (err) {
+        } catch (err: any) {
             console.warn('[PrintService] Could not load general settings, using default.', err.message);
         }
 
         // 3. Prepare Data for Renderer
-        const items = sale.items.map(item => {
+        const items = sale.items.map((item: any) => {
             const variantText = item.variant_name && item.variant_name !== 'Default' ? ` (${item.variant_name})` : '';
             return {
                 name: `${item.product_name}${variantText}`,
@@ -74,9 +74,9 @@ export async function printInvoice(invoiceId) {
         });
 
         // Calculate subtotal from items to ensure consistency
-        const calculatedSubtotal = items.reduce((sum, item) => sum + item.total, 0);
+        const calculatedSubtotal = items.reduce((sum: number, item: any) => sum + item.total, 0);
 
-        const renderData = {
+        const renderData: RenderData = {
             store: {
                 // These will be overridden by billSettings sections if present
                 name: 'Store Name',
@@ -93,7 +93,7 @@ export async function printInvoice(invoiceId) {
                 tax: sale.total_tax,
                 discount: sale.discount,
                 total: sale.total_amount,
-                totalItems: items.reduce((acc, item) => acc + item.qty, 0)
+                totalItems: items.reduce((acc: number, item: any) => acc + item.qty, 0)
             },
             items: items,
             currency: generalSettings.currency
@@ -103,7 +103,7 @@ export async function printInvoice(invoiceId) {
         const html = renderBill(renderData, billSettings);
 
         // 5. Determine Printer
-        let printerName = null;
+        let printerName: string | null = null;
         if (generalSettings.defaultPrinter) {
             printerName = generalSettings.defaultPrinter;
         }

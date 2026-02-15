@@ -1,9 +1,21 @@
+import { Request, Response, NextFunction } from 'express';
 import * as AuthService from '../../modules/auth/auth.service.js';
+
+// Extend Express Request
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+      permissions?: string[];
+      token?: string;
+    }
+  }
+}
 
 /**
  * Middleware to verify session token
  */
-export function authenticate(req, res, next) {
+export function authenticate(req: Request, res: Response, next: NextFunction) {
     if (req.path.startsWith('/auth/')) {
         return next();
     }
@@ -23,7 +35,7 @@ export function authenticate(req, res, next) {
         return res.status(401).json({ error: 'Unauthorized: Session expired or invalid' });
     }
 
-    req.user = session.user;
+    req.user = session;
     req.permissions = session.permissions;
     req.token = token;
 
@@ -34,13 +46,13 @@ export function authenticate(req, res, next) {
  * Middleware to require specific permission
  * Supports single string or array of strings (OR logic)
  */
-export function requirePermission(permission) {
-    return (req, res, next) => {
+export function requirePermission(permission: string | string[]) {
+    return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user || !req.permissions) {
             return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
         }
 
-        const userPermissions = req.permissions;
+        const userPermissions = req.permissions!;
         let hasAccess = false;
 
         if (Array.isArray(permission)) {

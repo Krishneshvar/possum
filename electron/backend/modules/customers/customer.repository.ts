@@ -3,21 +3,35 @@
  * Handles all database operations for customers
  */
 import { getDB } from '../../shared/db/index.js';
+import { Customer } from '../../../../types/index.js';
+
+export interface CustomerFilter {
+  searchTerm?: string;
+  currentPage?: number;
+  itemsPerPage?: number;
+}
+
+export interface PaginatedCustomers {
+  customers: Customer[];
+  totalCount: number;
+  totalPages: number;
+}
 
 /**
  * Find customers with filtering and pagination
  * @param {Object} params - Filter and pagination params
  * @returns {Object} Customers list with pagination info
  */
-export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }) {
+export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }: CustomerFilter): PaginatedCustomers {
   const db = getDB();
-  const filterClauses = [];
-  const filterParams = [];
+  const filterClauses: string[] = [];
+  const filterParams: any[] = [];
 
   filterClauses.push(`deleted_at IS NULL`);
 
   if (searchTerm) {
     // Search by name, id (if numeric), phone, or email
+    // Use proper typing or separate logic
     const isNumeric = /^\d+$/.test(searchTerm);
     if (isNumeric) {
       filterClauses.push(`(name LIKE ? OR id = ? OR phone LIKE ?)`);
@@ -36,7 +50,7 @@ export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }
     FROM customers
     ${whereClause}
   `;
-  const totalCount = db.prepare(countQuery).get(...filterParams).total;
+  const totalCount = (db.prepare(countQuery).get(...filterParams) as { total: number }).total;
 
   const paginatedQuery = `
     SELECT
@@ -55,7 +69,7 @@ export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedParams = [...filterParams, itemsPerPage, startIndex];
 
-  const paginatedCustomers = db.prepare(paginatedQuery).all(...paginatedParams);
+  const paginatedCustomers = db.prepare(paginatedQuery).all(...paginatedParams) as Customer[];
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -71,31 +85,31 @@ export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }
  * @param {number} id - Customer ID
  * @returns {Object|null} Customer or null
  */
-export function findCustomerById(id) {
+export function findCustomerById(id: number): Customer | undefined {
   const db = getDB();
-  return db.prepare('SELECT * FROM customers WHERE id = ? AND deleted_at IS NULL').get(id);
+  return db.prepare('SELECT * FROM customers WHERE id = ? AND deleted_at IS NULL').get(id) as Customer | undefined;
 }
 
 /**
  * Insert a new customer
  */
-export function insertCustomer({ name, phone, email, address }) {
+export function insertCustomer({ name, phone, email, address }: Partial<Customer>): Customer | undefined {
   const db = getDB();
   const stmt = db.prepare(`
         INSERT INTO customers (name, phone, email, address)
         VALUES (?, ?, ?, ?)
     `);
   const result = stmt.run(name, phone, email, address);
-  return findCustomerById(result.lastInsertRowid);
+  return findCustomerById(Number(result.lastInsertRowid));
 }
 
 /**
  * Update a customer
  */
-export function updateCustomerById(id, { name, phone, email, address }) {
+export function updateCustomerById(id: number, { name, phone, email, address }: Partial<Customer>): Customer | undefined {
   const db = getDB();
-  const updates = [];
-  const params = [];
+  const updates: string[] = [];
+  const params: any[] = [];
 
   if (name !== undefined) {
     updates.push('name = ?');
@@ -115,8 +129,9 @@ export function updateCustomerById(id, { name, phone, email, address }) {
   }
 
   if (updates.length > 0) {
+    params.push(id); // push id for WHERE clause
     const stmt = db.prepare(`UPDATE customers SET ${updates.join(', ')} WHERE id = ?`);
-    stmt.run(...params, id);
+    stmt.run(...params);
   }
   return findCustomerById(id);
 }
@@ -124,7 +139,7 @@ export function updateCustomerById(id, { name, phone, email, address }) {
 /**
  * Soft delete a customer
  */
-export function softDeleteCustomer(id) {
+export function softDeleteCustomer(id: number): boolean {
   const db = getDB();
   const stmt = db.prepare('UPDATE customers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
   const result = stmt.run(id);

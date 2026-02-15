@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchGeneralSettings } from '@/features/Settings/settingsSlice';
 import DashboardPage from "@/layouts/Dashboard/DashboardPage";
@@ -11,7 +11,7 @@ const AUTO_LOGOUT_TIME = 30 * 60 * 1000; // 30 minutes
 export default function App() {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const timerRef = useRef(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     dispatch(fetchGeneralSettings());

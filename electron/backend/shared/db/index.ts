@@ -12,13 +12,13 @@ const isDev = !app.isPackaged;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let dbInstance = null;
+let dbInstance: Database.Database | null = null;
 
 /**
  * Initialize and return the database instance
  * @returns {Database.Database} The database instance
  */
-function initDB() {
+export function initDB(): Database.Database {
     if (dbInstance) return dbInstance;
 
     const dbPath = isDev
@@ -37,7 +37,7 @@ function initDB() {
  * Get the existing database instance
  * @returns {Database.Database} The database instance
  */
-function getDB() {
+export function getDB(): Database.Database {
     if (!dbInstance) {
         return initDB();
     }
@@ -47,7 +47,7 @@ function getDB() {
 /**
  * Close the database connection
  */
-function closeDB() {
+export function closeDB(): void {
     if (dbInstance) {
         dbInstance.close();
         dbInstance = null;
@@ -59,12 +59,9 @@ function closeDB() {
  * Execute a function within a database transaction
  * @param {Function} fn - Function to execute within transaction
  * @returns {*} Result of the function
- * @throws {Error} Rolls back and rethrows any error
  */
-function transaction(fn) {
+export function transaction<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
     const db = getDB();
     const runTransaction = db.transaction(fn);
-    return runTransaction();
+    return runTransaction as (...args: any[]) => T;
 }
-
-export { initDB, getDB, closeDB, transaction };

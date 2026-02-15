@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ESNext", "DOM"],
+    "outDir": "dist",
+    "rootDir": ".",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["types/*"]
+    }
+  },
+  "include": ["electron/**/*.ts", "types/**/*.ts", "electron/backend/shims.d.ts"],
+  "exclude": ["app", "dist", "node_modules", "electron/dist"]
+}

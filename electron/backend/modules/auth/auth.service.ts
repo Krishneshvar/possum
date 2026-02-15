@@ -4,13 +4,14 @@
  */
 import crypto from 'crypto';
 import * as UserRepository from '../users/user.repository.js';
+import { User } from '../../../../types/index.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'possum-super-secret-key-123';
 
 /**
  * Base64Url Encoding helper
  */
-function base64url(obj) {
+function base64url(obj: any): string {
     return Buffer.from(JSON.stringify(obj))
         .toString('base64')
         .replace(/=/g, '')
@@ -21,7 +22,7 @@ function base64url(obj) {
 /**
  * Generate a manual JWT
  */
-function generateToken(payload) {
+function generateToken(payload: any): string {
     const header = { alg: 'HS256', typ: 'JWT' };
     const encodedHeader = base64url(header);
     const encodedPayload = base64url({
@@ -41,9 +42,11 @@ function generateToken(payload) {
 /**
  * Verify a manual JWT
  */
-export function verifyToken(token) {
+export function verifyToken(token: string): any | null {
     try {
         const [header, payload, signature] = token.split('.');
+        if (!header || !payload || !signature) return null;
+
         const expectedSignature = crypto
             .createHmac('sha256', JWT_SECRET)
             .update(`${header}.${payload}`)
@@ -62,17 +65,20 @@ export function verifyToken(token) {
     }
 }
 
+// Alias for getSession used by middleware
+export const getSession = verifyToken;
+
 /**
  * Hash password (consistent with user.service.js)
  */
-function hashPassword(password) {
+function hashPassword(password: string): string {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
 /**
  * Login user and return token + user info
  */
-export async function login(username, password) {
+export async function login(username: string, password: string): Promise<{ user: Partial<User>, token: string }> {
     const user = UserRepository.findUserByUsername(username);
     if (!user || user.is_active === 0) {
         throw new Error('Invalid username or password');
@@ -87,11 +93,11 @@ export async function login(username, password) {
     const permissions = UserRepository.getUserPermissions(user.id);
     const roles = UserRepository.getUserRoles(user.id).map(r => r.name);
 
-    const userData = {
+    const userData: any = {
         id: user.id,
         name: user.name,
         username: user.username,
-        roles,
+        roles, // string[]
         permissions
     };
 
@@ -106,7 +112,7 @@ export async function login(username, password) {
 /**
  * Get current user from token
  */
-export async function me(userId) {
+export async function me(userId: number): Promise<Partial<User>> {
     const user = UserRepository.findUserById(userId);
     if (!user) throw new Error('User not found');
 
@@ -117,7 +123,7 @@ export async function me(userId) {
         id: user.id,
         name: user.name,
         username: user.username,
-        roles,
+        roles: roles as any,
         permissions
     };
 }

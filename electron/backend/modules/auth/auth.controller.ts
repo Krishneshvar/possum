@@ -1,10 +1,11 @@
 /**
  * Auth Controller
  */
+import { Request, Response } from 'express';
 import * as AuthService from './auth.service.js';
 import * as AuditService from '../audit/audit.service.js';
 
-export async function login(req, res) {
+export async function login(req: Request, res: Response) {
     try {
         const { username, password } = req.body;
         if (!username || !password) {
@@ -14,37 +15,44 @@ export async function login(req, res) {
         const result = await AuthService.login(username, password);
 
         // Log the login event
-        AuditService.logLogin(result.user.id, {
+        AuditService.logLogin(result.user.id!, {
             username: result.user.username,
             timestamp: new Date().toISOString()
         });
 
         res.json(result);
-    } catch (error) {
+    } catch (error: any) {
         res.status(401).json({ error: error.message });
     }
 }
 
-export async function me(req, res) {
+export async function me(req: Request, res: Response) {
     try {
         // userId is attached to req by auth middleware
-        const result = await AuthService.me(req.userId);
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ error: 'User ID not found' });
+        }
+
+        const result = await AuthService.me(userId);
         res.json(result);
-    } catch (error) {
+    } catch (error: any) {
         res.status(404).json({ error: error.message });
     }
 }
 
-export async function logout(req, res) {
+export async function logout(req: Request, res: Response) {
     try {
         // userId is attached to req by auth middleware
-        AuditService.logLogout(req.userId, {
-            timestamp: new Date().toISOString()
-        });
+        const userId = req.user?.id;
+        if (userId) {
+             AuditService.logLogout(userId, {
+                timestamp: new Date().toISOString()
+            });
+        }
 
         res.json({ message: 'Logged out successfully' });
-    } catch (error) {
+    } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
 }
-
