@@ -1,78 +1,80 @@
 /**
  * Auth Service
- * Handles login, JWT generation and verification
+ * Handles login, session management, and password security
  */
-import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 import * as UserRepository from '../users/user.repository.js';
-import { User } from '../../../../types/index.js';
+import { User, Session } from '../../../../types/index.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'possum-super-secret-key-123';
+// In-memory session store
+const sessions = new Map<string, Session>();
+const SESSION_DURATION_SECONDS = 30 * 60; // 30 minutes
 
 /**
- * Base64Url Encoding helper
+ * Hash password using bcrypt
  */
-function base64url(obj: any): string {
-    return Buffer.from(JSON.stringify(obj))
-        .toString('base64')
-        .replace(/=/g, '')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_');
+export async function hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return await bcrypt.hash(password, saltRounds);
 }
 
 /**
- * Generate a manual JWT
+ * Verify password using bcrypt
  */
-function generateToken(payload: any): string {
-    const header = { alg: 'HS256', typ: 'JWT' };
-    const encodedHeader = base64url(header);
-    const encodedPayload = base64url({
-        ...payload,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-    });
-
-    const signature = crypto
-        .createHmac('sha256', JWT_SECRET)
-        .update(`${encodedHeader}.${encodedPayload}`)
-        .digest('base64url');
-
-    return `${encodedHeader}.${encodedPayload}.${signature}`;
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+    return await bcrypt.compare(password, hash);
 }
 
 /**
- * Verify a manual JWT
+ * Create a new session for a user
  */
-export function verifyToken(token: string): any | null {
-    try {
-        const [header, payload, signature] = token.split('.');
-        if (!header || !payload || !signature) return null;
+function createSession(user: any): string {
+    const token = uuidv4();
+    const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
 
-        const expectedSignature = crypto
-            .createHmac('sha256', JWT_SECRET)
-            .update(`${header}.${payload}`)
-            .digest('base64url');
+    const session: Session = {
+        id: uuidv4(),
+        user_id: user.id,
+        token,
+        expires_at: expiresAt,
+        // Store flattened permissions/roles for quick access
+        ...user
+    };
 
-        if (signature !== expectedSignature) return null;
+    sessions.set(token, session);
+    return token;
+}
 
-        const decodedPayload = JSON.parse(Buffer.from(payload, 'base64url').toString());
+/**
+ * Get session by token
+ * Also handles expiration and auto-renewal (optional, strictly speaking just check valid)
+ */
+export function getSession(token: string): any | null {
+    if (!token) return null;
 
-        // Expired?
-        if (decodedPayload.exp < Math.floor(Date.now() / 1000)) return null;
+    const session = sessions.get(token);
+    if (!session) return null;
 
-        return decodedPayload;
-    } catch (e) {
+    // Check expiration
+    if (session.expires_at < Math.floor(Date.now() / 1000)) {
+        sessions.delete(token);
         return null;
     }
+
+    // Slide expiration on activity? (Optional, usually good for UX)
+    // requirement says "30-minute auto-logout", usually implies "inactivity timeout".
+    session.expires_at = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
+    sessions.set(token, session);
+
+    return session;
 }
 
-// Alias for getSession used by middleware
-export const getSession = verifyToken;
-
 /**
- * Hash password (consistent with user.service.js)
+ * End a session (logout)
  */
-function hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex');
+export function endSession(token: string): void {
+    sessions.delete(token);
 }
 
 /**
@@ -84,8 +86,8 @@ export async function login(username: string, password: string): Promise<{ user:
         throw new Error('Invalid username or password');
     }
 
-    const passwordHash = hashPassword(password);
-    if (user.password_hash !== passwordHash) {
+    const isValid = await verifyPassword(password, user.password_hash || '');
+    if (!isValid) {
         throw new Error('Invalid username or password');
     }
 
@@ -101,7 +103,7 @@ export async function login(username: string, password: string): Promise<{ user:
         permissions
     };
 
-    const token = generateToken(userData);
+    const token = createSession(userData);
 
     return {
         user: userData,
@@ -110,9 +112,13 @@ export async function login(username: string, password: string): Promise<{ user:
 }
 
 /**
- * Get current user from token
+ * Get current user from token (via session)
  */
 export async function me(userId: number): Promise<Partial<User>> {
+    // This function was used to refresh user data.
+    // Now we can just use the session or re-fetch from DB if needed.
+    // Assuming the caller has the token, they can just use getSession.
+    // But if we need fresh data from DB:
     const user = UserRepository.findUserById(userId);
     if (!user) throw new Error('User not found');
 
@@ -126,4 +132,11 @@ export async function me(userId: number): Promise<Partial<User>> {
         roles: roles as any,
         permissions
     };
+}
+
+/**
+ * Clear all sessions (on app restart if needed, though memory is cleared anyway)
+ */
+export function clearAllSessions(): void {
+    sessions.clear();
 }

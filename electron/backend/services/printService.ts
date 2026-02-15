@@ -5,6 +5,8 @@ import fs from 'fs/promises';
 import { printBillHtml } from '../../print/printController.js';
 import { renderBill, DEFAULT_BILL_SCHEMA, RenderData, BillSchema } from '../utils/billRenderer.js';
 import * as saleService from '../modules/sales/sale.service.js';
+import * as AuthService from '../modules/auth/auth.service.js';
+import { Sale, SaleItem } from '../../../types/index.js';
 
 // Helper to get settings path
 const getUserDataPath = () => app.getPath('userData');
@@ -26,12 +28,34 @@ export async function getPrinters(): Promise<Electron.PrinterInfo[]> {
     return [];
 }
 
-export async function printInvoice(invoiceId: number): Promise<{ success: boolean }> {
+export async function printInvoice(invoiceId: number, token: string): Promise<{ success: boolean }> {
     try {
+        // Validate Auth
+        if (!token) {
+            throw new Error('Unauthorized: No token provided');
+        }
+        const session = AuthService.getSession(token);
+        if (!session) {
+            throw new Error('Unauthorized: Invalid session');
+        }
+
+        // Check Permission
+        const permissions = session.permissions || [];
+        // Allow if user can view sales or create sales
+        if (!permissions.includes('sales.view') && !permissions.includes('sales.create')) {
+             // Admin role check is implicitly handled if admin has these permissions.
+             // If admin role has all permissions (as per seed), this check passes.
+             // If not, we might need role check.
+             // Assuming permissions are assigned correctly.
+             if (!session.roles?.includes('admin')) {
+                 throw new Error('Forbidden: Insufficient permissions to print invoice');
+             }
+        }
+
         console.log(`[PrintService] Printing invoice ID: ${invoiceId}`);
 
         // 1. Fetch Invoice Data
-        const sale: any = saleService.getSale(invoiceId); // saleService is JS/any for now
+        const sale = saleService.getSale(invoiceId);
         if (!sale) {
             throw new Error(`Invoice with ID ${invoiceId} not found.`);
         }
@@ -57,18 +81,17 @@ export async function printInvoice(invoiceId: number): Promise<{ success: boolea
         }
 
         // 3. Prepare Data for Renderer
-        const items = sale.items.map((item: any) => {
+        const items = sale.items.map((item: SaleItem) => {
             const variantText = item.variant_name && item.variant_name !== 'Default' ? ` (${item.variant_name})` : '';
             return {
                 name: `${item.product_name}${variantText}`,
                 qty: item.quantity,
                 price: item.price_per_unit,
-                // We use (Price * Qty) - Discount + Tax?
-                // Or just (Price * Qty) - Discount?
-                // The renderer just displays what we give.
-                // Usually line total is (Price * Qty) - Discount. Tax is separate or included based on logic.
-                // Let's assume inclusive for display simplicity if we don't know.
-                // But wait, sale.total_amount matches the sum?
+                // We use (Price * Qty) - Discount
+                // Note: item.total is not available in SaleItem directly?
+                // Wait, SaleItem from repository has fields from `sale_items` table.
+                // It does NOT have `total`. But we can calculate it.
+                // item.price_per_unit * item.quantity - item.discount_amount
                 total: (item.price_per_unit * item.quantity) - (item.discount_amount || 0)
             };
         });

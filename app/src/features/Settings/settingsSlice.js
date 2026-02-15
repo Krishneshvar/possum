@@ -2,9 +2,11 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 export const fetchGeneralSettings = createAsyncThunk(
     'settings/fetchGeneralSettings',
-    async () => {
+    async (_, { getState }) => {
+        const state = getState();
+        const token = state.auth.token;
         if (window.electronAPI) {
-            const settings = await window.electronAPI.getGeneralSettings();
+            const settings = await window.electronAPI.getGeneralSettings(token);
             return settings || { currency: '₹' };
         }
         return { currency: '₹' };
@@ -13,9 +15,11 @@ export const fetchGeneralSettings = createAsyncThunk(
 
 export const saveGeneralSettings = createAsyncThunk(
     'settings/saveGeneralSettings',
-    async (settings) => {
+    async (settings, { getState }) => {
+        const state = getState();
+        const token = state.auth.token;
         if (window.electronAPI) {
-            await window.electronAPI.saveGeneralSettings(settings);
+            await window.electronAPI.saveGeneralSettings(settings, token);
         }
         return settings;
     }

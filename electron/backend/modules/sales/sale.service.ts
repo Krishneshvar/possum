@@ -13,7 +13,7 @@ import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
 import { getComputedStock } from '../../shared/utils/inventoryHelpers.js';
 import * as AuthService from '../auth/auth.service.js';
-import { Invoice, InvoiceItem, Variant, Product, Customer } from '../../../../types/index.js';
+import { Invoice, InvoiceItem, Variant, Customer, Sale, SaleItem } from '../../../../types/index.js';
 
 interface CreateSaleParams {
     items: { variantId: number; quantity: number; discount?: number; pricePerUnit?: number }[];
@@ -23,14 +23,12 @@ interface CreateSaleParams {
     payments?: { amount: number; paymentMethodId: number }[];
     taxMode?: string;
     billTaxIds?: number[];
-    fulfillment_status?: string;
+    fulfillment_status?: 'pending' | 'fulfilled' | 'cancelled';
     token?: string;
 }
 
 /**
  * Create a new sale with all related records
- * @param {Object} params - Sale parameters
- * @returns {Object} Created sale
  */
 export async function createSale({
     items,
@@ -42,7 +40,7 @@ export async function createSale({
     billTaxIds = [], // Deprecated
     fulfillment_status = 'pending',
     token // Added token for permission check
-}: CreateSaleParams): Promise<any> {
+}: CreateSaleParams): Promise<Sale> {
     if (!token) {
         throw new Error('Unauthorized: Service requires token for permission check');
     }
@@ -143,7 +141,7 @@ export async function createSale({
         // 4. Process results
         let totalAmount = 0; // Final Payable
         let totalTax = taxResult.total_tax;
-        const processedItems: any[] = [];
+        const processedItems: Partial<SaleItem>[] = [];
 
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
@@ -151,7 +149,7 @@ export async function createSale({
             const variant = variantMap.get(item.variantId);
 
             const pricePerUnit = item.pricePerUnit ?? variant!.price;
-            const costPerUnit = variant!.cost_price;
+            const costPerUnit = variant!.cost_price || 0;
             const itemDiscount = item.discount ?? 0;
 
             processedItems.push({
@@ -162,7 +160,6 @@ export async function createSale({
                 tax_rate: calculatedItem.tax_rate,
                 tax_amount: calculatedItem.tax_amount,
                 applied_tax_rate: calculatedItem.tax_rate,
-                // applied_tax_amount: calculatedItem.applied_tax_amount, // Not in Interface, removing from TS
                 tax_rule_snapshot: calculatedItem.tax_rule_snapshot,
                 discount_amount: itemDiscount
             });
@@ -176,7 +173,7 @@ export async function createSale({
         const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
 
         // Determine status
-        let status = 'draft';
+        let status: 'draft' | 'paid' | 'partially_paid' = 'draft';
         if (paidAmount >= totalAmount) {
             status = 'paid';
         } else if (paidAmount > 0) {
@@ -210,9 +207,9 @@ export async function createSale({
 
             // Deduct from inventory
             inventoryRepository.insertInventoryAdjustment({
-                variant_id: item.variant_id,
+                variant_id: item.variant_id!,
                 lot_id: null,
-                quantity_change: -item.quantity,
+                quantity_change: -(item.quantity || 0),
                 reason: 'sale',
                 reference_type: 'sale_item',
                 reference_id: saleItemId,
@@ -221,9 +218,9 @@ export async function createSale({
 
             // Log product flow
             productFlowRepository.insertProductFlow({
-                variant_id: item.variant_id,
+                variant_id: item.variant_id!,
                 event_type: 'sale',
-                quantity: -item.quantity,
+                quantity: -(item.quantity || 0),
                 reference_type: 'sale_item',
                 reference_id: saleItemId
             });
@@ -255,31 +252,23 @@ export async function createSale({
             }
         );
 
-        return {
-            id: saleId,
-            invoiceNumber,
-            totalAmount,
-            totalTax,
-            paidAmount,
-            discount,
-            status
-        };
+        // Fetch created sale to return
+        const createdSale = saleRepository.findSaleById(saleId);
+        if (!createdSale) throw new Error('Failed to retrieve created sale');
+        return createdSale;
+
     })(); // Execute transaction
 }
 
 /**
  * Get a sale by ID
- * @param {number} id - Sale ID
- * @returns {Object|null} Sale with details
  */
-export function getSale(id: number): any {
+export function getSale(id: number): Sale | null {
     return saleRepository.findSaleById(id);
 }
 
 /**
  * Get sales list
- * @param {Object} params - Filter params
- * @returns {Object} Sales with pagination
  */
 export function getSales(params: saleRepository.SaleFilter): saleRepository.PaginatedSales {
     return saleRepository.findSales(params);
@@ -287,10 +276,8 @@ export function getSales(params: saleRepository.SaleFilter): saleRepository.Pagi
 
 /**
  * Add payment to an existing sale
- * @param {Object} params - Payment params
- * @returns {Object} Updated sale info
  */
-export function addPayment({ saleId, amount, paymentMethodId, userId, token }: { saleId: number; amount: number; paymentMethodId: number; userId: number; token?: string }): any {
+export function addPayment({ saleId, amount, paymentMethodId, userId, token }: { saleId: number; amount: number; paymentMethodId: number; userId: number; token?: string }): { newPaidAmount: number, status: string } {
     if (!token) {
         throw new Error('Unauthorized: Service requires token for permission check');
     }
@@ -299,9 +286,7 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
     if (!session) throw new Error('Unauthorized: Invalid session');
 
     const userPermissions = session.permissions || [];
-    if (!userPermissions.includes('sales.create')) { // Assuming ADD_PAYMENT requires same permission or similar
-        // Or 'manage_sales'
-        // Original code used COMPLETE_SALE
+    if (!userPermissions.includes('sales.create')) {
         throw new Error('Forbidden: Missing required permission sales.create');
     }
 
@@ -356,12 +341,8 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
 
 /**
  * Cancel a sale
- * @param {number} saleId - Sale ID
- * @param {number} userId - User performing cancellation
- * @param {string} token - Auth token
- * @returns {Object} Cancellation result
  */
-export function cancelSale(saleId: number, userId: number, token?: string): any {
+export function cancelSale(saleId: number, userId: number, token?: string): { success: boolean, message: string } {
     if (!token) {
         throw new Error('Unauthorized: Service requires token for permission check');
     }
@@ -427,11 +408,8 @@ export function cancelSale(saleId: number, userId: number, token?: string): any 
 
 /**
  * Fulfill a sale/order
- * @param {number} saleId - Sale ID
- * @param {number} userId - User performing fulfillment
- * @returns {Object} Fulfillment result
  */
-export function fulfillSale(saleId: number, userId: number, token?: string): any {
+export function fulfillSale(saleId: number, userId: number, token?: string): { success: boolean, message: string } {
     if (!token) {
         throw new Error('Unauthorized: Service requires token for permission check');
     }
@@ -475,7 +453,6 @@ export function fulfillSale(saleId: number, userId: number, token?: string): any
 
 /**
  * Get payment methods
- * @returns {Array} Active payment methods
  */
 export function getPaymentMethods(): any[] {
     return saleRepository.findPaymentMethods();

@@ -3,23 +3,23 @@
  * Handles all database operations for sales
  */
 import { getDB } from '../../shared/db/index.js';
-import { Invoice, InvoiceItem } from '../../../../types/index.js';
+import { Sale, SaleItem, Transaction } from '../../../../types/index.js';
 
 /**
  * Insert a new sale
- * @param {Object} saleData - Sale data
- * @returns {Object} Insert result
  */
-export function insertSale({
-    invoice_number,
-    total_amount,
-    paid_amount,
-    discount,
-    total_tax,
-    status,
-    customer_id,
-    user_id
-}: any): { lastInsertRowid: number | bigint } {
+export function insertSale(saleData: Partial<Sale>): { lastInsertRowid: number | bigint } {
+    const {
+        invoice_number,
+        total_amount,
+        paid_amount,
+        discount,
+        total_tax,
+        status,
+        customer_id,
+        user_id
+    } = saleData;
+
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO sales (
@@ -43,22 +43,22 @@ export function insertSale({
 
 /**
  * Insert a sale item with frozen pricing
- * @param {Object} itemData - Sale item data
- * @returns {Object} Insert result
  */
-export function insertSaleItem({
-    sale_id,
-    variant_id,
-    quantity,
-    price_per_unit,
-    cost_per_unit,
-    tax_rate,
-    tax_amount,
-    discount_amount,
-    applied_tax_rate,
-    applied_tax_amount,
-    tax_rule_snapshot
-}: any): { lastInsertRowid: number | bigint } {
+export function insertSaleItem(itemData: Partial<SaleItem>): { lastInsertRowid: number | bigint } {
+    const {
+        sale_id,
+        variant_id,
+        quantity,
+        price_per_unit,
+        cost_per_unit,
+        tax_rate,
+        tax_amount,
+        discount_amount,
+        applied_tax_rate,
+        applied_tax_amount,
+        tax_rule_snapshot
+    } = itemData;
+
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO sale_items (
@@ -85,10 +85,8 @@ export function insertSaleItem({
 
 /**
  * Find a sale by ID with items
- * @param {number} id - Sale ID
- * @returns {Object|null} Sale with items or null
  */
-export function findSaleById(id: number): any | null {
+export function findSaleById(id: number): Sale | null {
     const db = getDB();
 
     const sale = db.prepare(`
@@ -101,7 +99,7 @@ export function findSaleById(id: number): any | null {
         LEFT JOIN customers c ON s.customer_id = c.id
         LEFT JOIN users u ON s.user_id = u.id
         WHERE s.id = ?
-    `).get(id);
+    `).get(id) as Sale | undefined;
 
     if (!sale) return null;
 
@@ -116,7 +114,7 @@ export function findSaleById(id: number): any | null {
         JOIN variants v ON si.variant_id = v.id
         JOIN products p ON v.product_id = p.id
         WHERE si.sale_id = ?
-    `).all(id);
+    `).all(id) as SaleItem[];
 
     const transactions = db.prepare(`
         SELECT 
@@ -126,7 +124,7 @@ export function findSaleById(id: number): any | null {
         JOIN payment_methods pm ON t.payment_method_id = pm.id
         WHERE t.sale_id = ?
         ORDER BY t.transaction_date ASC
-    `).all(id);
+    `).all(id) as Transaction[];
 
     return {
         ...sale,
@@ -150,7 +148,7 @@ export interface SaleFilter {
 }
 
 export interface PaginatedSales {
-    sales: any[];
+    sales: Sale[];
     totalCount: number;
     totalPages: number;
     currentPage: number;
@@ -158,8 +156,6 @@ export interface PaginatedSales {
 
 /**
  * Find sales with filtering and pagination
- * @param {Object} params - Filter params
- * @returns {Object} Sales list with pagination
  */
 export function findSales({
     status,
@@ -249,7 +245,7 @@ export function findSales({
     `;
 
     // Need to spread filterParams then add itemsPerPage and offset
-    const sales = db.prepare(query).all(...filterParams, itemsPerPage, offset);
+    const sales = db.prepare(query).all(...filterParams, itemsPerPage, offset) as Sale[];
 
     return {
         sales,
@@ -261,9 +257,6 @@ export function findSales({
 
 /**
  * Update sale status
- * @param {number} id - Sale ID
- * @param {string} status - New status
- * @returns {Object} Update result
  */
 export function updateSaleStatus(id: number, status: string): { changes: number } {
     const db = getDB();
@@ -272,9 +265,6 @@ export function updateSaleStatus(id: number, status: string): { changes: number 
 
 /**
  * Update sale fulfillment status
- * @param {number} id - Sale ID
- * @param {string} status - New fulfillment status
- * @returns {Object} Update result
  */
 export function updateFulfillmentStatus(id: number, status: string): { changes: number } {
     const db = getDB();
@@ -283,9 +273,6 @@ export function updateFulfillmentStatus(id: number, status: string): { changes: 
 
 /**
  * Update sale paid amount
- * @param {number} id - Sale ID
- * @param {number} paidAmount - New paid amount
- * @returns {Object} Update result
  */
 export function updateSalePaidAmount(id: number, paidAmount: number): { changes: number } {
     const db = getDB();
@@ -294,16 +281,16 @@ export function updateSalePaidAmount(id: number, paidAmount: number): { changes:
 
 /**
  * Insert a transaction
- * @param {Object} transactionData - Transaction data
- * @returns {Object} Insert result
  */
-export function insertTransaction({
-    sale_id,
-    amount,
-    type,
-    payment_method_id,
-    status
-}: any): { lastInsertRowid: number | bigint } {
+export function insertTransaction(transactionData: Partial<Transaction>): { lastInsertRowid: number | bigint } {
+    const {
+        sale_id,
+        amount,
+        type,
+        payment_method_id,
+        status
+    } = transactionData;
+
     const db = getDB();
     const stmt = db.prepare(`
         INSERT INTO transactions (
@@ -316,7 +303,6 @@ export function insertTransaction({
 
 /**
  * Generate next invoice number
- * @returns {string} Next invoice number
  */
 export function generateInvoiceNumber(): string {
     const db = getDB();
@@ -338,7 +324,6 @@ export function generateInvoiceNumber(): string {
 
 /**
  * Get all payment methods
- * @returns {Array} Payment methods
  */
 export function findPaymentMethods(): any[] {
     const db = getDB();
@@ -347,10 +332,8 @@ export function findPaymentMethods(): any[] {
 
 /**
  * Get sale items for a sale
- * @param {number} saleId - Sale ID
- * @returns {Array} Sale items
  */
-export function findSaleItems(saleId: number): any[] {
+export function findSaleItems(saleId: number): SaleItem[] {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -362,5 +345,5 @@ export function findSaleItems(saleId: number): any[] {
         JOIN variants v ON si.variant_id = v.id
         JOIN products p ON v.product_id = p.id
         WHERE si.sale_id = ?
-    `).all(saleId);
+    `).all(saleId) as SaleItem[];
 }

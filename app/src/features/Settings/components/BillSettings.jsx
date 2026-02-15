@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import BillPreview from './BillPreview';
 import SectionEditor from './SectionEditor';
@@ -7,16 +8,17 @@ import { DEFAULT_BILL_SCHEMA } from '../../../render/billRenderer';
 export default function BillSettings() {
     const [schema, setSchema] = useState(DEFAULT_BILL_SCHEMA);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const token = useSelector(state => state.auth.token);
 
     useEffect(() => {
-        if (window.electronAPI) {
-            window.electronAPI.getBillSettings()
+        if (window.electronAPI && token) {
+            window.electronAPI.getBillSettings(token)
                 .then(saved => {
                     if (saved) setSchema(saved);
                 })
                 .catch(err => console.error("Failed to load settings", err));
         }
-    }, []);
+    }, [token]);
 
     const handleSectionUpdate = (index, updatedSection) => {
         const newSections = [...schema.sections];
@@ -46,7 +48,7 @@ export default function BillSettings() {
         console.log('Saving schema:', JSON.stringify(schema, null, 2));
         if (window.electronAPI) {
             try {
-                await window.electronAPI.saveBillSettings(schema);
+                await window.electronAPI.saveBillSettings(schema, token);
                 toast.success('Settings saved successfully!');
             } catch (error) {
                 console.error("Failed to save settings via IPC", error);
