@@ -1,16 +1,21 @@
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { app } from 'electron';
+import fs from 'fs';
 
 // Configure storage for product images
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // From dist/electron/backend/shared/middleware/ to root uploads/
-        // 1: shared, 2: backend, 3: electron, 4: dist, 5: root
-        cb(null, path.join(__dirname, '..', '..', '..', '..', '..', 'uploads'));
+        // Use userData for persistence across updates and correct permissions
+        const uploadDir = path.join(app.getPath('userData'), 'uploads');
+
+        // Ensure directory exists
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = `${uuidv4()}${path.extname(file.originalname)}`;

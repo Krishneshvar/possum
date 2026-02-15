@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,16 +29,8 @@ const schemaFiles = [
 ];
 
 function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+  return bcrypt.hashSync(password, 10);
 }
-
-// NOTE: This script resets the DB. In production, we would use a proper migration runner.
-// For now, since this is "init-db", we delete and recreate.
-// BUT, the goal of the migration file I just created is to be run on *existing* databases.
-// Since we are resetting here, the base schemas should ideally reflect the new state.
-// However, to satisfy the requirement of "Safe Schema Migrations" for the future,
-// I will keep the base schemas as they were (mostly) and apply the migration on top
-// to simulate the upgrade path.
 
 try {
   if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);

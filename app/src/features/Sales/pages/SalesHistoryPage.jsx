@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Eye, Printer, ShoppingBag } from "lucide-react";
 import DataTable from "@/components/common/DataTable";
 import CurrencyText from "@/components/common/CurrencyText";
+import { useSelector } from 'react-redux';
 
 export default function SalesHistoryPage() {
   const navigate = useNavigate();
+  const token = useSelector(state => state.auth.token);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [activeFilters, setActiveFilters] = useState({
@@ -76,7 +78,7 @@ export default function SalesHistoryPage() {
 
   const handlePrint = (sale) => {
     if (window.electronAPI && window.electronAPI.printInvoice) {
-      window.electronAPI.printInvoice(sale.id)
+      window.electronAPI.printInvoice(sale.id, token)
         .catch(err => console.error("Print failed:", err));
     } else {
       console.log("Print Sale", sale);

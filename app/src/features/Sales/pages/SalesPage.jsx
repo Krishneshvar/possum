@@ -7,6 +7,7 @@ import { useCreateSaleMutation } from '@/services/salesApi';
 import { useCalculateTaxMutation } from '@/services/taxesApi';
 import { toast } from "sonner";
 import { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 
 const INITIAL_TAB_STATE = {
   items: [],
@@ -42,6 +43,7 @@ export default function SalesPage() {
   const [bills, setBills] = useState(INITIAL_BILLS);
   const [activeTab, setActiveTab] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
+  const token = useSelector(state => state.auth.token);
 
   // API Mutation
   const [createSale, { isLoading }] = useCreateSaleMutation();
@@ -266,7 +268,7 @@ export default function SalesPage() {
 
       // Trigger Print
       if (window.electronAPI && window.electronAPI.printInvoice) {
-        window.electronAPI.printInvoice(result.id)
+        window.electronAPI.printInvoice(result.id, token)
           .catch(err => console.error("Print failed automatically:", err));
       }
 
@@ -278,7 +280,7 @@ export default function SalesPage() {
       console.error("Sale failed", err);
       toast.error(err?.data?.error || "Failed to complete sale.");
     }
-  }, [currentBill, currentGrandTotal, activeTab, createSale]);
+  }, [currentBill, currentGrandTotal, activeTab, createSale, token]);
 
   // F12 Shortcut
   useEffect(() => {
