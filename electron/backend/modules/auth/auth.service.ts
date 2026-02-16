@@ -11,6 +11,10 @@ import { User, Session } from '../../../../types/index.js';
 const sessions = new Map<string, Session>();
 const SESSION_DURATION_SECONDS = 30 * 60; // 30 minutes
 
+// Pre-calculated hash for "password" (cost 10) to prevent timing attacks
+// generated with: bcrypt.hash('password', 10)
+const DUMMY_HASH = '$2b$10$InCX8UtTmhbQP3NuHPaRAeCdfZeaIngIzsAjWjbAYxjprs6WHcoAG';
+
 /**
  * Hash password using bcrypt
  */
@@ -82,12 +86,14 @@ export function endSession(token: string): void {
  */
 export async function login(username: string, password: string): Promise<{ user: Partial<User>, token: string }> {
     const user = UserRepository.findUserByUsername(username);
-    if (!user || user.is_active === 0) {
-        throw new Error('Invalid username or password');
-    }
 
-    const isValid = await verifyPassword(password, user.password_hash || '');
-    if (!isValid) {
+    // Prevent timing attacks (username enumeration) by always verifying a password
+    // even if the user does not exist.
+    const userPasswordHash = (user && user.is_active !== 0) ? (user.password_hash || '') : DUMMY_HASH;
+
+    const isValid = await verifyPassword(password, userPasswordHash);
+
+    if (!user || user.is_active === 0 || !isValid) {
         throw new Error('Invalid username or password');
     }
 
