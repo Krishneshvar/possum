@@ -138,6 +138,8 @@ const STYLES = `
 export function renderBill(data: RenderData, schema: BillSchema = DEFAULT_BILL_SCHEMA): string {
   const { paperWidth, sections, dateFormat, timeFormat } = schema;
 
+  const safePaperWidth = escapeHtml(paperWidth);
+
   // Merge schema options into data if they are meant to be editable from schema
   const headerSection = sections.find(s => s.id === 'storeHeader');
   if (headerSection) {
@@ -159,12 +161,22 @@ export function renderBill(data: RenderData, schema: BillSchema = DEFAULT_BILL_S
   <style>${STYLES}</style>
 </head>
 <body>
-  <div class="bill-container w-${paperWidth}">
+  <div class="bill-container w-${safePaperWidth}">
     ${sectionsHtml}
   </div>
 </body>
 </html>
   `;
+}
+
+function escapeHtml(unsafe: string | number | undefined | null): string {
+  if (unsafe === undefined || unsafe === null) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function formatDate(dateStr: string | Date | undefined, dateFormat: string, timeFormat: string): string {
@@ -187,25 +199,29 @@ function formatDate(dateStr: string | Date | undefined, dateFormat: string, time
 
 function renderSection(section: BillSection, data: RenderData, dateFormat: string, timeFormat: string, currency: string): string {
   const { options } = section;
-  const alignClass = `text-${options.alignment || 'left'}`;
-  const sizeClass = `text-${options.fontSize || 'medium'}`;
+  const alignment = escapeHtml(options.alignment || 'left');
+  const fontSize = escapeHtml(options.fontSize || 'medium');
+
+  const alignClass = `text-${alignment}`;
+  const sizeClass = `text-${fontSize}`;
   const commonClasses = `section ${alignClass} ${sizeClass}`;
 
   switch (section.type) {
     case 'header':
       const showLogo = options.showLogo && options.logoUrl;
+      // Note: logoUrl is trusted (config) but store details come from input
       return `
         <div class="${commonClasses}">
           <div class="header-container" style="justify-content: ${options.alignment === 'center' ? 'center' : options.alignment === 'right' ? 'flex-end' : 'flex-start'}">
-            ${showLogo ? `<img src="${options.logoUrl}" class="header-logo" />` : ''}
+            ${showLogo ? `<img src="${escapeHtml(options.logoUrl)}" class="header-logo" />` : ''}
             <div class="header-content">
-              <div class="text-large">${options.storeName || data.store.name || 'Store Name'}</div>
+              <div class="text-large">${escapeHtml(options.storeName || data.store.name || 'Store Name')}</div>
             </div>
           </div>
           <div class="text-small" style="margin-top: 4px;">
-            <div style="white-space: pre-wrap;">${options.storeDetails || data.store.address || ''}</div>
-            ${options.phone ? `<div><span class="bold">Ph No:</span> ${options.phone}</div>` : ''}
-            ${options.gst ? `<div><span class="bold">GSTIN:</span> ${options.gst}</div>` : ''}
+            <div style="white-space: pre-wrap;">${escapeHtml(options.storeDetails || data.store.address || '')}</div>
+            ${options.phone ? `<div><span class="bold">Ph No:</span> ${escapeHtml(options.phone)}</div>` : ''}
+            ${options.gst ? `<div><span class="bold">GSTIN:</span> ${escapeHtml(options.gst)}</div>` : ''}
           </div>
         </div>
         <div class="divider"></div>
@@ -214,10 +230,10 @@ function renderSection(section: BillSection, data: RenderData, dateFormat: strin
     case 'meta':
       return `
         <div class="${commonClasses}">
-          <div><span class="bold">Bill No:</span> ${data.bill.billNo || '-'}</div>
+          <div><span class="bold">Bill No:</span> ${escapeHtml(data.bill.billNo || '-')}</div>
           <div><span class="bold">Date:</span> ${formatDate(data.bill.date, dateFormat, timeFormat)}</div>
-          ${data.bill.cashier ? `<div><span class="bold">Cashier:</span> ${data.bill.cashier}</div>` : ''}
-          ${data.bill.customer ? `<div><span class="bold">Customer:</span> ${data.bill.customer}</div>` : ''}
+          ${data.bill.cashier ? `<div><span class="bold">Cashier:</span> ${escapeHtml(data.bill.cashier)}</div>` : ''}
+          ${data.bill.customer ? `<div><span class="bold">Customer:</span> ${escapeHtml(data.bill.customer)}</div>` : ''}
         </div>
         <div class="divider"></div>
       `;
@@ -225,8 +241,8 @@ function renderSection(section: BillSection, data: RenderData, dateFormat: strin
     case 'items':
       const rows = data.items.map(item => `
         <tr>
-          <td class="col-item">${item.name}</td>
-          <td class="col-qty">${item.qty}</td>
+          <td class="col-item">${escapeHtml(item.name)}</td>
+          <td class="col-qty">${escapeHtml(item.qty)}</td>
           <td class="col-rate">${formatCurrency(item.price || (item.total / item.qty), currency)}</td>
           <td class="col-amount">${formatCurrency(item.total, currency)}</td>
         </tr>
@@ -271,7 +287,7 @@ function renderSection(section: BillSection, data: RenderData, dateFormat: strin
     case 'footer':
       return `
         <div class="${commonClasses} footer-text">
-          ${options.text || 'Thank you!'}
+          ${escapeHtml(options.text || 'Thank you!')}
         </div>
       `;
 
