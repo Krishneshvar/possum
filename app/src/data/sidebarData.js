@@ -61,11 +61,7 @@ export const sidebarData = {
           url: "/sales/returns",
           icon: RotateCcw,
         },
-        {
-          title: "Taxes",
-          url: "/sales/taxes",
-          icon: Percent,
-        },
+
       ]
     },
     {

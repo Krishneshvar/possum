@@ -31,7 +31,7 @@ import SalesHistoryPage from '@/features/Sales/pages/SalesHistoryPage';
 import SaleDetailsPage from '@/features/Sales/pages/SaleDetailsPage';
 import SalesPage from '@/features/Sales/pages/SalesPage';
 import ReturnsPage from '@/features/Sales/pages/ReturnsPage';
-import TaxesPage from '@/features/Sales/pages/TaxesPage';
+
 import SettingsPage from '@/features/Settings/pages/SettingsPage';
 import TransactionsPage from '@/features/Transactions/pages/TransactionsPage';
 import PurchasePage from '@/features/Purchase/pages/PurchasePage';
@@ -107,7 +107,7 @@ export default function DashboardPage() {
         <Route path="/sales/history/:saleId" element={<ProtectedRoute requiredPermissions="sales.view"><SaleDetailsPage /></ProtectedRoute>} />
         <Route path="/sales/transactions" element={<ProtectedRoute requiredPermissions="sales.view"><TransactionsPage /></ProtectedRoute>} />
         <Route path="/sales/returns" element={<ProtectedRoute requiredPermissions="sales.refund"><ReturnsPage /></ProtectedRoute>} />
-        <Route path="/sales/taxes" element={<ProtectedRoute requiredPermissions="reports.view"><TaxesPage /></ProtectedRoute>} />
+
 
         <Route path="/reports" element={<ProtectedRoute requiredPermissions="reports.view"><ReportsPage /></ProtectedRoute>} />
         <Route path="/reports/sales" element={<ProtectedRoute requiredPermissions="reports.view"><SalesReportPage /></ProtectedRoute>} />
