@@ -127,67 +127,96 @@ export default function SalesPage() {
     });
   };
 
-  const updateBill = (updates) => {
+  const updateBill = useCallback((updates) => {
     setBills(prev => prev.map((bill, index) =>
       index === activeTab ? { ...bill, ...updates } : bill
     ));
-  };
+  }, [activeTab]);
 
-  const updateQuantity = (itemId, newQty) => {
+  const updateQuantity = useCallback((itemId, newQty) => {
     if (newQty < 1) return;
-    const newItems = currentBill.items.map(item =>
-      item.id === itemId ? { ...item, quantity: newQty } : item
-    );
-    updateBill({ items: newItems });
-  };
-
-  const updatePrice = (itemId, newPrice) => {
-    const newItems = currentBill.items.map(item => {
-      if (item.id === itemId) {
-        // Enforce MRP constraint: Price cannot exceed MRP
-        const validPrice = Math.min(newPrice, item.mrp);
-        return { ...item, price: validPrice };
+    setBills(prev => prev.map((bill, index) => {
+      if (index === activeTab) {
+        const newItems = bill.items.map(item =>
+          item.id === itemId ? { ...item, quantity: newQty } : item
+        );
+        return { ...bill, items: newItems };
       }
-      return item;
-    });
-    updateBill({ items: newItems });
-  };
+      return bill;
+    }));
+  }, [activeTab]);
 
-  const updateDiscount = (itemId, newDiscount) => {
-    const newItems = currentBill.items.map(item =>
-      item.id === itemId ? { ...item, discount: newDiscount } : item
-    );
-    updateBill({ items: newItems });
-  };
+  const updatePrice = useCallback((itemId, newPrice) => {
+    setBills(prev => prev.map((bill, index) => {
+      if (index === activeTab) {
+        const newItems = bill.items.map(item => {
+          if (item.id === itemId) {
+            // Enforce MRP constraint: Price cannot exceed MRP
+            const validPrice = Math.min(newPrice, item.mrp);
+            return { ...item, price: validPrice };
+          }
+          return item;
+        });
+        return { ...bill, items: newItems };
+      }
+      return bill;
+    }));
+  }, [activeTab]);
 
-  const removeItem = (itemId) => {
-    const newItems = currentBill.items.filter(item => String(item.id) !== String(itemId));
-    updateBill({ items: newItems });
-  };
+  const updateDiscount = useCallback((itemId, newDiscount) => {
+    setBills(prev => prev.map((bill, index) => {
+      if (index === activeTab) {
+        const newItems = bill.items.map(item =>
+          item.id === itemId ? { ...item, discount: newDiscount } : item
+        );
+        return { ...bill, items: newItems };
+      }
+      return bill;
+    }));
+  }, [activeTab]);
+
+  const removeItem = useCallback((itemId) => {
+    setBills(prev => prev.map((bill, index) => {
+      if (index === activeTab) {
+        const newItems = bill.items.filter(item => String(item.id) !== String(itemId));
+        return { ...bill, items: newItems };
+      }
+      return bill;
+    }));
+  }, [activeTab]);
 
   const setPaymentMethod = (method) => updateBill({ paymentMethod: method });
   const setCustomerName = (name) => updateBill({ customerName: name });
   const setCustomerId = (id) => updateBill({ customerId: id });
 
-  const addProductToBill = (product) => {
-    const existingItem = currentBill.items.find(item => item.id === product.id);
+  const addProductToBill = useCallback((product) => {
+    setBills(prev => prev.map((bill, index) => {
+      if (index === activeTab) {
+        const existingItem = bill.items.find(item => item.id === product.id);
 
-    if (existingItem) {
-      updateQuantity(product.id, existingItem.quantity + 1);
-    } else {
-      const newItem = {
-        id: product.id,
-        name: product.name,
-        quantity: 1,
-        price: parseFloat(product.mrp),
-        mrp: parseFloat(product.mrp),
-        discount: 0,
-        sku: product.sku,
-        tax_category_id: product.tax_category_id
-      };
-      updateBill({ items: [...currentBill.items, newItem] });
-    }
-  };
+        let newItems;
+        if (existingItem) {
+          newItems = bill.items.map(item =>
+            item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        } else {
+          const newItem = {
+            id: product.id,
+            name: product.name,
+            quantity: 1,
+            price: parseFloat(product.mrp),
+            mrp: parseFloat(product.mrp),
+            discount: 0,
+            sku: product.sku,
+            tax_category_id: product.tax_category_id
+          };
+          newItems = [...bill.items, newItem];
+        }
+        return { ...bill, items: newItems };
+      }
+      return bill;
+    }));
+  }, [activeTab]);
 
   const calculateTotal = (bill) => {
     // If we have tax result, use it. Otherwise approximate or 0.
