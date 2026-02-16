@@ -198,13 +198,17 @@ export function findSales({
     }
 
     if (startDate) {
-        filterClauses.push('date(s.sale_date) >= date(?)');
-        filterParams.push(startDate);
+        // Optimize: Use direct string comparison to utilize index
+        const dateOnly = startDate.substring(0, 10);
+        filterClauses.push('s.sale_date >= ?');
+        filterParams.push(`${dateOnly} 00:00:00`);
     }
 
     if (endDate) {
-        filterClauses.push('date(s.sale_date) <= date(?)');
-        filterParams.push(endDate);
+        // Optimize: Use direct string comparison to utilize index
+        const dateOnly = endDate.substring(0, 10);
+        filterClauses.push('s.sale_date <= ?');
+        filterParams.push(`${dateOnly} 23:59:59`);
     }
 
     if (searchTerm) {
