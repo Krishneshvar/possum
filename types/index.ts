@@ -47,6 +47,10 @@ export interface Variant extends BaseEntity {
   stock_alert_cap?: number;
   is_default: number; // 0 or 1
   barcode?: string;
+  status?: string; // Added
+  taxes?: string; // JSON string from DB or joined
+  image_path?: string; // Joined from product?
+  stock?: number; // Derived
 }
 
 export interface Category extends BaseEntity {

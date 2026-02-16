@@ -1,0 +1,177 @@
+import { useState } from 'react';
+import { Plus, Pencil, Trash2, Users, User } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import GenericPageHeader from '@/components/common/GenericPageHeader';
+import DataTable from "@/components/common/DataTable";
+import GenericDeleteDialog from "@/components/common/GenericDeleteDialog";
+import { CustomerForm } from '../components/CustomerForm';
+import {
+  useGetCustomersQuery,
+  useCreateCustomerMutation,
+  useUpdateCustomerMutation,
+  useDeleteCustomerMutation
+} from '@/services/customersApi';
+
+export default function CustomersPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const { data, isLoading, error, refetch } = useGetCustomersQuery({ searchTerm, page: currentPage, limit: itemsPerPage });
+  const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
+  const [updateCustomer, { isLoading: isUpdating }] = useUpdateCustomerMutation();
+  const [deleteCustomer] = useDeleteCustomerMutation();
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<any>(null);
+
+  const customers = data?.customers || [];
+  const totalPages = data?.totalPages || 1;
+
+  const handleOpenAddDialog = () => {
+    setEditingCustomer(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (customer: any) => {
+    setEditingCustomer(customer);
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenDeleteDialog = (customer: any) => {
+    setCustomerToDelete(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSave = async (values: any) => {
+    try {
+      if (editingCustomer) {
+        await updateCustomer({ id: editingCustomer.id, ...values }).unwrap();
+        toast.success("Customer updated successfully");
+      } else {
+        await createCustomer(values).unwrap();
+        toast.success("Customer created successfully");
+      }
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error(editingCustomer ? "Failed to update customer" : "Failed to create customer");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!customerToDelete) return;
+    try {
+      await deleteCustomer(customerToDelete.id).unwrap();
+      toast.success("Customer deleted successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete customer");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setCustomerToDelete(null);
+    }
+  };
+
+  const columns = [
+    { key: 'name', label: 'Name', renderCell: (c: any) => <span className="font-medium">{c.name}</span> },
+    { key: 'phone', label: 'Phone', renderCell: (c: any) => c.phone || '-' },
+    { key: 'email', label: 'Email', renderCell: (c: any) => c.email || '-' },
+    { key: 'address', label: 'Address', renderCell: (c: any) => <div className="max-w-[200px] truncate">{c.address || '-'}</div> },
+  ];
+
+  const renderActions = (customer: any) => (
+    <div className="flex items-center gap-2 justify-end">
+      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(customer)}>
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={() => handleOpenDeleteDialog(customer)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
+  const emptyState = (
+    <div className="text-center p-8 text-muted-foreground">
+      No customers found.
+    </div>
+  );
+
+  return (
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
+      <div className="w-full">
+        <GenericPageHeader
+          headerIcon={<Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />}
+          headerLabel={"Customers"}
+          actions={{
+            primary: {
+              label: "Add Customer",
+              icon: Plus,
+              onClick: handleOpenAddDialog,
+            }
+          }}
+        />
+      </div>
+
+      <DataTable
+        data={customers}
+        // @ts-ignore
+        columns={columns}
+        isLoading={isLoading}
+        // @ts-ignore
+        error={error?.message}
+        onRetry={refetch}
+
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search customers..."
+
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+
+        emptyState={emptyState}
+        renderActions={renderActions}
+        // @ts-ignore
+        avatarIcon={<User className="h-4 w-4 text-primary" />}
+      />
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCustomer ? "Edit Customer" : "Add Customer"}</DialogTitle>
+          </DialogHeader>
+          <CustomerForm
+            defaultValues={editingCustomer}
+            onSave={handleSave}
+            isLoading={isCreating || isUpdating}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <GenericDeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDelete}
+        itemName={customerToDelete?.name}
+        dialogTitle="Delete Customer?"
+      />
+    </div>
+  );
+}
