@@ -145,22 +145,6 @@ export function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.
     stockFilterClause = 'WHERE current_stock > stock_alert_cap';
   }
 
-  const countSql = `
-    SELECT COUNT(*) as total FROM (
-      SELECT 
-        v.id,
-        (
-            COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
-            + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
-        ) AS current_stock,
-        v.stock_alert_cap
-      FROM variants v
-      JOIN products p ON v.product_id = p.id
-      ${whereClause}
-    ) ${stockFilterClause}
-  `;
-  const totalCount = db.prepare(countSql).get(...filterParams).total;
-
   // Validate sort parameters to prevent SQL injection and handle outer query aliases
   const allowSortColumns = ['p.name', 'v.name', 'v.sku', 'v.mrp', 'v.cost_price', 'v.status', 'v.created_at', 'stock'];
   const sortMap = {
@@ -176,6 +160,79 @@ export function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.
 
   const safeSortBy = sortMap[sortBy] || 'product_name';
   const safeSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+  // Check if we can use the fast path (no stock filter and no stock sort)
+  const isStockSort = safeSortBy === 'stock';
+  const hasStockFilter = Boolean(stockStatus);
+
+  if (!isStockSort && !hasStockFilter) {
+    // FAST PATH: Query without stock calculation first
+    const countSql = `
+      SELECT COUNT(*) as total
+      FROM variants v
+      JOIN products p ON v.product_id = p.id
+      ${whereClause}
+    `;
+    const totalCount = db.prepare(countSql).get(...filterParams).total;
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const sql = `
+      SELECT
+        v.id, v.product_id, v.name, v.sku, v.mrp, v.cost_price,
+        v.stock_alert_cap, v.is_default, v.status, v.created_at,
+        p.name as product_name, p.image_path,
+        p.tax_category_id,
+        c.name as category_name
+      FROM variants v
+      JOIN products p ON v.product_id = p.id
+      LEFT JOIN categories c ON p.category_id = c.id
+      ${whereClause}
+      ORDER BY ${safeSortBy} ${safeSortOrder}
+      LIMIT ? OFFSET ?
+    `;
+
+    const variantsWithoutStock = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
+
+    // Fetch stock for the result set
+    const variantIds = variantsWithoutStock.map(v => v.id);
+    const stockMap = getComputedStockBatch(variantIds);
+
+    const variants = variantsWithoutStock.map(v => ({
+      ...v,
+      stock: stockMap[v.id] ?? 0
+    }));
+
+    if (variants.length === 0) {
+      return {
+        variants: [],
+        totalCount: 0,
+        totalPages: 0
+      };
+    }
+
+    return {
+      variants,
+      totalCount,
+      totalPages: Math.ceil(totalCount / itemsPerPage)
+    };
+  }
+
+  // SLOW PATH: Existing logic
+  const countSql = `
+    SELECT COUNT(*) as total FROM (
+      SELECT
+        v.id,
+        (
+            COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+            + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
+        ) AS current_stock,
+        v.stock_alert_cap
+      FROM variants v
+      JOIN products p ON v.product_id = p.id
+      ${whereClause}
+    ) ${stockFilterClause}
+  `;
+  const totalCount = db.prepare(countSql).get(...filterParams).total;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const sql = `
