@@ -5,6 +5,7 @@
  */
 import { getDB } from '../../shared/db/index.js';
 import { Product, Variant } from '../../../../types/index.js';
+import { getComputedStockBatch } from '../../shared/utils/inventoryHelpers.js';
 
 export interface ProductFilter {
     searchTerm?: string;
@@ -195,6 +196,17 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
     const countResult = db.prepare(countQuery).get(...filterParams) as { total_count: number } | undefined;
     const totalCount = countResult?.total_count ?? 0;
 
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedParams = [...filterParams, itemsPerPage, startIndex];
+
+    let paginatedProducts: Product[];
+
+    // Determine if we can use the fast path (no stock filtering)
+    // If no stock filtering, we defer stock calculation to batch processing
+    const isFastPath = !stockStatus || stockStatus.length === 0;
+
+    const selectStock = isFastPath ? 'v.id as variant_id' : `${stockSubquery} AS stock`;
+
     const paginatedQuery = `
     SELECT
       p.id,
@@ -203,7 +215,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
       p.image_path,
       c.name AS category_name,
       p.tax_category_id,
-      ${stockSubquery} AS stock,
+      ${selectStock},
       v.stock_alert_cap
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
@@ -214,10 +226,23 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
     LIMIT ? OFFSET ?
   `;
 
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedParams = [...filterParams, itemsPerPage, startIndex];
+    const products = db.prepare(paginatedQuery).all(...paginatedParams) as (Product & { variant_id?: number })[];
 
-    const paginatedProducts = db.prepare(paginatedQuery).all(...paginatedParams) as Product[];
+    if (isFastPath) {
+        // Fast Path: Compute stock in batch for the result page
+        const variantIds = products.map(p => p.variant_id!);
+        const stockMap = getComputedStockBatch(variantIds);
+
+        paginatedProducts = products.map(p => {
+            const product = { ...p, stock: stockMap[p.variant_id!] ?? 0 };
+            // Clean up internal variant_id
+            delete (product as any).variant_id;
+            return product;
+        });
+    } else {
+        // Slow Path: Stock was computed in SQL via correlated subquery
+        paginatedProducts = products;
+    }
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 

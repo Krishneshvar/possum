@@ -1,0 +1,3 @@
+## 2025-02-16 - Optimizing Product Retrieval with Fast Path
+**Learning:** Correlated subqueries in `SELECT` lists can be significant bottlenecks in SQLite when dealing with large datasets or complex logic (like stock calculation from multiple tables), even if `LIMIT` is used, because they complicate the query plan.
+**Action:** When a computed field (like stock) is expensive but only needed for display (not filtering/sorting), fetch the base entities first using `LIMIT/OFFSET`, collect their IDs, and then perform a batch calculation for that specific page of results. This "Fast Path" avoids calculating the field for rows that are discarded by pagination.
