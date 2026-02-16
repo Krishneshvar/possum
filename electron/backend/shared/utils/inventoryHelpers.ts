@@ -23,7 +23,7 @@ export function getComputedStock(variantId: number): number {
             ) AS stock
     `);
 
-    const result = stmt.get(variantId) as { stock: number } | undefined;
+    const result = stmt.get(variantId, variantId) as { stock: number } | undefined;
 
     return result?.stock ?? 0;
 }
