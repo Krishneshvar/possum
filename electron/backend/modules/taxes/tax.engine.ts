@@ -1,3 +1,4 @@
+import { Decimal } from 'decimal.js';
 import { getActiveTaxProfile, getTaxRulesByProfileId } from './tax.repository.js';
 import { Invoice, InvoiceItem, TaxProfile, TaxRule, Customer, TaxResult } from '../../../../types/index.js';
 
@@ -36,6 +37,11 @@ export class TaxEngine {
      */
     calculate(invoice: Invoice, customer: Customer | null = null): TaxResult {
         if (!this.profile) {
+            const invoiceGrandTotal = invoice.items.reduce((sum, item) => {
+                const itemTotal = new Decimal(item.price).mul(item.quantity);
+                return sum.add(itemTotal);
+            }, new Decimal(0));
+
             return {
                 items: invoice.items.map(item => ({
                     ...item,
@@ -45,14 +51,18 @@ export class TaxEngine {
                     tax_rule_snapshot: JSON.stringify([])
                 })),
                 total_tax: 0,
-                grand_total: invoice.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                grand_total: invoiceGrandTotal.toNumber()
             };
         }
 
         // 1. Exemption Logic
-        // If customer has is_tax_exempt flag, skip tax calculation
         if (customer && customer.is_tax_exempt) {
-             return {
+            const invoiceGrandTotal = invoice.items.reduce((sum, item) => {
+                const itemTotal = new Decimal(item.price).mul(item.quantity);
+                return sum.add(itemTotal);
+            }, new Decimal(0));
+
+            return {
                 items: invoice.items.map(item => ({
                     ...item,
                     tax_amount: 0,
@@ -61,61 +71,49 @@ export class TaxEngine {
                     tax_rule_snapshot: JSON.stringify([])
                 })),
                 total_tax: 0,
-                grand_total: invoice.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+                grand_total: invoiceGrandTotal.toNumber()
             };
         }
 
-        const invoiceTotal = invoice.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        let totalTax = 0;
+        const invoiceTotal = invoice.items.reduce((sum, item) => {
+            const itemTotal = new Decimal(item.price).mul(item.quantity);
+            return sum.add(itemTotal);
+        }, new Decimal(0));
+
+        let totalTax = new Decimal(0);
         const updatedItems: InvoiceItem[] = [];
 
         for (const item of invoice.items) {
-            const applicableRules = this.getApplicableRules(item, invoiceTotal, customer);
+            const applicableRules = this.getApplicableRules(item, invoiceTotal.toNumber(), customer);
 
             // Calculate tax for this item
             const { taxAmount, taxRate, snapshot } = this.calculateItemTax(item, applicableRules);
 
-            // If inclusive, the tax is already inside the price.
-            // If exclusive, the tax is added on top.
-            // The `price` in item is the NET unit price (after discounts) passed from service.
-
-            let finalTaxAmount = taxAmount;
-
-            // Per requirement: "Round tax per line (not globally)"
-            finalTaxAmount = parseFloat(finalTaxAmount.toFixed(2));
+            // Round tax per line (not globally) to 2 decimal places
+            const finalTaxAmount = taxAmount.toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
             updatedItems.push({
                 ...item,
-                tax_amount: finalTaxAmount,
-                tax_rate: taxRate, // This might be a blended rate if multiple rules apply
-                // applied_tax_amount: finalTaxAmount, // Not in interface but in JS code? Added to interface?
-                // Interface has tax_amount. JS had applied_tax_amount as dup?
-                // I'll stick to interface. Interface has tax_amount.
-                // JS had applied_tax_amount. I'll ignore it if not in interface or add to interface if critical.
-                // JS: applied_tax_amount: finalTaxAmount
-                // I'll add it to InvoiceItem interface or just ignore if unused.
-                // Interface defined `tax_amount`.
+                tax_amount: finalTaxAmount.toNumber(),
+                tax_rate: taxRate.toNumber(),
                 tax_rule_snapshot: JSON.stringify(snapshot)
             } as InvoiceItem);
 
-            totalTax += finalTaxAmount;
+            totalTax = totalTax.add(finalTaxAmount);
         }
 
         // Grand total calculation depends on pricing mode
-        let grandTotal = 0;
+        let grandTotal = new Decimal(0);
         if (this.profile.pricing_mode === 'INCLUSIVE') {
-            // For inclusive, the invoice total (sum of item prices) is the grand total.
-            // Tax is just a component of it.
             grandTotal = invoiceTotal;
         } else {
-            // For exclusive, tax is added on top
-            grandTotal = invoiceTotal + totalTax;
+            grandTotal = invoiceTotal.add(totalTax);
         }
 
         return {
             items: updatedItems,
-            total_tax: parseFloat(totalTax.toFixed(2)),
-            grand_total: parseFloat(grandTotal.toFixed(2))
+            total_tax: totalTax.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber(),
+            grand_total: grandTotal.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber()
         };
     }
 
@@ -127,33 +125,22 @@ export class TaxEngine {
 
         return this.rules.filter(rule => {
             // 1. Category match
-            if (rule.tax_category_id && rule.tax_category_id !== item.tax_category_id) { // item needs tax_category_id
-                // InvoiceItem interface doesn't have tax_category_id?
-                // Wait, InvoiceItem has product_id, maybe we need to fetch product?
-                // Or item passed to calculate includes tax_category_id?
-                // In JS code: item.tax_category_id.
-                // So InvoiceItem should have it.
-                // I need to update InvoiceItem interface.
+            if (rule.tax_category_id && rule.tax_category_id !== item.tax_category_id) {
                 return false;
             }
 
-            // 2. Rule Scope
-            // If scope is INVOICE, it applies to all items (unless specific category set?)
-            // Requirement says: "Filter by: category match OR null category"
-            // So if rule has no category, it applies to all.
-
-            // 3. Price Thresholds
+            // 2. Price Thresholds
             if (rule.min_price !== null && rule.min_price !== undefined && itemPrice < rule.min_price) return false;
             if (rule.max_price !== null && rule.max_price !== undefined && itemPrice > rule.max_price) return false;
 
-            // 4. Invoice Total Thresholds
+            // 3. Invoice Total Thresholds
             if (rule.min_invoice_total !== null && rule.min_invoice_total !== undefined && invoiceTotal < rule.min_invoice_total) return false;
             if (rule.max_invoice_total !== null && rule.max_invoice_total !== undefined && invoiceTotal > rule.max_invoice_total) return false;
 
-            // 5. Customer Type
+            // 4. Customer Type
             if (rule.customer_type && customer?.type !== rule.customer_type) return false;
 
-            // 6. Date Validity
+            // 5. Date Validity
             if (rule.valid_from && new Date(rule.valid_from) > now) return false;
             if (rule.valid_to && new Date(rule.valid_to) < now) return false;
 
@@ -161,99 +148,83 @@ export class TaxEngine {
         }).sort((a, b) => a.priority - b.priority);
     }
 
-    calculateItemTax(item: InvoiceItem, rules: TaxRule[]): { taxAmount: number; taxRate: number; snapshot: any[] } {
-        let taxAmount = 0;
-        let taxableAmount = item.price * item.quantity;
-        let accumulatedTax = 0;
+    calculateItemTax(item: InvoiceItem, rules: TaxRule[]): { taxAmount: Decimal; taxRate: Decimal; snapshot: any[] } {
+        let taxAmount = new Decimal(0);
         const snapshot: any[] = [];
 
-        // Separate compound and non-compound rules
         const simpleRules = rules.filter(r => !r.is_compound);
         const compoundRules = rules.filter(r => r.is_compound);
+        const allRules = [...simpleRules.sort((a, b) => a.priority - b.priority), ...compoundRules.sort((a, b) => a.priority - b.priority)];
+
+        const itemTotalAmount = new Decimal(item.price).mul(item.quantity);
 
         if (this.profile!.pricing_mode === 'INCLUSIVE') {
-            // 1. Calculate effective tax rate to find Base.
-            // We simulate the tax calculation on a base of 1.0 to find the multiplier.
-
-            let simBase = 1.0;
-            let simTax = 0;
-
-            const sortedSimple = simpleRules.sort((a, b) => a.priority - b.priority);
-            const sortedCompound = compoundRules.sort((a, b) => a.priority - b.priority);
-            const allRules = [...sortedSimple, ...sortedCompound];
-
-            // Calculate Factor
-            let currentSimTax = 0;
+            // Factor calculation: simBase is 1.0
+            let currentSimTax = new Decimal(0);
             for (const rule of allRules) {
-                let ruleTax = 0;
+                let ruleFactor = new Decimal(rule.rate_percent).div(100);
+                let ruleTax;
                 if (!rule.is_compound) {
-                    ruleTax = 1.0 * (rule.rate_percent / 100);
+                    ruleTax = new Decimal(1).mul(ruleFactor);
                 } else {
-                    ruleTax = (1.0 + currentSimTax) * (rule.rate_percent / 100);
+                    ruleTax = new Decimal(1).add(currentSimTax).mul(ruleFactor);
                 }
-                currentSimTax += ruleTax;
+                currentSimTax = currentSimTax.add(ruleTax);
             }
 
-            const totalFactor = 1.0 + currentSimTax;
-            const originalTotal = item.price * item.quantity;
-            const baseAmount = originalTotal / totalFactor;
+            const totalFactor = new Decimal(1).add(currentSimTax);
+            const baseAmount = itemTotalAmount.div(totalFactor);
 
-            // Now calculate actual tax amounts
-            let currentTotalTax = 0;
-
-            // We need to capture the exact amount for each rule
+            let currentTotalTax = new Decimal(0);
             for (const rule of allRules) {
-                let ruleTaxAmount = 0;
+                let ruleFactor = new Decimal(rule.rate_percent).div(100);
+                let ruleTaxAmount;
                 if (!rule.is_compound) {
-                    ruleTaxAmount = baseAmount * (rule.rate_percent / 100);
+                    ruleTaxAmount = baseAmount.mul(ruleFactor);
                 } else {
-                    ruleTaxAmount = (baseAmount + currentTotalTax) * (rule.rate_percent / 100);
+                    ruleTaxAmount = baseAmount.add(currentTotalTax).mul(ruleFactor);
                 }
 
                 snapshot.push({
                     rule_name: this.getRuleName(rule),
                     rate: rule.rate_percent,
-                    amount: ruleTaxAmount,
+                    amount: ruleTaxAmount.toDecimalPlaces(4).toNumber(), // Keep precision in snapshot
                     is_compound: rule.is_compound
                 });
 
-                currentTotalTax += ruleTaxAmount;
+                currentTotalTax = currentTotalTax.add(ruleTaxAmount);
             }
 
             taxAmount = currentTotalTax;
 
         } else {
             // EXCLUSIVE
-            // Price is Base.
-            const baseAmount = item.price * item.quantity;
-            let currentTotalTax = 0;
-
-            const sortedSimple = simpleRules.sort((a, b) => a.priority - b.priority);
-            const sortedCompound = compoundRules.sort((a, b) => a.priority - b.priority);
-            const allRules = [...sortedSimple, ...sortedCompound];
+            const baseAmount = itemTotalAmount;
+            let currentTotalTax = new Decimal(0);
 
             for (const rule of allRules) {
-                let ruleTaxAmount = 0;
+                let ruleFactor = new Decimal(rule.rate_percent).div(100);
+                let ruleTaxAmount;
                 if (!rule.is_compound) {
-                    ruleTaxAmount = baseAmount * (rule.rate_percent / 100);
+                    ruleTaxAmount = baseAmount.mul(ruleFactor);
                 } else {
-                    ruleTaxAmount = (baseAmount + currentTotalTax) * (rule.rate_percent / 100);
+                    ruleTaxAmount = baseAmount.add(currentTotalTax).mul(ruleFactor);
                 }
 
                 snapshot.push({
                     rule_name: this.getRuleName(rule),
                     rate: rule.rate_percent,
-                    amount: ruleTaxAmount,
+                    amount: ruleTaxAmount.toDecimalPlaces(4).toNumber(),
                     is_compound: rule.is_compound
                 });
 
-                currentTotalTax += ruleTaxAmount;
+                currentTotalTax = currentTotalTax.add(ruleTaxAmount);
             }
 
             taxAmount = currentTotalTax;
         }
 
-        const effectiveRate = (item.price * item.quantity) > 0 ? (taxAmount / (item.price * item.quantity)) * 100 : 0;
+        const effectiveRate = itemTotalAmount.gt(0) ? taxAmount.div(itemTotalAmount).mul(100) : new Decimal(0);
 
         return {
             taxAmount,

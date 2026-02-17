@@ -2,6 +2,7 @@
  * Sale Service
  * Contains business logic for sales operations
  */
+import { Decimal } from 'decimal.js';
 import * as saleRepository from './sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
@@ -68,7 +69,7 @@ export async function createSale({
         taxEngine.init();
 
         // 1. Calculate Gross Total (Pre-Discount) to determine Discount Ratio if needed
-        let grossTotal = 0;
+        let grossTotal = new Decimal(0);
         const tempItems: any[] = [];
         const variantMap = new Map<number, Variant>();
 
@@ -77,18 +78,19 @@ export async function createSale({
             if (!variant) throw new Error(`Variant not found: ${item.variantId}`);
             variantMap.set(item.variantId, variant);
 
-            const pricePerUnit = item.pricePerUnit ?? variant.price; // Variant has price (which is MRP usually)
-            const lineTotal = pricePerUnit * item.quantity;
-            const lineDiscount = item.discount ?? 0;
-            const netLineTotal = Math.max(0, lineTotal - lineDiscount);
+            const pricePerUnit = new Decimal(item.pricePerUnit ?? variant.price);
+            const lineTotal = pricePerUnit.mul(item.quantity);
+            const lineDiscount = new Decimal(item.discount ?? 0);
+            const netLineTotal = Decimal.max(0, lineTotal.sub(lineDiscount));
 
-            grossTotal += netLineTotal;
-            tempItems.push({ ...item, pricePerUnit, netLineTotal });
+            grossTotal = grossTotal.add(netLineTotal);
+            tempItems.push({ ...item, pricePerUnit: pricePerUnit.toNumber(), netLineTotal });
         }
 
         // 2. Distribute Global Discount proportionally to items to get True Taxable Amount
         // Discount is applied to the Net Total (after line discounts)
-        let distributedGlobalDiscount = 0;
+        let distributedGlobalDiscount = new Decimal(0);
+        const globalDiscountToDistribute = new Decimal(discount);
         const calculationItems: InvoiceItem[] = [];
 
         for (let i = 0; i < tempItems.length; i++) {
@@ -96,24 +98,22 @@ export async function createSale({
             const variant = variantMap.get(item.variantId);
             const product = productRepository.findProductById(variant!.product_id);
 
-            let itemGlobalDiscount = 0;
-            if (grossTotal > 0 && discount > 0) {
+            let itemGlobalDiscount = new Decimal(0);
+            if (grossTotal.gt(0) && globalDiscountToDistribute.gt(0)) {
                 // Last item gets the remainder to avoid rounding issues
                 if (i === tempItems.length - 1) {
-                    itemGlobalDiscount = discount - distributedGlobalDiscount;
+                    itemGlobalDiscount = globalDiscountToDistribute.sub(distributedGlobalDiscount);
                 } else {
-                    itemGlobalDiscount = (item.netLineTotal / grossTotal) * discount;
-                    distributedGlobalDiscount += itemGlobalDiscount;
+                    itemGlobalDiscount = item.netLineTotal.div(grossTotal).mul(globalDiscountToDistribute);
+                    distributedGlobalDiscount = distributedGlobalDiscount.add(itemGlobalDiscount);
                 }
             }
 
             // Final Taxable Amount for this line
-            const finalTaxableAmount = Math.max(0, item.netLineTotal - itemGlobalDiscount);
+            const finalTaxableAmount = Decimal.max(0, item.netLineTotal.sub(itemGlobalDiscount));
 
             // Effective Unit Price for Tax Engine (Tax Engine expects unit price)
-            // It calculates Total = Price * Qty
-            // So Price = FinalTaxableAmount / Qty
-            const effectiveUnitPrice = item.quantity > 0 ? finalTaxableAmount / item.quantity : 0;
+            const effectiveUnitPrice = item.quantity > 0 ? finalTaxableAmount.div(item.quantity).toNumber() : 0;
 
             calculationItems.push({
                 product_name: product?.name || 'Unknown',
@@ -123,9 +123,9 @@ export async function createSale({
                 tax_category_id: product?.tax_category_id,
                 variant_id: item.variantId,
                 product_id: variant!.product_id,
-                invoice_id: 0, // Placeholder
-                tax_amount: 0, // Placeholder
-                total: 0 // Placeholder
+                invoice_id: 0,
+                tax_amount: 0,
+                total: 0
             } as InvoiceItem);
         }
 
@@ -139,8 +139,8 @@ export async function createSale({
         const taxResult = taxEngine.calculate({ items: calculationItems } as Invoice, customer);
 
         // 4. Process results
-        let totalAmount = 0; // Final Payable
-        let totalTax = taxResult.total_tax;
+        let totalAmount = new Decimal(taxResult.grand_total);
+        let totalTax = new Decimal(taxResult.total_tax);
         const processedItems: Partial<SaleItem>[] = [];
 
         for (let i = 0; i < items.length; i++) {
@@ -165,18 +165,17 @@ export async function createSale({
             });
         }
 
-        // Grand Total from tax engine is Sum(Item Total + Item Tax) (if Exclusive) or Sum(Item Total) (if Inclusive)
-        // Since we fed it "Post-Global-Discount" prices, taxResult.grand_total IS the final payable amount.
-        totalAmount = taxResult.grand_total;
+        // Grand Total from tax engine is the final payable amount.
+        totalAmount = new Decimal(taxResult.grand_total);
 
         // Calculate paid amount from payments
-        const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+        const paidAmount = payments.reduce((sum, p) => sum.add(p.amount), new Decimal(0));
 
         // Determine status
         let status: 'draft' | 'paid' | 'partially_paid' = 'draft';
-        if (paidAmount >= totalAmount) {
+        if (paidAmount.gte(totalAmount)) {
             status = 'paid';
-        } else if (paidAmount > 0) {
+        } else if (paidAmount.gt(0)) {
             status = 'partially_paid';
         }
 
@@ -186,10 +185,10 @@ export async function createSale({
         // Insert sale
         const saleResult = saleRepository.insertSale({
             invoice_number: invoiceNumber,
-            total_amount: totalAmount,
-            paid_amount: paidAmount,
+            total_amount: totalAmount.toNumber(),
+            paid_amount: paidAmount.toNumber(),
             discount,
-            total_tax: totalTax,
+            total_tax: totalTax.toNumber(),
             status,
             fulfillment_status,
             customer_id: customerId,
@@ -247,7 +246,7 @@ export async function createSale({
             null, // newData
             {
                 invoice_number: invoiceNumber,
-                total_amount: totalAmount,
+                total_amount: totalAmount.toNumber(),
                 items_count: processedItems.length
             }
         );
@@ -307,19 +306,19 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
         // Insert transaction
         saleRepository.insertTransaction({
             sale_id: saleId,
-            amount,
+            amount: amount,
             type: 'payment',
             payment_method_id: paymentMethodId,
             status: 'completed'
         });
 
         // Update paid amount
-        const newPaidAmount = sale.paid_amount + amount;
-        saleRepository.updateSalePaidAmount(saleId, newPaidAmount);
+        const newPaidAmount = new Decimal(sale.paid_amount).add(amount);
+        saleRepository.updateSalePaidAmount(saleId, newPaidAmount.toNumber());
 
         // Update status if fully paid
         let newStatus = sale.status;
-        if (newPaidAmount >= sale.total_amount && sale.status !== 'paid') {
+        if (newPaidAmount.gte(sale.total_amount) && sale.status !== 'paid') {
             saleRepository.updateSaleStatus(saleId, 'paid');
             newStatus = 'paid';
         }
@@ -335,7 +334,7 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
             { amount, new_status: newStatus }
         );
 
-        return { newPaidAmount, status: newStatus };
+        return { newPaidAmount: newPaidAmount.toNumber(), status: newStatus };
     })();
 }
 

@@ -2,6 +2,7 @@
  * Return Service
  * Contains business logic for returns
  */
+import { Decimal } from 'decimal.js';
 import * as returnRepository from './return.repository.js';
 import * as saleRepository from '../sales/sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
@@ -33,18 +34,14 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
             throw new Error('Sale not found');
         }
 
-        // Calculate sale items subtotal (ignoring line-level discounts, wait, we need line net)
-        // Re-implement simplified logic from original code:
-        // We need line totals to distribute global discount correctly if we want exact refund matching logic
-        // But the previous JS code implemented this logic.
-
-        let billItemsSubtotal = 0;
+        let billItemsSubtotal = new Decimal(0);
         sale.items.forEach((si: any) => {
-            billItemsSubtotal += (si.price_per_unit * si.quantity - si.discount_amount);
+            const lineSubtotal = new Decimal(si.price_per_unit).mul(si.quantity).sub(si.discount_amount);
+            billItemsSubtotal = billItemsSubtotal.add(lineSubtotal);
         });
 
         // Calculate refund amounts
-        let totalRefund = 0;
+        let totalRefund = new Decimal(0);
         const processedItems: CreateReturnItem[] = [];
 
         for (const item of items) {
@@ -66,27 +63,31 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
 
             // Calculate refund for this item:
             // 1. Line subtotal (what the items cost after line-level discount)
-            const lineSubtotal = (saleItem.price_per_unit * saleItem.quantity - saleItem.discount_amount);
+            const linePricePerUnit = new Decimal(saleItem.price_per_unit);
+            const lineQuantity = new Decimal(saleItem.quantity);
+            const lineDiscountAmount = new Decimal(saleItem.discount_amount);
+            const lineSubtotal = linePricePerUnit.mul(lineQuantity).sub(lineDiscountAmount);
 
             // 2. Pro-rated global discount for this line
-            const lineGlobalDiscount = billItemsSubtotal > 1e-6
-                ? (lineSubtotal / billItemsSubtotal) * sale.discount
-                : 0;
+            const saleGlobalDiscount = new Decimal(sale.discount);
+            const lineGlobalDiscount = billItemsSubtotal.gt(0)
+                ? lineSubtotal.div(billItemsSubtotal).mul(saleGlobalDiscount)
+                : new Decimal(0);
 
-            // 3. Line Net Paid (ignoring the tax field as it was causing values to exceed bill totals)
-            const lineNetPaid = lineSubtotal - lineGlobalDiscount;
+            // 3. Line Net Paid
+            const lineNetPaid = lineSubtotal.sub(lineGlobalDiscount);
 
             // 4. Refund for the returned quantity
-            const refundAmount = (lineNetPaid / saleItem.quantity) * item.quantity;
+            const refundAmount = lineNetPaid.div(lineQuantity).mul(item.quantity).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 
-            totalRefund += refundAmount;
+            totalRefund = totalRefund.add(refundAmount);
 
             processedItems.push({
                 sale_item_id: item.saleItemId,
                 quantity: item.quantity,
-                refund_amount: refundAmount,
+                refund_amount: refundAmount.toNumber(),
                 variant_id: saleItem.variant_id,
-                saleItemId: item.saleItemId // Keep for consistency
+                saleItemId: item.saleItemId
             });
         }
 
@@ -137,25 +138,25 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
 
         saleRepository.insertTransaction({
             sale_id: saleId,
-            amount: -totalRefund, // Negative amount for refund
+            amount: -totalRefund.toNumber(), // Negative amount for refund
             type: 'refund',
             payment_method_id: paymentMethodId,
             status: 'completed'
         });
 
         // Update sale paid amount
-        const newPaidAmount = sale.paid_amount - totalRefund;
-        saleRepository.updateSalePaidAmount(saleId, newPaidAmount);
+        const newPaidAmount = new Decimal(sale.paid_amount).sub(totalRefund);
+        saleRepository.updateSalePaidAmount(saleId, newPaidAmount.toNumber());
 
         // Update sale status if fully refunded
-        if (newPaidAmount <= 0 && sale.total_amount > 0) {
+        if (newPaidAmount.lte(0) && sale.total_amount > 0) {
             saleRepository.updateSaleStatus(saleId, 'refunded');
         }
 
         // Log return creation
         auditService.logCreate(userId, 'returns', returnId, {
             sale_id: saleId,
-            total_refund: totalRefund,
+            total_refund: totalRefund.toNumber(),
             item_count: processedItems.length,
             reason
         });
@@ -163,7 +164,7 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
         return {
             id: returnId,
             saleId,
-            totalRefund,
+            totalRefund: totalRefund.toNumber(),
             itemCount: processedItems.length
         };
     });
