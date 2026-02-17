@@ -95,7 +95,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                 <div className="space-y-4 py-2">
                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                         {sale?.items?.map((item: any) => {
-                            const returnedQty = 0; // TODO: Fetch already returned quantity if partial returns allowed
+                            const returnedQty = item.returned_quantity || 0;
                             const availableQty = item.quantity - returnedQty;
                             const isSelected = !!selectedItems[item.id];
 
