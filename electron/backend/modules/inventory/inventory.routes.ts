@@ -14,22 +14,25 @@ import {
     getInventoryStatsController
 } from './inventory.controller.js';
 
+import { validate } from '../../shared/middleware/validate.middleware.js';
+import { adjustInventorySchema, receiveInventorySchema, getVariantInventorySchema } from './inventory.schema.js';
+
 const router = Router();
 
 // Variant stock endpoints
-router.get('/variants/:id/stock', getVariantStockController);
-router.get('/variants/:id/lots', getVariantLotsController);
-router.get('/variants/:id/adjustments', getVariantAdjustmentsController);
+router.get('/variants/:id/stock', validate(getVariantInventorySchema), getVariantStockController);
+router.get('/variants/:id/lots', validate(getVariantInventorySchema), getVariantLotsController);
+router.get('/variants/:id/adjustments', validate(getVariantInventorySchema), getVariantAdjustmentsController);
 
 // Adjustment endpoints
-router.post('/adjustments', createAdjustmentController);
+router.post('/adjustments', validate(adjustInventorySchema), createAdjustmentController);
 
 // Alert endpoints
 router.get('/alerts/low-stock', getLowStockAlertsController);
 router.get('/alerts/expiring', getExpiringLotsController);
 
 // Receive inventory endpoint
-router.post('/receive', receiveInventoryController);
+router.post('/receive', validate(receiveInventorySchema), receiveInventoryController);
 
 // Stats endpoint
 router.get('/stats', getInventoryStatsController);

@@ -12,6 +12,8 @@ import {
 } from './product.controller.js';
 import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 import { upload } from '../../shared/middleware/upload.middleware.js';
+import { validate } from '../../shared/middleware/validate.middleware.js';
+import { createProductSchema, updateProductSchema, getProductSchema } from './product.schema.js';
 
 const router = Router();
 
@@ -19,9 +21,9 @@ const router = Router();
 router.get('/', requirePermission(['reports.view', 'sales.create', 'products.manage']), getProductsController);
 
 // Image upload handling via multer
-router.post('/', requirePermission('products.manage'), upload.single('image'), createProductController);
-router.get('/:id', requirePermission(['reports.view', 'sales.create', 'products.manage']), getProductDetails);
-router.put('/:id', requirePermission('products.manage'), upload.single('image'), updateProductController);
-router.delete('/:id', requirePermission('products.manage'), deleteProductController);
+router.post('/', requirePermission('products.manage'), upload.single('image'), validate(createProductSchema), createProductController);
+router.get('/:id', requirePermission(['reports.view', 'sales.create', 'products.manage']), validate(getProductSchema), getProductDetails);
+router.put('/:id', requirePermission('products.manage'), upload.single('image'), validate(updateProductSchema), updateProductController);
+router.delete('/:id', requirePermission('products.manage'), validate(getProductSchema), deleteProductController);
 
 export default router;
