@@ -12,7 +12,7 @@ import * as customerRepository from '../customers/customer.repository.js';
 import { taxEngine } from '../taxes/tax.engine.js';
 import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
-import { getComputedStock } from '../../shared/utils/inventoryHelpers.js';
+import { getComputedStock, getComputedStockBatch } from '../../shared/utils/inventoryHelpers.js';
 import * as AuthService from '../auth/auth.service.js';
 import { Invoice, InvoiceItem, Variant, Customer, Sale, SaleItem } from '../../../../types/index.js';
 
@@ -54,30 +54,42 @@ export async function createSale({
         throw new Error('Forbidden: Missing required permission sales.create');
     }
 
+    // Pre-fetch stock and variant data asynchronously (Parallel & Non-blocking)
+    const variantIds = items.map(item => item.variantId);
+    const stockMapPromise = getComputedStockBatch(variantIds);
+    const variantPromises = variantIds.map(id => findVariantById(id));
 
-    return transaction(() => {
-        // Validate stock availability for all items
-        for (const item of items) {
-            const currentStock = getComputedStock(item.variantId);
-            if (currentStock < item.quantity) {
-                const variant = findVariantById(item.variantId) as Variant;
-                throw new Error(`Insufficient stock for ${variant?.name || 'variant'}. Available: ${currentStock}, Requested: ${item.quantity}`);
-            }
+    const [stockMap, variantsList] = await Promise.all([
+        stockMapPromise,
+        Promise.all(variantPromises)
+    ]);
+
+    const preFetchedVariantMap = new Map<number, Variant>();
+    variantsList.forEach(v => {
+        if (v) preFetchedVariantMap.set(v.id!, v);
+    });
+
+    // Validate stock and existence before transaction
+    for (const item of items) {
+        const variant = preFetchedVariantMap.get(item.variantId);
+        if (!variant) throw new Error(`Variant not found: ${item.variantId}`);
+
+        const currentStock = stockMap[item.variantId] ?? 0;
+        if (currentStock < item.quantity) {
+            throw new Error(`Insufficient stock for ${variant.name}. Available: ${currentStock}, Requested: ${item.quantity}`);
         }
+    }
 
+    const saleId = transaction(() => {
         // Initialize Tax Engine
         taxEngine.init();
 
-        // 1. Calculate Gross Total (Pre-Discount) to determine Discount Ratio if needed
+        // 1. Calculate Gross Total (Pre-Discount)
         let grossTotal = new Decimal(0);
         const tempItems: any[] = [];
-        const variantMap = new Map<number, Variant>();
 
         for (const item of items) {
-            const variant = findVariantById(item.variantId) as Variant;
-            if (!variant) throw new Error(`Variant not found: ${item.variantId}`);
-            variantMap.set(item.variantId, variant);
-
+            const variant = preFetchedVariantMap.get(item.variantId)!;
             const pricePerUnit = new Decimal(item.pricePerUnit ?? variant.price);
             const lineTotal = pricePerUnit.mul(item.quantity);
             const lineDiscount = new Decimal(item.discount ?? 0);
@@ -87,20 +99,18 @@ export async function createSale({
             tempItems.push({ ...item, pricePerUnit: pricePerUnit.toNumber(), netLineTotal });
         }
 
-        // 2. Distribute Global Discount proportionally to items to get True Taxable Amount
-        // Discount is applied to the Net Total (after line discounts)
+        // 2. Distribute Global Discount and Prepare Items for Tax Engine
         let distributedGlobalDiscount = new Decimal(0);
         const globalDiscountToDistribute = new Decimal(discount);
         const calculationItems: InvoiceItem[] = [];
 
         for (let i = 0; i < tempItems.length; i++) {
             const item = tempItems[i];
-            const variant = variantMap.get(item.variantId);
-            const product = productRepository.findProductById(variant!.product_id);
+            const variant = preFetchedVariantMap.get(item.variantId)!;
+            const product = productRepository.findProductById(variant.product_id);
 
             let itemGlobalDiscount = new Decimal(0);
             if (grossTotal.gt(0) && globalDiscountToDistribute.gt(0)) {
-                // Last item gets the remainder to avoid rounding issues
                 if (i === tempItems.length - 1) {
                     itemGlobalDiscount = globalDiscountToDistribute.sub(distributedGlobalDiscount);
                 } else {
@@ -109,20 +119,17 @@ export async function createSale({
                 }
             }
 
-            // Final Taxable Amount for this line
             const finalTaxableAmount = Decimal.max(0, item.netLineTotal.sub(itemGlobalDiscount));
-
-            // Effective Unit Price for Tax Engine (Tax Engine expects unit price)
             const effectiveUnitPrice = item.quantity > 0 ? finalTaxableAmount.div(item.quantity).toNumber() : 0;
 
             calculationItems.push({
                 product_name: product?.name || 'Unknown',
-                variant_name: variant?.name,
+                variant_name: variant.name,
                 price: effectiveUnitPrice,
                 quantity: item.quantity,
                 tax_category_id: product?.tax_category_id,
                 variant_id: item.variantId,
-                product_id: variant!.product_id,
+                product_id: variant.product_id,
                 invoice_id: 0,
                 tax_amount: 0,
                 total: 0
@@ -139,17 +146,16 @@ export async function createSale({
         const taxResult = taxEngine.calculate({ items: calculationItems } as Invoice, customer);
 
         // 4. Process results
-        let totalAmount = new Decimal(taxResult.grand_total);
         let totalTax = new Decimal(taxResult.total_tax);
         const processedItems: Partial<SaleItem>[] = [];
 
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const calculatedItem = taxResult.items[i];
-            const variant = variantMap.get(item.variantId);
+            const variant = preFetchedVariantMap.get(item.variantId)!;
 
-            const pricePerUnit = item.pricePerUnit ?? variant!.price;
-            const costPerUnit = variant!.cost_price || 0;
+            const pricePerUnit = item.pricePerUnit ?? variant.price;
+            const costPerUnit = variant.cost_price || 0;
             const itemDiscount = item.discount ?? 0;
 
             processedItems.push({
@@ -166,17 +172,17 @@ export async function createSale({
         }
 
         // Grand Total from tax engine is the final payable amount.
-        totalAmount = new Decimal(taxResult.grand_total);
+        const totalAmount = new Decimal(taxResult.grand_total);
 
         // Calculate paid amount from payments
         const paidAmount = payments.reduce((sum, p) => sum.add(p.amount), new Decimal(0));
 
         // Determine status
-        let status: 'draft' | 'paid' | 'partially_paid' = 'draft';
+        let statusIdx: 'draft' | 'paid' | 'partially_paid' = 'draft';
         if (paidAmount.gte(totalAmount)) {
-            status = 'paid';
+            statusIdx = 'paid';
         } else if (paidAmount.gt(0)) {
-            status = 'partially_paid';
+            statusIdx = 'partially_paid';
         }
 
         // Generate invoice number
@@ -189,17 +195,17 @@ export async function createSale({
             paid_amount: paidAmount.toNumber(),
             discount,
             total_tax: totalTax.toNumber(),
-            status,
+            status: statusIdx,
             fulfillment_status,
             customer_id: customerId,
             user_id: userId
         });
-        const saleId = Number(saleResult.lastInsertRowid);
+        const newSaleId = Number(saleResult.lastInsertRowid);
 
         // Insert sale items and adjust inventory
         for (const item of processedItems) {
             const itemResult = saleRepository.insertSaleItem({
-                sale_id: saleId,
+                sale_id: newSaleId,
                 ...item
             });
             const saleItemId = Number(itemResult.lastInsertRowid);
@@ -228,7 +234,7 @@ export async function createSale({
         // Insert payment transactions
         for (const payment of payments) {
             saleRepository.insertTransaction({
-                sale_id: saleId,
+                sale_id: newSaleId,
                 amount: payment.amount,
                 type: 'payment',
                 payment_method_id: payment.paymentMethodId,
@@ -241,7 +247,7 @@ export async function createSale({
             userId,
             'sales.create',
             'SALE',
-            saleId,
+            newSaleId,
             null, // oldData
             null, // newData
             {
@@ -251,12 +257,13 @@ export async function createSale({
             }
         );
 
-        // Fetch created sale to return
-        const createdSale = saleRepository.findSaleById(saleId);
-        if (!createdSale) throw new Error('Failed to retrieve created sale');
-        return createdSale;
+        return newSaleId;
+    })();
 
-    })(); // Execute transaction
+    // Fetch created sale to return (outside of transaction)
+    const createdSale = saleRepository.findSaleById(saleId);
+    if (!createdSale) throw new Error('Failed to retrieve created sale');
+    return createdSale;
 }
 
 /**

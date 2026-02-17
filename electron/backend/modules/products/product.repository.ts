@@ -139,9 +139,9 @@ function getStockSubquery(): string {
  * Find products with filtering and pagination
  * Stock is derived from inventory_lots + inventory_adjustments
  * @param {Object} params - Filter and pagination params
- * @returns {Object} Products list with pagination info
+ * @returns {Promise<PaginatedProducts>} Products list with pagination info
  */
-export function findProducts({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage }: ProductFilter): PaginatedProducts {
+export async function findProducts({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage }: ProductFilter): Promise<PaginatedProducts> {
     const db = getDB();
     const filterClauses: string[] = [];
     const filterParams: any[] = [];
@@ -199,14 +199,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedParams = [...filterParams, itemsPerPage, startIndex];
 
-    let paginatedProducts: Product[];
-
-    // Determine if we can use the fast path (no stock filtering)
-    // If no stock filtering, we defer stock calculation to batch processing
-    const isFastPath = !stockStatus || stockStatus.length === 0;
-
-    const selectStock = isFastPath ? 'v.id as variant_id' : `${stockSubquery} AS stock`;
-
+    // Note: We always use the batch approach for stock calculation in the async path
     const paginatedQuery = `
     SELECT
       p.id,
@@ -215,7 +208,7 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
       p.image_path,
       c.name AS category_name,
       p.tax_category_id,
-      ${selectStock},
+      v.id as variant_id,
       v.stock_alert_cap
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
@@ -228,21 +221,16 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
 
     const products = db.prepare(paginatedQuery).all(...paginatedParams) as (Product & { variant_id?: number })[];
 
-    if (isFastPath) {
-        // Fast Path: Compute stock in batch for the result page
-        const variantIds = products.map(p => p.variant_id!);
-        const stockMap = getComputedStockBatch(variantIds);
+    // Compute stock in batch for the result page asynchronously
+    const variantIds = products.map(p => p.variant_id!);
+    const stockMap = await getComputedStockBatch(variantIds);
 
-        paginatedProducts = products.map(p => {
-            const product = { ...p, stock: stockMap[p.variant_id!] ?? 0 };
-            // Clean up internal variant_id
-            delete (product as any).variant_id;
-            return product;
-        });
-    } else {
-        // Slow Path: Stock was computed in SQL via correlated subquery
-        paginatedProducts = products;
-    }
+    const paginatedProducts = products.map(p => {
+        const product = { ...p, stock: stockMap[p.variant_id!] ?? 0 };
+        // Clean up internal variant_id
+        delete (product as any).variant_id;
+        return product;
+    });
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -256,9 +244,9 @@ export function findProducts({ searchTerm, stockStatus, status, categories, curr
 /**
  * Get product with variants and their computed stock
  * @param {number} productId - Product ID
- * @returns {Object|null} Product with variants including stock
+ * @returns {Promise<Product|null>} Product with variants including stock
  */
-export function findProductWithVariants(productId: number): Product | null {
+export async function findProductWithVariants(productId: number): Promise<Product | null> {
     const db = getDB();
 
     const product = findProductById(productId);
@@ -266,19 +254,26 @@ export function findProductWithVariants(productId: number): Product | null {
         return null;
     }
 
-    const stockSubquery = getStockSubquery();
     const variants = db.prepare(`
         SELECT 
-            v.*,
-            ${stockSubquery} AS stock
+            v.*
         FROM variants v
         WHERE v.product_id = ? AND v.deleted_at IS NULL
         ORDER BY v.is_default DESC, v.name ASC
     `).all(productId) as Variant[];
 
+    // Compute stock in batch for variants asynchronously
+    const variantIds = variants.map(v => v.id!);
+    const stockMap = await getComputedStockBatch(variantIds);
+
+    const variantsWithStock = variants.map(v => ({
+        ...v,
+        stock: stockMap[v.id!] ?? 0
+    }));
+
     return {
         ...product,
-        variants
+        variants: variantsWithStock
     };
 }
 
@@ -312,7 +307,7 @@ export function setProductTaxes(productId: number, taxIds: number[]): void {
     if (taxIds && taxIds.length > 0) {
         const insertStmt = db.prepare('INSERT INTO product_taxes (product_id, tax_id) VALUES (?, ?)');
         const transaction = db.transaction((pId: number, tIds: number[]) => {
-             for (const taxId of tIds) {
+            for (const taxId of tIds) {
                 insertStmt.run(pId, taxId);
             }
         });

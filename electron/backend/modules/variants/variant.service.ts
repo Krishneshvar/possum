@@ -78,12 +78,12 @@ export function deleteVariant(id: number) {
  * @param {Object} params - Query parameters
  * @returns {Object} Paginated variants with image URLs
  */
-export function getVariants(params: VariantQueryOptions) {
-    const result = variantRepository.findVariants(params);
+export async function getVariants(params: VariantQueryOptions) {
+    const result = await variantRepository.findVariants(params);
 
     return {
         ...result,
-        variants: result.variants.map(variant => ({
+        variants: result.variants.map((variant: any) => ({
             ...variant,
             taxes: variant.taxes ? JSON.parse(variant.taxes) : [],
             imageUrl: buildImageUrl(variant.image_path)

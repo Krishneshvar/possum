@@ -78,18 +78,18 @@ export function createProductWithVariants({ name, description, category_id, stat
 /**
  * Get a product with all its variants and taxes
  * @param {number} id - Product ID
- * @returns {Object|null} Product with variants and taxes or null
+ * @returns {Promise<Object|null>} Product with variants and taxes or null
  */
-export function getProductWithVariants(id: number) {
+export async function getProductWithVariants(id: number) {
     const product = productRepository.findProductById(id);
     if (!product) return null;
 
-    const variants = variantRepository.findVariantsByProductId(id);
+    const variants = await productRepository.findProductWithVariants(id);
     const taxes = productRepository.findProductTaxes(id);
 
     return {
         ...product,
-        variants,
+        ...variants,
         taxes,
         imageUrl: buildImageUrl(product.image_path)
     };
@@ -98,10 +98,10 @@ export function getProductWithVariants(id: number) {
 /**
  * Get paginated products list
  * @param {Object} params - Filter and pagination params
- * @returns {Object} Products with imageUrls and pagination
+ * @returns {Promise<Object>} Products with imageUrls and pagination
  */
-export function getProducts(params: ProductFilter) {
-    const productsData = productRepository.findProducts(params);
+export async function getProducts(params: ProductFilter) {
+    const productsData = await productRepository.findProducts(params);
 
     const productsWithImageUrls = productsData.products.map((product: Product) => ({
         ...product,

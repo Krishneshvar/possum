@@ -99,7 +99,7 @@ export async function getVariantsController(req: Request, res: Response) {
             limit
         } = req.query;
 
-        const result = variantService.getVariants({
+        const result = await variantService.getVariants({
             searchTerm: getQueryString(searchTerm) || '',
             categoryId: getQueryNumber(categoryId),
             stockStatus: getQueryString(stockStatus),

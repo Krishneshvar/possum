@@ -8,13 +8,13 @@ import { getComputedStock, getComputedStockBatch } from '../../shared/utils/inve
 import { Variant } from '../../../../types/index.js';
 
 export interface VariantQueryOptions {
-    searchTerm?: string;
-    categoryId?: number;
-    stockStatus?: 'low' | 'out' | 'ok' | string;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC' | string;
-    currentPage?: number;
-    itemsPerPage?: number;
+  searchTerm?: string;
+  categoryId?: number;
+  stockStatus?: 'low' | 'out' | 'ok' | string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC' | string;
+  currentPage?: number;
+  itemsPerPage?: number;
 }
 
 /**
@@ -47,9 +47,9 @@ export function insertVariant(productId: number, variant: Partial<Variant>) {
 /**
  * Find all variants for a product with computed stock
  * @param {number} productId - Product ID
- * @returns {Array} Variants list with stock
+ * @returns {Promise<Variant[]>} Variants list with stock
  */
-export function findVariantsByProductId(productId: number): Variant[] {
+export async function findVariantsByProductId(productId: number): Promise<Variant[]> {
   const db = getDB();
   // Map mrp to price
   const variants = db.prepare(`
@@ -64,21 +64,21 @@ export function findVariantsByProductId(productId: number): Variant[] {
     return [];
   }
 
-  const variantIds = variants.map(v => v.id);
-  const stockMap = getComputedStockBatch(variantIds);
+  const variantIds = variants.map(v => v.id!);
+  const stockMap = await getComputedStockBatch(variantIds);
 
   return variants.map(variant => ({
     ...variant,
-    stock: stockMap[variant.id] ?? 0
+    stock: stockMap[variant.id!] ?? 0
   }));
 }
 
 /**
  * Find a single variant by ID with computed stock
  * @param {number} id - Variant ID
- * @returns {Object|null} Variant with stock or null
+ * @returns {Promise<Variant|null>} Variant with stock or null
  */
-export function findVariantById(id: number): Variant | null {
+export async function findVariantById(id: number): Promise<Variant | null> {
   const db = getDB();
   // Map mrp to price
   const variant = db.prepare(`
@@ -93,9 +93,11 @@ export function findVariantById(id: number): Variant | null {
     return null;
   }
 
+  const stock = await getComputedStock(id);
+
   return {
     ...variant,
-    stock: getComputedStock(id)
+    stock
   };
 }
 
@@ -137,9 +139,9 @@ export function softDeleteVariant(id: number) {
 /**
  * Find variants with filtering, pagination, and sorting
  * @param {Object} params - Query parameters
- * @returns {Object} Paginated variants data
+ * @returns {Promise<Object>} Paginated variants data
  */
-export function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
+export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
   const db = getDB();
   const filterClauses: string[] = [];
   const filterParams: any[] = [];
@@ -216,7 +218,7 @@ export function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.
     const variantsWithoutStock = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
 
     const variantIds = variantsWithoutStock.map((v: any) => v.id);
-    const stockMap = getComputedStockBatch(variantIds);
+    const stockMap = await getComputedStockBatch(variantIds);
 
     const variants = variantsWithoutStock.map((v: any) => ({
       ...v,
@@ -280,8 +282,8 @@ export function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.
   const rows = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
 
   const variants = rows.map((v: any) => ({
-      ...v,
-      stock: v.stock // already joined
+    ...v,
+    stock: v.stock // already joined
   })) as Variant[];
 
   if (variants.length === 0) {

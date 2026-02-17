@@ -38,7 +38,7 @@ export async function getProductsController(req: Request, res: Response) {
             categoryIds = categoryIds.filter(id => id !== '');
         }
 
-        const productsData = productService.getProducts({
+        const productsData = await productService.getProducts({
             searchTerm: getQueryString(searchTerm) || '',
             stockStatus: stockStatusArray,
             status: statusArray,
@@ -126,7 +126,7 @@ export async function createProductController(req: Request, res: Response) {
 export async function getProductDetails(req: Request, res: Response) {
     const { id } = req.params;
     try {
-        const product = productService.getProductWithVariants(parseInt(id as string, 10));
+        const product = await productService.getProductWithVariants(parseInt(id as string, 10));
         if (!product) {
             return res.status(404).json({ error: 'Product not found.' });
         }
