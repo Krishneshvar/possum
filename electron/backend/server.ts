@@ -1,4 +1,5 @@
 import express from 'express';
+import helmet from 'helmet';
 import { initDB } from './shared/db/index.js';
 import { registerRoutes } from './routes.js';
 import dotenv from 'dotenv';
@@ -28,6 +29,11 @@ process.on('uncaughtException', (error: Error) => {
 export function startServer(): void {
   initDB();
   const expressApp = express();
+
+  // Security Middleware
+  expressApp.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  }));
 
   // Technical Logging (HTTP Request Tracking)
   expressApp.use(httpLogger);
