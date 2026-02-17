@@ -96,6 +96,9 @@ export async function createProductController(req: Request, res: Response) {
     }
 
     try {
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
+
         const newProduct = productService.createProductWithVariants({
             name,
             category_id: category_id ? parseInt(category_id, 10) : 0, // Should handle null better
@@ -104,7 +107,7 @@ export async function createProductController(req: Request, res: Response) {
             image_path,
             variants: parsedVariants,
             taxIds: parsedTaxIds,
-            userId: (req as any).userId || 1 // Get from auth middleware
+            userId
         });
         res.status(201).json(newProduct);
     } catch (err: any) {
@@ -164,7 +167,9 @@ export async function updateProductController(req: Request, res: Response) {
     const productData = { name, category_id, description, status, variants: parsedVariants, taxIds: parsedTaxIds };
 
     try {
-        const changes = productService.updateProduct(parseInt(id as string, 10), productData, image_path, (req as any).userId || 1);
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
+        const changes = productService.updateProduct(parseInt(id as string, 10), productData, image_path, userId);
         if (changes.changes === 0) {
             if (image_path) {
                 try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
@@ -193,7 +198,9 @@ export async function deleteProductController(req: Request, res: Response) {
     }
 
     try {
-        const changes = productService.deleteProduct(productId, (req as any).userId || 1);
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
+        const changes = productService.deleteProduct(productId, userId);
         if (changes.changes === 0) {
             return res.status(404).json({ error: 'Product not found.' });
         }

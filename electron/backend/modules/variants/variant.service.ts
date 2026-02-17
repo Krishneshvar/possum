@@ -26,7 +26,7 @@ export function addVariant(productId: number, variantData: Partial<Variant> & { 
                 variantId,
                 quantity: parseInt(String(variantData.stock), 10),
                 unitCost: parseFloat(String(variantData.cost_price || 0)),
-                userId: variantData.userId || 1
+                userId: variantData.userId!
             });
         }
         return result;
@@ -54,7 +54,7 @@ export function updateVariant(variantData: Partial<Variant> & { id: number; stoc
                         variantId: variantData.id,
                         quantityChange: diff,
                         reason: 'correction',
-                        userId: variantData.userId || 1
+                        userId: variantData.userId!
                     });
                 }
             }

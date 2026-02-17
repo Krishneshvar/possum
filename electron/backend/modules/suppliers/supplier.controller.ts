@@ -25,7 +25,8 @@ export function getSuppliers(req: Request, res: Response) {
 
 export function createSupplier(req: Request, res: Response) {
     try {
-        const supplierData = { ...req.body, userId: (req as any).userId || 1 };
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const supplierData = { ...req.body, userId: req.user.id };
         const newSupplier = supplierService.createSupplier(supplierData);
         res.status(201).json(newSupplier);
     } catch (error: any) {
@@ -40,7 +41,8 @@ export function createSupplier(req: Request, res: Response) {
 export function updateSupplier(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        const supplierData = { ...req.body, userId: (req as any).userId || 1 };
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const supplierData = { ...req.body, userId: req.user.id };
         const updatedSupplier = supplierService.updateSupplier(parseInt(id as string, 10), supplierData);
         res.json(updatedSupplier);
     } catch (error: any) {
@@ -55,7 +57,8 @@ export function updateSupplier(req: Request, res: Response) {
 export function deleteSupplier(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        supplierService.deleteSupplier(parseInt(id as string, 10), (req as any).userId || 1);
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        supplierService.deleteSupplier(parseInt(id as string, 10), req.user.id);
         res.json({ message: 'Supplier deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting supplier:', error);

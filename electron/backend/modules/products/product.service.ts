@@ -54,7 +54,7 @@ export function createProductWithVariants({ name, description, category_id, stat
                     variantId,
                     quantity: parseInt(variant.stock, 10),
                     unitCost: parseFloat(variant.cost_price || 0),
-                    userId: userId || 1
+                    userId: userId
                 });
             }
         }
@@ -65,7 +65,7 @@ export function createProductWithVariants({ name, description, category_id, stat
         }
 
         // Log product creation
-        auditService.logCreate(userId || 1, 'products', newProductId, {
+        auditService.logCreate(userId, 'products', newProductId, {
             name, description, category_id, status, image_path
         });
 
@@ -162,7 +162,7 @@ export function updateProduct(productId: number, productData: any, newImagePath:
         // Log product update
         if (result.changes > 0) {
             const newProduct = productRepository.findProductById(productId);
-            auditService.logUpdate(userId || 1, 'products', productId, oldProduct, newProduct);
+            auditService.logUpdate(userId, 'products', productId, oldProduct, newProduct);
         }
 
         return result;
@@ -191,7 +191,7 @@ export function deleteProduct(id: number, userId: number) {
 
     // Log product deletion
     if (result.changes > 0) {
-        auditService.logDelete(userId || 1, 'products', id, oldProduct);
+        auditService.logDelete(userId, 'products', id, oldProduct);
     }
 
     return result;

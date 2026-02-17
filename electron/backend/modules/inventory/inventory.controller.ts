@@ -86,7 +86,8 @@ export async function createAdjustmentController(req: Request, res: Response) {
             });
         }
 
-        const userId = (req as any).userId || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
 
         const result = inventoryService.adjustInventory({
             variantId: parseInt(variantId, 10),
@@ -159,7 +160,8 @@ export async function receiveInventoryController(req: Request, res: Response) {
             });
         }
 
-        const userId = (req as any).userId || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
 
         const result = inventoryService.receiveInventory({
             variantId: parseInt(variantId, 10),

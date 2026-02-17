@@ -45,7 +45,8 @@ export async function getCustomerById(req: Request, res: Response) {
  */
 export async function createCustomer(req: Request, res: Response) {
     try {
-        const customerData = { ...req.body, userId: req.user?.id || 1 };
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const customerData = { ...req.body, userId: req.user.id };
         const customer = await CustomerService.createCustomer(customerData);
         res.status(201).json(customer);
     } catch (error: any) {
@@ -60,7 +61,8 @@ export async function createCustomer(req: Request, res: Response) {
 export async function updateCustomer(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        const customerData = { ...req.body, userId: req.user?.id || 1 };
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const customerData = { ...req.body, userId: req.user.id };
         const customer = await CustomerService.updateCustomer(Number(id), customerData);
         res.json(customer);
     } catch (error: any) {
@@ -75,7 +77,8 @@ export async function updateCustomer(req: Request, res: Response) {
 export async function deleteCustomer(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        await CustomerService.deleteCustomer(Number(id), req.user?.id || 1);
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        await CustomerService.deleteCustomer(Number(id), req.user.id);
         res.status(204).send();
     } catch (error: any) {
         console.error('Error deleting customer:', error);

@@ -29,7 +29,8 @@ export async function getUserById(req: Request, res: Response) {
 
 export async function createUser(req: Request, res: Response) {
     try {
-        const userData = { ...req.body, createdBy: req.user?.id || 1 };
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userData = { ...req.body, createdBy: req.user.id };
         const user = await UserService.createUser(userData);
         res.status(201).json(user);
     } catch (error: any) {
@@ -39,7 +40,8 @@ export async function createUser(req: Request, res: Response) {
 
 export async function updateUser(req: Request, res: Response) {
     try {
-        const userData = { ...req.body, updatedBy: req.user?.id || 1 };
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userData = { ...req.body, updatedBy: req.user.id };
         const user = await UserService.updateUser(Number(req.params.id), userData);
         res.json(user);
     } catch (error: any) {
@@ -49,7 +51,8 @@ export async function updateUser(req: Request, res: Response) {
 
 export async function deleteUser(req: Request, res: Response) {
     try {
-        await UserService.deleteUser(Number(req.params.id), req.user?.id || 1);
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        await UserService.deleteUser(Number(req.params.id), req.user.id);
         res.status(204).send();
     } catch (error: any) {
         res.status(500).json({ error: error.message });

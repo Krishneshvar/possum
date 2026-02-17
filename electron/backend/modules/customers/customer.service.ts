@@ -33,7 +33,7 @@ export async function createCustomer(data: any): Promise<Customer> {
     if (!customer) throw new Error('Failed to create customer');
 
     // Log customer creation
-    auditService.logCreate(data.userId || 1, 'customers', customer.id, data);
+    auditService.logCreate(data.userId!, 'customers', customer.id, data);
 
     return customer;
 }
@@ -48,7 +48,7 @@ export async function updateCustomer(id: number, data: any): Promise<Customer> {
     if (!updatedCustomer) throw new Error('Failed to update customer');
 
     // Log customer update
-    auditService.logUpdate(data.userId || 1, 'customers', id, oldCustomer, updatedCustomer);
+    auditService.logUpdate(data.userId!, 'customers', id, oldCustomer, updatedCustomer);
 
     return updatedCustomer;
 }
@@ -62,7 +62,7 @@ export async function deleteCustomer(id: number, userId: number): Promise<boolea
 
     // Log customer deletion
     if (success) {
-        auditService.logDelete(userId || 1, 'customers', id, customer);
+        auditService.logDelete(userId, 'customers', id, customer);
     }
 
     return success;

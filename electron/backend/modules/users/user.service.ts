@@ -38,7 +38,7 @@ export async function createUser(data: any): Promise<User> {
 
     // Log user creation (exclude password)
     const { password, password_hash: _, ...logData } = { ...data, id: userId };
-    auditService.logCreate(data.createdBy || 1, 'users', userId, logData);
+    auditService.logCreate(data.createdBy!, 'users', userId, logData);
 
     return newUser;
 }
@@ -63,7 +63,7 @@ export async function updateUser(id: number, data: any): Promise<User> {
     // Log user update (exclude password)
     const { password_hash: _old, ...oldData } = oldUser;
     const { password_hash: _new, ...newData } = updatedUser;
-    auditService.logUpdate(data.updatedBy || 1, 'users', id, oldData, newData);
+    auditService.logUpdate(data.updatedBy!, 'users', id, oldData, newData);
 
     return updatedUser;
 }
@@ -75,7 +75,7 @@ export async function deleteUser(id: number, deletedBy: number): Promise<boolean
     // Log user deletion (exclude password)
     if (success) {
         const { password_hash, ...userData } = user;
-        auditService.logDelete(deletedBy || 1, 'users', id, userData);
+        auditService.logDelete(deletedBy, 'users', id, userData);
     }
 
     return success;

@@ -21,8 +21,8 @@ export async function createSale(req: AuthenticatedRequest, res: Response) {
     try {
         const { items, customerId, discount, payments, taxMode, billTaxIds, fulfillment_status } = req.body;
 
-        // Use userId from middleware if available
-        const userId = req.user?.id || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
         const token = (req as any).token; // From middleware
 
         const result = await SaleService.createSale({
@@ -105,7 +105,8 @@ export async function getSale(req: Request, res: Response) {
 export async function updateSale(req: AuthenticatedRequest, res: Response) {
     try {
         const { status } = req.body;
-        const userId = req.user?.id || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
         const token = (req as any).token;
         const saleId = parseInt(req.params.id as string, 10);
 
@@ -122,7 +123,8 @@ export async function updateSale(req: AuthenticatedRequest, res: Response) {
 
 export async function deleteSale(req: AuthenticatedRequest, res: Response) {
     try {
-        const userId = req.user?.id || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
         const token = (req as any).token;
         const saleId = parseInt(req.params.id as string, 10);
 
@@ -144,7 +146,8 @@ export async function getPaymentMethods(req: Request, res: Response) {
 
 export async function fulfillSale(req: AuthenticatedRequest, res: Response) {
     try {
-        const userId = req.user?.id || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
         const saleId = parseInt(req.params.id as string, 10);
         const token = (req as any).token;
         const result = await SaleService.fulfillSale(saleId, userId, token);
@@ -158,7 +161,8 @@ export async function addPayment(req: AuthenticatedRequest, res: Response) {
     try {
         const saleId = parseInt(req.params.id as string, 10);
         const { amount, paymentMethodId } = req.body;
-        const userId = req.user?.id || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
         const token = (req as any).token;
 
         const result = await SaleService.addPayment({

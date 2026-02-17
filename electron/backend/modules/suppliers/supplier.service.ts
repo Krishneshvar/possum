@@ -20,7 +20,7 @@ export function createSupplier(data: Partial<Supplier> & { userId?: number }) {
         const supplierId = Number(result.lastInsertRowid);
 
         // Log supplier creation
-        auditService.logCreate(data.userId || 1, 'suppliers', supplierId, data);
+        auditService.logCreate(data.userId!, 'suppliers', supplierId, data);
 
         return { id: supplierId, ...data };
     } catch (err: any) {
@@ -42,7 +42,7 @@ export function updateSupplier(id: number, data: Partial<Supplier> & { userId?: 
     // Log supplier update
     if (result.changes > 0) {
         const newSupplier = supplierRepo.findSupplierById(id);
-        auditService.logUpdate(data.userId || 1, 'suppliers', id, oldSupplier, newSupplier);
+        auditService.logUpdate(data.userId!, 'suppliers', id, oldSupplier, newSupplier);
     }
 
     return { id, ...data };

@@ -39,11 +39,10 @@ export function getPurchaseOrderById(req: Request, res: Response) {
 
 export function createPurchaseOrder(req: Request, res: Response) {
     try {
-        // req.body should include supplier_id, items, created_by (if user auth is strict, getting from token is better)
-        // For now taking from body or defaulting
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const poData = {
             ...(req.body || {}),
-            created_by: (req.body && req.body.created_by) || (req as any).userId || 1
+            created_by: req.user.id
         };
         const newPo = purchaseService.createPurchaseOrder(poData);
         res.status(201).json(newPo);
@@ -55,7 +54,8 @@ export function createPurchaseOrder(req: Request, res: Response) {
 
 export function receivePurchaseOrder(req: Request, res: Response) {
     try {
-        const userId = (req.body && req.body.userId) || (req as any).userId || 1;
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const userId = req.user.id;
         const updatedPo = purchaseService.receivePurchaseOrder(parseInt(req.params.id as string, 10), userId);
         res.json(updatedPo);
     } catch (error: any) {
