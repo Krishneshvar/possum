@@ -139,6 +139,7 @@ export interface SaleItem extends BaseEntity {
   // Joined fields
   variant_name?: string;
   product_name?: string;
+  returned_quantity?: number;
   sku?: string;
   image_path?: string;
 }

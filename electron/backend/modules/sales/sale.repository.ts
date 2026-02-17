@@ -109,7 +109,8 @@ export function findSaleById(id: number): Sale | null {
             v.name as variant_name,
             v.sku,
             p.name as product_name,
-            p.image_path
+            p.image_path,
+            (SELECT COALESCE(SUM(ri.quantity), 0) FROM return_items ri WHERE ri.sale_item_id = si.id) as returned_quantity
         FROM sale_items si
         JOIN variants v ON si.variant_id = v.id
         JOIN products p ON v.product_id = p.id
