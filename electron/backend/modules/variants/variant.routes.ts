@@ -1,8 +1,5 @@
-/**
- * Variant Routes
- * Route registration for variant endpoints
- */
 import { Router } from 'express';
+import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 import {
     addVariantController,
     updateVariantController,
@@ -13,10 +10,9 @@ import {
 const router = Router();
 
 // Routes for variants
-router.get('/', getVariantsController);
-router.post('/', addVariantController); // Is this used? Usually part of product create.
-// Wait, product create creates variants in bulk. This might be for adding a variant to existing product.
-router.put('/:id', updateVariantController);
-router.delete('/:id', deleteVariantController);
+router.get('/', requirePermission(['reports.view', 'sales.create', 'products.manage']), getVariantsController);
+router.post('/', requirePermission('products.manage'), addVariantController);
+router.put('/:id', requirePermission('products.manage'), updateVariantController);
+router.delete('/:id', requirePermission('products.manage'), deleteVariantController);
 
 export default router;

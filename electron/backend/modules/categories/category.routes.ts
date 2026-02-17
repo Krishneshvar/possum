@@ -1,8 +1,5 @@
-/**
- * Category Routes
- * Route registration for category endpoints
- */
 import { Router } from 'express';
+import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 
 import {
     getCategoriesController,
@@ -14,8 +11,8 @@ import {
 const router = Router();
 
 router.get('/', getCategoriesController);
-router.post('/', createCategoryController);
-router.put('/:id', updateCategoryController);
-router.delete('/:id', deleteCategoryController);
+router.post('/', requirePermission('products.manage'), createCategoryController);
+router.put('/:id', requirePermission('products.manage'), updateCategoryController);
+router.delete('/:id', requirePermission('products.manage'), deleteCategoryController);
 
 export default router;

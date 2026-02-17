@@ -18,8 +18,11 @@ export async function addVariantController(req: Request, res: Response) {
         return res.status(400).json({ error: 'Product ID and variant name are required.' });
     }
 
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+    const userId = req.user.id;
+
     try {
-        const newVariant = variantService.addVariant(productId, variantData);
+        const newVariant = variantService.addVariant(productId, { ...variantData, userId });
         if (newVariant.changes === 0) {
             return res.status(400).json({ error: 'Failed to add variant.' });
         }
@@ -42,8 +45,15 @@ export async function updateVariantController(req: Request, res: Response) {
         return res.status(400).json({ error: 'Variant name is required.' });
     }
 
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+    const userId = req.user.id;
+
     try {
-        const changes = variantService.updateVariant({ ...variantData, id: parseInt(id as string, 10) });
+        const changes = variantService.updateVariant({
+            ...variantData,
+            id: parseInt(id as string, 10),
+            userId
+        });
         if (changes.changes === 0) {
             return res.status(404).json({ error: 'Variant not found or no changes made.' });
         }

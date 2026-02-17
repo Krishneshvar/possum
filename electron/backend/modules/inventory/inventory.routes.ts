@@ -16,25 +16,26 @@ import {
 
 import { validate } from '../../shared/middleware/validate.middleware.js';
 import { adjustInventorySchema, receiveInventorySchema, getVariantInventorySchema } from './inventory.schema.js';
+import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 
 const router = Router();
 
 // Variant stock endpoints
-router.get('/variants/:id/stock', validate(getVariantInventorySchema), getVariantStockController);
-router.get('/variants/:id/lots', validate(getVariantInventorySchema), getVariantLotsController);
-router.get('/variants/:id/adjustments', validate(getVariantInventorySchema), getVariantAdjustmentsController);
+router.get('/variants/:id/stock', requirePermission(['inventory.manage', 'inventory.view', 'reports.view', 'sales.create']), validate(getVariantInventorySchema), getVariantStockController);
+router.get('/variants/:id/lots', requirePermission(['inventory.manage', 'inventory.view', 'reports.view']), validate(getVariantInventorySchema), getVariantLotsController);
+router.get('/variants/:id/adjustments', requirePermission(['inventory.manage', 'inventory.view', 'reports.view']), validate(getVariantInventorySchema), getVariantAdjustmentsController);
 
 // Adjustment endpoints
-router.post('/adjustments', validate(adjustInventorySchema), createAdjustmentController);
+router.post('/adjustments', requirePermission('inventory.manage'), validate(adjustInventorySchema), createAdjustmentController);
 
 // Alert endpoints
-router.get('/alerts/low-stock', getLowStockAlertsController);
-router.get('/alerts/expiring', getExpiringLotsController);
+router.get('/alerts/low-stock', requirePermission(['inventory.manage', 'inventory.view', 'reports.view']), getLowStockAlertsController);
+router.get('/alerts/expiring', requirePermission(['inventory.manage', 'inventory.view', 'reports.view']), getExpiringLotsController);
 
 // Receive inventory endpoint
-router.post('/receive', validate(receiveInventorySchema), receiveInventoryController);
+router.post('/receive', requirePermission('inventory.manage'), validate(receiveInventorySchema), receiveInventoryController);
 
 // Stats endpoint
-router.get('/stats', getInventoryStatsController);
+router.get('/stats', requirePermission(['inventory.manage', 'inventory.view', 'reports.view']), getInventoryStatsController);
 
 export default router;
