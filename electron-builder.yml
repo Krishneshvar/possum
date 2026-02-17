@@ -2,12 +2,21 @@ appId: com.electron.app
 productName: possum
 directories:
   buildResources: build
+  app: .
 files:
+  - 'dist/**/*'
+  - 'package.json'
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!app/node_modules'
+  - '!app/src'
+  - '!app/public'
+  - '!app/index.html'
+  - '!app/vite.config.ts'
+  - '!app/tsconfig.json'
 asarUnpack:
   - resources/**
 win:

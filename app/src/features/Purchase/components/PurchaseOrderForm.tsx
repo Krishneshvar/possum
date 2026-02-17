@@ -1,0 +1,240 @@
+import React, { useState, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { useGetSuppliersQuery } from '@/services/suppliersApi';
+import { useGetVariantsQuery } from '@/services/productsApi';
+import { useCreatePurchaseOrderMutation } from '@/services/purchaseApi';
+import { toast } from 'sonner';
+import { Trash2, Plus } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
+
+interface PurchaseOrderFormProps {
+    onSuccess: () => void;
+}
+
+interface OrderItem {
+    variantId: number;
+    productName: string;
+    variantSku: string;
+    variantName: string;
+    quantity: number;
+    unitCost: number;
+}
+
+export function PurchaseOrderForm({ onSuccess }: PurchaseOrderFormProps) {
+    const currency = useCurrency();
+    const { data: suppliersData } = useGetSuppliersQuery({ limit: 1000 });
+    const suppliers = suppliersData?.suppliers || [];
+    const { data: variantsData } = useGetVariantsQuery({ page: 1, limit: 1000 });
+    const variants = variantsData?.variants || [];
+
+    const [createPurchaseOrder, { isLoading }] = useCreatePurchaseOrderMutation();
+
+    const [supplierId, setSupplierId] = useState('');
+    const [items, setItems] = useState<OrderItem[]>([]);
+
+    // Item entry state
+    const [selectedVariantId, setSelectedVariantId] = useState('');
+    const [quantity, setQuantity] = useState(1);
+    const [unitCost, setUnitCost] = useState(0);
+
+    const selectedVariant = useMemo(() =>
+        variants.find((v: any) => v.id === parseInt(selectedVariantId)),
+        [variants, selectedVariantId]
+    );
+
+    const addItem = () => {
+        if (!selectedVariant || quantity <= 0 || unitCost < 0) return;
+
+        const newItem = {
+            variantId: selectedVariant.id,
+            productName: selectedVariant.product_name,
+            variantSku: selectedVariant.sku,
+            variantName: selectedVariant.name,
+            quantity: quantity,
+            unitCost: unitCost,
+        };
+
+        setItems([...items, newItem]);
+        // Reset item entry
+        setSelectedVariantId('');
+        setQuantity(1);
+        setUnitCost(0);
+    };
+
+    const removeItem = (index: number) => {
+        const newItems = [...items];
+        newItems.splice(index, 1);
+        setItems(newItems);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!supplierId || items.length === 0) {
+            toast.error('Please select a supplier and add at least one item.');
+            return;
+        }
+
+        try {
+            await createPurchaseOrder({
+                supplier_id: Number(supplierId),
+                items: items.map(i => ({
+                    variant_id: i.variantId,
+                    quantity: i.quantity,
+                    unit_cost: i.unitCost
+                })),
+                created_by: 1 // TODO: get from auth
+            }).unwrap();
+
+            toast.success('Purchase Order created successfully');
+            onSuccess();
+        } catch (error) {
+            console.error('Failed to create PO:', error);
+            toast.error('Failed to create Purchase Order');
+        }
+    };
+
+    const calculateTotal = () => {
+        return items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0).toFixed(2);
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <Label>Supplier</Label>
+                <Select value={supplierId} onValueChange={setSupplierId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select Supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {suppliers.map(s => (
+                            <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="border p-4 rounded-md space-y-4">
+                <h3 className="font-semibold text-sm">Add Items</h3>
+                <div className="space-y-2">
+                    <Label>Select Variant</Label>
+                    <Select
+                        value={selectedVariantId}
+                        onValueChange={(val) => {
+                            setSelectedVariantId(val);
+                            const variant = variants.find((v: any) => v.id === parseInt(val));
+                            if (variant) setUnitCost(variant.cost_price || 0);
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Search SKU or Product Name" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {variants.map((v: any) => (
+                                <SelectItem key={v.id} value={String(v.id)}>
+                                    {v.product_name} - {v.name} ({v.sku})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <Label>Quantity</Label>
+                        <Input
+                            type="number"
+                            min="1"
+                            value={quantity}
+                            onChange={e => setQuantity(Number(e.target.value))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Unit Cost</Label>
+                        <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={unitCost}
+                            onChange={e => setUnitCost(Number(e.target.value))}
+                        />
+                    </div>
+                    <div className="flex items-end">
+                        <Button type="button" onClick={addItem} disabled={!selectedVariant} className="w-full">
+                            <Plus className="mr-2 h-4 w-4" /> Add
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="border rounded-md">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Product | Variant</TableHead>
+                            <TableHead className="text-right">Qty</TableHead>
+                            <TableHead className="text-right">Cost</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {items.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                                    No items added.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            items.map((item, idx) => (
+                                <TableRow key={idx}>
+                                    <TableCell>
+                                        <div className="font-medium">{item.productName}</div>
+                                        <div className="text-xs text-muted-foreground">{item.variantSku} ({item.variantName})</div>
+                                    </TableCell>
+                                    <TableCell className="text-right">{item.quantity}</TableCell>
+                                    <TableCell className="text-right">{currency}{item.unitCost.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right">{currency}{(item.quantity * item.unitCost).toFixed(2)}</TableCell>
+                                    <TableCell>
+                                        <Button variant="ghost" size="sm" onClick={() => removeItem(idx)} className="text-red-500">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                        {items.length > 0 && (
+                            <TableRow className="bg-muted/50 font-bold">
+                                <TableCell colSpan={3} className="text-right">Total Order Cost:</TableCell>
+                                <TableCell className="text-right text-lg">{currency}{calculateTotal()}</TableCell>
+                                <TableCell></TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            <div className="flex justify-end pt-4">
+                <Button onClick={handleSubmit} disabled={isLoading || items.length === 0 || !supplierId}>
+                    {isLoading ? 'Creating Order...' : 'Create Purchase Order'}
+                </Button>
+            </div>
+        </div>
+    );
+}
