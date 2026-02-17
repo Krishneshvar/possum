@@ -1,12 +1,9 @@
-/**
- * Purchase Controller
- * HTTP handlers for POs
- */
 import * as purchaseService from './purchase.service.js';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { getQueryNumber, getQueryString } from '../../shared/utils/index.js';
+import { logger } from '../../shared/utils/logger.js';
 
-export function getPurchaseOrders(req: Request, res: Response) {
+export function getPurchaseOrders(req: Request, res: Response, next: NextFunction) {
     try {
         const { page, limit, searchTerm, status, sortBy, sortOrder } = req.query;
         const pos = purchaseService.getAllPurchaseOrders({
@@ -19,25 +16,23 @@ export function getPurchaseOrders(req: Request, res: Response) {
         });
         res.json(pos);
     } catch (error) {
-        console.error('Error fetching POs:', error);
-        res.status(500).json({ error: 'Failed to fetch purchase orders' });
+        next(error);
     }
 }
 
-export function getPurchaseOrderById(req: Request, res: Response) {
+export function getPurchaseOrderById(req: Request, res: Response, next: NextFunction) {
     try {
         const po = purchaseService.getPurchaseOrderById(parseInt(req.params.id as string, 10));
         res.json(po);
     } catch (error: any) {
-        console.error('Error fetching PO:', error);
         if (error.message === 'Purchase Order not found') {
             return res.status(404).json({ error: error.message });
         }
-        res.status(500).json({ error: 'Failed to fetch purchase order' });
+        next(error);
     }
 }
 
-export function createPurchaseOrder(req: Request, res: Response) {
+export function createPurchaseOrder(req: Request, res: Response, next: NextFunction) {
     try {
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const poData = {
@@ -47,29 +42,26 @@ export function createPurchaseOrder(req: Request, res: Response) {
         const newPo = purchaseService.createPurchaseOrder(poData);
         res.status(201).json(newPo);
     } catch (error: any) {
-        console.error('Error creating PO:', error);
-        res.status(500).json({ error: error.message || 'Failed to create purchase order' });
+        next(error);
     }
 }
 
-export function receivePurchaseOrder(req: Request, res: Response) {
+export function receivePurchaseOrder(req: Request, res: Response, next: NextFunction) {
     try {
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
         const updatedPo = purchaseService.receivePurchaseOrder(parseInt(req.params.id as string, 10), userId);
         res.json(updatedPo);
     } catch (error: any) {
-        console.error('Error receiving PO:', error);
-        res.status(400).json({ error: error.message });
+        next(error);
     }
 }
 
-export function cancelPurchaseOrder(req: Request, res: Response) {
+export function cancelPurchaseOrder(req: Request, res: Response, next: NextFunction) {
     try {
         const updatedPo = purchaseService.cancelPurchaseOrder(parseInt(req.params.id as string, 10));
         res.json(updatedPo);
     } catch (error: any) {
-        console.error('Error cancelling PO:', error);
-        res.status(400).json({ error: error.message });
+        next(error);
     }
 }

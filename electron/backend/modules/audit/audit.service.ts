@@ -1,9 +1,6 @@
-/**
- * Audit Service
- * Contains business logic for audit operations
- */
 import * as auditRepository from './audit.repository.js';
 import { AuditLogFilters } from './audit.repository.js';
+import { logger } from '../../shared/utils/logger.js';
 
 /**
  * Log an action to the audit trail
@@ -25,6 +22,9 @@ export function logAction(
     newData: any | null = null,
     eventDetails: any | null = null
 ) {
+    // Also log technically for observability
+    logger.info(`Audit Event: User ${userId} performed ${action}${tableName ? ` on ${tableName} (ID: ${rowId})` : ''}`);
+
     return auditRepository.insertAuditLog({
         user_id: userId,
         action,
