@@ -19,7 +19,11 @@ export async function createReturnController(req: Request, res: Response) {
         }
 
         // Use userId from auth context
-        const userId = (req as any).userId || 1;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized: User not authenticated.' });
+        }
 
         const result = returnService.createReturn(
             parseInt(saleId, 10),
