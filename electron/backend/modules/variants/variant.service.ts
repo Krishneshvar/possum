@@ -90,3 +90,11 @@ export async function getVariants(params: VariantQueryOptions) {
         }))
     };
 }
+
+/**
+ * Get variant statistics
+ * @returns {Promise<Object>} Variant statistics
+ */
+export async function getVariantStats() {
+    return await variantRepository.getVariantStats();
+}

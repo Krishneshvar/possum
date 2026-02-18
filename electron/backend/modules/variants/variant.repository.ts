@@ -300,3 +300,46 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     totalPages: Math.ceil(totalCount / itemsPerPage!)
   };
 }
+
+/**
+ * Get variant statistics
+ * @returns {Promise<Object>} Variant statistics
+ */
+export async function getVariantStats(): Promise<{
+  totalVariants: number;
+  lowStockVariants: number;
+  inactiveVariants: number;
+  avgStockLevel: number;
+}> {
+  const db = getDB();
+  
+  const sql = `
+    SELECT 
+      v.id,
+      v.stock_alert_cap,
+      v.status,
+      (
+        COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+        + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
+      ) AS stock
+    FROM variants v
+    JOIN products p ON v.product_id = p.id
+    WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
+  `;
+  
+  const variants = db.prepare(sql).all() as Array<{ id: number; stock: number; stock_alert_cap: number; status: string }>;
+  
+  const totalVariants = variants.length;
+  const lowStockVariants = variants.filter(v => v.stock <= v.stock_alert_cap && v.stock > 0).length;
+  const inactiveVariants = variants.filter(v => v.status !== 'active').length;
+  const avgStockLevel = totalVariants > 0 
+    ? Math.round(variants.reduce((sum, v) => sum + v.stock, 0) / totalVariants)
+    : 0;
+  
+  return {
+    totalVariants,
+    lowStockVariants,
+    inactiveVariants,
+    avgStockLevel
+  };
+}

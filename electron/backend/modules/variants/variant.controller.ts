@@ -115,3 +115,17 @@ export async function getVariantsController(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to retrieve variants.' });
     }
 }
+
+/**
+ * GET /api/variants/stats
+ * Get variant statistics
+ */
+export async function getVariantStatsController(req: Request, res: Response) {
+    try {
+        const stats = await variantService.getVariantStats();
+        res.json(stats);
+    } catch (err) {
+        console.error('Error in getVariantStatsController:', err);
+        res.status(500).json({ error: 'Failed to retrieve variant statistics.' });
+    }
+}

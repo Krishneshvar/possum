@@ -180,6 +180,10 @@ export const productsApi = createApi({
           ]
           : [{ type: 'Variant', id: 'LIST' }, { type: 'Stock', id: 'LIST' }],
     }),
+    getVariantStats: builder.query({
+      query: () => '/variants/stats',
+      providesTags: ['Variant', 'Stock'],
+    }),
     getInventoryStats: builder.query({
       query: () => '/inventory/stats',
       providesTags: ['Stock', 'Variant'],
@@ -210,6 +214,7 @@ export const {
   useUpdateVariantMutation,
   useDeleteVariantMutation,
   useGetVariantsQuery,
+  useGetVariantStatsQuery,
   useGetInventoryStatsQuery,
   useCreateAdjustmentMutation,
 } = productsApi;
