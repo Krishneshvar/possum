@@ -1,0 +1,79 @@
+/**
+ * Session Repository
+ * Handles all database operations for user sessions
+ */
+import { getDB } from '../../shared/db/index.js';
+import { Session } from '../../../../types/index.js';
+
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Create a new session
+ */
+export function create(session: Session): void {
+    const db = getDB();
+    const { user_id, token, expires_at, ...rest } = session;
+
+    // Generate a unique ID for the session record itself
+    const sessionId = uuidv4();
+
+    // We store the full session data (including user's numeric id if present in rest)
+    // in the 'data' JSON column to restore the object exactly as it was.
+    const stmt = db.prepare(`
+        INSERT INTO sessions (id, user_id, token, expires_at, data)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(sessionId, user_id, token, expires_at, JSON.stringify(rest));
+}
+
+/**
+ * Find session by token
+ */
+export function findByToken(token: string): Session | null {
+    const db = getDB();
+    const row = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token) as any;
+
+    if (!row) return null;
+
+    const rest = row.data ? JSON.parse(row.data) : {};
+
+    return {
+        ...rest,
+        user_id: row.user_id,
+        token: row.token,
+        expires_at: row.expires_at
+    };
+}
+
+/**
+ * Update session expiration
+ */
+export function updateExpiration(token: string, newExpiresAt: number): void {
+    const db = getDB();
+    db.prepare('UPDATE sessions SET expires_at = ? WHERE token = ?').run(newExpiresAt, token);
+}
+
+/**
+ * Delete session by token
+ */
+export function deleteByToken(token: string): void {
+    const db = getDB();
+    db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+}
+
+/**
+ * Delete all expired sessions
+ */
+export function deleteExpired(now: number): void {
+    const db = getDB();
+    db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
+}
+
+/**
+ * Clear all sessions
+ */
+export function deleteAll(): void {
+    const db = getDB();
+    db.prepare('DELETE FROM sessions').run();
+}

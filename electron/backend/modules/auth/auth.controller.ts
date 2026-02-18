@@ -43,8 +43,14 @@ export async function me(req: Request, res: Response) {
 
 export async function logout(req: Request, res: Response) {
     try {
-        // userId is attached to req by auth middleware
+        // userId and token are attached to req by auth middleware
         const userId = req.user?.id;
+        const token = req.token;
+
+        if (token) {
+            AuthService.endSession(token);
+        }
+
         if (userId) {
              AuditService.logLogout(userId, {
                 timestamp: new Date().toISOString()
