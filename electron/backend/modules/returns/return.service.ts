@@ -6,6 +6,7 @@ import { Decimal } from 'decimal.js';
 import * as returnRepository from './return.repository.js';
 import * as saleRepository from '../sales/sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
+import * as inventoryService from '../inventory/inventory.service.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
 import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
@@ -109,24 +110,16 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
             });
             const returnItemId = Number(returnItemResult.lastInsertRowid);
 
-            // Add back to inventory
-            inventoryRepository.insertInventoryAdjustment({
-                variant_id: item.variant_id!,
-                lot_id: null,
-                quantity_change: item.quantity,
-                reason: 'return',
-                reference_type: 'return_item',
-                reference_id: returnItemId,
-                adjusted_by: userId
-            });
-
-            // Log product flow
-            productFlowRepository.insertProductFlow({
-                variant_id: item.variant_id!,
-                event_type: 'return',
+            // Restore inventory using the original sale item's lot adjustments
+            inventoryService.restoreStock({
+                variantId: item.variant_id!,
+                referenceType: 'sale_item',
+                referenceId: item.sale_item_id!,
                 quantity: item.quantity,
-                reference_type: 'return_item',
-                reference_id: returnItemId
+                userId,
+                reason: 'return',
+                newReferenceType: 'return_item',
+                newReferenceId: returnItemId
             });
         }
 

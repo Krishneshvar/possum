@@ -1,22 +1,22 @@
 export interface InventoryLot extends BaseEntity {
-  variant_id: number;
-  batch_number?: string | null;
-  manufactured_date?: string | null;
-  expiry_date?: string | null;
-  quantity: number;
-  unit_cost?: number;
-  purchase_order_item_id?: number | null;
+    variant_id: number;
+    batch_number?: string | null;
+    manufactured_date?: string | null;
+    expiry_date?: string | null;
+    quantity: number;
+    unit_cost?: number;
+    purchase_order_item_id?: number | null;
 }
 
 export interface InventoryAdjustment extends BaseEntity {
-  variant_id: number;
-  lot_id?: number | null;
-  quantity_change: number;
-  reason: string;
-  reference_type?: string | null;
-  reference_id?: number | null;
-  adjusted_by: number;
-  adjusted_at: string;
+    variant_id: number;
+    lot_id?: number | null;
+    quantity_change: number;
+    reason: string;
+    reference_type?: string | null;
+    reference_id?: number | null;
+    adjusted_by: number;
+    adjusted_at: string;
 }
 
 import { BaseEntity } from '../../../../types/index.js';
@@ -69,6 +69,29 @@ export function findLotsByVariantId(variantId: number): any[] {
 }
 
 /**
+ * Find available lots for a variant with remaining stock, ordered by FIFO
+ * @param {number} variantId - Variant ID
+ * @returns {Array} Available lots with remaining_quantity
+ */
+export function findAvailableLots(variantId: number): any[] {
+    const db = getDB();
+    return db.prepare(`
+        SELECT 
+            il.*,
+            (il.quantity + COALESCE((
+                SELECT SUM(quantity_change) 
+                FROM inventory_adjustments 
+                WHERE lot_id = il.id
+            ), 0)) as remaining_quantity
+        FROM inventory_lots il
+        WHERE il.variant_id = ?
+        GROUP BY il.id
+        HAVING remaining_quantity > 0
+        ORDER BY il.created_at ASC
+    `).all(variantId);
+}
+
+/**
  * Get inventory adjustments for a variant
  * @param {number} variantId - Variant ID
  * @param {Object} options - Query options
@@ -88,6 +111,17 @@ export function findAdjustmentsByVariantId(variantId: number, { limit = 50, offs
         ORDER BY ia.adjusted_at DESC
         LIMIT ? OFFSET ?
     `).all(variantId, limit, offset);
+}
+
+/**
+ * Find adjustments by reference type and ID
+ * @param {string} type - Reference type
+ * @param {number} id - Reference ID
+ * @returns {Array} Adjustments
+ */
+export function findAdjustmentsByReference(type: string, id: number): any[] {
+    const db = getDB();
+    return db.prepare('SELECT * FROM inventory_adjustments WHERE reference_type = ? AND reference_id = ?').all(type, id);
 }
 
 /**

@@ -5,6 +5,7 @@
 import { Decimal } from 'decimal.js';
 import * as saleRepository from './sale.repository.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
+import * as inventoryService from '../inventory/inventory.service.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
 import * as productRepository from '../products/product.repository.js';
 import * as auditService from '../audit/audit.service.js';
@@ -202,7 +203,7 @@ export async function createSale({
         });
         const newSaleId = Number(saleResult.lastInsertRowid);
 
-        // Insert sale items and adjust inventory
+        // Insert sale items and adjust inventory using FIFO
         for (const item of processedItems) {
             const itemResult = saleRepository.insertSaleItem({
                 sale_id: newSaleId,
@@ -210,24 +211,14 @@ export async function createSale({
             });
             const saleItemId = Number(itemResult.lastInsertRowid);
 
-            // Deduct from inventory
-            inventoryRepository.insertInventoryAdjustment({
-                variant_id: item.variant_id!,
-                lot_id: null,
-                quantity_change: -(item.quantity || 0),
+            // Deduct from inventory using FIFO lots
+            inventoryService.deductStock({
+                variantId: item.variant_id!,
+                quantity: item.quantity || 0,
+                userId,
                 reason: INVENTORY_REASONS.SALE,
-                reference_type: 'sale_item',
-                reference_id: saleItemId,
-                adjusted_by: userId
-            });
-
-            // Log product flow
-            productFlowRepository.insertProductFlow({
-                variant_id: item.variant_id!,
-                event_type: 'sale',
-                quantity: -(item.quantity || 0),
-                reference_type: 'sale_item',
-                reference_id: saleItemId
+                referenceType: 'sale_item',
+                referenceId: saleItemId
             });
         }
 
@@ -372,25 +363,17 @@ export function cancelSale(saleId: number, userId: number, token?: string): { su
             throw new Error('Cannot cancel a refunded sale');
         }
 
-        // Restore inventory for each item
+        // Restore inventory for each item using lot-specific restoration
         for (const item of sale.items) {
-            inventoryRepository.insertInventoryAdjustment({
-                variant_id: item.variant_id,
-                lot_id: null,
-                quantity_change: item.quantity,
-                reason: INVENTORY_REASONS.CORRECTION,
-                reference_type: 'sale_cancellation',
-                reference_id: saleId,
-                adjusted_by: userId
-            });
-
-            // Log product flow
-            productFlowRepository.insertProductFlow({
-                variant_id: item.variant_id,
-                event_type: 'adjustment',
+            inventoryService.restoreStock({
+                variantId: item.variant_id,
+                referenceType: 'sale_item',
+                referenceId: item.id,
                 quantity: item.quantity,
-                reference_type: 'sale_cancellation',
-                reference_id: saleId
+                userId,
+                reason: INVENTORY_REASONS.CORRECTION,
+                newReferenceType: 'sale_cancellation',
+                newReferenceId: saleId
             });
         }
 
