@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -15,6 +15,14 @@ import {
   Package
 } from 'lucide-react';
 import DataTable from '@/components/common/DataTable';
+import GenericPageHeader from '@/components/common/GenericPageHeader';
+import { KeyboardShortcut } from '@/components/common/KeyboardShortcut';
+import { StatCards } from '@/components/common/StatCards';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,6 +74,20 @@ export default function InventoryPage() {
     setSearchTerm('');
     setPage(1);
   };
+
+  // Keyboard shortcut: Ctrl/Cmd + I to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+        searchInput?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const filtersConfig = [
     {
@@ -123,12 +145,14 @@ export default function InventoryPage() {
       renderCell: (v: any) => {
         const stock = v.stock ?? 0;
         return (
-          <div className="text-right font-bold text-lg">
+          <div className="text-right">
             <StockAdjustmentCell
               variantId={v.id}
               originalStock={stock}
               productName={v.product_name}
               variantName={v.name}
+              sku={v.sku}
+              threshold={v.stock_alert_cap ?? 10}
             />
           </div>
         );
@@ -136,13 +160,20 @@ export default function InventoryPage() {
     },
     {
       key: 'threshold',
-      label: 'Threshold',
+      label: 'Alert Threshold',
       sortable: false,
       className: 'text-right',
       renderCell: (v: any) => (
-        <span className="text-muted-foreground font-mono italic">
-          {v.stock_alert_cap ?? 10}
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-muted-foreground font-mono italic cursor-help">
+              {v.stock_alert_cap ?? 10}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Low stock alert triggers at this level</p>
+          </TooltipContent>
+        </Tooltip>
       )
     },
     {
@@ -156,17 +187,33 @@ export default function InventoryPage() {
         const isLow = stock <= threshold && stock > 0;
         const isOut = stock <= 0;
 
+        const statusConfig = isOut
+          ? { label: 'Out', variant: 'destructive' as const, className: 'bg-red-500 hover:bg-red-600 text-white' }
+          : isLow
+          ? { label: 'Low', variant: 'default' as const, className: 'bg-orange-500 hover:bg-orange-600 text-white' }
+          : { label: 'OK', variant: 'default' as const, className: 'bg-green-600 hover:bg-green-700 text-white' };
+
         return (
           <div className="flex justify-center">
-            <Badge
-              className={
-                isOut ? 'bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 text-[10px] font-bold' :
-                  isLow ? 'bg-orange-500 hover:bg-orange-600 text-white px-2 py-0.5 text-[10px] font-bold' :
-                    'bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 text-[10px] font-bold'
-              }
-            >
-              {isOut ? 'Out' : isLow ? 'Low' : 'OK'}
-            </Badge>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant={statusConfig.variant}
+                  className={`${statusConfig.className} px-2 py-0.5 text-[10px] font-bold cursor-help`}
+                >
+                  {statusConfig.label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {isOut
+                    ? 'No stock available'
+                    : isLow
+                    ? `Stock is below threshold (${threshold})`
+                    : 'Stock level is healthy'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         );
       }
@@ -174,82 +221,64 @@ export default function InventoryPage() {
   ];
 
   const emptyState = (
-    <div className="text-center p-8 text-muted-foreground">
-      No matching products found.
+    <div className="text-center p-12 space-y-3">
+      <div className="flex justify-center">
+        <div className="rounded-full bg-muted p-4">
+          <Package className="h-8 w-8 text-muted-foreground" />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <p className="font-medium text-foreground">No inventory items found</p>
+        <p className="text-sm text-muted-foreground">
+          {searchTerm || activeFilters.category.length > 0 || activeFilters.stockStatus.length > 0
+            ? 'Try adjusting your search or filters'
+            : 'Add products with variants to start tracking inventory'}
+        </p>
+      </div>
     </div>
   );
 
+  const statsData = [
+    {
+      title: 'Items in Stock',
+      icon: Container,
+      color: 'text-blue-500',
+      todayValue: stats?.totalItemsInStock ?? 0,
+    },
+    {
+      title: 'Low Stock',
+      icon: AlertTriangle,
+      color: 'text-red-500',
+      todayValue: stats?.productsWithLowStock ?? 0,
+    },
+    {
+      title: 'Out of Stock',
+      icon: PackageX,
+      color: 'text-slate-500',
+      todayValue: stats?.productsWithNoStock ?? 0,
+    },
+    {
+      title: 'Expiring Soon',
+      icon: Calendar,
+      color: 'text-orange-500',
+      todayValue: expiring.length,
+    },
+  ];
+
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Inventory Management</h1>
-          <p className="text-muted-foreground mt-1">Track stock levels, monitor alerts, and manage inventory lots.</p>
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
+      <div className="w-full">
+        <GenericPageHeader
+          headerIcon={<Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />}
+          headerLabel="Inventory Management"
+        />
+        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Quick search:</span>
+          <KeyboardShortcut keys={["Ctrl", "I"]} />
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-blue-500 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              Items in Stock
-              <Container className="h-4 w-4 text-blue-500" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalItemsInStock ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className="border-l-4 border-l-red-500 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm cursor-pointer hover:bg-card/70 transition-colors"
-          onClick={() => {
-            setActiveFilters({ ...activeFilters, stockStatus: ['low'] });
-            setPage(1);
-          }}
-        >
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              Low Stock
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.productsWithLowStock ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className="border-l-4 border-l-slate-500 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm cursor-pointer hover:bg-card/70 transition-colors"
-          onClick={() => {
-            setActiveFilters({ ...activeFilters, stockStatus: ['out'] });
-            setPage(1);
-          }}
-        >
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              Out of Stock
-              <PackageX className="h-4 w-4 text-slate-500" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.productsWithNoStock ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-orange-500 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-              Expiring Soon
-              <Calendar className="h-4 w-4 text-orange-500" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{expiring.length}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatCards cardData={statsData} />
 
       <DataTable
         data={variants}
@@ -263,7 +292,7 @@ export default function InventoryPage() {
           setSearchTerm(value);
           setPage(1);
         }}
-        searchPlaceholder="Filter by SKU or name..."
+        searchPlaceholder="Search by product name, variant, or SKU..."
 
         sortBy={sort.sortBy}
         sortOrder={sort.sortOrder}
