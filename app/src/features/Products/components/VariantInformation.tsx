@@ -12,10 +12,12 @@ import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
 interface VariantInformationProps {
     variant: any;
+    errors?: any;
     onVariantChange: (id: number, field: string, value: string) => void;
+    onVariantBlur?: (id: number, field: string) => void;
 }
 
-export default function VariantInformation({ variant, onVariantChange }: VariantInformationProps) {
+export default function VariantInformation({ variant, errors, onVariantChange, onVariantBlur }: VariantInformationProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="space-y-3">
@@ -61,10 +63,13 @@ export default function VariantInformation({ variant, onVariantChange }: Variant
           name="name"
           value={variant.name}
           onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
+          onBlur={() => onVariantBlur?.(variant._tempId, 'name')}
           placeholder="e.g. Red, Size L"
           className="h-11"
           required
+          aria-invalid={!!errors?.name}
         />
+        {errors?.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
       </div>
       <div className="space-y-3">
         <Label htmlFor={`sku-${variant._tempId}`} className="text-sm font-medium">
@@ -75,10 +80,13 @@ export default function VariantInformation({ variant, onVariantChange }: Variant
           name="sku"
           value={variant.sku}
           onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
+          onBlur={() => onVariantBlur?.(variant._tempId, 'sku')}
           placeholder="Variant SKU"
           className="h-11 font-mono"
           required
+          aria-invalid={!!errors?.sku}
         />
+        {errors?.sku && <p className="text-xs text-destructive mt-1">{errors.sku}</p>}
       </div>
     </div>
   );

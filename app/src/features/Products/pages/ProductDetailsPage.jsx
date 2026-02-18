@@ -1,12 +1,12 @@
 import {
-  ArrowLeft,
   Edit2,
   Trash2,
   Package,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Plus,
+  Tag,
+  Layers,
 } from "lucide-react"
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
@@ -16,14 +16,14 @@ import { useCurrency } from "@/hooks/useCurrency"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardContent } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import DisplayVariants from "../components/DisplayVariants"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import { useDeleteProductMutation, useGetProductQuery } from "@/services/productsApi"
-import { productStatusBadges } from "../data/productsBadgeStyles"
 
 export default function ProductDetailsPage() {
   const { productId } = useParams()
@@ -31,6 +31,7 @@ export default function ProductDetailsPage() {
   const { data: product, isLoading, isError } = useGetProductQuery(productId)
   const [deleteProduct] = useDeleteProductMutation()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const currency = useCurrency()
 
   const handleDeleteClick = () => {
@@ -43,19 +44,22 @@ export default function ProductDetailsPage() {
 
   const handleConfirmDelete = async () => {
     if (!product) return
+    setIsDeleting(true)
     try {
       await deleteProduct(product.id).unwrap()
       setIsDeleteDialogOpen(false)
-      toast.success("Product deleted successfully", {
-        description: "The product was deleted successfully.",
+      toast.success("Product deleted", {
+        description: `${product.name} has been removed from inventory.`,
         duration: 5000,
       })
       navigate("/products")
     } catch (err) {
-      toast.error("Error deleting product", {
-        description: "An error occurred while deleting product. Please try again later.",
+      toast.error("Failed to delete product", {
+        description: "An error occurred. Please try again.",
         duration: 5000,
       })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -66,11 +70,6 @@ export default function ProductDetailsPage() {
       icon: Edit2,
     },
     secondary: [
-      {
-        label: "Add Variant",
-        url: "/products",
-        icon: Plus,
-      },
       {
         label: "Delete",
         onClick: () => handleDeleteClick(),
@@ -85,28 +84,18 @@ export default function ProductDetailsPage() {
   }
 
   const getProductStatus = (status) => {
-    if (status === "active") {
-      return (
-        <Badge className={`${productStatusBadges.active.className}`}>
-          {productStatusBadges.active.text}
-        </Badge>
-      )
-    } else if (status === "inactive") {
-      return (
-        <Badge
-          variant="secondary"
-          className={`${productStatusBadges.inactive.className}`}
-        >
-          {productStatusBadges.inactive.text}
-        </Badge>
-      )
-    } else {
-      return (
-        <Badge variant="destructive" className={`${productStatusBadges.discontinued.className}`}>
-          {productStatusBadges.discontinued.text}
-        </Badge>
-      )
-    }
+    const statusConfig = {
+      active: { label: "Active", className: "bg-green-100 text-green-700 border-green-200" },
+      inactive: { label: "Inactive", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+      discontinued: { label: "Discontinued", className: "bg-red-100 text-red-700 border-red-200" },
+    };
+
+    const config = statusConfig[status] || statusConfig.inactive;
+    return (
+      <Badge variant="outline" className={config.className}>
+        {config.label}
+      </Badge>
+    );
   }
 
   const getVariantStockStatus = (variant) => {
@@ -129,41 +118,16 @@ export default function ProductDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="h-10 w-40 bg-muted rounded-lg animate-pulse" />
-            <div className="flex gap-3">
-              <div className="h-10 w-32 bg-muted rounded-lg animate-pulse" />
-              <div className="h-10 w-32 bg-muted rounded-lg animate-pulse" />
-              <div className="h-10 w-32 bg-muted rounded-lg animate-pulse" />
-            </div>
+      <div className="space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl mx-auto">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-64 w-full rounded-xl" />
           </div>
-
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="border-0 shadow-sm">
-                <CardHeader className="space-y-4">
-                  <div className="h-8 bg-muted rounded animate-pulse" />
-                  <div className="h-4 w-48 bg-muted rounded animate-pulse" />
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-24 bg-muted/50 rounded-lg animate-pulse" />
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-            <div className="space-y-6">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6 space-y-4">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <Skeleton className="h-48 w-full rounded-xl" />
         </div>
       </div>
     )
@@ -171,19 +135,19 @@ export default function ProductDetailsPage() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Alert variant="destructive" className="max-w-md border-0 shadow-lg">
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
+        <Alert variant="destructive" className="max-w-md">
           <AlertTriangle className="h-5 w-5" />
-          <AlertTitle className="text-lg">Something went wrong</AlertTitle>
+          <AlertTitle>Failed to load product</AlertTitle>
           <AlertDescription className="mt-2 space-y-4">
-            <p className="text-sm">Failed to fetch product data.</p>
+            <p className="text-sm">Unable to fetch product details. Please try again.</p>
             <Button
               variant="outline"
               size="sm"
-              className="w-full bg-transparent"
+              className="w-full"
               onClick={() => window.location.reload()}
             >
-              Try Again
+              Retry
             </Button>
           </AlertDescription>
         </Alert>
@@ -193,18 +157,19 @@ export default function ProductDetailsPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <Card className="max-w-md border-0 shadow-lg">
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
+        <Card className="max-w-md">
           <CardContent className="p-8 text-center space-y-4">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
               <Package className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-foreground">Product Not Found</h3>
-              <p className="text-muted-foreground">The product you're looking for doesn't exist or has been removed.</p>
+              <h3 className="text-xl font-semibold">Product Not Found</h3>
+              <p className="text-muted-foreground text-sm">
+                This product doesn't exist or has been removed.
+              </p>
             </div>
             <Button onClick={() => navigate("/products")} className="w-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Products
             </Button>
           </CardContent>
@@ -214,83 +179,79 @@ export default function ProductDetailsPage() {
   }
 
   return (
-    <>
-      <div className="min-h-screen mb-6 space-y-8">
-        <GenericPageHeader
-          showBackButton
-          headerIcon={""}
-          headerLabel={product.name}
-          actions={productActions}
-        />
+    <div className="space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl mx-auto">
+      <GenericPageHeader
+        showBackButton
+        headerIcon={<Package className="h-5 w-5 text-primary" />}
+        headerLabel={product.name}
+        actions={productActions}
+      />
 
-        <div className="grid gap-8 grid-cols-1 lg:grid-cols-1 xl:grid-cols-3">
-          <Card className="lg:col-span-2 shadow-lg">
-            <CardContent className="w-full">
-              <div className="flex mb-4 gap-2 items-center text-lg font-medium">
-                <Package className="h-5 w-5" />
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Product Information Card */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
                 Product Information
-              </div>
-              <div className="flex flex-col gap-6 sm:flex-row md:flex-col lg:flex-row">
-                <div className="flex justify-center">
-                  {product.imageUrl && (
-                    <img src={product.imageUrl} alt={product.name} className="size-32 rounded-lg object-cover" />
-                  )}
-                </div>
-                <div className="flex flex-col flex-1">
-                  <h2 className="text-2xl font-bold mb-2">
-                    {product.name}
-                  </h2>
-                  <p className="text-muted-foreground mb-4">
-                    {product.description || "No description..."}
-                  </p>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-between md:gap-2 lg:justify-start lg:gap-6 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Label className="text-muted-foreground font-medium">Status:</Label>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col sm:flex-row gap-6">
+                {product.imageUrl && (
+                  <div className="flex-shrink-0">
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name} 
+                      className="w-32 h-32 rounded-lg object-cover border"
+                    />
+                  </div>
+                )}
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
+                    <p className="text-muted-foreground">
+                      {product.description || "No description provided."}
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground">Status</p>
                       {getProductStatus(product.status)}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Label className="text-muted-foreground font-medium">Category:</Label>
-                      <span className="font-medium">{product.category_name}</span>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground">Category</p>
+                      <Badge variant="secondary" className="font-normal">
+                        <Layers className="h-3 w-3 mr-1" />
+                        {product.category_name || "Uncategorized"}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <Label className="text-muted-foreground font-medium mr-1">Taxes:</Label>
-                      {product.taxes && product.taxes.length > 0 ? (
+                    {product.taxes && product.taxes.length > 0 && (
+                      <div className="space-y-1 sm:col-span-2">
+                        <p className="text-muted-foreground">Tax Categories</p>
                         <div className="flex flex-wrap gap-1">
                           {product.taxes.map((tax) => (
                             <Badge key={tax.id} variant="outline" className="text-xs">
+                              <Tag className="h-3 w-3 mr-1" />
                               {tax.name} ({tax.rate}%)
                             </Badge>
                           ))}
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground italic">None</span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-2 space-y-6 xl:col-span-1 border-0 shadow-lg">
-            <CardContent className="space-y-4">
-              <div className="flex gap-2 items-center font-medium">
-                <Package /> Product Overview
-              </div>
-              <div className="flex flex-col gap-2 text-md">
-                <div className="flex justify-between">
-                  <h3 className="text-muted-foreground">Total Stock:</h3>
-                  <p>{calculateTotalStock()}</p>
-                </div>
-                <div className="flex justify-between">
-                  <h3 className="text-muted-foreground">Total Variants:</h3>
-                  <p>{product.variants.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="lg:col-span-2 shadow-lg">
+          {/* Variants Card */}
+          <Card>
             <DisplayVariants
               product={product}
               getProductStatus={getProductStatus}
@@ -298,17 +259,37 @@ export default function ProductDetailsPage() {
               formatPrice={formatPrice}
             />
           </Card>
+        </div>
 
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Quick Stats Card */}
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base">Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Total Stock</span>
+                <span className="text-lg font-semibold">{calculateTotalStock()}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Variants</span>
+                <span className="text-lg font-semibold">{product.variants.length}</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       <GenericDeleteDialog
         dialogTitle="Delete Product?"
-        itemName={product?.name ?? "this product"}
+        itemName={product.name}
         open={isDeleteDialogOpen}
         onOpenChange={handleDialogOpenChange}
         onConfirm={handleConfirmDelete}
       />
-    </>
+    </div>
   )
 }

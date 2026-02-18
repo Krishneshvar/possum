@@ -11,6 +11,11 @@ export interface ProductFormData {
     variants: any[];
 }
 
+export interface ValidationErrors {
+    name?: string;
+    variants?: { [key: number]: { name?: string; sku?: string; mrp?: string } };
+}
+
 const defaultVariant = {
     _tempId: Date.now(),
     name: 'Default',
@@ -35,6 +40,9 @@ export function useProductAndVariantForm(initialData?: any) {
         variants: [defaultVariant]
     });
 
+    const [errors, setErrors] = useState<ValidationErrors>({});
+    const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+
     useEffect(() => {
         if (initialData) {
             setFormData({
@@ -57,8 +65,32 @@ export function useProductAndVariantForm(initialData?: any) {
         }
     }, [initialData]);
 
+    const validateField = (field: string, value: any) => {
+        if (field === 'name' && !value.trim()) {
+            return 'Product name is required';
+        }
+        return undefined;
+    };
+
+    const validateVariantField = (field: string, value: any) => {
+        if (field === 'name' && !value.trim()) return 'Variant name is required';
+        if (field === 'sku' && !value.trim()) return 'SKU is required';
+        if (field === 'mrp' && (!value || parseFloat(value) <= 0)) return 'MRP must be greater than 0';
+        return undefined;
+    };
+
     const handleProductChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        if (touched[field]) {
+            const error = validateField(field, value);
+            setErrors(prev => ({ ...prev, [field]: error }));
+        }
+    };
+
+    const handleBlur = (field: string) => {
+        setTouched(prev => ({ ...prev, [field]: true }));
+        const error = validateField(field, formData[field as keyof ProductFormData]);
+        setErrors(prev => ({ ...prev, [field]: error }));
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +114,31 @@ export function useProductAndVariantForm(initialData?: any) {
             newVariants[index] = { ...newVariants[index], [field]: value };
             return { ...prev, variants: newVariants };
         });
+        
+        const touchKey = `variant-${index}-${field}`;
+        if (touched[touchKey]) {
+            const error = validateVariantField(field, value);
+            setErrors(prev => ({
+                ...prev,
+                variants: {
+                    ...prev.variants,
+                    [index]: { ...prev.variants?.[index], [field]: error }
+                }
+            }));
+        }
+    };
+
+    const handleVariantBlur = (index: number, field: string) => {
+        const touchKey = `variant-${index}-${field}`;
+        setTouched(prev => ({ ...prev, [touchKey]: true }));
+        const error = validateVariantField(field, formData.variants[index][field]);
+        setErrors(prev => ({
+            ...prev,
+            variants: {
+                ...prev.variants,
+                [index]: { ...prev.variants?.[index], [field]: error }
+            }
+        }));
     };
 
     const clearPriceFields = (index: number) => {
@@ -123,16 +180,29 @@ export function useProductAndVariantForm(initialData?: any) {
         }));
     };
 
+    const reorderVariants = (startIndex: number, endIndex: number) => {
+        setFormData(prev => {
+            const result = Array.from(prev.variants);
+            const [removed] = result.splice(startIndex, 1);
+            result.splice(endIndex, 0, removed);
+            return { ...prev, variants: result };
+        });
+    };
+
     return {
         formData,
         setFormData,
+        errors,
         handleProductChange,
         handleVariantChange,
         handleFileChange,
         handleRemoveImage,
+        handleBlur,
+        handleVariantBlur,
         clearPriceFields,
         addVariantLocally,
         removeVariantLocally,
-        handleSetDefaultVariantLocally
+        handleSetDefaultVariantLocally,
+        reorderVariants
     };
 }

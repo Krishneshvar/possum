@@ -1,7 +1,8 @@
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Info } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VariantInventoryProps {
     variant: any;
@@ -19,7 +20,14 @@ export default function VariantInventory({ variant, onVariantChange, isEditing =
         <h3 className="text-lg font-semibold text-foreground">Inventory</h3>
       </div>
 
-      {/* Stock is read-only - derived from inventory_lots + inventory_adjustments */}
+      {isEditing && (
+        <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-sm text-blue-800 dark:text-blue-300">
+            Changing stock quantity will create an inventory adjustment record.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-3">
@@ -35,14 +43,15 @@ export default function VariantInventory({ variant, onVariantChange, isEditing =
             placeholder="0"
             className="h-11"
             min="0"
+            aria-label="Current stock quantity"
           />
           <p className="text-xs text-muted-foreground">
-            {isEditing ? "Entering a different value will create an inventory adjustment." : "Initial stock level."}
+            {isEditing ? "Current available units" : "Initial stock level"}
           </p>
         </div>
         <div className="space-y-3">
           <Label htmlFor={`stock_alert_cap-${variant._tempId}`} className="text-sm font-medium">
-            Low Stock Alert Threshold
+            Low Stock Alert
           </Label>
           <Input
             id={`stock_alert_cap-${variant._tempId}`}
@@ -53,7 +62,11 @@ export default function VariantInventory({ variant, onVariantChange, isEditing =
             placeholder="10"
             className="h-11"
             min="0"
+            aria-label="Low stock alert threshold"
           />
+          <p className="text-xs text-muted-foreground">
+            Alert when stock falls below this level
+          </p>
         </div>
       </div>
     </div>

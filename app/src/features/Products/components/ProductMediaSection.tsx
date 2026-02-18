@@ -2,7 +2,6 @@ import { useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 interface ProductMediaSectionProps {
@@ -34,9 +33,9 @@ export default function ProductMediaSection({
 
     return (
         <Card className="overflow-hidden">
-            <CardHeader>
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                    <ImageIcon className="h-5 w-5 text-primary" />
+            <CardHeader className="pb-4">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-primary" />
                     Product Image
                 </CardTitle>
             </CardHeader>
@@ -47,25 +46,22 @@ export default function ProductMediaSection({
               relative flex flex-col justify-center items-center 
               border-2 border-dashed rounded-lg 
               transition-colors duration-200 ease-in-out
-              ${imageUrl ? 'border-primary/20 bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'}
+              ${imageUrl ? 'border-primary/30 bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'}
               min-h-[200px]
             `}
                     >
                         {imageUrl ? (
                             <>
-                                <div className="absolute top-2 right-2 z-10">
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="icon"
-                                        onClick={handleRemoveImage}
-                                        className="h-8 w-8 rounded-full shadow-sm hover:scale-105 transition-transform"
-                                        title="Remove image"
-                                        aria-label="Remove image"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={handleRemoveImage}
+                                    className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full shadow-sm hover:scale-105 transition-transform"
+                                    aria-label="Remove product image"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
                                 <img
                                     src={imageUrl}
                                     alt="Product preview"
@@ -78,9 +74,9 @@ export default function ProductMediaSection({
                                     <Upload className="h-6 w-6 text-muted-foreground" />
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium">Click to upload image</p>
+                                    <p className="text-sm font-medium">Upload product image</p>
                                     <p className="text-xs text-muted-foreground">
-                                        SVG, PNG, JPG or GIF (max. 2MB)
+                                        PNG, JPG or WebP (max. 2MB)
                                     </p>
                                 </div>
                                 <Button
@@ -88,6 +84,7 @@ export default function ProductMediaSection({
                                     size="sm"
                                     type="button"
                                     onClick={handleButtonClick}
+                                    aria-label="Select image file"
                                 >
                                     Select File
                                 </Button>
@@ -101,6 +98,7 @@ export default function ProductMediaSection({
                             accept="image/*"
                             onChange={handleFileChange}
                             className="hidden"
+                            aria-label="Product image file input"
                         />
                     </div>
                 </div>

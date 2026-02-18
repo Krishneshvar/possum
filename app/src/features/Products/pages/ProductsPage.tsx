@@ -1,7 +1,10 @@
 import { Download, Package, Plus, Upload } from "lucide-react"
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 import ProductsTable from "../components/ProductsTable"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
+import { KeyboardShortcut } from "@/components/common/KeyboardShortcut"
 
 import { StatCards } from "@/components/common/StatCards"
 import { productsStatsData } from "../data/productsStatsData.js"
@@ -32,6 +35,21 @@ const productActions = {
 };
 
 export default function ProductsPage() {
+  const navigate = useNavigate();
+
+  // Keyboard shortcut: Ctrl/Cmd + K to add new product
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        navigate('/products/add');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
       <div className="w-full">
@@ -40,6 +58,10 @@ export default function ProductsPage() {
           headerLabel={"Products"}
           actions={productActions}
         />
+        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Quick add:</span>
+          <KeyboardShortcut keys={["Ctrl", "K"]} />
+        </div>
       </div>
 
       <StatCards cardData={productsStatsData} />

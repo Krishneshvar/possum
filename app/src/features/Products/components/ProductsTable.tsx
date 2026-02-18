@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
 import { setSearchTerm, setCurrentPage, setFilter, clearAllFilters } from "../productsSlice"
@@ -92,29 +93,52 @@ export default function ProductsTable() {
   }
 
   const emptyState = (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center space-y-4 max-w-sm mx-auto">
-      <div className="bg-muted/50 p-6 rounded-full">
-        <Package className="h-12 w-12 text-muted-foreground/50" />
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center space-y-4 max-w-md mx-auto">
+      <div className="bg-primary/10 p-6 rounded-full">
+        <Package className="h-12 w-12 text-primary" />
       </div>
       <div className="space-y-2">
         <h3 className="text-lg font-semibold text-foreground">No products found</h3>
         <p className="text-sm text-muted-foreground">
-          We couldn't find any products matching your search. Try adjusting filters or add a new product.
+          {searchTerm || Object.values(filters).some(f => f.length > 0)
+            ? "We couldn't find any products matching your criteria. Try adjusting your search or filters."
+            : "Get started by adding your first product to the inventory."}
         </p>
       </div>
-      <Button variant="outline" onClick={handleClearAllFilters}>
-        Clear Filters
-      </Button>
+      <div className="flex gap-2">
+        {(searchTerm || Object.values(filters).some(f => f.length > 0)) && (
+          <Button variant="outline" onClick={handleClearAllFilters}>
+            Clear Filters
+          </Button>
+        )}
+        <Button asChild>
+          <Link to="/products/add">
+            <Package className="mr-2 h-4 w-4" />
+            Add Product
+          </Link>
+        </Button>
+      </div>
     </div>
   )
 
   const renderProductActions = (product: any) => (
     <div className="flex items-center justify-end gap-1">
-      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hidden sm:flex" asChild title="Edit Product">
-        <Link to={`/products/edit/${product.id}`}>
-          <Edit className="h-4 w-4" />
-        </Link>
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-muted-foreground hover:text-primary hidden sm:flex" 
+            asChild
+            aria-label={`Edit ${product.name}`}
+          >
+            <Link to={`/products/edit/${product.id}`}>
+              <Edit className="h-4 w-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Edit Product</TooltipContent>
+      </Tooltip>
 
       <ActionsDropdown>
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
