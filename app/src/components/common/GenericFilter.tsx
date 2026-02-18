@@ -1,7 +1,9 @@
 import React from 'react';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface FilterOption {
@@ -19,14 +21,14 @@ interface GenericFilterProps {
     filtersConfig: FilterConfig[];
     activeFilters: Record<string, string | string[]>;
     onFilterChange: (payload: { key: string; value: string[] }) => void;
-    onClearAll: () => void;
+    onClearAllFilters: () => void;
 }
 
 export default function GenericFilter({
     filtersConfig,
     activeFilters,
     onFilterChange,
-    onClearAll
+    onClearAllFilters
 }: GenericFilterProps) {
     if (!filtersConfig || filtersConfig.length === 0) return null;
 
@@ -34,51 +36,68 @@ export default function GenericFilter({
         activeFilters[filter.key] && activeFilters[filter.key].length > 0
     );
 
-    return (
-        <div className="flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center">
-                {filtersConfig.map((filter) => (
-                    <div key={filter.key} className="flex flex-col gap-1.5 w-full sm:w-auto">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider pl-1">
-                            {filter.label}
-                        </span>
-                        <ToggleGroup
-                            type="multiple"
-                            value={activeFilters[filter.key] as string[] || []}
-                            onValueChange={(value) => onFilterChange({ key: filter.key, value })}
-                            className="justify-start flex-wrap gap-1.5 sm:gap-2"
-                        >
-                            {filter.options.map((option) => (
-                                <ToggleGroupItem
-                                    key={option.value}
-                                    value={option.value}
-                                    aria-label={`Filter by ${option.label}`}
-                                    className={cn(
-                                        "h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-all duration-200 ease-in-out data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:border-primary/20",
-                                        "flex-grow sm:flex-grow-0"
-                                    )}
-                                >
-                                    {option.label}
-                                </ToggleGroupItem>
-                            ))}
-                        </ToggleGroup>
-                    </div>
-                ))}
+    const toggleOption = (filterKey: string, optionValue: string) => {
+        const current = (activeFilters[filterKey] as string[]) || [];
+        const newValue = current.includes(optionValue)
+            ? current.filter(v => v !== optionValue)
+            : [...current, optionValue];
+        onFilterChange({ key: filterKey, value: newValue });
+    };
 
-                {hasActiveFilters && (
-                    <div className="pt-0 sm:pt-6 w-full sm:w-auto mt-2 sm:mt-0 flex justify-end sm:justify-start">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onClearAll}
-                            className="h-8 px-2 lg:px-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-xs sm:text-sm transition-colors"
-                        >
-                            <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                            Clear Filters
-                        </Button>
-                    </div>
-                )}
-            </div>
+    return (
+        <div className="flex flex-wrap gap-2 items-center">
+            {filtersConfig.map((filter) => {
+                const activeCount = (activeFilters[filter.key] as string[] || []).length;
+                return (
+                    <Popover key={filter.key}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8">
+                                {filter.label}
+                                {activeCount > 0 && (
+                                    <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                                        {activeCount}
+                                    </Badge>
+                                )}
+                                <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-3" align="start">
+                            <div className="space-y-2">
+                                {filter.options.map((option) => {
+                                    const isChecked = (activeFilters[filter.key] as string[] || []).includes(option.value);
+                                    return (
+                                        <div key={option.value} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`${filter.key}-${option.value}`}
+                                                checked={isChecked}
+                                                onCheckedChange={() => toggleOption(filter.key, option.value)}
+                                            />
+                                            <label
+                                                htmlFor={`${filter.key}-${option.value}`}
+                                                className="text-sm cursor-pointer flex-1"
+                                            >
+                                                {option.label}
+                                            </label>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                );
+            })}
+
+            {hasActiveFilters && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClearAllFilters}
+                    className="h-8 text-muted-foreground hover:text-destructive"
+                >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear
+                </Button>
+            )}
         </div>
     );
 }

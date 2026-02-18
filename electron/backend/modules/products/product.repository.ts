@@ -284,33 +284,40 @@ export async function findProductWithVariants(productId: number): Promise<Produc
  */
 export function findProductTaxes(productId: number): any[] {
     const db = getDB();
+    const product = db.prepare('SELECT tax_category_id FROM products WHERE id = ?').get(productId) as { tax_category_id: number | null } | undefined;
+    
+    if (!product || !product.tax_category_id) {
+        return [];
+    }
+
+    const activeProfile = db.prepare('SELECT id FROM tax_profiles WHERE is_active = 1').get() as { id: number } | undefined;
+    if (!activeProfile) {
+        return [];
+    }
+
     return db.prepare(`
-        SELECT t.id, t.name, t.rate, t.type
-        FROM taxes t
-        INNER JOIN product_taxes pt ON t.id = pt.tax_id
-        WHERE pt.product_id = ? AND t.is_active = 1
-    `).all(productId);
+        SELECT 
+            tr.id,
+            tc.name,
+            tr.rate_percent as rate,
+            tr.rule_scope as type
+        FROM tax_rules tr
+        INNER JOIN tax_categories tc ON tr.tax_category_id = tc.id
+        WHERE tr.tax_profile_id = ? 
+        AND tr.tax_category_id = ?
+        AND (tr.valid_from IS NULL OR tr.valid_from <= date('now'))
+        AND (tr.valid_to IS NULL OR tr.valid_to >= date('now'))
+        ORDER BY tr.priority DESC
+    `).all(activeProfile.id, product.tax_category_id);
 }
 
 /**
- * Set taxes for a product
+ * Set taxes for a product (deprecated - now uses tax_category_id)
  * @param {number} productId - Product ID
  * @param {number[]} taxIds - Array of tax IDs
  */
 export function setProductTaxes(productId: number, taxIds: number[]): void {
-    const db = getDB();
-
-    // Remove existing tax associations
-    db.prepare('DELETE FROM product_taxes WHERE product_id = ?').run(productId);
-
-    // Insert new associations
-    if (taxIds && taxIds.length > 0) {
-        const insertStmt = db.prepare('INSERT INTO product_taxes (product_id, tax_id) VALUES (?, ?)');
-        const transaction = db.transaction((pId: number, tIds: number[]) => {
-            for (const taxId of tIds) {
-                insertStmt.run(pId, taxId);
-            }
-        });
-        transaction(productId, taxIds);
-    }
+    // This function is deprecated as products now use tax_category_id
+    // Keeping for backward compatibility but does nothing
+    return;
 }

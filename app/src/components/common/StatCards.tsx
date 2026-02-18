@@ -42,11 +42,6 @@ export function StatCards({ cardData }: StatCardsProps) {
               <CardTitle className="text-2xl font-semibold">
                 {formatValue(item.todayValue)}
               </CardTitle>
-              {item.overallValue && (
-                <p className="text-xs text-muted-foreground">
-                  Overall: {formatValue(item.overallValue)}
-                </p>
-              )}
             </CardHeader>
           </Card>
         );

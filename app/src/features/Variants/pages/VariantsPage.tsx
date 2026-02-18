@@ -4,9 +4,6 @@ import { useNavigate } from "react-router-dom"
 import VariantsTable from "../components/VariantsTable"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import { KeyboardShortcut } from "@/components/common/KeyboardShortcut"
-import { StatCards } from "@/components/common/StatCards"
-import { variantsStatsData } from "../data/variantsStatsData"
-import { useGetVariantStatsQuery } from "@/services/productsApi"
 
 const variantsActions = {
   secondary: [
@@ -25,7 +22,6 @@ const variantsActions = {
 
 export default function VariantsPage() {
   const navigate = useNavigate();
-  const { data: stats } = useGetVariantStatsQuery();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -53,8 +49,6 @@ export default function VariantsPage() {
           <span className="text-muted-foreground/70">to Products</span>
         </div>
       </div>
-
-      <StatCards cardData={variantsStatsData} statsData={stats} />
 
       <VariantsTable />
     </div>

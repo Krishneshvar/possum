@@ -61,6 +61,7 @@ export default function GenericTableHeader({ columns, visibleColumns, onSort, so
   return (
     <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
       <TableRow className="border-b border-border/60 hover:bg-muted/40 transition-colors">
+        <TableHead className="w-16 px-3 sm:px-4"></TableHead>
         {columns.map(
           (column) =>
             visibleColumns[column.key] && (

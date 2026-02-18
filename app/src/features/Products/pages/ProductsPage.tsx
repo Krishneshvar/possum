@@ -1,13 +1,14 @@
 import { Download, Package, Plus, Upload } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
+import { useGetProductsQuery } from "@/services/productsApi"
+import { useGetCategoriesQuery } from "@/services/categoriesApi"
 
 import ProductsTable from "../components/ProductsTable"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import { KeyboardShortcut } from "@/components/common/KeyboardShortcut"
-
 import { StatCards } from "@/components/common/StatCards"
-import { productsStatsData } from "../data/productsStatsData.js"
+import { Box, Layers, Tags, AlertTriangle } from "lucide-react"
 
 const productActions = {
   primary: {
@@ -36,6 +37,21 @@ const productActions = {
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const { data: productsData } = useGetProductsQuery({ page: 1, limit: 9999 });
+  const { data: categories } = useGetCategoriesQuery(undefined);
+
+  const statsData = useMemo(() => {
+    const products = productsData?.products || [];
+    const activeProducts = products.filter(p => p.status === 'active').length;
+    const lowStock = products.filter(p => p.stock <= p.stock_alert_cap).length;
+
+    return [
+      { title: 'Total Products', icon: Box, color: 'text-blue-500', todayValue: products.length },
+      { title: 'Active Products', icon: Layers, color: 'text-purple-500', todayValue: activeProducts },
+      { title: 'Categories', icon: Tags, color: 'text-green-500', todayValue: categories?.length || 0 },
+      { title: 'Low Stock', icon: AlertTriangle, color: 'text-orange-500', todayValue: lowStock },
+    ];
+  }, [productsData, categories]);
 
   // Keyboard shortcut: Ctrl/Cmd + K to add new product
   useEffect(() => {
@@ -64,7 +80,7 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <StatCards cardData={productsStatsData} />
+      <StatCards cardData={statsData} />
 
       <ProductsTable />
     </div>

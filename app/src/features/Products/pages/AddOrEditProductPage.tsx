@@ -21,8 +21,8 @@ export default function AddOrEditProductPage() {
 
   const isEditMode = !!productId;
 
-  const { data: product, isLoading: isProductLoading, error: productError } = useGetProductQuery(productId, {
-    skip: !isEditMode,
+  const { data: product, isLoading: isProductLoading, error: productError } = useGetProductQuery(productId!, {
+    skip: !isEditMode || !productId,
   });
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery(undefined);
 
@@ -57,52 +57,30 @@ export default function AddOrEditProductPage() {
       const submitData = new FormData();
       submitData.append('name', formData.name);
       submitData.append('description', formData.description);
-      submitData.append('category_id', formData.category_id);
-      submitData.append('tax_category_id', formData.tax_category_id);
+      submitData.append('category_id', formData.category_id || '0');
+      submitData.append('taxIds', JSON.stringify(formData.tax_category_id ? [formData.tax_category_id] : []));
       submitData.append('status', formData.status);
 
       if (formData.imageFile) {
         submitData.append('image', formData.imageFile);
       }
 
-      // Clean variants
-      const variantsToSave = formData.variants.map(v => ({
-        ...v,
-        id: v.id, // Only send ID if it's a real backend ID (not _tempId if new)
-        price: v.mrp, // Map mrp to price if needed by backend, or backend expects mrp?
-        // Backend controller expects 'variants' as JSON string.
-        // And backend uses `mrp` or `price`?
-        // Backend `product.controller.ts` calls `productService.createProductWithVariants`
-        // `product.service.ts` calls `variantRepository.insertVariant`.
-        // `variantRepository.insertVariant` expects `variant` object.
-        // It maps `price` to `mrp` column if I updated it correctly.
-        // So I should send `price`.
-        mrp: v.mrp,
+      const finalVariants = formData.variants.map(v => ({
+        name: v.name,
+        sku: v.sku,
+        price: v.mrp,
         cost_price: v.cost_price,
         stock: v.stock,
         stock_alert_cap: v.stock_alert_cap,
         is_default: v.is_default,
-        status: v.status
-      }));
-
-      // Wait, if I send `mrp` and `price`, backend might be confused?
-      // `product.controller.ts` parses variants JSON.
-      // `productService` passes it to repo.
-      // `repo.insertVariant` takes `Partial<Variant>`.
-      // `Variant` interface has `price`.
-      // So I should send `price`.
-      // But `formData` has `mrp`.
-      // So I map `price: v.mrp`.
-
-      const finalVariants = variantsToSave.map((v: any) => ({
-          ...v,
-          price: v.mrp // Ensure price is populated
+        status: v.status,
+        ...(v.id && { id: v.id })
       }));
 
       submitData.append('variants', JSON.stringify(finalVariants));
 
       if (isEdit && id) {
-        await updateProduct({ id, data: submitData }).unwrap();
+        await updateProduct({ id, body: submitData }).unwrap();
       } else {
         await createProduct(submitData).unwrap();
       }
@@ -122,6 +100,8 @@ export default function AddOrEditProductPage() {
   };
 
   if (hasError) {
+    console.error('Product error:', productError);
+    console.error('Categories error:', categoriesError);
     toast.error('Error fetching data', {
       description: 'Could not load product or categories. Please try again later.',
       duration: 5000,
@@ -144,8 +124,9 @@ export default function AddOrEditProductPage() {
 
   const handleFailure = (err: any) => {
     console.error('Failed to save product:', err);
+    const errorMsg = err?.data?.error || 'An error occurred while saving. Please try again later.';
     toast.error('Error saving product', {
-      description: 'An error occurred while saving. Please try again later.',
+      description: errorMsg,
       duration: 5000,
     });
   };

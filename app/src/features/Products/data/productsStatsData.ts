@@ -1,4 +1,3 @@
-// app/src/features/Products/data/productsStatsData.ts
 import {
   Archive,
   Box,
@@ -10,29 +9,27 @@ export const productsStatsData = [
   {
     title: 'Total Products',
     icon: Box,
-    value: '1,234',
-    change: '+12%',
-    description: 'from last month',
+    color: 'text-blue-500',
+    todayValue: '0',
+    overallValue: '0',
   },
   {
     title: 'Total Variants',
     icon: Layers,
-    value: '3,456',
-    change: '+5%',
-    description: 'from last month',
+    color: 'text-purple-500',
+    todayValue: '0',
+    overallValue: '0',
   },
   {
     title: 'Categories',
     icon: Tags,
-    value: '42',
-    change: '+2',
-    description: 'new categories',
+    color: 'text-green-500',
+    todayValue: '0',
   },
   {
-    title: 'Archived',
+    title: 'Low Stock',
     icon: Archive,
-    value: '15',
-    change: '-3',
-    description: 'since last month',
+    color: 'text-orange-500',
+    todayValue: '0',
   },
 ];

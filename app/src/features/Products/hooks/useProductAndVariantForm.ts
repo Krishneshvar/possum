@@ -108,13 +108,17 @@ export function useProductAndVariantForm(initialData?: any) {
         setFormData(prev => ({ ...prev, imageFile: null, imageUrl: null }));
     };
 
-    const handleVariantChange = (index: number, field: string, value: any) => {
+    const handleVariantChange = (tempId: number, field: string, value: any) => {
         setFormData(prev => {
             const newVariants = [...prev.variants];
-            newVariants[index] = { ...newVariants[index], [field]: value };
+            const index = newVariants.findIndex(v => v._tempId === tempId);
+            if (index !== -1) {
+                newVariants[index] = { ...newVariants[index], [field]: value };
+            }
             return { ...prev, variants: newVariants };
         });
         
+        const index = formData.variants.findIndex(v => v._tempId === tempId);
         const touchKey = `variant-${index}-${field}`;
         if (touched[touchKey]) {
             const error = validateVariantField(field, value);
@@ -128,22 +132,25 @@ export function useProductAndVariantForm(initialData?: any) {
         }
     };
 
-    const handleVariantBlur = (index: number, field: string) => {
+    const handleVariantBlur = (tempId: number, field: string) => {
+        const index = formData.variants.findIndex(v => v._tempId === tempId);
         const touchKey = `variant-${index}-${field}`;
         setTouched(prev => ({ ...prev, [touchKey]: true }));
-        const error = validateVariantField(field, formData.variants[index][field]);
-        setErrors(prev => ({
-            ...prev,
-            variants: {
-                ...prev.variants,
-                [index]: { ...prev.variants?.[index], [field]: error }
-            }
-        }));
+        if (index !== -1) {
+            const error = validateVariantField(field, formData.variants[index][field]);
+            setErrors(prev => ({
+                ...prev,
+                variants: {
+                    ...prev.variants,
+                    [index]: { ...prev.variants?.[index], [field]: error }
+                }
+            }));
+        }
     };
 
-    const clearPriceFields = (index: number) => {
-        handleVariantChange(index, 'mrp', '');
-        handleVariantChange(index, 'cost_price', '');
+    const clearPriceFields = (tempId: number) => {
+        handleVariantChange(tempId, 'mrp', '');
+        handleVariantChange(tempId, 'cost_price', '');
     };
 
     const addVariantLocally = () => {
@@ -170,12 +177,12 @@ export function useProductAndVariantForm(initialData?: any) {
         }));
     };
 
-    const handleSetDefaultVariantLocally = (index: number) => {
+    const handleSetDefaultVariantLocally = (tempId: number) => {
         setFormData(prev => ({
             ...prev,
-            variants: prev.variants.map((v, i) => ({
+            variants: prev.variants.map((v) => ({
                 ...v,
-                is_default: i === index
+                is_default: v._tempId === tempId
             }))
         }));
     };
