@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { MANUAL_INVENTORY_REASONS, INVENTORY_REASON_LABELS, INVENTORY_REASONS } from '@shared/index';
 
 import {
     Select,
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { useCreateAdjustmentMutation } from '@/services/productsApi';
 
 interface StockAdjustmentCellProps {
@@ -25,7 +25,7 @@ export default function StockAdjustmentCell({ variantId, originalStock, productN
     const [createAdjustment, { isLoading }] = useCreateAdjustmentMutation();
     const [isEditing, setIsEditing] = useState(false);
     const [newStock, setNewStock] = useState(originalStock.toString());
-    const [reason, setReason] = useState('correction');
+    const [reason, setReason] = useState<string>(INVENTORY_REASONS.CORRECTION);
 
     const handleSave = async () => {
         const diff = parseInt(newStock, 10) - originalStock;
@@ -70,12 +70,9 @@ export default function StockAdjustmentCell({ variantId, originalStock, productN
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="correction">Correction</SelectItem>
-                        <SelectItem value="damage">Damage</SelectItem>
-                        <SelectItem value="theft">Theft</SelectItem>
-                        <SelectItem value="spoilage">Spoilage</SelectItem>
-                        <SelectItem value="confirm_receive">Purchase</SelectItem>
-                        <SelectItem value="return">Return</SelectItem>
+                        {MANUAL_INVENTORY_REASONS.map(r => (
+                            <SelectItem key={r} value={r}>{INVENTORY_REASON_LABELS[r]}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
                 <div className="flex justify-end gap-2 mt-1">

@@ -6,6 +6,7 @@ import * as inventoryRepository from './inventory.repository.js';
 import * as productFlowRepository from '../productFlow/productFlow.repository.js';
 import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
+import { VALID_INVENTORY_REASONS, INVENTORY_REASONS } from '../../../../types/index.js';
 
 /**
  * Get stock for a variant
@@ -59,7 +60,7 @@ export function adjustInventory({
     userId: number;
 }) {
     // Valid reasons: 'sale', 'return', 'confirm_receive', 'spoilage', 'damage', 'theft', 'correction'
-    const validReasons = ['sale', 'return', 'confirm_receive', 'spoilage', 'damage', 'theft', 'correction'];
+    const validReasons = VALID_INVENTORY_REASONS as unknown as string[];
     if (!validReasons.includes(reason)) {
         throw new Error(`Invalid adjustment reason: ${reason}. Must be one of: ${validReasons.join(', ')}`);
     }
@@ -87,9 +88,9 @@ export function adjustInventory({
         });
 
         // Log to product flow
-        const eventType = reason === 'sale' ? 'sale'
-            : reason === 'return' ? 'return'
-                : reason === 'confirm_receive' ? 'adjustment' // or 'purchase' map? 'adjustment' is safer for manual
+        const eventType = reason === INVENTORY_REASONS.SALE ? 'sale'
+            : reason === INVENTORY_REASONS.RETURN ? 'return'
+                : reason === INVENTORY_REASONS.CONFIRM_RECEIVE ? 'adjustment' // or 'purchase' map? 'adjustment' is safer for manual
                     : 'adjustment';
 
         productFlowRepository.insertProductFlow({
@@ -184,7 +185,7 @@ export function receiveInventory({
             variant_id: variantId,
             lot_id: lotId,
             quantity_change: quantity,
-            reason: 'confirm_receive',
+            reason: INVENTORY_REASONS.CONFIRM_RECEIVE,
             reference_type: 'purchase_order_item',
             reference_id: purchaseOrderItemId,
             adjusted_by: userId

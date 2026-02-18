@@ -14,7 +14,7 @@ import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
 import { getComputedStock, getComputedStockBatch } from '../../shared/utils/inventoryHelpers.js';
 import * as AuthService from '../auth/auth.service.js';
-import { Invoice, InvoiceItem, Variant, Customer, Sale, SaleItem } from '../../../../types/index.js';
+import { Invoice, InvoiceItem, Variant, Customer, Sale, SaleItem, INVENTORY_REASONS } from '../../../../types/index.js';
 
 interface CreateSaleParams {
     items: { variantId: number; quantity: number; discount?: number; pricePerUnit?: number }[];
@@ -215,7 +215,7 @@ export async function createSale({
                 variant_id: item.variant_id!,
                 lot_id: null,
                 quantity_change: -(item.quantity || 0),
-                reason: 'sale',
+                reason: INVENTORY_REASONS.SALE,
                 reference_type: 'sale_item',
                 reference_id: saleItemId,
                 adjusted_by: userId
@@ -378,7 +378,7 @@ export function cancelSale(saleId: number, userId: number, token?: string): { su
                 variant_id: item.variant_id,
                 lot_id: null,
                 quantity_change: item.quantity,
-                reason: 'correction',
+                reason: INVENTORY_REASONS.CORRECTION,
                 reference_type: 'sale_cancellation',
                 reference_id: saleId,
                 adjusted_by: userId

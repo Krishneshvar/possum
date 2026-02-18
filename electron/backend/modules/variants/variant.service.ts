@@ -8,7 +8,7 @@ import * as inventoryRepository from '../inventory/inventory.repository.js';
 import { transaction } from '../../shared/db/index.js';
 import { buildImageUrl } from '../../shared/utils/index.js';
 import { VariantQueryOptions } from './variant.repository.js';
-import { Variant } from '../../../../types/index.js';
+import { Variant, INVENTORY_REASONS } from '../../../../types/index.js';
 
 /**
  * Add a variant to a product
@@ -53,7 +53,7 @@ export function updateVariant(variantData: Partial<Variant> & { id: number; stoc
                     inventoryService.adjustInventory({
                         variantId: variantData.id,
                         quantityChange: diff,
-                        reason: 'correction',
+                        reason: INVENTORY_REASONS.CORRECTION,
                         userId: variantData.userId!
                     });
                 }
