@@ -8,12 +8,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface GenericDeleteDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
     dialogTitle?: string;
     itemName?: string;
     confirmButtonText?: string;
@@ -27,6 +28,23 @@ export default function GenericDeleteDialog({
   itemName = "this item",
   confirmButtonText = "Delete"
 }: GenericDeleteDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirm = async (e: React.MouseEvent) => {
+     // Prevent default closing to let the parent control the dialog state
+     // This allows for async operations where we only close on success
+     e.preventDefault();
+
+     if (isDeleting) return;
+
+     setIsDeleting(true);
+     try {
+       await onConfirm();
+     } finally {
+       setIsDeleting(false);
+     }
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -42,16 +60,13 @@ export default function GenericDeleteDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={(e: React.MouseEvent) => {
-               // Prevent default closing to let the parent control the dialog state
-               // This allows for async operations where we only close on success
-               e.preventDefault();
-               onConfirm();
-            }}
+            onClick={handleConfirm}
             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            disabled={isDeleting}
           >
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {confirmButtonText}
           </AlertDialogAction>
         </AlertDialogFooter>

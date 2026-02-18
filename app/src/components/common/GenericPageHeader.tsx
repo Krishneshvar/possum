@@ -49,20 +49,20 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions = {
         <Button
           variant="destructive"
           onClick={action.onClick}
-          className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}
+          className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto ${buttonClasses}`}
         >
           {content}
         </Button>
       );
     } else if (action.url) {
       return (
-        <Button asChild size="default" variant={isPrimary ? "default" : "secondary"} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
+        <Button asChild size="default" variant={isPrimary ? "default" : "secondary"} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto ${buttonClasses}`}>
           <Link to={action.url}>{content}</Link>
         </Button>
       );
     } else {
       return (
-        <Button size="default" variant={isPrimary ? "default" : "secondary"} onClick={action.onClick} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto cursor-pointer ${buttonClasses}`}>
+        <Button size="default" variant={isPrimary ? "default" : "secondary"} onClick={action.onClick} className={`px-4 sm:px-6 font-medium shadow-sm w-full sm:w-auto ${buttonClasses}`}>
           {content}
         </Button>
       );
@@ -77,8 +77,9 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions = {
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 flex-shrink-0 hover:shadow-sm cursor-pointer"
+              className="h-10 w-10 flex-shrink-0 hover:shadow-sm"
               onClick={() => navigate(-1)}
+              aria-label="Go back"
             >
               <ArrowLeft className="h-5 w-5 text-foreground" />
             </Button>
@@ -97,7 +98,7 @@ export default function GenericPageHeader({ headerIcon, headerLabel, actions = {
               <div className="flex lg:hidden ml-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="h-9 px-2">
+                    <Button variant="outline" className="h-9 px-2" aria-label="More actions">
                       <Ellipsis className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
