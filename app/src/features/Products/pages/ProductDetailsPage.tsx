@@ -20,31 +20,37 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 
+// @ts-ignore
 import DisplayVariants from "../components/DisplayVariants"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import { useDeleteProductMutation, useGetProductQuery } from "@/services/productsApi"
+import { Product, Variant } from "@shared/index";
+
+// Define a type for the Product with extra joined fields if they come from API
+interface ProductDetail extends Product {
+    category_name?: string;
+    taxes?: any[];
+}
 
 export default function ProductDetailsPage() {
-  const { productId } = useParams()
+  const { productId } = useParams<{ productId: string }>()
   const navigate = useNavigate()
   const { data: product, isLoading, isError } = useGetProductQuery(productId)
   const [deleteProduct] = useDeleteProductMutation()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
   const currency = useCurrency()
 
   const handleDeleteClick = () => {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleDialogOpenChange = (open) => {
+  const handleDialogOpenChange = (open: boolean) => {
     setIsDeleteDialogOpen(open)
   }
 
   const handleConfirmDelete = async () => {
     if (!product) return
-    setIsDeleting(true)
     try {
       await deleteProduct(product.id).unwrap()
       setIsDeleteDialogOpen(false)
@@ -58,8 +64,6 @@ export default function ProductDetailsPage() {
         description: "An error occurred. Please try again.",
         duration: 5000,
       })
-    } finally {
-      setIsDeleting(false)
     }
   }
 
@@ -78,13 +82,13 @@ export default function ProductDetailsPage() {
     ],
   };
 
-  const formatPrice = (price) => {
-    if (price === null || isNaN(price)) return "N/A"
-    return `${currency}${Number.parseFloat(price).toFixed(2)}`
+  const formatPrice = (price: number | null | undefined) => {
+    if (price === null || price === undefined || isNaN(price)) return "N/A"
+    return `${currency}${Number.parseFloat(price.toString()).toFixed(2)}`
   }
 
-  const getProductStatus = (status) => {
-    const statusConfig = {
+  const getProductStatus = (status: string | undefined) => {
+    const statusConfig: Record<string, { label: string; className: string }> = {
       active: { label: "Active", className: "bg-green-100 text-green-700 border-green-200" },
       inactive: { label: "Inactive", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
       discontinued: { label: "Discontinued", className: "bg-red-100 text-red-700 border-red-200" },
@@ -99,10 +103,12 @@ export default function ProductDetailsPage() {
     );
   }
 
-  const getVariantStockStatus = (variant) => {
-    if (variant.stock <= 0) {
+  const getVariantStockStatus = (variant: Variant) => {
+      const stock = variant.stock || 0;
+      const cap = variant.stock_alert_cap || 0;
+    if (stock <= 0) {
       return { label: "Out of Stock", icon: XCircle, styles: "text-destructive" }
-    } else if (variant.stock <= variant.stock_alert_cap) {
+    } else if (stock <= cap) {
       return { label: "Low Stock", icon: AlertTriangle, styles: "text-warning" }
     } else {
       return { label: "In Stock", icon: CheckCircle, styles: "text-success" }
@@ -110,9 +116,10 @@ export default function ProductDetailsPage() {
   }
 
   const calculateTotalStock = () => {
+      if (!product || !product.variants) return 0;
     let totalStock = 0;
     for (let i = 0; i < product.variants.length; i++) {
-      totalStock += product.variants[i].stock;
+      totalStock += product.variants[i].stock || 0;
     }
     return totalStock;
   }
@@ -179,12 +186,15 @@ export default function ProductDetailsPage() {
     )
   }
 
+  // Type assertion or check for extended properties
+  const typedProduct = product as ProductDetail;
+
   return (
     <div className="space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl mx-auto">
       <GenericPageHeader
         showBackButton
         headerIcon={<Package className="h-5 w-5 text-primary" />}
-        headerLabel={product.name}
+        headerLabel={typedProduct.name}
         actions={productActions}
       />
 
@@ -201,20 +211,20 @@ export default function ProductDetailsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-col sm:flex-row gap-6">
-                {product.imageUrl && (
+                {typedProduct.image_path && (
                   <div className="flex-shrink-0">
                     <img
-                      src={product.imageUrl}
-                      alt={product.name}
+                      src={typedProduct.image_path}
+                      alt={typedProduct.name}
                       className="w-32 h-32 rounded-lg object-cover border"
                     />
                   </div>
                 )}
                 <div className="flex-1 space-y-4">
                   <div>
-                    <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
+                    <h2 className="text-2xl font-bold mb-2">{typedProduct.name}</h2>
                     <p className="text-muted-foreground">
-                      {product.description || "No description provided."}
+                      {typedProduct.description || "No description provided."}
                     </p>
                   </div>
 
@@ -223,20 +233,21 @@ export default function ProductDetailsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
                       <p className="text-muted-foreground">Status</p>
-                      {getProductStatus(product.status)}
+                      {getProductStatus(typedProduct.status)}
                     </div>
                     <div className="space-y-1">
                       <p className="text-muted-foreground">Category</p>
                       <Badge variant="secondary" className="font-normal">
                         <Layers className="h-3 w-3 mr-1" />
-                        {product.category_name || "Uncategorized"}
+                        {typedProduct.category_name || "Uncategorized"}
                       </Badge>
                     </div>
-                    {product.taxes && product.taxes.length > 0 && (
+                    {/* Assuming taxes is an array if present */}
+                    {typedProduct.taxes && typedProduct.taxes.length > 0 && (
                       <div className="space-y-1 sm:col-span-2">
                         <p className="text-muted-foreground">Tax Categories</p>
                         <div className="flex flex-wrap gap-1">
-                          {product.taxes.map((tax) => (
+                          {typedProduct.taxes.map((tax: any) => (
                             <Badge key={tax.id} variant="outline" className="text-xs">
                               <Tag className="h-3 w-3 mr-1" />
                               {tax.name} ({tax.rate}%)
@@ -254,7 +265,7 @@ export default function ProductDetailsPage() {
           {/* Variants Card */}
           <Card>
             <DisplayVariants
-              product={product}
+              product={typedProduct}
               getProductStatus={getProductStatus}
               getVariantStockStatus={getVariantStockStatus}
               formatPrice={formatPrice}
@@ -277,7 +288,7 @@ export default function ProductDetailsPage() {
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Variants</span>
-                <span className="text-lg font-semibold">{product.variants.length}</span>
+                <span className="text-lg font-semibold">{typedProduct.variants ? typedProduct.variants.length : 0}</span>
               </div>
             </CardContent>
           </Card>
@@ -286,7 +297,7 @@ export default function ProductDetailsPage() {
 
       <GenericDeleteDialog
         dialogTitle="Delete Product?"
-        itemName={product.name}
+        itemName={typedProduct.name}
         open={isDeleteDialogOpen}
         onOpenChange={handleDialogOpenChange}
         onConfirm={handleConfirmDelete}

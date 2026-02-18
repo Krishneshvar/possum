@@ -283,3 +283,85 @@ export const MANUAL_INVENTORY_REASONS = [
   INVENTORY_REASONS.RETURN,
   INVENTORY_REASONS.CONFIRM_RECEIVE,
 ];
+
+// Purchase Order Types
+export interface PurchaseOrder {
+  id: number;
+  supplier_id: number;
+  status: 'pending' | 'received' | 'cancelled';
+  order_date: string;
+  received_date?: string | null;
+  created_by: number;
+  supplier_name?: string;
+  created_by_name?: string;
+  item_count?: number;
+  total_cost?: number;
+  items?: PurchaseOrderItem[];
+}
+
+export interface PurchaseOrderItem {
+  id: number;
+  purchase_order_id: number;
+  variant_id: number;
+  quantity: number;
+  unit_cost: number;
+  variant_name?: string;
+  sku?: string;
+  product_name?: string;
+}
+
+// Report Types
+export interface SalesReportSummary {
+  total_transactions: number;
+  total_sales: number;
+  total_tax: number;
+  total_discount: number;
+  total_collected: number;
+}
+
+export interface DailyReport extends SalesReportSummary {
+  date: string;
+  reportType: 'daily';
+}
+
+export interface MonthlyReport {
+  year: number;
+  month: number;
+  reportType: 'monthly';
+  summary: SalesReportSummary;
+  breakdown: Array<{
+      date: string;
+      total_transactions: number;
+      total_sales: number;
+      total_tax: number;
+      total_discount: number;
+  }>;
+}
+
+export interface YearlyReport {
+  year: number;
+  reportType: 'yearly';
+  summary: SalesReportSummary;
+  breakdown: Array<{
+      month: string;
+      total_transactions: number;
+      total_sales: number;
+      total_tax: number;
+      total_discount: number;
+  }>;
+}
+
+export interface TopProduct {
+  product_id: number;
+  product_name: string;
+  variant_name: string;
+  sku: string;
+  total_quantity_sold: number;
+  total_revenue: number;
+}
+
+export interface PaymentMethodStat {
+  payment_method: string;
+  total_transactions: number;
+  total_amount: number;
+}

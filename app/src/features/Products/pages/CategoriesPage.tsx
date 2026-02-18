@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Package, Plus, Pencil, Trash2, FolderTree } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,7 +9,6 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     AlertDialog,
@@ -32,15 +30,27 @@ import {
     useUpdateCategoryMutation,
     useDeleteCategoryMutation
 } from '@/services/categoriesApi';
+import { Category } from '@shared/index';
 
-const CategoryItem = ({ category, level = 0, onEdit, onDelete }) => {
+interface CategoryWithSub extends Category {
+    subcategories?: CategoryWithSub[];
+}
+
+interface CategoryItemProps {
+    category: CategoryWithSub;
+    level?: number;
+    onEdit: (category: CategoryWithSub) => void;
+    onDelete: (id: number) => void;
+}
+
+const CategoryItem = ({ category, level = 0, onEdit, onDelete }: CategoryItemProps) => {
     return (
         <>
             <div className="flex items-center justify-between p-3 border-b hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
                     {level > 0 && <div className="w-4 border-l-2 border-b-2 h-4 -mt-2 border-muted-foreground/30 rounded-bl-sm" />}
                     <span className="font-medium flex items-center gap-2">
-                        {category.subcategories?.length > 0 ? <FolderTree className="h-4 w-4 text-muted-foreground" /> : <div className="w-4" />}
+                        {category.subcategories && category.subcategories.length > 0 ? <FolderTree className="h-4 w-4 text-muted-foreground" /> : <div className="w-4" />}
                         {category.name}
                     </span>
                 </div>
@@ -59,7 +69,7 @@ const CategoryItem = ({ category, level = 0, onEdit, onDelete }) => {
                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This will permanently delete the category "{category.name}".
-                                    {category.subcategories?.length > 0 && " All subcategories will also be deleted."}
+                                    {category.subcategories && category.subcategories.length > 0 && " All subcategories will also be deleted."}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -87,14 +97,14 @@ const CategoryItem = ({ category, level = 0, onEdit, onDelete }) => {
 
 export default function CategoriesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingCategory, setEditingCategory] = useState(null);
+    const [editingCategory, setEditingCategory] = useState<CategoryWithSub | undefined>(undefined);
 
-    const { data: categories = [], isLoading } = useGetCategoriesQuery();
+    const { data: categories = [], isLoading } = useGetCategoriesQuery(undefined);
     const [addCategory, { isLoading: isAdding }] = useAddCategoryMutation();
     const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
     const [deleteCategory] = useDeleteCategoryMutation();
 
-    const handleSave = async (data) => {
+    const handleSave = async (data: any) => {
         try {
             if (editingCategory) {
                 await updateCategory({ id: editingCategory.id, ...data }).unwrap();
@@ -104,14 +114,14 @@ export default function CategoriesPage() {
                 toast.success('Category added successfully');
             }
             setIsDialogOpen(false);
-            setEditingCategory(null);
+            setEditingCategory(undefined);
         } catch (error) {
             console.error(error);
             toast.error(editingCategory ? 'Failed to update category' : 'Failed to add category');
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id: number) => {
         try {
             await deleteCategory(id).unwrap();
             toast.success('Category deleted successfully');
@@ -122,11 +132,11 @@ export default function CategoriesPage() {
     };
 
     const openAddDialog = () => {
-        setEditingCategory(null);
+        setEditingCategory(undefined);
         setIsDialogOpen(true);
     };
 
-    const openEditDialog = (category) => {
+    const openEditDialog = (category: CategoryWithSub) => {
         setEditingCategory(category);
         setIsDialogOpen(true);
     };
@@ -158,7 +168,7 @@ export default function CategoriesPage() {
                     <div className="p-8 text-center text-muted-foreground">No categories found. Add one to get started.</div>
                 ) : (
                     <div>
-                        {categories.map(category => (
+                        {categories.map((category: CategoryWithSub) => (
                             <CategoryItem
                                 key={category.id}
                                 category={category}

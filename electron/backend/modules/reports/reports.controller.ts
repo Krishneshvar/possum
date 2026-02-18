@@ -2,16 +2,17 @@
  * Reports Controller
  * Handles HTTP requests for sales reporting
  */
+import { Request, Response } from 'express';
 import * as reportsService from './reports.service.js';
 
 /**
  * GET /api/reports/daily
  * Get daily sales report
  */
-export async function getDailyReportController(req, res) {
+export async function getDailyReportController(req: Request, res: Response) {
     try {
         const { date } = req.query;
-        if (!date) {
+        if (!date || typeof date !== 'string') {
             return res.status(400).json({ error: 'date parameter is required (YYYY-MM-DD).' });
         }
 
@@ -27,14 +28,14 @@ export async function getDailyReportController(req, res) {
  * GET /api/reports/monthly
  * Get monthly sales report
  */
-export async function getMonthlyReportController(req, res) {
+export async function getMonthlyReportController(req: Request, res: Response) {
     try {
         const { year, month } = req.query;
         if (!year || !month) {
             return res.status(400).json({ error: 'year and month parameters are required.' });
         }
 
-        const report = reportsService.getMonthlyReport(parseInt(year, 10), parseInt(month, 10));
+        const report = reportsService.getMonthlyReport(parseInt(year as string, 10), parseInt(month as string, 10));
         res.json(report);
     } catch (err) {
         console.error('Error fetching monthly report:', err);
@@ -46,14 +47,14 @@ export async function getMonthlyReportController(req, res) {
  * GET /api/reports/yearly
  * Get yearly sales report
  */
-export async function getYearlyReportController(req, res) {
+export async function getYearlyReportController(req: Request, res: Response) {
     try {
         const { year } = req.query;
         if (!year) {
             return res.status(400).json({ error: 'year parameter is required.' });
         }
 
-        const report = reportsService.getYearlyReport(parseInt(year, 10));
+        const report = reportsService.getYearlyReport(parseInt(year as string, 10));
         res.json(report);
     } catch (err) {
         console.error('Error fetching yearly report:', err);
@@ -65,14 +66,14 @@ export async function getYearlyReportController(req, res) {
  * GET /api/reports/top-products
  * Get top selling products
  */
-export async function getTopProductsController(req, res) {
+export async function getTopProductsController(req: Request, res: Response) {
     try {
-        const { startDate, endDate, limit = 10 } = req.query;
-        if (!startDate || !endDate) {
+        const { startDate, endDate, limit = '10' } = req.query;
+        if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
             return res.status(400).json({ error: 'startDate and endDate parameters are required.' });
         }
 
-        const products = reportsService.getTopProducts(startDate, endDate, parseInt(limit, 10));
+        const products = reportsService.getTopProducts(startDate, endDate, parseInt(limit as string, 10));
         res.json(products);
     } catch (err) {
         console.error('Error fetching top products:', err);
@@ -85,10 +86,10 @@ export async function getTopProductsController(req, res) {
  * GET /api/reports/payment-methods
  * Get sales by payment method
  */
-export async function getSalesByPaymentMethodController(req, res) {
+export async function getSalesByPaymentMethodController(req: Request, res: Response) {
     try {
         const { startDate, endDate } = req.query;
-        if (!startDate || !endDate) {
+        if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
             return res.status(400).json({ error: 'startDate and endDate parameters are required.' });
         }
 
