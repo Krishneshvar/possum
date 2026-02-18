@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import {
   useGetProductQuery,
-  useCreateProductMutation,
+  useAddProductMutation,
   useUpdateProductMutation,
   useDeleteVariantMutation
 } from '@/services/productsApi';
@@ -26,7 +26,7 @@ export default function AddOrEditProductPage() {
   });
   const { data: categoriesData, isLoading: isCategoriesLoading, error: categoriesError } = useGetCategoriesQuery(undefined);
 
-  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [createProduct, { isLoading: isCreating }] = useAddProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [deleteVariant] = useDeleteVariantMutation();
 

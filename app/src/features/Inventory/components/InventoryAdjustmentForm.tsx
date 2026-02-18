@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { MANUAL_INVENTORY_REASONS, INVENTORY_REASON_LABELS, INVENTORY_REASONS } from '@shared/index';
 
 import {
     Select,
@@ -19,19 +20,11 @@ interface InventoryAdjustmentFormProps {
     onSuccess: () => void;
 }
 
-const ADJUSTMENT_REASONS = [
-    { value: 'correction', label: 'Correction' },
-    { value: 'damage', label: 'Damage' },
-    { value: 'theft', label: 'Theft' },
-    { value: 'spoilage', label: 'Spoilage' },
-    { value: 'return', label: 'Return' },
-];
-
 export default function InventoryAdjustmentForm({ variants, onSuccess }: InventoryAdjustmentFormProps) {
     const [createAdjustment, { isLoading }] = useCreateAdjustmentMutation();
     const [selectedVariantId, setSelectedVariantId] = useState('');
     const [quantityChange, setQuantityChange] = useState('');
-    const [reason, setReason] = useState('correction');
+    const [reason, setReason] = useState<string>(INVENTORY_REASONS.CORRECTION);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,7 +38,7 @@ export default function InventoryAdjustmentForm({ variants, onSuccess }: Invento
 
             toast.success('Stock updated successfully');
             setQuantityChange('');
-            setReason('correction');
+            setReason(INVENTORY_REASONS.CORRECTION);
             setSelectedVariantId('');
             onSuccess();
         } catch (error: any) {
@@ -92,8 +85,8 @@ export default function InventoryAdjustmentForm({ variants, onSuccess }: Invento
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            {ADJUSTMENT_REASONS.map(r => (
-                                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                            {MANUAL_INVENTORY_REASONS.map(r => (
+                                <SelectItem key={r} value={r}>{INVENTORY_REASON_LABELS[r]}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

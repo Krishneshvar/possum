@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { VALID_INVENTORY_REASONS } from '../../../../types/index.js';
 
 export const adjustInventorySchema = z.object({
     body: z.object({
         variantId: z.number().int().positive(),
         lotId: z.number().int().positive().optional().nullable(),
         quantityChange: z.number(),
-        reason: z.enum(['sale', 'return', 'confirm_receive', 'spoilage', 'damage', 'theft', 'correction'])
+        reason: z.enum(VALID_INVENTORY_REASONS as unknown as [string, ...string[]])
     })
 });
 

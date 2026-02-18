@@ -14,9 +14,9 @@ export const validate = (schema: ZodSchema) => async (req: Request, res: Respons
         });
 
         // Replace request parts with parsed data to ensure type safety and strip unknown fields
-        req.body = parsed.body;
-        req.query = parsed.query;
-        req.params = parsed.params;
+        if (parsed.body) req.body = parsed.body;
+        if (parsed.query) req.query = parsed.query;
+        if (parsed.params) req.params = parsed.params;
 
         next();
     } catch (error) {
