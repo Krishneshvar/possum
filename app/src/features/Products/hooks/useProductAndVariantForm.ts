@@ -56,10 +56,10 @@ export function useProductAndVariantForm(initialData?: any) {
                 variants: initialData.variants?.map((v: any) => ({
                     ...v,
                     _tempId: v.id || Date.now() + Math.random(),
-                    mrp: v.price || v.mrp || '',
-                    cost_price: v.cost_price || '',
-                    stock: v.stock || '',
-                    stock_alert_cap: v.stock_alert_cap || 10
+                    mrp: v.price ?? v.mrp ?? '',
+                    cost_price: v.cost_price ?? '',
+                    stock: v.stock ?? '',
+                    stock_alert_cap: v.stock_alert_cap ?? 10
                 })) || [defaultVariant]
             });
         }

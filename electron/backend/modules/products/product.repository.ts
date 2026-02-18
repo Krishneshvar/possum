@@ -190,7 +190,13 @@ export async function findProducts({ searchTerm, stockStatus, status, categories
       COUNT(DISTINCT p.id) as total_count
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
-    INNER JOIN variants v ON p.id = v.product_id AND v.is_default = 1 AND v.deleted_at IS NULL
+    LEFT JOIN variants v ON v.id = (
+      SELECT v2.id
+      FROM variants v2
+      WHERE v2.product_id = p.id AND v2.deleted_at IS NULL
+      ORDER BY v2.is_default DESC, v2.id ASC
+      LIMIT 1
+    )
     ${whereClause}
   `;
     const countResult = db.prepare(countQuery).get(...filterParams) as { total_count: number } | undefined;
@@ -212,7 +218,13 @@ export async function findProducts({ searchTerm, stockStatus, status, categories
       v.stock_alert_cap
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
-    INNER JOIN variants v ON p.id = v.product_id AND v.is_default = 1 AND v.deleted_at IS NULL
+    LEFT JOIN variants v ON v.id = (
+      SELECT v2.id
+      FROM variants v2
+      WHERE v2.product_id = p.id AND v2.deleted_at IS NULL
+      ORDER BY v2.is_default DESC, v2.id ASC
+      LIMIT 1
+    )
     ${whereClause}
     GROUP BY p.id
     ORDER BY p.name ASC
@@ -222,7 +234,9 @@ export async function findProducts({ searchTerm, stockStatus, status, categories
     const products = db.prepare(paginatedQuery).all(...paginatedParams) as (Product & { variant_id?: number })[];
 
     // Compute stock in batch for the result page asynchronously
-    const variantIds = products.map(p => p.variant_id!);
+    const variantIds = products
+        .map(p => p.variant_id)
+        .filter((id): id is number => typeof id === 'number');
     const stockMap = await getComputedStockBatch(variantIds);
 
     const paginatedProducts = products.map(p => {

@@ -1,7 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { API_BASE } from '../lib/api-client';
 
-const createFormData = (body: any, isUpdate = false) => {
+const createFormData = (body: any) => {
+  if (body instanceof FormData) {
+    return body;
+  }
+
   const formData = new FormData();
   for (const key in body) {
     if (body[key] !== undefined && body[key] !== null) {
@@ -75,7 +79,7 @@ export const productsApi = createApi({
       query: ({ id, body }) => ({
         url: `/products/${id}`,
         method: 'PUT',
-        body: body,
+        body: createFormData(body),
         headers: {},
       }),
       invalidatesTags: (result, error, { id }) => [

@@ -12,7 +12,6 @@ import {
 import { useGetCategoriesQuery } from '@/services/categoriesApi';
 import ProductForm from '../components/ProductForm';
 import GenericPageHeader from '@/components/common/GenericPageHeader';
-import { flattenCategories } from '@/utils/categories.utils';
 import { useProductAndVariantForm } from '../hooks/useProductAndVariantForm';
 
 export default function AddOrEditProductPage() {
@@ -34,17 +33,14 @@ export default function AddOrEditProductPage() {
 
   const initialData = useMemo(() => {
     if (isEditMode && product) {
-      const flatCategories = flattenCategories(categories);
-      const matchingCategory = flatCategories?.find(cat => cat.name === product.category_name);
-
       return {
         ...product,
-        category_id: matchingCategory ? String(matchingCategory.id) : '',
+        category_id: product.category_id ? String(product.category_id) : '',
         tax_category_id: product.tax_category_id ? String(product.tax_category_id) : '',
       };
     }
     return null;
-  }, [isEditMode, product, categories]);
+  }, [isEditMode, product]);
 
   const { formData, ...formHandlers } = useProductAndVariantForm(initialData);
 
@@ -54,17 +50,6 @@ export default function AddOrEditProductPage() {
 
   const saveProductAndVariants = async (isEdit: boolean, id?: number) => {
     try {
-      const submitData = new FormData();
-      submitData.append('name', formData.name);
-      submitData.append('description', formData.description);
-      submitData.append('category_id', formData.category_id || '0');
-      submitData.append('taxIds', JSON.stringify(formData.tax_category_id ? [formData.tax_category_id] : []));
-      submitData.append('status', formData.status);
-
-      if (formData.imageFile) {
-        submitData.append('image', formData.imageFile);
-      }
-
       const finalVariants = formData.variants.map(v => ({
         name: v.name,
         sku: v.sku,
@@ -72,12 +57,21 @@ export default function AddOrEditProductPage() {
         cost_price: v.cost_price,
         stock: v.stock,
         stock_alert_cap: v.stock_alert_cap,
-        is_default: v.is_default,
+        is_default: Boolean(v.is_default),
         status: v.status,
         ...(v.id && { id: v.id })
       }));
 
-      submitData.append('variants', JSON.stringify(finalVariants));
+      const parsedTaxCategoryId = formData.tax_category_id ? Number(formData.tax_category_id) : null;
+      const submitData = {
+        name: formData.name,
+        description: formData.description,
+        category_id: formData.category_id ? Number(formData.category_id) : undefined,
+        taxIds: parsedTaxCategoryId ? [parsedTaxCategoryId] : [],
+        status: formData.status,
+        imageFile: formData.imageFile,
+        variants: finalVariants,
+      };
 
       if (isEdit && id) {
         await updateProduct({ id, body: submitData }).unwrap();
@@ -124,7 +118,8 @@ export default function AddOrEditProductPage() {
 
   const handleFailure = (err: any) => {
     console.error('Failed to save product:', err);
-    const errorMsg = err?.data?.error || 'An error occurred while saving. Please try again later.';
+    const validationError = err?.data?.details?.[0]?.message;
+    const errorMsg = validationError || err?.data?.error || 'An error occurred while saving. Please try again later.';
     toast.error('Error saving product', {
       description: errorMsg,
       duration: 5000,

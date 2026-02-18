@@ -1,24 +1,21 @@
 import { Eye, Trash2, Package, Edit } from "lucide-react"
 import { Link } from "react-router-dom"
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
-import { setSearchTerm, setCurrentPage, setFilter, clearAllFilters } from "../productsSlice"
+import { setSearchTerm, setCurrentPage } from "../productsSlice"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./productsTableContents"
-import { useGetCategoriesQuery } from "@/services/categoriesApi"
-import { statusFilter, categoryFilter } from "../data/productsFiltersConfig"
-import { flattenCategories } from "@/utils/categories.utils"
 import DataTable from "@/components/common/DataTable"
 
 export default function ProductsTable() {
   const dispatch = useDispatch()
-  const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state: any) => state.products)
+  const { searchTerm, currentPage, itemsPerPage } = useSelector((state: any) => state.products)
   const [sort, setSort] = useState({
     sortBy: 'name',
     sortOrder: 'ASC',
@@ -28,9 +25,6 @@ export default function ProductsTable() {
     page: currentPage,
     limit: itemsPerPage,
     searchTerm: searchTerm,
-    stockStatus: filters.stockStatus,
-    status: filters.status,
-    categories: filters.categories,
     sortBy: sort.sortBy,
     sortOrder: sort.sortOrder,
   });
@@ -42,15 +36,6 @@ export default function ProductsTable() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [deleteProduct] = useDeleteProductMutation()
-  const { data: categories = [] } = useGetCategoriesQuery(undefined)
-
-  const handleFilterChange = ({ key, value }: { key: string, value: string[] }) => {
-    dispatch(setFilter({ key, value }))
-  }
-
-  const handleClearAllFilters = () => {
-    dispatch(clearAllFilters())
-  }
 
   const handlePageChange = (page: number) => {
     dispatch(setCurrentPage(page))
@@ -100,15 +85,15 @@ export default function ProductsTable() {
       <div className="space-y-2">
         <h3 className="text-lg font-semibold text-foreground">No products found</h3>
         <p className="text-sm text-muted-foreground">
-          {searchTerm || Object.values(filters).some(f => f.length > 0)
-            ? "We couldn't find any products matching your criteria. Try adjusting your search or filters."
+          {searchTerm
+            ? "We couldn't find any products matching your search."
             : "Get started by adding your first product to the inventory."}
         </p>
       </div>
       <div className="flex gap-2">
-        {(searchTerm || Object.values(filters).some(f => f.length > 0)) && (
-          <Button variant="outline" onClick={handleClearAllFilters}>
-            Clear Filters
+        {searchTerm && (
+          <Button variant="outline" onClick={() => dispatch(setSearchTerm(""))}>
+            Clear Search
           </Button>
         )}
         <Button asChild>
@@ -166,14 +151,6 @@ export default function ProductsTable() {
     </div>
   )
 
-  const filtersConfig = useMemo(() => {
-    const flatCategories = flattenCategories(categories);
-    return [
-      statusFilter,
-      categoryFilter(flatCategories),
-    ];
-  }, [categories]);
-
   // Update columns to include sortable properties
   const columnsWithSort = allColumns.map(col => {
     if (col.key === 'product') {
@@ -212,11 +189,6 @@ export default function ProductsTable() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
-
-        filtersConfig={filtersConfig}
-        activeFilters={filters}
-        onFilterChange={handleFilterChange}
-        onClearAllFilters={handleClearAllFilters}
 
         emptyState={emptyState}
         renderActions={renderProductActions}
