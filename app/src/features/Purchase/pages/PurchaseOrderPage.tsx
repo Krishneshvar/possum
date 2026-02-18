@@ -19,15 +19,18 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
+// @ts-ignore
 import CurrencyText from '@/components/common/CurrencyText';
-import DataTable from '@/components/common/DataTable';
+import DataTable, { Column } from '@/components/common/DataTable';
+// @ts-ignore
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { PurchaseOrder } from '@shared/index';
 
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilters, setActiveFilters] = useState({
+  const [activeFilters, setActiveFilters] = useState<{ status: string[] }>({
     status: [],
   });
   const [page, setPage] = useState(1);
@@ -44,19 +47,19 @@ export default function PurchaseOrdersPage() {
     sortOrder
   });
 
-  const purchaseOrders = data?.purchaseOrders || [];
+  const purchaseOrders: PurchaseOrder[] = data?.purchaseOrders || [];
   const totalCount = data?.totalCount || 0;
   const totalPages = data?.totalPages || 0;
 
   const [receivePurchaseOrder] = useReceivePurchaseOrderMutation();
   const [cancelPurchaseOrder] = useCancelPurchaseOrderMutation();
-  const [poToCancel, setPoToCancel] = useState(null);
+  const [poToCancel, setPoToCancel] = useState<PurchaseOrder | null>(null);
 
-  const handleReceive = async (id) => {
+  const handleReceive = async (id: number) => {
     try {
       await receivePurchaseOrder(id).unwrap();
       toast.success('Purchase Order received. Stock updated.');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to receive PO:', error);
       toast.error(error?.data?.error || 'Failed to receive Purchase Order');
     }
@@ -74,9 +77,14 @@ export default function PurchaseOrdersPage() {
     }
   };
 
-  const handleSort = (field, order) => {
-    setSortBy(field);
-    setSortOrder(order);
+  const handleSort = (column: Column) => {
+    const field = column.sortField || column.key;
+    if (sortBy === field) {
+        setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        setSortBy(field);
+        setSortOrder('DESC');
+    }
   };
 
   const filtersConfig = [
@@ -92,8 +100,8 @@ export default function PurchaseOrdersPage() {
     },
   ];
 
-  const handleFilterChange = (key, value) => {
-    setActiveFilters((prev) => ({ ...prev, [key]: value }));
+  const handleFilterChange = (payload: { key: string; value: string[] }) => {
+    setActiveFilters((prev) => ({ ...prev, [payload.key]: payload.value }));
     setPage(1);
   };
 
@@ -103,7 +111,7 @@ export default function PurchaseOrdersPage() {
     setPage(1);
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: '2-digit',
@@ -112,7 +120,7 @@ export default function PurchaseOrdersPage() {
     });
   };
 
-  const getStatusVariant = (status) => {
+  const getStatusVariant = (status: string) => {
     switch (status) {
       case 'pending': return 'warning';
       case 'received': return 'default';
@@ -127,20 +135,20 @@ export default function PurchaseOrdersPage() {
       label: 'PO Number',
       sortable: true,
       sortField: 'id',
-      renderCell: (po) => <span className="font-medium">#{po.id}</span>
+      renderCell: (po: PurchaseOrder) => <span className="font-medium">#{po.id}</span>
     },
     {
       key: 'order_date',
       label: 'Order Date',
       sortable: true,
       sortField: 'order_date',
-      renderCell: (po) => <span className="text-muted-foreground whitespace-nowrap">{formatDate(po.order_date)}</span>
+      renderCell: (po: PurchaseOrder) => <span className="text-muted-foreground whitespace-nowrap">{formatDate(po.order_date)}</span>
     },
     {
       key: 'supplier_name',
       label: 'Supplier',
       sortable: false,
-      renderCell: (po) => <span className="font-medium">{po.supplier_name}</span>
+      renderCell: (po: PurchaseOrder) => <span className="font-medium">{po.supplier_name}</span>
     },
     {
       key: 'total_cost',
@@ -148,7 +156,7 @@ export default function PurchaseOrdersPage() {
       sortable: true,
       sortField: 'total_cost',
       className: 'text-right',
-      renderCell: (po) => (
+      renderCell: (po: PurchaseOrder) => (
         <div className="text-right font-bold text-primary">
           <CurrencyText value={po.total_cost} />
         </div>
@@ -160,9 +168,9 @@ export default function PurchaseOrdersPage() {
       sortable: true,
       sortField: 'status',
       className: 'text-center',
-      renderCell: (po) => (
+      renderCell: (po: PurchaseOrder) => (
         <div className="flex justify-center">
-          <Badge variant={getStatusVariant(po.status)} className="capitalize">
+          <Badge variant={getStatusVariant(po.status) as "default" | "secondary" | "destructive" | "outline"} className="capitalize">
             {po.status}
           </Badge>
         </div>
@@ -170,7 +178,7 @@ export default function PurchaseOrdersPage() {
     },
   ];
 
-  const renderActions = (po) => (
+  const renderActions = (po: PurchaseOrder) => (
     <ActionsDropdown>
       <DropdownMenuItem onClick={() => navigate(`/purchase/orders/${po.id}`)} className="cursor-pointer">
         <Eye className="mr-2 h-4 w-4" />
@@ -224,7 +232,7 @@ export default function PurchaseOrdersPage() {
         onRetry={refetch}
 
         searchTerm={searchTerm}
-        onSearchChange={(value) => {
+        onSearchChange={(value: string) => {
           setSearchTerm(value);
           setPage(1);
         }}
@@ -253,7 +261,7 @@ export default function PurchaseOrdersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Purchase Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel PO #{poToCancel?.order_number}? This action cannot be undone.
+              Are you sure you want to cancel PO #{poToCancel?.id}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

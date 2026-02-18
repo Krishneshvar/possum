@@ -3,13 +3,14 @@
  * Handles all database operations for sales reporting
  */
 import { getDB } from '../../shared/db/index.js';
+import { SalesReportSummary, TopProduct, PaymentMethodStat } from '../../../../types/index.js';
 
 /**
  * Get daily sales report
  * @param {string} date - Date in YYYY-MM-DD format
- * @returns {Object} Daily report
+ * @returns {SalesReportSummary} Daily report
  */
-export function getDailySalesReport(date) {
+export function getDailySalesReport(date: string): SalesReportSummary {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -21,16 +22,16 @@ export function getDailySalesReport(date) {
         FROM sales
         WHERE date(sale_date) = ?
           AND status NOT IN ('cancelled', 'draft')
-    `).get(date);
+    `).get(date) as SalesReportSummary;
 }
 
 /**
  * Get monthly sales report
  * @param {number} year - Year
  * @param {number} month - Month (1-12)
- * @returns {Object} Monthly report
+ * @returns {SalesReportSummary} Monthly report
  */
-export function getMonthlySalesReport(year, month) {
+export function getMonthlySalesReport(year: number, month: number): SalesReportSummary {
     const db = getDB();
     const paddedMonth = String(month).padStart(2, '0');
     return db.prepare(`
@@ -43,15 +44,15 @@ export function getMonthlySalesReport(year, month) {
         FROM sales
         WHERE strftime('%Y-%m', sale_date) = ?
           AND status NOT IN ('cancelled', 'draft')
-    `).get(`${year}-${paddedMonth}`);
+    `).get(`${year}-${paddedMonth}`) as SalesReportSummary;
 }
 
 /**
  * Get yearly sales report
  * @param {number} year - Year
- * @returns {Object} Yearly report
+ * @returns {SalesReportSummary} Yearly report
  */
-export function getYearlySalesReport(year) {
+export function getYearlySalesReport(year: number): SalesReportSummary {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -63,7 +64,7 @@ export function getYearlySalesReport(year) {
         FROM sales
         WHERE strftime('%Y', sale_date) = ?
           AND status NOT IN ('cancelled', 'draft')
-    `).get(String(year));
+    `).get(String(year)) as SalesReportSummary;
 }
 
 /**
@@ -72,7 +73,7 @@ export function getYearlySalesReport(year) {
  * @param {number} month - Month (1-12)
  * @returns {Array} Daily breakdown
  */
-export function getDailyBreakdownForMonth(year, month) {
+export function getDailyBreakdownForMonth(year: number, month: number): any[] {
     const db = getDB();
     const paddedMonth = String(month).padStart(2, '0');
     return db.prepare(`
@@ -95,7 +96,7 @@ export function getDailyBreakdownForMonth(year, month) {
  * @param {number} year - Year
  * @returns {Array} Monthly breakdown
  */
-export function getMonthlyBreakdownForYear(year) {
+export function getMonthlyBreakdownForYear(year: number): any[] {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -119,7 +120,7 @@ export function getMonthlyBreakdownForYear(year) {
  * @param {number} limit - Number of products
  * @returns {Array} Top products
  */
-export function getTopSellingProducts(startDate, endDate, limit = 10) {
+export function getTopSellingProducts(startDate: string, endDate: string, limit: number = 10): TopProduct[] {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -138,7 +139,7 @@ export function getTopSellingProducts(startDate, endDate, limit = 10) {
         GROUP BY v.id
         ORDER BY total_quantity_sold DESC
         LIMIT ?
-    `).all(startDate, endDate, limit);
+    `).all(startDate, endDate, limit) as TopProduct[];
 }
 
 /**
@@ -147,7 +148,7 @@ export function getTopSellingProducts(startDate, endDate, limit = 10) {
  * @param {string} endDate - End date
  * @returns {Array} Sales by payment method
  */
-export function getSalesByPaymentMethod(startDate, endDate) {
+export function getSalesByPaymentMethod(startDate: string, endDate: string): PaymentMethodStat[] {
     const db = getDB();
     return db.prepare(`
         SELECT 
@@ -160,7 +161,17 @@ export function getSalesByPaymentMethod(startDate, endDate) {
           AND t.status = 'completed'
           AND t.type = 'payment'
         GROUP BY pm.name
-    `).all(startDate, endDate);
+    `).all(startDate, endDate) as PaymentMethodStat[];
+}
+
+interface UpsertReportParams {
+    report_type: string;
+    period_start: string;
+    period_end: string;
+    total_sales: number;
+    total_tax: number;
+    total_discount: number;
+    total_transactions: number;
 }
 
 /**
@@ -176,14 +187,14 @@ export function upsertSalesReport({
     total_tax,
     total_discount,
     total_transactions
-}) {
+}: UpsertReportParams) {
     const db = getDB();
 
     // Check if report exists
     const existing = db.prepare(`
         SELECT id FROM sales_reports 
         WHERE report_type = ? AND period_start = ? AND period_end = ?
-    `).get(report_type, period_start, period_end);
+    `).get(report_type, period_start, period_end) as { id: number } | undefined;
 
     if (existing) {
         return db.prepare(`
