@@ -5,10 +5,9 @@
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import * as UserRepository from '../users/user.repository.js';
+import * as SessionRepository from './session.repository.js';
 import { User, Session } from '../../../../types/index.js';
 
-// In-memory session store
-const sessions = new Map<string, Session>();
 const SESSION_DURATION_SECONDS = 30 * 60; // 30 minutes
 
 // Pre-calculated hash for "password" (cost 10) to prevent timing attacks
@@ -38,38 +37,46 @@ function createSession(user: any): string {
     const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
 
     const session: Session = {
-        id: uuidv4(),
+        ...user,
         user_id: user.id,
         token,
-        expires_at: expiresAt,
-        // Store flattened permissions/roles for quick access
-        ...user
+        expires_at: expiresAt
     };
 
-    sessions.set(token, session);
+    SessionRepository.create(session);
     return token;
 }
 
 /**
  * Get session by token
- * Also handles expiration and auto-renewal (optional, strictly speaking just check valid)
+ * Also handles expiration and auto-renewal
  */
 export function getSession(token: string): any | null {
     if (!token) return null;
 
-    const session = sessions.get(token);
+    const now = Math.floor(Date.now() / 1000);
+
+    // Periodically clean up expired sessions (lazy cleanup)
+    // Roughly 10% of calls to getSession will trigger a cleanup
+    if (Math.random() < 0.1) {
+        SessionRepository.deleteExpired(now);
+    }
+
+    const session = SessionRepository.findByToken(token);
     if (!session) return null;
 
     // Check expiration
-    if (session.expires_at < Math.floor(Date.now() / 1000)) {
-        sessions.delete(token);
+    if (session.expires_at < now) {
+        SessionRepository.deleteByToken(token);
         return null;
     }
 
-    // Slide expiration on activity? (Optional, usually good for UX)
-    // requirement says "30-minute auto-logout", usually implies "inactivity timeout".
-    session.expires_at = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
-    sessions.set(token, session);
+    // Slide expiration on activity
+    const newExpiresAt = now + SESSION_DURATION_SECONDS;
+    SessionRepository.updateExpiration(token, newExpiresAt);
+
+    // Update local object for immediate use
+    session.expires_at = newExpiresAt;
 
     return session;
 }
@@ -78,7 +85,7 @@ export function getSession(token: string): any | null {
  * End a session (logout)
  */
 export function endSession(token: string): void {
-    sessions.delete(token);
+    SessionRepository.deleteByToken(token);
 }
 
 /**
@@ -141,8 +148,8 @@ export async function me(userId: number): Promise<Partial<User>> {
 }
 
 /**
- * Clear all sessions (on app restart if needed, though memory is cleared anyway)
+ * Clear all sessions (on app restart if needed)
  */
 export function clearAllSessions(): void {
-    sessions.clear();
+    SessionRepository.deleteAll();
 }
