@@ -1,7 +1,14 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { AlertTriangle } from "lucide-react";
-import { createPortal } from "react-dom";
-
-import { Button } from "@/components/ui/button";
 
 interface GenericDeleteDialogProps {
     open: boolean;
@@ -20,40 +27,35 @@ export default function GenericDeleteDialog({
   itemName = "this item",
   confirmButtonText = "Delete"
 }: GenericDeleteDialogProps) {
-  if (!open) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card rounded-lg shadow-xl w-full max-w-md p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex p-2 items-center justify-center rounded-lg bg-destructive/10">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex p-2 items-center justify-center rounded-lg bg-destructive/10">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+            </div>
+            <AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
           </div>
-          <h2 className="text-lg font-semibold">{dialogTitle}</h2>
-        </div>
-
-        <p className="text-sm text-muted-foreground mb-6">
-          Are you sure you want to delete{" "}
-          <strong>"{itemName}"</strong>? This action cannot be undone.
-        </p>
-
-        <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="cursor-pointer"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={onConfirm}
-            className="bg-destructive hover:bg-destructive/90 cursor-pointer text-white"
+          <AlertDialogDescription>
+            Are you sure you want to delete <strong>"{itemName}"</strong>? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e: React.MouseEvent) => {
+               // Prevent default closing to let the parent control the dialog state
+               // This allows for async operations where we only close on success
+               e.preventDefault();
+               onConfirm();
+            }}
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
           >
             {confirmButtonText}
-          </Button>
-        </div>
-      </div>
-    </div>,
-    document.body
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

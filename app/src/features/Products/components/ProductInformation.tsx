@@ -63,7 +63,7 @@ export default function ProductInformation({
               Status <RequiredFieldIndicator />
             </Label>
             <Select
-              onValueChange={(value) => handleChange("status", value)}
+              onValueChange={(value: string) => handleChange("status", value)}
               value={formData.status}
             >
               <SelectTrigger id="status" className="w-full py-[1.3rem]">
@@ -100,7 +100,7 @@ export default function ProductInformation({
               id="name"
               name="name"
               value={formData.name}
-              onChange={(e) => handleChange(e.target.name, e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e.target.name, e.target.value)}
               placeholder="Enter product name"
               className="h-11"
               required
@@ -119,14 +119,14 @@ export default function ProductInformation({
           </div>
 
           <div className="space-y-3">
-            <Label className="text-sm font-medium">
+            <Label htmlFor="tax_category_id" className="text-sm font-medium">
               Tax Category
             </Label>
             <Select
               value={String(formData.tax_category_id || '')}
-              onValueChange={(value) => handleChange('tax_category_id', value)}
+              onValueChange={(value: string) => handleChange('tax_category_id', value)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="tax_category_id">
                 <SelectValue placeholder="Select Tax Category" />
               </SelectTrigger>
               <SelectContent>
@@ -153,6 +153,7 @@ export default function ProductInformation({
                     onClick={handleRemoveImage}
                     className="h-6 w-6 rounded-full bg-background/70 backdrop-blur-sm hover:bg-background text-muted-foreground hover:text-destructive"
                     title="Remove image"
+                    aria-label="Remove image"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -194,7 +195,7 @@ export default function ProductInformation({
               id="description"
               name="description"
               value={formData.description}
-              onChange={(e) => handleChange(e.target.name, e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange(e.target.name, e.target.value)}
               placeholder="Enter product description..."
               className="flex-grow"
             />
