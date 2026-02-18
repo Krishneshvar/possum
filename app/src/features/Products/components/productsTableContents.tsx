@@ -1,14 +1,21 @@
 import { Badge } from "@/components/ui/badge";
-// @ts-ignore
-import { productStatusBadges } from "../data/productsBadgeStyles";
+import { cn } from "@/lib/utils";
 
+// Helper for status badges
 const getProductStatus = (status: string) => {
-  const statusConfig = productStatusBadges[status];
-  if (!statusConfig) return null;
+  const styles: Record<string, string> = {
+    active: "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
+    inactive: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200",
+    discontinued: "bg-red-100 text-red-700 hover:bg-red-200 border-red-200",
+    draft: "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200",
+  };
+
+  const label = status.charAt(0).toUpperCase() + status.slice(1);
+  const className = styles[status.toLowerCase()] || "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
 
   return (
-    <Badge variant="secondary" className={`${statusConfig.className} font-medium`}>
-      {statusConfig.text}
+    <Badge variant="outline" className={cn("capitalize font-medium border px-2 py-0.5 shadow-sm", className)}>
+      {label}
     </Badge>
   );
 };
@@ -16,16 +23,29 @@ const getProductStatus = (status: string) => {
 export const allColumns = [
   {
     key: "product",
-    label: "Product",
+    label: "Product Name",
     renderCell: (product: any) => (
-      <p className="font-semibold leading-none text-foreground">{product.name}</p>
+      <div className="flex flex-col">
+        <span className="font-semibold text-foreground truncate max-w-[200px] lg:max-w-[300px]" title={product.name}>
+          {product.name}
+        </span>
+        {product.sku && (
+          <span className="text-xs text-muted-foreground font-mono mt-0.5">
+            SKU: {product.sku}
+          </span>
+        )}
+      </div>
     ),
   },
   {
     key: "category",
     label: "Category",
     renderCell: (product: any) => (
-      <p className="text-sm text-muted-foreground">{product.category_name}</p>
+      <div className="flex items-center">
+        <Badge variant="secondary" className="font-normal text-muted-foreground bg-muted hover:bg-muted/80">
+          {product.category_name || "Uncategorized"}
+        </Badge>
+      </div>
     ),
   },
   {
@@ -35,27 +55,40 @@ export const allColumns = [
   },
   {
     key: "stock",
-    label: "Stock",
+    label: "Inventory",
     renderCell: (product: any) => {
       const stock = product.stock ?? 0;
       const alertCap = product.stock_alert_cap ?? 10;
-      let badgeStyle = "bg-success/10 text-success border-success/20";
+
+      let statusColor = "text-green-600 bg-green-50 border-green-200";
       let statusText = "In Stock";
+      let dotColor = "bg-green-500";
 
       if (stock === 0) {
-        badgeStyle = "bg-destructive/10 text-destructive border-destructive/20";
+        statusColor = "text-red-600 bg-red-50 border-red-200";
         statusText = "Out of Stock";
+        dotColor = "bg-red-500";
       } else if (stock <= alertCap) {
-        badgeStyle = "bg-warning/10 text-warning border-warning/20";
+        statusColor = "text-amber-600 bg-amber-50 border-amber-200";
         statusText = "Low Stock";
+        dotColor = "bg-amber-500";
       }
 
       return (
-        <div className="flex flex-col gap-1">
-          <p className="font-semibold text-foreground">{stock} units</p>
-          <Badge variant="outline" className={`${badgeStyle} text-[10px] px-1 py-0 h-4 w-fit font-medium`}>
-            {statusText}
-          </Badge>
+        <div className="flex flex-col gap-1.5 min-w-[100px]">
+          <div className="flex items-baseline gap-1">
+            <span className={cn("text-sm font-semibold", stock === 0 ? "text-muted-foreground" : "text-foreground")}>
+              {stock}
+            </span>
+            <span className="text-xs text-muted-foreground">units</span>
+          </div>
+
+          <div className={cn("flex items-center gap-1.5 px-2 py-0.5 rounded-full border w-fit", statusColor)}>
+            <div className={cn("h-1.5 w-1.5 rounded-full animate-pulse", dotColor)} />
+            <span className="text-[10px] font-medium leading-none uppercase tracking-wide">
+              {statusText}
+            </span>
+          </div>
         </div>
       );
     },

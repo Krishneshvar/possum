@@ -2,7 +2,8 @@ import { Eye, Trash2, Package, Edit } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useMemo } from "react"
 import { useSelector, useDispatch } from "react-redux"
-import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
 import { setSearchTerm, setCurrentPage, setFilter, clearAllFilters } from "../productsSlice"
@@ -91,44 +92,58 @@ export default function ProductsTable() {
   }
 
   const emptyState = (
-    <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
-      <Package className="h-8 w-8 text-muted-foreground" />
-      <p className="text-sm font-medium text-muted-foreground">No products found</p>
-      <p className="text-xs text-muted-foreground max-w-sm">Try adjusting your search or add a new product</p>
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center space-y-4 max-w-sm mx-auto">
+      <div className="bg-muted/50 p-6 rounded-full">
+        <Package className="h-12 w-12 text-muted-foreground/50" />
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold text-foreground">No products found</h3>
+        <p className="text-sm text-muted-foreground">
+          We couldn't find any products matching your search. Try adjusting filters or add a new product.
+        </p>
+      </div>
+      <Button variant="outline" onClick={handleClearAllFilters}>
+        Clear Filters
+      </Button>
     </div>
   )
 
   const renderProductActions = (product: any) => (
-    <ActionsDropdown>
-      <DropdownMenuItem asChild>
-        <Link to={`/products/${product.id}`} className="cursor-pointer">
-          <Eye className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">View Details</span>
-          <span className="sm:hidden">View</span>
+    <div className="flex items-center justify-end gap-1">
+      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hidden sm:flex" asChild title="Edit Product">
+        <Link to={`/products/edit/${product.id}`}>
+          <Edit className="h-4 w-4" />
         </Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link to={`/products/edit/${product.id}`} className="cursor-pointer">
-          <Edit className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Edit Product</span>
-          <span className="sm:hidden">Edit</span>
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        className="text-destructive focus:text-destructive cursor-pointer"
-        onClick={() => handleDeleteClick(product)}
-      >
-        <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-        <span className="hidden sm:inline">Delete Product</span>
-        <span className="sm:hidden">Delete</span>
-      </DropdownMenuItem>
-    </ActionsDropdown>
+      </Button>
+
+      <ActionsDropdown>
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link to={`/products/${product.id}`} className="cursor-pointer">
+            <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>View Details</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to={`/products/edit/${product.id}`} className="cursor-pointer">
+            <Edit className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Edit Product</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive cursor-pointer hover:bg-destructive/10"
+          onClick={() => handleDeleteClick(product)}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          <span>Delete Product</span>
+        </DropdownMenuItem>
+      </ActionsDropdown>
+    </div>
   )
 
   const filtersConfig = useMemo(() => {
     const flatCategories = flattenCategories(categories);
-
     return [
       statusFilter,
       categoryFilter(flatCategories),
@@ -164,7 +179,7 @@ export default function ProductsTable() {
 
         searchTerm={searchTerm}
         onSearchChange={(value) => dispatch(setSearchTerm(value))}
-        searchPlaceholder="Search products by name or SKU..."
+        searchPlaceholder="Search products by name, SKU, or category..."
 
         sortBy={sort.sortBy}
         sortOrder={sort.sortOrder}
@@ -183,6 +198,7 @@ export default function ProductsTable() {
         renderActions={renderProductActions}
         // @ts-ignore
         avatarIcon={<Package className="h-4 w-4 text-primary" />}
+        className="border-none shadow-none bg-transparent sm:bg-card sm:border sm:shadow-sm"
       />
 
       <GenericDeleteDialog
