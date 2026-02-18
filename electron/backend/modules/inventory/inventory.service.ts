@@ -65,29 +65,38 @@ export function adjustInventory({
         throw new Error(`Invalid adjustment reason: ${reason}. Must be one of: ${validReasons.join(', ')}`);
     }
 
-    // Validate stock availability for negative adjustments
-    if (quantityChange < 0) {
-        const currentStock = inventoryRepository.getStockByVariantId(variantId);
-        if (currentStock + quantityChange < 0) {
-            const error = new Error(`Insufficient stock. Available: ${currentStock}, Requested adjustment: ${quantityChange}`);
-            (error as any).code = 'INSUFFICIENT_STOCK';
-            throw error;
-        }
-
-        // Feature: Automatically handle FIFO deduction if no lotId is provided for a negative adjustment
-        if (!lotId) {
-            return deductStock({
-                variantId,
-                quantity: Math.abs(quantityChange),
-                userId,
-                reason,
-                referenceType,
-                referenceId
-            });
-        }
-    }
-
     const tx = transaction(() => {
+        // Validate stock availability for negative adjustments INSIDE transaction
+        if (quantityChange < 0) {
+            const currentStock = inventoryRepository.getStockByVariantId(variantId);
+            if (currentStock + quantityChange < 0) {
+                const error = new Error(`Insufficient stock. Available: ${currentStock}, Requested adjustment: ${quantityChange}`);
+                (error as any).code = 'INSUFFICIENT_STOCK';
+                throw error;
+            }
+
+            // Feature: Automatically handle FIFO deduction if no lotId is provided for a negative adjustment
+            if (!lotId) {
+                deductStockInternal({
+                    variantId,
+                    quantity: Math.abs(quantityChange),
+                    userId,
+                    reason,
+                    referenceType,
+                    referenceId
+                });
+
+                const newStock = inventoryRepository.getStockByVariantId(variantId);
+                return {
+                    id: 0, // Multiple adjustments created
+                    variantId,
+                    quantityChange,
+                    reason,
+                    newStock
+                };
+            }
+        }
+
         // Create inventory adjustment
         const adjustmentResult = inventoryRepository.insertInventoryAdjustment({
             variant_id: variantId,
@@ -102,7 +111,7 @@ export function adjustInventory({
         // Log to product flow
         const eventType = reason === INVENTORY_REASONS.SALE ? 'sale'
             : reason === INVENTORY_REASONS.RETURN ? 'return'
-                : reason === INVENTORY_REASONS.CONFIRM_RECEIVE ? 'adjustment' // or 'purchase' map? 'adjustment' is safer for manual
+                : reason === INVENTORY_REASONS.CONFIRM_RECEIVE ? 'adjustment'
                     : 'adjustment';
 
         productFlowRepository.insertProductFlow({
@@ -133,7 +142,7 @@ export function adjustInventory({
         };
     });
 
-    return tx();
+    return tx.immediate();
 }
 
 /**
@@ -231,15 +240,13 @@ export function receiveInventory({
         };
     });
 
-    return tx();
+    return tx.immediate();
 }
 
 /**
- * Automatically deduct inventory stock from available lots (FIFO)
- * @param {Object} params - Deduction parameters
- * @returns {Object} Result
+ * Internal FIFO deduction logic without transaction wrapper
  */
-export function deductStock({
+function deductStockInternal({
     variantId,
     quantity,
     userId,
@@ -254,56 +261,68 @@ export function deductStock({
     referenceType?: string | null;
     referenceId?: number | null;
 }) {
-    if (quantity <= 0) return { success: true, deducted: 0 };
+    let remainingToDeduct = quantity;
+    const availableLots = inventoryRepository.findAvailableLots(variantId);
 
-    const tx = transaction(() => {
-        let remainingToDeduct = quantity;
-        const availableLots = inventoryRepository.findAvailableLots(variantId);
+    for (const lot of availableLots) {
+        if (remainingToDeduct <= 0) break;
 
-        for (const lot of availableLots) {
-            if (remainingToDeduct <= 0) break;
+        const deductionFromThisLot = Math.min(remainingToDeduct, lot.remaining_quantity);
 
-            const deductionFromThisLot = Math.min(remainingToDeduct, lot.remaining_quantity);
-
-            inventoryRepository.insertInventoryAdjustment({
-                variant_id: variantId,
-                lot_id: lot.id,
-                quantity_change: -deductionFromThisLot,
-                reason,
-                reference_type: referenceType,
-                reference_id: referenceId,
-                adjusted_by: userId
-            });
-
-            remainingToDeduct -= deductionFromThisLot;
-        }
-
-        // If still remainingToDeduct > 0 (headless stock or negative stock allowed)
-        if (remainingToDeduct > 0) {
-            inventoryRepository.insertInventoryAdjustment({
-                variant_id: variantId,
-                lot_id: null,
-                quantity_change: -remainingToDeduct,
-                reason,
-                reference_type: referenceType,
-                reference_id: referenceId,
-                adjusted_by: userId
-            });
-        }
-
-        const eventType = reason === INVENTORY_REASONS.SALE ? 'sale' : 'adjustment';
-        productFlowRepository.insertProductFlow({
+        inventoryRepository.insertInventoryAdjustment({
             variant_id: variantId,
-            event_type: eventType,
-            quantity: -quantity,
-            reference_type: referenceType || 'adjustment',
-            reference_id: referenceId
+            lot_id: lot.id,
+            quantity_change: -deductionFromThisLot,
+            reason,
+            reference_type: referenceType,
+            reference_id: referenceId,
+            adjusted_by: userId
         });
 
-        return { success: true, deducted: quantity };
+        remainingToDeduct -= deductionFromThisLot;
+    }
+
+    // If still remainingToDeduct > 0 (headless stock or negative stock allowed)
+    if (remainingToDeduct > 0) {
+        inventoryRepository.insertInventoryAdjustment({
+            variant_id: variantId,
+            lot_id: null,
+            quantity_change: -remainingToDeduct,
+            reason,
+            reference_type: referenceType,
+            reference_id: referenceId,
+            adjusted_by: userId
+        });
+    }
+
+    const eventType = reason === INVENTORY_REASONS.SALE ? 'sale' : 'adjustment';
+    productFlowRepository.insertProductFlow({
+        variant_id: variantId,
+        event_type: eventType,
+        quantity: -quantity,
+        reference_type: referenceType || 'adjustment',
+        reference_id: referenceId
     });
 
-    return tx();
+    return { success: true, deducted: quantity };
+}
+
+/**
+ * Automatically deduct inventory stock from available lots (FIFO)
+ * @param {Object} params - Deduction parameters
+ * @returns {Object} Result
+ */
+export function deductStock(params: {
+    variantId: number;
+    quantity: number;
+    userId: number;
+    reason: string;
+    referenceType?: string | null;
+    referenceId?: number | null;
+}) {
+    if (params.quantity <= 0) return { success: true, deducted: 0 };
+    const tx = transaction(() => deductStockInternal(params));
+    return tx.immediate();
 }
 
 /**
@@ -381,7 +400,7 @@ export function restoreStock({
         return { success: true, restored: quantity };
     });
 
-    return tx();
+    return tx.immediate();
 }
 
 /**

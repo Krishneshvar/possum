@@ -162,7 +162,7 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
         };
     });
 
-    return tx();
+    return tx.immediate();
 }
 
 /**

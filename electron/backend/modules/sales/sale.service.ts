@@ -55,33 +55,30 @@ export async function createSale({
         throw new Error('Forbidden: Missing required permission sales.create');
     }
 
-    // Pre-fetch stock and variant data asynchronously (Parallel & Non-blocking)
+    // Pre-fetch variant data asynchronously (Parallel & Non-blocking)
     const variantIds = items.map(item => item.variantId);
-    const stockMapPromise = getComputedStockBatch(variantIds);
     const variantPromises = variantIds.map(id => findVariantById(id));
-
-    const [stockMap, variantsList] = await Promise.all([
-        stockMapPromise,
-        Promise.all(variantPromises)
-    ]);
+    const variantsList = await Promise.all(variantPromises);
 
     const preFetchedVariantMap = new Map<number, Variant>();
     variantsList.forEach(v => {
         if (v) preFetchedVariantMap.set(v.id!, v);
     });
 
-    // Validate stock and existence before transaction
-    for (const item of items) {
-        const variant = preFetchedVariantMap.get(item.variantId);
-        if (!variant) throw new Error(`Variant not found: ${item.variantId}`);
-
-        const currentStock = stockMap[item.variantId] ?? 0;
-        if (currentStock < item.quantity) {
-            throw new Error(`Insufficient stock for ${variant.name}. Available: ${currentStock}, Requested: ${item.quantity}`);
-        }
-    }
-
     const saleId = transaction(() => {
+        // LOCKING & VALIDATION: Move stock check INSIDE transaction to prevent race conditions.
+        for (const item of items) {
+            const variant = preFetchedVariantMap.get(item.variantId);
+            if (!variant) throw new Error(`Variant not found: ${item.variantId}`);
+
+            // Fetch FRESH stock inside transaction
+            const currentStock = inventoryRepository.getStockByVariantId(item.variantId);
+            if (currentStock < item.quantity) {
+                const error = new Error(`Insufficient stock for ${variant.name}. Available: ${currentStock}, Requested: ${item.quantity}`);
+                (error as any).code = 'INSUFFICIENT_STOCK';
+                throw error;
+            }
+        }
         // Initialize Tax Engine
         taxEngine.init();
 
@@ -249,7 +246,7 @@ export async function createSale({
         );
 
         return newSaleId;
-    })();
+    }).immediate();
 
     // Fetch created sale to return (outside of transaction)
     const createdSale = saleRepository.findSaleById(saleId);
@@ -333,7 +330,7 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
         );
 
         return { newPaidAmount: newPaidAmount.toNumber(), status: newStatus };
-    })();
+    }).immediate();
 }
 
 /**
@@ -392,7 +389,7 @@ export function cancelSale(saleId: number, userId: number, token?: string): { su
         );
 
         return { success: true, message: 'Sale cancelled successfully' };
-    })();
+    }).immediate();
 }
 
 /**
@@ -437,7 +434,7 @@ export function fulfillSale(saleId: number, userId: number, token?: string): { s
         );
 
         return { success: true, message: 'Sale fulfilled successfully' };
-    })();
+    }).immediate();
 }
 
 /**

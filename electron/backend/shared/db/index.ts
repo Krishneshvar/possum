@@ -59,10 +59,9 @@ export function closeDB(): void {
 /**
  * Execute a function within a database transaction
  * @param {Function} fn - Function to execute within transaction
- * @returns {*} Result of the function
+ * @returns {Database.Transaction} The transaction function
  */
-export function transaction<T>(fn: (...args: any[]) => T): (...args: any[]) => T {
+export function transaction<T extends (...args: any[]) => any>(fn: T): Database.Transaction<T> {
     const db = getDB();
-    const runTransaction = db.transaction(fn);
-    return runTransaction as (...args: any[]) => T;
+    return db.transaction(fn);
 }
