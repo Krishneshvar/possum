@@ -64,7 +64,7 @@ export const allColumns = [
       let statusText = "In Stock";
       let dotColor = "bg-green-500";
 
-      if (stock === 0) {
+      if (stock <= 0) {
         statusColor = "text-red-600 bg-red-50 border-red-200";
         statusText = "Out of Stock";
         dotColor = "bg-red-500";
@@ -77,7 +77,7 @@ export const allColumns = [
       return (
         <div className="flex flex-col gap-1.5 min-w-[100px]">
           <div className="flex items-baseline gap-1">
-            <span className={cn("text-sm font-semibold", stock === 0 ? "text-muted-foreground" : "text-foreground")}>
+            <span className={cn("text-sm font-semibold", stock <= 0 ? "text-muted-foreground" : "text-foreground")}>
               {stock}
             </span>
             <span className="text-xs text-muted-foreground">units</span>

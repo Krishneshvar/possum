@@ -26,7 +26,9 @@ export async function getProductsController(req: Request, res: Response) {
             searchTerm,
             stockStatus,
             status,
-            categories
+            categories,
+            sortBy,
+            sortOrder,
         } = req.query;
 
         const stockStatusArray = getQueryArray(stockStatus);
@@ -44,7 +46,9 @@ export async function getProductsController(req: Request, res: Response) {
             status: statusArray,
             categories: categoryIds,
             currentPage: getQueryNumber(page, 1) || 1,
-            itemsPerPage: getQueryNumber(limit, 10) || 10
+            itemsPerPage: getQueryNumber(limit, 10) || 10,
+            sortBy: getQueryString(sortBy) || 'name',
+            sortOrder: getQueryString(sortOrder) || 'ASC',
         });
 
         res.json(productsData);

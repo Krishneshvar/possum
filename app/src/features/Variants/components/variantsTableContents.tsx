@@ -48,7 +48,5 @@ export const allColumns = [
                 {row.status}
             </Badge>
         ),
-        sortable: true,
-        sortField: 'v.status',
     }
 ];

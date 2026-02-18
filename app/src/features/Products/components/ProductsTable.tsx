@@ -110,10 +110,10 @@ export default function ProductsTable() {
     <div className="flex items-center justify-end gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-muted-foreground hover:text-primary hidden sm:flex" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-primary hidden sm:flex"
             asChild
             aria-label={`Edit ${product.name}`}
           >
@@ -158,9 +158,6 @@ export default function ProductsTable() {
     }
     if (col.key === 'category') {
       return { ...col, sortable: true, sortField: 'category_name' };
-    }
-    if (col.key === 'status') {
-      return { ...col, sortable: true, sortField: 'status' };
     }
     if (col.key === 'stock') {
       return { ...col, sortable: true, sortField: 'stock' };

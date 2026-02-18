@@ -14,6 +14,8 @@ export interface ProductFilter {
     categories?: number[];
     currentPage: number;
     itemsPerPage: number;
+    sortBy?: string;
+    sortOrder?: string;
 }
 
 export interface PaginatedProducts {
@@ -141,7 +143,7 @@ function getStockSubquery(): string {
  * @param {Object} params - Filter and pagination params
  * @returns {Promise<PaginatedProducts>} Products list with pagination info
  */
-export async function findProducts({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage }: ProductFilter): Promise<PaginatedProducts> {
+export async function findProducts({ searchTerm, stockStatus, status, categories, currentPage, itemsPerPage, sortBy, sortOrder }: ProductFilter): Promise<PaginatedProducts> {
     const db = getDB();
     const filterClauses: string[] = [];
     const filterParams: any[] = [];
@@ -205,6 +207,15 @@ export async function findProducts({ searchTerm, stockStatus, status, categories
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedParams = [...filterParams, itemsPerPage, startIndex];
 
+    // Whitelist allowed sort columns to prevent SQL injection
+    const allowedSortColumns: Record<string, string> = {
+        name: 'p.name',
+        category_name: 'c.name',
+        stock: 'computed_stock',
+    };
+    const orderByColumn = allowedSortColumns[sortBy ?? 'name'] ?? 'p.name';
+    const orderByDirection = sortOrder?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
     // Note: We always use the batch approach for stock calculation in the async path
     const paginatedQuery = `
     SELECT
@@ -215,7 +226,8 @@ export async function findProducts({ searchTerm, stockStatus, status, categories
       c.name AS category_name,
       p.tax_category_id,
       v.id as variant_id,
-      v.stock_alert_cap
+      v.stock_alert_cap,
+      ${getStockSubquery()} AS computed_stock
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN variants v ON v.id = (
@@ -227,7 +239,7 @@ export async function findProducts({ searchTerm, stockStatus, status, categories
     )
     ${whereClause}
     GROUP BY p.id
-    ORDER BY p.name ASC
+    ORDER BY ${orderByColumn} ${orderByDirection}
     LIMIT ? OFFSET ?
   `;
 
@@ -241,8 +253,9 @@ export async function findProducts({ searchTerm, stockStatus, status, categories
 
     const paginatedProducts = products.map(p => {
         const product = { ...p, stock: stockMap[p.variant_id!] ?? 0 };
-        // Clean up internal variant_id
+        // Clean up internal fields
         delete (product as any).variant_id;
+        delete (product as any).computed_stock;
         return product;
     });
 

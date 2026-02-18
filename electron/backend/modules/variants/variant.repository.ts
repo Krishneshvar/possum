@@ -170,7 +170,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     stockFilterClause = 'WHERE current_stock > stock_alert_cap';
   }
 
-  const allowSortColumns = ['p.name', 'v.name', 'v.sku', 'v.mrp', 'v.cost_price', 'v.status', 'v.created_at', 'stock'];
+  const allowSortColumns = ['p.name', 'v.name', 'v.sku', 'v.mrp', 'v.cost_price', 'v.created_at', 'stock'];
   const sortMap: Record<string, string> = {
     'p.name': 'product_name',
     'v.name': 'name',
@@ -178,7 +178,6 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     'v.mrp': 'mrp', // Sort by mrp
     'price': 'mrp', // Alias for price
     'v.cost_price': 'cost_price',
-    'v.status': 'status',
     'v.created_at': 'created_at',
     'stock': 'stock'
   };
@@ -312,7 +311,7 @@ export async function getVariantStats(): Promise<{
   avgStockLevel: number;
 }> {
   const db = getDB();
-  
+
   const sql = `
     SELECT 
       v.id,
@@ -326,16 +325,16 @@ export async function getVariantStats(): Promise<{
     JOIN products p ON v.product_id = p.id
     WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
   `;
-  
+
   const variants = db.prepare(sql).all() as Array<{ id: number; stock: number; stock_alert_cap: number; status: string }>;
-  
+
   const totalVariants = variants.length;
   const lowStockVariants = variants.filter(v => v.stock <= v.stock_alert_cap && v.stock > 0).length;
   const inactiveVariants = variants.filter(v => v.status !== 'active').length;
-  const avgStockLevel = totalVariants > 0 
+  const avgStockLevel = totalVariants > 0
     ? Math.round(variants.reduce((sum, v) => sum + v.stock, 0) / totalVariants)
     : 0;
-  
+
   return {
     totalVariants,
     lowStockVariants,
