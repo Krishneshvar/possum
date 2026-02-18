@@ -1,4 +1,3 @@
-// app/src/features/Products/data/productsFiltersConfig.ts
 export const stockStatusFilter = {
     key: "stockStatus",
     label: "Stock Status",
@@ -19,8 +18,8 @@ export const statusFilter = {
     ],
 };
 
-export const categoryFilter = {
-    key: "category",
+export const categoryFilter = (categories: any[]) => ({
+    key: "categories",
     label: "Category",
-    options: [],
-};
+    options: categories.map((c: any) => ({ label: c.name, value: String(c.id) })),
+});
