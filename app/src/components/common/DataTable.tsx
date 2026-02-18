@@ -106,12 +106,14 @@ export default function DataTable({
                                     placeholder={searchPlaceholder}
                                     className="pl-10 h-10 sm:h-11 focus:border-border bg-background text-sm sm:text-base w-full"
                                     value={searchTerm}
-                                    onChange={(e) => onSearchChange(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => onSearchChange(e.target.value)}
+                                    aria-label="Search items"
                                 />
                                 {searchTerm && (
                                     <button
                                         onClick={() => onSearchChange("")}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                                        aria-label="Clear search"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>

@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Split, Plus } from "lucide-react";
+import { Split, Plus, Loader2 } from "lucide-react";
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
 import ProductInformation from "./ProductInformation";
@@ -128,9 +128,16 @@ export default function ProductForm({
         <Button
           type="submit"
           disabled={isSaving}
-          className="cursor-pointer"
+          className="cursor-pointer min-w-[100px]"
         >
-          Save
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save"
+          )}
         </Button>
       </Card>
     </form>
