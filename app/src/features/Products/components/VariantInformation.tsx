@@ -11,10 +11,10 @@ import {
 import RequiredFieldIndicator from "@/components/common/RequiredFieldIndicator";
 
 interface VariantInformationProps {
-    variant: any;
-    errors?: any;
-    onVariantChange: (id: number, field: string, value: string) => void;
-    onVariantBlur?: (id: number, field: string) => void;
+  variant: any;
+  errors?: any;
+  onVariantChange: (id: number, field: string, value: string) => void;
+  onVariantBlur?: (id: number, field: string) => void;
 }
 
 export default function VariantInformation({ variant, errors, onVariantChange, onVariantBlur }: VariantInformationProps) {
@@ -25,8 +25,9 @@ export default function VariantInformation({ variant, errors, onVariantChange, o
           Status <RequiredFieldIndicator />
         </Label>
         <Select
-          onValueChange={(value) => onVariantChange(variant._tempId, 'status', value)}
-          value={variant.status}
+          key={variant.status}
+          onValueChange={(value: string) => onVariantChange(variant._tempId, 'status', value)}
+          value={variant.status?.toLowerCase().trim()}
         >
           <SelectTrigger id={`status-${variant._tempId}`} className="w-full py-[1.3rem]">
             <SelectValue placeholder="Select status" />
@@ -62,7 +63,7 @@ export default function VariantInformation({ variant, errors, onVariantChange, o
           id={`variant-name-${variant._tempId}`}
           name="name"
           value={variant.name}
-          onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
           onBlur={() => onVariantBlur?.(variant._tempId, 'name')}
           placeholder="e.g. Red, Size L"
           className="h-11"
@@ -79,7 +80,7 @@ export default function VariantInformation({ variant, errors, onVariantChange, o
           id={`sku-${variant._tempId}`}
           name="sku"
           value={variant.sku}
-          onChange={(e) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onVariantChange(variant._tempId, e.target.name, e.target.value)}
           onBlur={() => onVariantBlur?.(variant._tempId, 'sku')}
           placeholder="Variant SKU"
           className="h-11 font-mono"

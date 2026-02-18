@@ -33,8 +33,9 @@ export default function ProductOrganizationSection({
                         Status <RequiredFieldIndicator />
                     </Label>
                     <Select
+                        key={formData.status}
                         onValueChange={(value: string) => handleChange("status", value)}
-                        value={formData.status}
+                        value={formData.status?.toLowerCase().trim()}
                     >
                         <SelectTrigger id="status" className="w-full" aria-label="Product status">
                             <SelectValue placeholder="Select status" />
@@ -80,6 +81,7 @@ export default function ProductOrganizationSection({
                         Tax Category
                     </Label>
                     <Select
+                        key={`${formData.tax_category_id || ""}-${taxCategories?.length || 0}`}
                         value={String(formData.tax_category_id || '')}
                         onValueChange={(value: string) => handleChange('tax_category_id', value)}
                     >

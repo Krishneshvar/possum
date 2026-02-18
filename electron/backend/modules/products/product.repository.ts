@@ -270,7 +270,8 @@ export async function findProductWithVariants(productId: number): Promise<Produc
 
     const variants = db.prepare(`
         SELECT 
-            v.*
+            v.*,
+            v.mrp as price
         FROM variants v
         WHERE v.product_id = ? AND v.deleted_at IS NULL
         ORDER BY v.is_default DESC, v.name ASC
@@ -299,7 +300,7 @@ export async function findProductWithVariants(productId: number): Promise<Produc
 export function findProductTaxes(productId: number): any[] {
     const db = getDB();
     const product = db.prepare('SELECT tax_category_id FROM products WHERE id = ?').get(productId) as { tax_category_id: number | null } | undefined;
-    
+
     if (!product || !product.tax_category_id) {
         return [];
     }
@@ -310,19 +311,19 @@ export function findProductTaxes(productId: number): any[] {
     }
 
     return db.prepare(`
-        SELECT 
-            tr.id,
-            tc.name,
-            tr.rate_percent as rate,
-            tr.rule_scope as type
+    SELECT
+    tr.id,
+        tc.name,
+        tr.rate_percent as rate,
+        tr.rule_scope as type
         FROM tax_rules tr
         INNER JOIN tax_categories tc ON tr.tax_category_id = tc.id
-        WHERE tr.tax_profile_id = ? 
+        WHERE tr.tax_profile_id = ?
         AND tr.tax_category_id = ?
-        AND (tr.valid_from IS NULL OR tr.valid_from <= date('now'))
-        AND (tr.valid_to IS NULL OR tr.valid_to >= date('now'))
+            AND(tr.valid_from IS NULL OR tr.valid_from <= date('now'))
+        AND(tr.valid_to IS NULL OR tr.valid_to >= date('now'))
         ORDER BY tr.priority DESC
-    `).all(activeProfile.id, product.tax_category_id);
+        `).all(activeProfile.id, product.tax_category_id);
 }
 
 /**

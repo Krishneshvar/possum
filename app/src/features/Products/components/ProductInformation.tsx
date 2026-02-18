@@ -10,23 +10,23 @@ import CategorySelector from "./CategorySelector";
 import { useEffect, useRef } from "react";
 
 interface ProductInformationProps {
-    formData: any;
-    handleChange: (field: string, value: any) => void;
-    handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    imageUrl: string | null;
-    handleRemoveImage: () => void;
-    categories: any[];
-    taxCategories?: any[];
+  formData: any;
+  handleChange: (field: string, value: any) => void;
+  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  imageUrl: string | null;
+  handleRemoveImage: () => void;
+  categories: any[];
+  taxCategories?: any[];
 }
 
 export default function ProductInformation({
-    formData,
-    handleChange,
-    handleFileChange,
-    imageUrl,
-    handleRemoveImage,
-    categories,
-    taxCategories
+  formData,
+  handleChange,
+  handleFileChange,
+  imageUrl,
+  handleRemoveImage,
+  categories,
+  taxCategories
 }: ProductInformationProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,8 +63,9 @@ export default function ProductInformation({
               Status <RequiredFieldIndicator />
             </Label>
             <Select
+              key={formData.status}
               onValueChange={(value: string) => handleChange("status", value)}
-              value={formData.status}
+              value={formData.status?.toLowerCase().trim()}
             >
               <SelectTrigger id="status" className="w-full py-[1.3rem]">
                 <SelectValue placeholder="Select status" />
@@ -123,6 +124,7 @@ export default function ProductInformation({
               Tax Category
             </Label>
             <Select
+              key={`${formData.tax_category_id || ""}-${taxCategories?.length || 0}`}
               value={String(formData.tax_category_id || '')}
               onValueChange={(value: string) => handleChange('tax_category_id', value)}
             >

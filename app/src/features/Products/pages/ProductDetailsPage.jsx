@@ -90,7 +90,8 @@ export default function ProductDetailsPage() {
       discontinued: { label: "Discontinued", className: "bg-red-100 text-red-700 border-red-200" },
     };
 
-    const config = statusConfig[status] || statusConfig.inactive;
+    const normalizedStatus = (status || 'inactive').toLowerCase();
+    const config = statusConfig[normalizedStatus] || statusConfig.inactive;
     return (
       <Badge variant="outline" className={config.className}>
         {config.label}
@@ -202,9 +203,9 @@ export default function ProductDetailsPage() {
               <div className="flex flex-col sm:flex-row gap-6">
                 {product.imageUrl && (
                   <div className="flex-shrink-0">
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name} 
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
                       className="w-32 h-32 rounded-lg object-cover border"
                     />
                   </div>

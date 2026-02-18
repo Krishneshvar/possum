@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 export interface ProductFormData {
     name: string;
@@ -25,7 +25,8 @@ const defaultVariant = {
     stock: '',
     stock_alert_cap: 10,
     is_default: true,
-    status: 'active'
+    status: 'active',
+    profit_margin: ''
 };
 
 export function useProductAndVariantForm(initialData?: any) {
@@ -50,14 +51,16 @@ export function useProductAndVariantForm(initialData?: any) {
                 description: initialData.description || '',
                 category_id: initialData.category_id ? String(initialData.category_id) : '',
                 tax_category_id: initialData.tax_category_id ? String(initialData.tax_category_id) : '',
-                status: initialData.status || 'active',
+                status: (initialData.status || 'active').toLowerCase(),
                 imageFile: null,
                 imageUrl: initialData.imageUrl || initialData.image_path || null,
                 variants: initialData.variants?.map((v: any) => ({
                     ...v,
                     _tempId: v.id || Date.now() + Math.random(),
+                    status: (v.status || 'active').toLowerCase(),
                     mrp: v.price ?? v.mrp ?? '',
                     cost_price: v.cost_price ?? '',
+                    profit_margin: ((v.price ?? v.mrp) && v.cost_price && (v.price ?? v.mrp) > 0) ? (((((v.price ?? v.mrp) - v.cost_price) / (v.price ?? v.mrp)) * 100).toFixed(2)) : '',
                     stock: v.stock ?? '',
                     stock_alert_cap: v.stock_alert_cap ?? 10
                 })) || [defaultVariant]
@@ -112,12 +115,41 @@ export function useProductAndVariantForm(initialData?: any) {
         setFormData(prev => {
             const newVariants = [...prev.variants];
             const index = newVariants.findIndex(v => v._tempId === tempId);
-            if (index !== -1) {
-                newVariants[index] = { ...newVariants[index], [field]: value };
+            if (index === -1) return prev;
+
+            const variant = { ...newVariants[index], [field]: value };
+
+            // Pricing calculation logic
+            const mrpRaw = field === 'mrp' ? value : variant.mrp;
+            const costRaw = field === 'cost_price' ? value : variant.cost_price;
+            const marginRaw = field === 'profit_margin' ? value : variant.profit_margin;
+
+            const mrp = parseFloat(mrpRaw);
+            const cost = parseFloat(costRaw);
+            const margin = parseFloat(marginRaw);
+
+            if (field === 'mrp' || field === 'cost_price') {
+                if (!isNaN(mrp) && !isNaN(cost) && mrp > 0) {
+                    variant.profit_margin = (((mrp - cost) / mrp) * 100).toFixed(2);
+                } else if (!mrpRaw || !costRaw) {
+                    variant.profit_margin = '';
+                }
+            } else if (field === 'profit_margin') {
+                if (!isNaN(margin)) {
+                    if (!isNaN(mrp) && mrp > 0) {
+                        variant.cost_price = (mrp * (1 - margin / 100)).toFixed(2);
+                    } else if (!isNaN(cost) && margin < 100) {
+                        variant.mrp = (cost / (1 - margin / 100)).toFixed(2);
+                    }
+                } else if (!marginRaw) {
+                    // If margin is cleared, we don't necessarily clear MRP/Cost because they are primary
+                }
             }
+
+            newVariants[index] = variant;
             return { ...prev, variants: newVariants };
         });
-        
+
         const index = formData.variants.findIndex(v => v._tempId === tempId);
         const touchKey = `variant-${index}-${field}`;
         if (touched[touchKey]) {
@@ -151,6 +183,7 @@ export function useProductAndVariantForm(initialData?: any) {
     const clearPriceFields = (tempId: number) => {
         handleVariantChange(tempId, 'mrp', '');
         handleVariantChange(tempId, 'cost_price', '');
+        handleVariantChange(tempId, 'profit_margin', '');
     };
 
     const addVariantLocally = () => {
@@ -162,6 +195,7 @@ export function useProductAndVariantForm(initialData?: any) {
                 sku: '',
                 mrp: '',
                 cost_price: '',
+                profit_margin: '',
                 stock: '',
                 stock_alert_cap: 10,
                 is_default: false,
