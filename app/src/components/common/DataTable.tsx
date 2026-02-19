@@ -38,6 +38,7 @@ interface DataTableProps {
     totalPages?: number;
     onPageChange?: (page: number) => void;
     filtersConfig?: any[];
+    customFilters?: React.ReactNode;
     activeFilters?: Record<string, any>;
     onFilterChange?: (payload: { key: string; value: string[] }) => void;
     onClearAllFilters?: () => void;
@@ -72,6 +73,7 @@ export default function DataTable({
 
     // Filters
     filtersConfig,
+    customFilters,
     activeFilters,
     onFilterChange,
     onClearAllFilters,
@@ -131,14 +133,19 @@ export default function DataTable({
                 </div>
 
                 {/* Filters - Below Search Bar */}
-                {filtersConfig && activeFilters && onFilterChange && onClearAllFilters && (
+                {(filtersConfig || customFilters) && activeFilters && onFilterChange && onClearAllFilters && (
                     <div className="px-4 sm:px-6 pt-3">
-                        <GenericFilter
-                            filtersConfig={filtersConfig}
-                            activeFilters={activeFilters}
-                            onFilterChange={onFilterChange}
-                            onClearAllFilters={onClearAllFilters}
-                        />
+                        <div className="flex gap-2 items-center">
+                            {filtersConfig && (
+                                <GenericFilter
+                                    filtersConfig={filtersConfig}
+                                    activeFilters={activeFilters}
+                                    onFilterChange={onFilterChange}
+                                    onClearAllFilters={onClearAllFilters}
+                                />
+                            )}
+                            {customFilters}
+                        </div>
                     </div>
                 )}
 

@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { ClipboardCheck, Eye } from 'lucide-react';
+import { ClipboardCheck, Eye, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { useGetAuditLogsQuery } from '@/services/auditLogApi';
-import { setSearchTerm, setCurrentPage, setSort, setFilter, clearAllFilters } from '../auditLogSlice';
+import { setSearchTerm, setCurrentPage, setSort, setFilter, clearAllFilters, setDateRange } from '../auditLogSlice';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import { allColumns } from './auditLogTableContents';
 import { actionFilter, resourceFilter } from '../data/auditLogFiltersConfig';
@@ -19,6 +22,8 @@ export default function AuditLogTable() {
     const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder, filters } = useSelector((state: any) => state.auditLog);
     const [selectedLog, setSelectedLog] = useState<any>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [startDate, setStartDate] = useState(filters.startDate || '');
+    const [endDate, setEndDate] = useState(filters.endDate || '');
 
     const { data, isLoading: isDataLoading, error, refetch } = useGetAuditLogsQuery({
         page: currentPage,
@@ -38,6 +43,12 @@ export default function AuditLogTable() {
 
     const handleClearAllFilters = () => {
         dispatch(clearAllFilters());
+        setStartDate('');
+        setEndDate('');
+    }
+
+    const handleDateRangeApply = () => {
+        dispatch(setDateRange({ startDate, endDate }));
     }
 
     const handlePageChange = (page: number) => {
@@ -71,6 +82,43 @@ export default function AuditLogTable() {
         resourceFilter,
     ];
 
+    const dateRangeFilter = (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Date Range
+                    {(filters.startDate || filters.endDate) && (
+                        <span className="ml-2 bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs">Active</span>
+                    )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="start">
+                <div className="space-y-3">
+                    <div>
+                        <label className="text-sm font-medium mb-1.5 block">From Date</label>
+                        <Input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium mb-1.5 block">To Date</label>
+                        <Input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
+                    </div>
+                    <Button onClick={handleDateRangeApply} className="w-full" size="sm">
+                        Apply
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+
     const parseJson = (data: any) => {
         if (!data) return null;
         try {
@@ -98,13 +146,14 @@ export default function AuditLogTable() {
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 // @ts-ignore
-                onSort={(column) => dispatch(setSort({ sortBy: column.sortField, sortOrder: sortOrder === 'ASC' ? 'DESC' : 'ASC' }))}
+                onSort={(column) => dispatch(setSort({ sortBy: column.sortField, sortOrder: sortBy === column.sortField && sortOrder === 'ASC' ? 'DESC' : 'ASC' }))}
 
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
 
                 filtersConfig={filtersConfig}
+                customFilters={dateRangeFilter}
                 activeFilters={filters}
                 onFilterChange={handleFilterChange}
                 onClearAllFilters={handleClearAllFilters}

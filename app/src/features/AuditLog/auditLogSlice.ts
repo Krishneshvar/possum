@@ -19,7 +19,7 @@ interface AuditLogState {
 const initialState: AuditLogState = {
     searchTerm: '',
     currentPage: 1,
-    itemsPerPage: 50,
+    itemsPerPage: 20,
     sortBy: 'created_at',
     sortOrder: 'DESC',
     filters: {
@@ -53,6 +53,12 @@ const auditLogSlice = createSlice({
             state.filters[key] = value;
             state.currentPage = 1;
         },
+        setDateRange: (state, action) => {
+            const { startDate, endDate } = action.payload;
+            state.filters.startDate = startDate || null;
+            state.filters.endDate = endDate || null;
+            state.currentPage = 1;
+        },
         clearAllFilters: (state) => {
             state.filters = initialState.filters;
             state.currentPage = 1;
@@ -61,5 +67,5 @@ const auditLogSlice = createSlice({
     },
 });
 
-export const { setSearchTerm, setCurrentPage, setSort, setFilter, clearAllFilters } = auditLogSlice.actions;
+export const { setSearchTerm, setCurrentPage, setSort, setFilter, setDateRange, clearAllFilters } = auditLogSlice.actions;
 export default auditLogSlice.reducer;

@@ -4,19 +4,21 @@ import { AuditLogFilters } from './audit.repository.js';
 
 export async function getAuditLogs(req: Request, res: Response) {
     try {
-        const { userId, action, startDate, endDate, limit, offset } = req.query;
+        const { userId, action, startDate, endDate, limit, offset, sortBy, sortOrder, page, searchTerm } = req.query;
 
         const limitNum = limit ? parseInt(limit as string, 10) : 100;
-        const offsetNum = offset ? parseInt(offset as string, 10) : 0;
-        const currentPage = Math.floor(offsetNum / limitNum) + 1;
+        const pageNum = page ? parseInt(page as string, 10) : 1;
 
         const params: AuditLogFilters = {
             userId: userId ? parseInt(userId as string, 10) : undefined,
             action: action as string || undefined,
             startDate: startDate as string || undefined,
             endDate: endDate as string || undefined,
+            searchTerm: searchTerm as string || undefined,
+            sortBy: sortBy as string || undefined,
+            sortOrder: (sortOrder as 'ASC' | 'DESC') || undefined,
             itemsPerPage: limitNum,
-            currentPage: currentPage
+            currentPage: pageNum
         };
 
         const logs = await AuditService.getAuditLogs(params);

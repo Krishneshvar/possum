@@ -58,15 +58,11 @@ export const allColumns = [
     {
         key: "action",
         label: "Action",
-        sortable: true,
-        sortField: "action",
         renderCell: (log: any) => getActionBadge(log.action),
     },
     {
         key: "table_name",
         label: "Resource",
-        sortable: true,
-        sortField: "table_name",
         renderCell: (log: any) => (
             log.table_name ? (
                 <div className="flex flex-col">
