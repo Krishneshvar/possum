@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,7 +23,7 @@ import {
   useCancelPurchaseOrderMutation
 } from '@/services/purchaseApi';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
+import { Plus, Eye, CheckCircle, XCircle, ShoppingCart, PackageCheck, PackageX } from 'lucide-react';
 import { toast } from 'sonner';
 // @ts-ignore
 import CurrencyText from '@/components/common/CurrencyText';
@@ -133,8 +139,7 @@ export default function PurchaseOrdersPage() {
     {
       key: 'id',
       label: 'PO Number',
-      sortable: true,
-      sortField: 'id',
+      sortable: false,
       renderCell: (po: PurchaseOrder) => <span className="font-medium">#{po.id}</span>
     },
     {
@@ -147,7 +152,8 @@ export default function PurchaseOrdersPage() {
     {
       key: 'supplier_name',
       label: 'Supplier',
-      sortable: false,
+      sortable: true,
+      sortField: 'supplier_name',
       renderCell: (po: PurchaseOrder) => <span className="font-medium">{po.supplier_name}</span>
     },
     {
@@ -165,8 +171,7 @@ export default function PurchaseOrdersPage() {
     {
       key: 'status',
       label: 'Status',
-      sortable: true,
-      sortField: 'status',
+      sortable: false,
       className: 'text-center',
       renderCell: (po: PurchaseOrder) => (
         <div className="flex justify-center">
@@ -178,34 +183,93 @@ export default function PurchaseOrdersPage() {
     },
   ];
 
-  const renderActions = (po: PurchaseOrder) => (
-    <ActionsDropdown>
-      <DropdownMenuItem onClick={() => navigate(`/purchase/orders/${po.id}`)} className="cursor-pointer">
-        <Eye className="mr-2 h-4 w-4" />
-        <span>View Details</span>
-      </DropdownMenuItem>
-      {po.status === 'pending' && (
-        <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => handleReceive(po.id)} className="cursor-pointer text-green-600 focus:text-green-600">
-            <CheckCircle className="mr-2 h-4 w-4" />
-            <span>Mark as Received</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setPoToCancel(po)}
-            className="cursor-pointer text-destructive focus:text-destructive"
-          >
-            <XCircle className="mr-2 h-4 w-4" />
-            <span>Cancel Order</span>
-          </DropdownMenuItem>
-        </>
-      )}
-    </ActionsDropdown>
-  );
+  const renderActions = (po: PurchaseOrder) => {
+    if (po.status === 'pending') {
+      return (
+        <TooltipProvider>
+          <div className="flex items-center gap-2 justify-end">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleReceive(po.id)}
+                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                  aria-label={`Receive purchase order ${po.id}`}
+                >
+                  <PackageCheck className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Receive</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPoToCancel(po)}
+                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                  aria-label={`Cancel purchase order ${po.id}`}
+                >
+                  <PackageX className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Cancel</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/purchase/orders/${po.id}`)}
+                  className="h-8 w-8 p-0"
+                  aria-label={`View details for purchase order ${po.id}`}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+      );
+    }
+    
+    return (
+      <TooltipProvider>
+        <div className="flex justify-end">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/purchase/orders/${po.id}`)}
+                className="h-8 w-8 p-0"
+                aria-label={`View details for purchase order ${po.id}`}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>View</TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
+    );
+  };
 
   const emptyState = (
-    <div className="text-center p-8 text-muted-foreground">
-      No purchase orders found. Create your first purchase order to get started.
+    <div className="flex flex-col items-center justify-center p-12 text-center">
+      <div className="rounded-full bg-muted p-6 mb-4">
+        <ShoppingCart className="h-12 w-12 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-semibold mb-2">No Purchase Orders Yet</h3>
+      <p className="text-sm text-muted-foreground mb-6 max-w-md">
+        Purchase orders help you track inventory orders from suppliers. Create your first order to manage incoming stock.
+      </p>
+      <Button onClick={() => navigate('/purchase/orders/create')} size="lg">
+        <Plus className="mr-2 h-4 w-4" />
+        Create First Purchase Order
+      </Button>
     </div>
   );
 
@@ -218,7 +282,7 @@ export default function PurchaseOrdersPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-muted-foreground">{totalCount} Orders</span>
-          <Button onClick={() => navigate('/purchase/orders/new')}>
+          <Button onClick={() => navigate('/purchase/orders/create')}>
             <Plus className="mr-2 h-4 w-4" />
             New Purchase Order
           </Button>

@@ -23,7 +23,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Calendar, User, Package, CheckCircle, XCircle, Printer, Truck, Receipt } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Package, CheckCircle, XCircle, Printer, Truck, Receipt, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
@@ -78,7 +78,13 @@ export default function PurchaseOrderDetailPage() {
         <div className="container mx-auto p-4 max-w-5xl space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate('/purchase')} className="shrink-0">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => navigate('/purchase')} 
+                        className="shrink-0"
+                        aria-label="Back to purchase orders"
+                    >
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <div>
@@ -99,37 +105,62 @@ export default function PurchaseOrderDetailPage() {
                         <>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" disabled={isCancelling}>
-                                        <XCircle className="mr-2 h-4 w-4" />
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10" 
+                                        disabled={isCancelling || isReceiving}
+                                        aria-label="Cancel purchase order"
+                                    >
+                                        {isCancelling ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <XCircle className="mr-2 h-4 w-4" />
+                                        )}
                                         Cancel Order
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogTitle>Cancel Purchase Order?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This will cancel Purchase Order <span className="font-mono font-bold">PO-{po.id}</span>.
-                                            This action cannot be undone.
+                                            This will cancel Purchase Order <span className="font-mono font-bold">PO-{po.id}</span> from {po.supplier_name}.
+                                            This action cannot be undone and the order will not be fulfilled.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>No, Keep it</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleCancel} className="bg-red-600 hover:bg-red-700">
-                                            Confirm Cancellation
+                                        <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleCancel} className="bg-destructive hover:bg-destructive/90">
+                                            Yes, Cancel Order
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
 
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20" onClick={handleReceive} disabled={isReceiving}>
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Receive Order
+                            <Button 
+                                size="sm" 
+                                className="bg-green-600 hover:bg-green-700 text-white" 
+                                onClick={handleReceive} 
+                                disabled={isReceiving || isCancelling}
+                                aria-label="Receive purchase order and update inventory"
+                            >
+                                {isReceiving ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Receiving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                        Receive Order
+                                    </>
+                                )}
                             </Button>
                         </>
                     )}
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" disabled aria-label="Print purchase order (coming soon)">
                         <Printer className="mr-2 h-4 w-4" />
-                        Print PO
+                        Print
                     </Button>
                 </div>
             </div>
@@ -202,7 +233,7 @@ export default function PurchaseOrderDetailPage() {
                                     </span>
                                     <span className="text-xs font-medium">{po.created_by_name}</span>
                                 </div>
-                                {po.received_date && (
+                                {po.status === 'received' && po.received_date && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs text-muted-foreground flex items-center gap-2">
                                             <Calendar className="h-3.5 w-3.5" />

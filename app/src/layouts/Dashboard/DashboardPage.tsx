@@ -34,7 +34,6 @@ import ReturnsPage from '@/features/Sales/pages/ReturnsPage';
 
 import SettingsPage from '@/features/Settings/pages/SettingsPage';
 import TransactionsPage from '@/features/Transactions/pages/TransactionsPage';
-import PurchasePage from '@/features/Purchase/pages/PurchasePage';
 import PurchaseOrdersPage from '@/features/Purchase/pages/PurchaseOrderPage';
 import CreatePurchaseOrderPage from '@/features/Purchase/pages/CreatePurchaseOrderPage';
 import SuppliersPage from '@/features/Suppliers/pages/SuppliersPage';
@@ -126,10 +125,10 @@ export default function DashboardPage() {
         <Route path="/products/flow" element={<ProtectedRoute requiredPermissions="products.manage"><ProductFlowPage /></ProtectedRoute>} />
         <Route path="/products/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
 
-        <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchasePage /></ProtectedRoute>} />
+        <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
         <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
-        <Route path="/purchase/orders/:id" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrderDetailPage /></ProtectedRoute>} />
         <Route path="/purchase/orders/create" element={<ProtectedRoute requiredPermissions="purchase.manage"><CreatePurchaseOrderPage /></ProtectedRoute>} />
+        <Route path="/purchase/orders/:id" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrderDetailPage /></ProtectedRoute>} />
         <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
 
         <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />
