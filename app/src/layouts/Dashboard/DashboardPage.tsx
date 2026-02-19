@@ -105,8 +105,8 @@ export default function DashboardPage() {
         <Route path="/sales/orders" element={<ProtectedRoute requiredPermissions="sales.view"><OrdersPage /></ProtectedRoute>} />
         <Route path="/sales/history" element={<ProtectedRoute requiredPermissions="sales.view"><SalesHistoryPage /></ProtectedRoute>} />
         <Route path="/sales/history/:saleId" element={<ProtectedRoute requiredPermissions="sales.view"><SaleDetailsPage /></ProtectedRoute>} />
-        <Route path="/sales/transactions" element={<ProtectedRoute requiredPermissions="sales.view"><TransactionsPage /></ProtectedRoute>} />
-        <Route path="/sales/returns" element={<ProtectedRoute requiredPermissions="sales.refund"><ReturnsPage /></ProtectedRoute>} />
+        <Route path="/transactions" element={<ProtectedRoute requiredPermissions="sales.view"><TransactionsPage /></ProtectedRoute>} />
+        <Route path="/returns" element={<ProtectedRoute requiredPermissions="sales.refund"><ReturnsPage /></ProtectedRoute>} />
 
 
         <Route path="/reports" element={<ProtectedRoute requiredPermissions="reports.view"><ReportsPage /></ProtectedRoute>} />
