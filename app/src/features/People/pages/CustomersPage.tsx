@@ -26,9 +26,11 @@ export default function CustomersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
   const itemsPerPage = 10;
 
-  const { data, isLoading, error, refetch } = useGetCustomersQuery({ searchTerm, page: currentPage, limit: itemsPerPage });
+  const { data, isLoading, error, refetch } = useGetCustomersQuery({ searchTerm, page: currentPage, limit: itemsPerPage, sortBy, sortOrder });
   const [createCustomer, { isLoading: isCreating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: isUpdating }] = useUpdateCustomerMutation();
   const [deleteCustomer] = useDeleteCustomerMutation();
@@ -84,16 +86,30 @@ export default function CustomersPage() {
     }
   };
 
+  const handleSort = (column: any) => {
+    if (column.key === sortBy) {
+      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+      setSortBy(column.key);
+      setSortOrder('ASC');
+    }
+  };
+
   const columns = [
-    { key: 'name', label: 'Name', renderCell: (c: any) => <span className="font-medium">{c.name}</span> },
+    { key: 'name', label: 'Name', sortable: true, renderCell: (c: any) => <span className="font-medium">{c.name}</span> },
     { key: 'phone', label: 'Phone', renderCell: (c: any) => c.phone || '-' },
-    { key: 'email', label: 'Email', renderCell: (c: any) => c.email || '-' },
+    { key: 'email', label: 'Email', sortable: true, renderCell: (c: any) => c.email || '-' },
     { key: 'address', label: 'Address', renderCell: (c: any) => <div className="max-w-[200px] truncate">{c.address || '-'}</div> },
   ];
 
   const renderActions = (customer: any) => (
     <div className="flex items-center gap-2 justify-end">
-      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(customer)}>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        onClick={() => handleOpenEditDialog(customer)}
+        aria-label={`Edit ${customer.name}`}
+      >
         <Pencil className="h-4 w-4" />
       </Button>
       <Button
@@ -101,6 +117,7 @@ export default function CustomersPage() {
         size="icon"
         className="text-destructive hover:text-destructive hover:bg-destructive/10"
         onClick={() => handleOpenDeleteDialog(customer)}
+        aria-label={`Delete ${customer.name}`}
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -108,8 +125,20 @@ export default function CustomersPage() {
   );
 
   const emptyState = (
-    <div className="text-center p-8 text-muted-foreground">
-      No customers found.
+    <div className="text-center p-8 space-y-3">
+      <div className="flex justify-center">
+        <div className="rounded-full bg-muted p-3">
+          <Users className="h-6 w-6 text-muted-foreground" />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground">No customers yet</p>
+        <p className="text-sm text-muted-foreground">Start building your customer base by adding your first customer</p>
+      </div>
+      <Button onClick={handleOpenAddDialog} size="sm" className="mt-2">
+        <Plus className="h-4 w-4 mr-2" />
+        Add Your First Customer
+      </Button>
     </div>
   );
 
@@ -141,6 +170,10 @@ export default function CustomersPage() {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search customers..."
+
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
 
         currentPage={currentPage}
         totalPages={totalPages}

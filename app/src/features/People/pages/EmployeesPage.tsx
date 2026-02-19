@@ -5,6 +5,12 @@ import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -27,9 +33,17 @@ export default function EmployeesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
   const itemsPerPage = 10;
 
-  const { data, isLoading, error, refetch } = useGetUsersQuery({ search: searchTerm, page: currentPage, limit: itemsPerPage });
+  const { data, isLoading, error, refetch } = useGetUsersQuery({ 
+    search: searchTerm, 
+    page: currentPage, 
+    limit: itemsPerPage,
+    sortBy,
+    sortOrder
+  });
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
@@ -85,14 +99,39 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleSort = (column: any) => {
+    const field = column.sortField || column.key;
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+      setSortBy(field);
+      setSortOrder('ASC');
+    }
+  };
+
   const columns = [
-    { key: 'name', label: 'Name', renderCell: (u: any) => <span className="font-medium">{u.name}</span> },
-    { key: 'username', label: 'Username', renderCell: (u: any) => u.username },
+    { 
+      key: 'name', 
+      label: 'Name', 
+      sortable: true,
+      sortField: 'name',
+      renderCell: (u: any) => <span className="font-medium">{u.name}</span> 
+    },
+    { 
+      key: 'username', 
+      label: 'Username', 
+      sortable: true,
+      sortField: 'username',
+      renderCell: (u: any) => u.username 
+    },
     {
       key: 'is_active',
       label: 'Status',
       renderCell: (u: any) => (
-        <Badge variant={u.is_active ? "default" : "secondary"}>
+        <Badge 
+          variant={u.is_active ? "default" : "secondary"}
+          aria-label={`Employee status: ${u.is_active ? "Active" : "Inactive"}`}
+        >
           {u.is_active ? "Active" : "Inactive"}
         </Badge>
       )
@@ -100,29 +139,63 @@ export default function EmployeesPage() {
     {
       key: 'created_at',
       label: 'Created At',
+      sortable: true,
+      sortField: 'created_at',
       renderCell: (u: any) => <span className="text-muted-foreground text-sm">{new Date(u.created_at).toLocaleDateString()}</span>
     },
   ];
 
   const renderActions = (user: any) => (
-    <div className="flex items-center gap-2 justify-end">
-      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(user)}>
-        <Pencil className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={() => handleOpenDeleteDialog(user)}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
+    <TooltipProvider>
+      <div className="flex items-center gap-2 justify-end">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => handleOpenEditDialog(user)}
+              aria-label={`Edit ${user.name}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Edit employee</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => handleOpenDeleteDialog(user)}
+              aria-label={`Delete ${user.name}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Delete employee</TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   );
 
   const emptyState = (
-    <div className="text-center p-8 text-muted-foreground">
-      No employees found.
+    <div className="text-center p-12 space-y-3">
+      <div className="flex justify-center">
+        <div className="rounded-full bg-muted p-3">
+          <UserCog className="h-6 w-6 text-muted-foreground" />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">No employees yet</p>
+        <p className="text-sm text-muted-foreground">
+          Add employees to manage access and track activity
+        </p>
+      </div>
+      <Button onClick={handleOpenAddDialog} size="sm" className="mt-4">
+        <Plus className="h-4 w-4 mr-2" />
+        Add Your First Employee
+      </Button>
     </div>
   );
 
@@ -137,6 +210,7 @@ export default function EmployeesPage() {
               label: "Add Employee",
               icon: Plus,
               onClick: handleOpenAddDialog,
+              ariaLabel: "Add new employee (Ctrl+N)",
             }
           }}
         />
@@ -154,6 +228,10 @@ export default function EmployeesPage() {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search employees..."
+
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
 
         currentPage={currentPage}
         totalPages={totalPages}

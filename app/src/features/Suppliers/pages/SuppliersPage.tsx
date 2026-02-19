@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useGetSuppliersQuery, useDeleteSupplierMutation } from '@/services/suppliersApi';
 import { SupplierForm } from '../components/SupplierForm';
-import { Plus, Trash2, Edit, Truck } from 'lucide-react';
+import { Plus, Trash2, Edit, Truck, PackageOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
@@ -124,22 +124,32 @@ export default function SuppliersPage() {
   const renderActions = (supplier: any) => (
     <ActionsDropdown>
       <DropdownMenuItem onClick={() => handleEditClick(supplier)} className="cursor-pointer">
-        <Edit className="mr-2 h-4 w-4" />
-        <span>Edit</span>
+        <Edit className="mr-2 h-4 w-4" aria-hidden="true" />
+        <span>Edit Supplier</span>
       </DropdownMenuItem>
       <DropdownMenuItem
         onClick={() => handleDeleteClick(supplier)}
         className="cursor-pointer text-destructive focus:text-destructive"
       >
-        <Trash2 className="mr-2 h-4 w-4" />
-        <span>Delete</span>
+        <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+        <span>Delete Supplier</span>
       </DropdownMenuItem>
     </ActionsDropdown>
   );
 
   const emptyState = (
-    <div className="text-center p-8 text-muted-foreground">
-      No suppliers found. Add your first supplier to get started.
+    <div className="flex flex-col items-center justify-center p-12 text-center">
+      <div className="rounded-full bg-muted p-4 mb-4">
+        <PackageOpen className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+      </div>
+      <h3 className="text-lg font-semibold mb-2">No suppliers yet</h3>
+      <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+        Suppliers are vendors who provide products for your inventory. Add your first supplier to start managing purchase orders.
+      </p>
+      <Button onClick={handleAddClick} size="sm">
+        <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+        Add Your First Supplier
+      </Button>
     </div>
   );
 
@@ -159,9 +169,16 @@ export default function SuppliersPage() {
                 Add Supplier
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}</DialogTitle>
+                <DialogTitle className="text-xl">
+                  {editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground pt-1">
+                  {editingSupplier 
+                    ? 'Update supplier information and contact details'
+                    : 'Enter supplier information to add them to your system'}
+                </p>
               </DialogHeader>
               <SupplierForm
                 supplier={editingSupplier}
@@ -210,9 +227,9 @@ export default function SuppliersPage() {
       <AlertDialog open={!!supplierToDelete} onOpenChange={() => setSupplierToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Supplier?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the supplier "{supplierToDelete?.name}". This action cannot be undone.
+              This will permanently delete <span className="font-semibold text-foreground">{supplierToDelete?.name}</span> from your system. Any associated purchase orders will remain but will no longer be linked to this supplier. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

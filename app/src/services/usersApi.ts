@@ -22,6 +22,8 @@ export interface GetUsersParams {
     limit?: number;
     search?: string;
     role?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
 }
 
 export const usersApi = createApi({

@@ -7,6 +7,7 @@ export interface Supplier {
     contact_person?: string;
     phone?: string;
     email?: string;
+    address?: string;
 }
 
 export interface GetSuppliersParams {

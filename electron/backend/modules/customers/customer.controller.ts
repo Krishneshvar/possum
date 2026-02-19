@@ -10,12 +10,14 @@ import * as CustomerService from './customer.service.js';
  */
 export async function getCustomers(req: Request, res: Response) {
     try {
-        const { searchTerm, currentPage, itemsPerPage } = req.query;
+        const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder } = req.query;
 
         const params = {
             searchTerm: (searchTerm as string) || '',
             currentPage: parseInt(currentPage as string) || 1,
-            itemsPerPage: parseInt(itemsPerPage as string) || 10
+            itemsPerPage: parseInt(itemsPerPage as string) || 10,
+            sortBy: (sortBy as string) || 'name',
+            sortOrder: (sortOrder as 'ASC' | 'DESC') || 'ASC'
         };
 
         const result = await CustomerService.getCustomers(params);

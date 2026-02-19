@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import RequiredFieldIndicator from '@/components/common/RequiredFieldIndicator';
 
 interface EmployeeFormProps {
     defaultValues?: any;
@@ -77,56 +79,113 @@ export function EmployeeForm({ defaultValues, onSave, isLoading }: EmployeeFormP
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                    id="name"
-                    name="name"
-                    placeholder="e.g. John Doe"
-                    value={formData.name}
-                    onChange={handleChange}
-                />
-                {errors.name && <p className="text-sm font-medium text-destructive">{errors.name}</p>}
+        <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Account Information Section */}
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name">
+                        Full Name <RequiredFieldIndicator />
+                    </Label>
+                    <Input
+                        id="name"
+                        name="name"
+                        placeholder="e.g. John Doe"
+                        value={formData.name}
+                        onChange={handleChange}
+                        aria-required="true"
+                        aria-invalid={!!errors.name}
+                        aria-describedby={errors.name ? "name-error" : undefined}
+                    />
+                    {errors.name && (
+                        <p id="name-error" className="text-sm font-medium text-destructive" role="alert">
+                            {errors.name}
+                        </p>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="username">
+                        Username <RequiredFieldIndicator />
+                    </Label>
+                    <Input
+                        id="username"
+                        name="username"
+                        placeholder="e.g. johndoe"
+                        value={formData.username}
+                        onChange={handleChange}
+                        aria-required="true"
+                        aria-invalid={!!errors.username}
+                        aria-describedby={errors.username ? "username-error" : "username-helper"}
+                    />
+                    {!errors.username && defaultValues && (
+                        <p id="username-helper" className="text-xs text-muted-foreground">
+                            Used for login access
+                        </p>
+                    )}
+                    {errors.username && (
+                        <p id="username-error" className="text-sm font-medium text-destructive" role="alert">
+                            {errors.username}
+                        </p>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="password">
+                        Password {!defaultValues && <RequiredFieldIndicator />}
+                    </Label>
+                    <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="******"
+                        value={formData.password}
+                        onChange={handleChange}
+                        aria-required={!defaultValues}
+                        aria-invalid={!!errors.password}
+                        aria-describedby="password-helper"
+                    />
+                    <p id="password-helper" className="text-xs text-muted-foreground flex items-start gap-1.5">
+                        <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <span>
+                            {defaultValues 
+                                ? "Leave empty to keep current password" 
+                                : "Minimum 6 characters required"}
+                        </span>
+                    </p>
+                    {/* @ts-ignore */}
+                    {errors.password && (
+                        <p className="text-sm font-medium text-destructive" role="alert">
+                            {errors.password}
+                        </p>
+                    )}
+                </div>
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                    id="username"
-                    name="username"
-                    placeholder="e.g. johndoe"
-                    value={formData.username}
-                    onChange={handleChange}
-                />
-                {errors.username && <p className="text-sm font-medium text-destructive">{errors.username}</p>}
+            <Separator />
+
+            {/* Status Section */}
+            <div className="space-y-3">
+                <div>
+                    <h4 className="text-sm font-medium">Account Status</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Inactive employees cannot log in
+                    </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="is_active"
+                        name="is_active"
+                        checked={formData.is_active}
+                        onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                        aria-label="Set employee account as active"
+                    />
+                    <Label htmlFor="is_active" className="font-normal cursor-pointer">
+                        Employee is active
+                    </Label>
+                </div>
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="password">Password {defaultValues && "(Leave empty to keep current)"}</Label>
-                <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="******"
-                    value={formData.password}
-                    onChange={handleChange}
-                />
-                {/* @ts-ignore */}
-                {errors.password && <p className="text-sm font-medium text-destructive">{errors.password}</p>}
-            </div>
-
-            <div className="flex items-center space-x-2 pt-2">
-                <Checkbox
-                    id="is_active"
-                    name="is_active"
-                    checked={formData.is_active}
-                    onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, is_active: checked }))}
-                />
-                <Label htmlFor="is_active">Active Account</Label>
-            </div>
-
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {defaultValues ? "Update Employee" : "Add Employee"}

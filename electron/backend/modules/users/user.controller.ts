@@ -6,11 +6,13 @@ import * as UserService from './user.service.js';
 
 export async function getUsers(req: Request, res: Response) {
     try {
-        const { searchTerm, currentPage, itemsPerPage } = req.query;
+        const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder } = req.query;
         const result = await UserService.getUsers({
             searchTerm: searchTerm as string,
             currentPage: Number(currentPage) || 1,
-            itemsPerPage: Number(itemsPerPage) || 10
+            itemsPerPage: Number(itemsPerPage) || 10,
+            sortBy: sortBy as string,
+            sortOrder: sortOrder as 'ASC' | 'DESC'
         });
         res.json(result);
     } catch (error: any) {

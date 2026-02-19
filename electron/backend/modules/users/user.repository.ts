@@ -9,6 +9,8 @@ export interface UserFilter {
     searchTerm?: string;
     currentPage?: number;
     itemsPerPage?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedUsers {
@@ -20,7 +22,7 @@ export interface PaginatedUsers {
 /**
  * Find users with filtering and pagination
  */
-export function findUsers({ searchTerm, currentPage = 1, itemsPerPage = 10 }: UserFilter): PaginatedUsers {
+export function findUsers({ searchTerm, currentPage = 1, itemsPerPage = 10, sortBy = 'created_at', sortOrder = 'DESC' }: UserFilter): PaginatedUsers {
     const db = getDB();
     const filterClauses: string[] = [];
     const filterParams: any[] = [];
@@ -39,11 +41,15 @@ export function findUsers({ searchTerm, currentPage = 1, itemsPerPage = 10 }: Us
   `;
     const totalCount = (db.prepare(countQuery).get(...filterParams) as { total: number }).total;
 
+    const allowedSortFields = ['name', 'username', 'created_at'];
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const order = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
     const paginatedQuery = `
     SELECT id, name, username, is_active, created_at, updated_at
     FROM users
     ${whereClause}
-    ORDER BY name ASC
+    ORDER BY ${sortField} ${order}
     LIMIT ? OFFSET ?
   `;
 

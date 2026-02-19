@@ -9,6 +9,8 @@ export interface CustomerFilter {
   searchTerm?: string;
   currentPage?: number;
   itemsPerPage?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface PaginatedCustomers {
@@ -22,7 +24,7 @@ export interface PaginatedCustomers {
  * @param {Object} params - Filter and pagination params
  * @returns {Object} Customers list with pagination info
  */
-export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }: CustomerFilter): PaginatedCustomers {
+export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10, sortBy = 'name', sortOrder = 'ASC' }: CustomerFilter): PaginatedCustomers {
   const db = getDB();
   const filterClauses: string[] = [];
   const filterParams: any[] = [];
@@ -43,6 +45,9 @@ export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }
   }
 
   const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
+  const allowedSortFields = ['name', 'email'];
+  const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'name';
+  const order = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
   const countQuery = `
     SELECT
@@ -62,7 +67,7 @@ export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10 }
       created_at
     FROM customers
     ${whereClause}
-    ORDER BY name ASC
+    ORDER BY ${sortField} ${order}
     LIMIT ? OFFSET ?
   `;
 

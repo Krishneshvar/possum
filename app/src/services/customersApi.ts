@@ -14,6 +14,8 @@ export interface GetCustomersParams {
     page?: number;
     limit?: number;
     searchTerm?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface GetCustomersResponse {
