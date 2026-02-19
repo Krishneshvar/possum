@@ -14,6 +14,7 @@ import { purchaseApi } from '../services/purchaseApi';
 import { authApi } from '../services/authApi';
 import { auditLogApi } from '../services/auditLogApi';
 import { transactionsApi } from '../services/transactionsApi';
+import { dashboardApi } from '../services/dashboardApi';
 import authReducer from '../features/Auth/authSlice';
 import productsReducer from '../features/Products/productsSlice';
 import variantsReducer from '../features/Variants/variantsSlice';
@@ -42,6 +43,7 @@ export const store = configureStore({
         settings: settingsReducer,
         [auditLogApi.reducerPath]: auditLogApi.reducer,
         [transactionsApi.reducerPath]: transactionsApi.reducer,
+        [dashboardApi.reducerPath]: dashboardApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(
@@ -60,6 +62,7 @@ export const store = configureStore({
             authApi.middleware,
             auditLogApi.middleware,
             transactionsApi.middleware,
+            dashboardApi.middleware,
         ),
 });
 

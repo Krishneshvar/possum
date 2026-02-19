@@ -6,12 +6,10 @@ import {
 } from 'react-router-dom';
 
 import { AppSidebar } from "@/layouts/Sidebar/AppSidebar";
-import { StatCards } from "@/components/common/StatCards";
+import DashboardHome from './DashboardHome';
 import { SiteHeader } from '@/components/common/SiteHeader';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from '@/components/ui/separator';
-
-import { cardData } from './dashboardStatsData';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGetMeQuery } from '@/services/authApi';
 import { setUser, setLoading, selectIsAuthenticated, selectCurrentUser } from '@/features/Auth/authSlice';
@@ -97,8 +95,8 @@ export default function DashboardPage() {
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route path="/" element={<StatCards cardData={cardData} />} />
-        <Route path="/dashboard" element={<StatCards cardData={cardData} />} />
+        <Route path="/" element={<DashboardHome />} />
+        <Route path="/dashboard" element={<DashboardHome />} />
 
         <Route path="/sales" element={<ProtectedRoute requiredPermissions="sales.create"><SalesPage /></ProtectedRoute>} />
         <Route path="/sales/orders" element={<ProtectedRoute requiredPermissions="sales.view"><OrdersPage /></ProtectedRoute>} />
