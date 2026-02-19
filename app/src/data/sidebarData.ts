@@ -4,14 +4,13 @@ import {
   Box,
   ClipboardCheck,
   LayoutDashboard,
-  RefreshCw,
   ShoppingCart,
   Users,
   Settings,
   CircleQuestionMark,
   Puzzle,
   Truck,
-  ArrowRightLeft
+  History
 } from 'lucide-react';
 
 export const sidebarData = {
@@ -58,6 +57,11 @@ export const sidebarData = {
         {
           title: "Sales",
           url: "/sales",
+        },
+        {
+          title: "Bill History",
+          url: "/sales/history",
+          icon: History,
         },
         {
           title: "Transactions",

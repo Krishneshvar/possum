@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Tag } from 'lucide-react';
+import { Edit, Trash2, Tag, FolderTree } from 'lucide-react';
 import { useDeleteCategoryMutation, Category } from '@/services/categoriesApi';
 import { toast } from 'sonner';
 import { flattenCategories } from '@/utils/categories.utils';
@@ -42,30 +42,51 @@ export default function CategoriesTableView({ categories, onEdit }: CategoriesTa
   const columns = [
     {
       key: 'name',
-      label: 'Name',
-      renderCell: (category: Category) => <span className="font-medium">{category.name}</span>
+      label: 'Category Name',
+      renderCell: (category: Category) => (
+        <div className="flex items-center gap-2">
+          <span style={{ marginLeft: `${(category.depth || 0) * 20}px` }} className="font-medium">
+            {category.name}
+          </span>
+        </div>
+      )
     },
     {
       key: 'parent_id',
-      label: 'Parent Category',
-      renderCell: (category: Category) => (
-        category.parent_id
-          ? flatCategories.find((p) => p.id === category.parent_id)?.name || 'N/A'
-          : '—'
-      )
+      label: 'Parent',
+      renderCell: (category: Category) => {
+        if (!category.parent_id) {
+          return <span className="text-muted-foreground text-sm">Top-level</span>;
+        }
+        const parent = flatCategories.find((p) => p.id === category.parent_id);
+        return (
+          <div className="flex items-center gap-1.5 text-sm">
+            <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{parent?.name || 'Unknown'}</span>
+          </div>
+        );
+      }
     }
   ];
 
   const renderActions = (category: Category) => (
     <div className="flex justify-end gap-2">
-      <Button variant="ghost" size="sm" onClick={() => onEdit(category)}>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => onEdit(category)}
+        aria-label={`Edit ${category.name}`}
+        title="Edit category"
+      >
         <Edit className="h-4 w-4" />
       </Button>
       <Button
         variant="ghost"
         size="sm"
         onClick={() => handleDeleteClick(category)}
-        className="text-destructive"
+        className="text-destructive hover:text-destructive"
+        aria-label={`Delete ${category.name}`}
+        title="Delete category"
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -73,8 +94,16 @@ export default function CategoriesTableView({ categories, onEdit }: CategoriesTa
   );
 
   const emptyState = (
-    <div className="text-center p-8 text-muted-foreground">
-      No categories found.
+    <div className="text-center py-12">
+      <div className="flex justify-center mb-4">
+        <div className="rounded-full bg-primary/10 p-4">
+          <Tag className="h-8 w-8 text-primary" />
+        </div>
+      </div>
+      <h3 className="text-lg font-semibold mb-2">No categories yet</h3>
+      <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+        Categories help organize your products. Create your first category to get started.
+      </p>
     </div>
   );
 

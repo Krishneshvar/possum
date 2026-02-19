@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCurrency } from "@/hooks/useCurrency";
-import SalesControls from '../components/SalesControls';
 import SalesTable from '../components/SalesTable';
-import ProductSelector from '../components/ProductSelector';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Banknote, CreditCard, Wallet } from 'lucide-react';
+import { Banknote, CreditCard, Wallet, Loader2, Receipt, User, Percent, DollarSign, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useGetProductsQuery } from "@/services/productsApi";
+import { useGetVariantsQuery } from "@/services/productsApi";
 import { useGetPaymentMethodsQuery, useCreateSaleMutation } from "@/services/salesApi";
 import { useGetCustomersQuery } from "@/services/customersApi";
 import { useCalculateTaxMutation } from "@/services/taxesApi";
 import { toast } from "sonner";
-import SalesHistoryPage from "./SalesHistoryPage";
+
 
 interface SaleItem {
     id: number; // This is sometimes treated as product ID or variant ID? Should be unique in cart?
@@ -25,6 +25,9 @@ interface SaleItem {
     name: string;
     sku: string;
     mrp: number;
+    pricePerUnit: number;
+    discountType: 'amount' | 'percentage';
+    discountValue: number;
     quantity: number;
     maxStock: number;
     product_name?: string;
@@ -33,7 +36,6 @@ interface SaleItem {
 
 export default function SalesPage() {
     const currency = useCurrency();
-    const [view, setView] = useState<'cart' | 'history'>('cart');
     const [activeTab, setActiveTab] = useState(0);
     const tabsCount = 3; // Maximum concurrent bills
 
@@ -48,6 +50,9 @@ export default function SalesPage() {
         amountTendered: '',
         searchTerm: '',
         quantity: 1,
+        selectedPrice: 0,
+        selectedDiscountType: 'amount' as 'amount' | 'percentage',
+        selectedDiscountValue: 0,
         selectedProduct: null as any,
         selectedVariant: '',
         taxResult: null as any // Store calculation result
@@ -64,11 +69,10 @@ export default function SalesPage() {
 
     const currentBill = bills[activeTab];
 
-    const { data: productsData } = useGetProductsQuery({
-        searchTerm: currentBill.searchTerm.length > 2 ? currentBill.searchTerm : undefined,
-        limit: 10
+    const { data: variantsData } = useGetVariantsQuery({
+        limit: 1000
     });
-    const products = productsData?.products || [];
+    const variants = variantsData?.variants || [];
 
     const { data: customersData } = useGetCustomersQuery({ limit: 1000 }); // Simplified for demo
     const customers = customersData?.customers || [];
@@ -78,6 +82,17 @@ export default function SalesPage() {
 
     const [createSale] = useCreateSaleMutation();
     const [calculateTax] = useCalculateTaxMutation();
+
+    const calculateItemSubtotal = (item: SaleItem) => item.pricePerUnit * item.quantity;
+    const calculateItemDiscountAmount = (item: SaleItem) => {
+        const lineSubtotal = calculateItemSubtotal(item);
+        if (item.discountType === 'percentage') {
+            const pct = Math.max(0, Math.min(100, item.discountValue || 0));
+            return (lineSubtotal * pct) / 100;
+        }
+        return Math.max(0, Math.min(lineSubtotal, item.discountValue || 0));
+    };
+    const calculateItemTotal = (item: SaleItem) => Math.max(0, calculateItemSubtotal(item) - calculateItemDiscountAmount(item));
 
     // Trigger tax calculation when cart changes
     useEffect(() => {
@@ -92,7 +107,7 @@ export default function SalesPage() {
                     product_id: item.productId || item.id,
                     variant_id: item.variantId,
                     quantity: item.quantity,
-                    price: item.mrp,
+                    price: item.pricePerUnit,
                     product_name: item.product_name || item.name,
                     variant_name: item.variant_name
                 })),
@@ -101,12 +116,13 @@ export default function SalesPage() {
                     : 0 // If percentage, backend logic handles it differently or we compute amount here?
             };
 
-            // If percentage discount, apply it to subtotal locally before sending?
-            // Backend tax engine distributes 'discount_total'.
-            // If type is percentage, calculate total discount amount first.
+            const lineDiscountTotal = currentBill.items.reduce((sum, item) => sum + calculateItemDiscountAmount(item), 0);
+
+            // Include line-level discounts and optional overall discount in one total for tax engine.
+            invoice.discount_total += lineDiscountTotal;
             if (currentBill.discountType === 'percentage') {
-                const subtotal = currentBill.items.reduce((sum, item) => sum + (item.mrp * item.quantity), 0);
-                invoice.discount_total = (subtotal * (parseFloat(String(currentBill.overallDiscount || 0)) / 100));
+                const subtotal = currentBill.items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+                invoice.discount_total += (subtotal * (parseFloat(String(currentBill.overallDiscount || 0)) / 100));
             }
 
             try {
@@ -121,7 +137,7 @@ export default function SalesPage() {
         }, 500); // Debounce
 
         return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         currentBill.items,
         currentBill.customerId,
@@ -129,54 +145,36 @@ export default function SalesPage() {
         currentBill.discountType
     ]);
 
-    const handleAddItem = () => {
-        if (!currentBill.selectedProduct) return;
 
-        let itemToAdd: SaleItem = {
-            id: currentBill.selectedProduct.id,
-            productId: currentBill.selectedProduct.id,
-            name: currentBill.selectedProduct.name,
-            sku: currentBill.selectedProduct.sku,
-            mrp: currentBill.selectedProduct.mrp,
-            quantity: currentBill.quantity,
-            maxStock: currentBill.selectedProduct.stock,
-            product_name: currentBill.selectedProduct.name
+
+    const handleDirectAddFromVariant = (variant: any) => {
+        const mrp = variant.price || variant.mrp || 1;
+        const itemToAdd: SaleItem = {
+            id: variant.id,
+            productId: variant.product_id,
+            variantId: variant.id,
+            name: `${variant.product_name} - ${variant.name}`,
+            product_name: variant.product_name,
+            variant_name: variant.name,
+            sku: variant.sku,
+            mrp,
+            pricePerUnit: mrp,
+            discountType: 'amount',
+            discountValue: 0,
+            quantity: 1,
+            maxStock: variant.stock
         };
 
-        if (currentBill.selectedProduct.variants && currentBill.selectedProduct.variants.length > 0) {
-            const variant = currentBill.selectedProduct.variants.find((v: any) => v.id === parseInt(currentBill.selectedVariant));
-            if (variant) {
-                itemToAdd = {
-                    id: variant.id,
-                    productId: currentBill.selectedProduct.id,
-                    variantId: variant.id,
-                    name: `${currentBill.selectedProduct.name} - ${variant.name}`,
-                    product_name: currentBill.selectedProduct.name,
-                    variant_name: variant.name,
-                    sku: variant.sku,
-                    mrp: variant.price || variant.mrp, // Ensure price usage
-                    quantity: currentBill.quantity,
-                    maxStock: variant.stock
-                };
-            }
-        }
-
-        if (itemToAdd.quantity > itemToAdd.maxStock) {
-            toast.error(`Only ${itemToAdd.maxStock} units available.`);
+        if (1 > itemToAdd.maxStock) {
+            toast.error(`Out of stock.`);
             return;
         }
 
-        // Check duplicates by ID (Variant ID or Product ID)
-        // If variantId exists, use it. Else use id.
-        const existingItemIndex = currentBill.items.findIndex(i =>
-            (itemToAdd.variantId && i.variantId === itemToAdd.variantId) ||
-            (!itemToAdd.variantId && i.id === itemToAdd.id)
-        );
-
+        const existingItemIndex = currentBill.items.findIndex(i => i.variantId === itemToAdd.variantId);
         let newItems;
         if (existingItemIndex > -1) {
             newItems = [...currentBill.items];
-            const newQty = newItems[existingItemIndex].quantity + itemToAdd.quantity;
+            const newQty = newItems[existingItemIndex].quantity + 1;
             if (newQty > itemToAdd.maxStock) {
                 toast.error(`Cannot exceed stock limit.`);
                 return;
@@ -191,7 +189,10 @@ export default function SalesPage() {
             searchTerm: '',
             selectedProduct: null,
             selectedVariant: '',
-            quantity: 1
+            quantity: 1,
+            selectedPrice: 0,
+            selectedDiscountType: 'amount',
+            selectedDiscountValue: 0
         });
     };
 
@@ -212,9 +213,25 @@ export default function SalesPage() {
         updateBill({ items: newItems });
     };
 
+    const handleUpdatePrice = (index: number, newPrice: number) => {
+        const safePrice = Number.isFinite(newPrice) ? newPrice : 1;
+        const newItems = [...currentBill.items];
+        const item = newItems[index];
+        const clamped = Math.max(1, Math.min(safePrice, item.mrp));
+        item.pricePerUnit = clamped;
+        updateBill({ items: newItems });
+    };
+
+    const handleUpdateItemDiscount = (index: number, updates: Partial<Pick<SaleItem, 'discountType' | 'discountValue'>>) => {
+        const newItems = [...currentBill.items];
+        const item = newItems[index];
+        newItems[index] = { ...item, ...updates };
+        updateBill({ items: newItems });
+    };
+
     // Use backend results if available, else fallback
     const taxResult = currentBill.taxResult || {};
-    const subtotal = currentBill.items.reduce((sum, item) => sum + (item.mrp * item.quantity), 0);
+    const subtotal = currentBill.items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
     // If tax result exists, it has breakdown.
     // grand_total from tax engine includes taxes.
     // If exclusive, grand_total = subtotal - discount + tax.
@@ -233,21 +250,26 @@ export default function SalesPage() {
         ? taxResult.grand_total.toFixed(2)
         : fallbackGrandTotal;
 
+    const [isProcessingSale, setIsProcessingSale] = useState(false);
+
     const onCompleteSale = async () => {
         if (currentBill.items.length === 0) {
             toast.error('Cart is empty');
             return;
         }
         if (!currentBill.paymentMethod) {
-            toast.error('Select payment method');
+            toast.error('Please select a payment method');
             return;
         }
+
+        setIsProcessingSale(true);
 
         const saleData = {
             items: currentBill.items.map(item => ({
                 variantId: item.variantId || item.id, // Assuming id is variantId for simple products too or handle backend
                 quantity: item.quantity,
-                pricePerUnit: item.mrp // Pass current price
+                pricePerUnit: item.pricePerUnit,
+                discount: calculateItemDiscountAmount(item)
             })),
             customerId: currentBill.customerId ? parseInt(currentBill.customerId) : null,
             discount: discountAmount,
@@ -263,7 +285,10 @@ export default function SalesPage() {
 
         try {
             await createSale(saleData).unwrap();
-            toast.success('Sale completed successfully!');
+            toast.success('Sale completed successfully!', {
+                description: `Total: ${currency}${grandTotal}`,
+                duration: 3000
+            });
             // Reset current bill
             updateBill({
                 items: [],
@@ -275,50 +300,37 @@ export default function SalesPage() {
             });
         } catch (err: any) {
             console.error(err);
-            toast.error(err?.data?.error || 'Failed to complete sale');
+            toast.error('Failed to complete sale', {
+                description: err?.data?.error || 'Please try again or contact support'
+            });
+        } finally {
+            setIsProcessingSale(false);
         }
     };
 
-    if (view === 'history') {
-        return (
-            <div className="h-[calc(100vh-4rem)] p-4 flex flex-col gap-4">
-                <SalesControls view={view} setView={setView} />
-                <SalesHistoryPage />
-            </div>
-        );
-    }
 
     return (
-        <div className="h-[calc(100vh-4rem)] p-4 flex flex-col gap-4 overflow-hidden">
-            <SalesControls view={view} setView={setView} />
+        <div className="h-[calc(100vh-7rem)] p-4 flex flex-col gap-4 overflow-hidden">
 
             <div className="flex flex-col lg:flex-row gap-4 h-full overflow-hidden">
                 {/* Left Side: Product Selection & Cart */}
                 <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                    <ProductSelector
-                        searchTerm={currentBill.searchTerm}
-                        onSearchChange={(e) => updateBill({ searchTerm: e.target.value })}
-                        products={products}
-                        selectedProduct={currentBill.selectedProduct}
-                        onProductSelect={(id) => {
-                            const product = products.find((p: any) => p.id === parseInt(id));
-                            updateBill({
-                                selectedProduct: product,
-                                searchTerm: product?.name || '',
-                                selectedVariant: product?.variants?.[0]?.id ? String(product.variants[0].id) : ''
-                            });
-                        }}
-                        selectedVariant={currentBill.selectedVariant}
-                        onVariantChange={(val) => updateBill({ selectedVariant: val })}
-                        quantity={currentBill.quantity}
-                        onQuantityChange={(val) => updateBill({ quantity: val })}
-                        onAddItem={handleAddItem}
-                        setSearchTerm={(term) => updateBill({ searchTerm: term })}
-                    />
-
                     <SalesTable
                         items={currentBill.items}
+                        variants={variants}
+                        searchTerm={currentBill.searchTerm}
+                        onSearchChange={(value) => updateBill({
+                            searchTerm: value,
+                            selectedProduct: null,
+                            selectedVariant: '',
+                            selectedPrice: 0,
+                            selectedDiscountType: 'amount',
+                            selectedDiscountValue: 0
+                        })}
+                        onDirectAdd={handleDirectAddFromVariant}
                         updateQuantity={handleUpdateQuantity}
+                        updatePrice={handleUpdatePrice}
+                        updateDiscount={handleUpdateItemDiscount}
                         removeItem={handleRemoveItem}
                         total={subtotal}
                     />
@@ -340,6 +352,7 @@ export default function SalesPage() {
                         setActiveTab={setActiveTab}
                         tabsCount={tabsCount}
                         taxResult={taxResult}
+                        isProcessingSale={isProcessingSale}
                     />
                 </div>
             </div>
@@ -361,215 +374,327 @@ function BillingSection({
     activeTab,
     setActiveTab,
     tabsCount,
-    taxResult
+    taxResult,
+    isProcessingSale
 }: any) {
+    const isCalculatingTax = currentBill.items.length > 0 && !taxResult;
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '3') {
+                e.preventDefault();
+                const tabIndex = parseInt(e.key) - 1;
+                if (tabIndex < tabsCount) {
+                    setActiveTab(tabIndex);
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [setActiveTab, tabsCount]);
+
     return (
-        <div className="bg-card border rounded-md shadow-sm p-4 space-y-6">
-            <div className="space-y-4">
-                {/* Customer Selection */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Customer
-                    </Label>
-                    <Select value={currentBill.customerId} onValueChange={(val) => updateBill({ customerId: val })}>
-                        <SelectTrigger className="bg-background border-border">
-                            <SelectValue placeholder="Walk-in Customer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                            {customers.map((c: any) => (
-                                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Payment Method */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Payment Method
-                    </Label>
-                    <div className="flex gap-2">
-                        <Select value={currentBill.paymentMethod} onValueChange={(val) => updateBill({ paymentMethod: val })}>
-                            <SelectTrigger className="bg-background border-border flex-1">
-                                <SelectValue placeholder="Method" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {paymentMethods.map((method: any) => (
-                                    <SelectItem key={method.id} value={String(method.id)}>
-                                        <div className="flex items-center capitalize">
-                                            {method.name.toLowerCase() === 'cash' && <Banknote className="h-4 w-4 mr-2 text-success" />}
-                                            {method.name.toLowerCase() === 'card' && <CreditCard className="h-4 w-4 mr-2 text-primary" />}
-                                            {method.name.toLowerCase() === 'upi' && <Wallet className="h-4 w-4 mr-2 text-warning" />}
-                                            {method.name}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex border border-border rounded-md overflow-hidden bg-background h-10">
-                            <button
-                                onClick={() => updateBill({ paymentType: 'full' })}
-                                className={cn(
-                                    "px-3 text-xs font-bold transition-colors border-r border-border",
-                                    currentBill.paymentType === 'full' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                                )}
-                            >
-                                Full
-                            </button>
-                            <button
-                                onClick={() => updateBill({ paymentType: 'partial' })}
-                                className={cn(
-                                    "px-3 text-xs font-bold transition-colors",
-                                    currentBill.paymentType === 'partial' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                                )}
-                            >
-                                Partial
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                {/* Overall Discount */}
-                <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Overall Discount
-                    </Label>
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-                                {currentBill.discountType === 'fixed' ? currency : '%'}
-                            </div>
-                            <Input
-                                type="text"
-                                placeholder="0.00"
-                                value={currentBill.overallDiscount || ''}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val === "" || /^\d*\.?\d*$/.test(val)) {
-                                        updateBill({ overallDiscount: val === "" ? 0 : parseFloat(val) });
-                                    }
-                                }}
-                                className="pl-7 bg-background border-border"
-                            />
-                        </div>
-                        <div className="flex border border-border rounded-lg overflow-hidden bg-background">
-                            <button
-                                onClick={() => updateBill({ discountType: 'fixed' })}
-                                className={cn(
-                                    "px-3 py-2 text-xs font-bold transition-colors",
-                                    currentBill.discountType === 'fixed' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                                )}
-                            >
-                                Fixed
-                            </button>
-                            <button
-                                onClick={() => updateBill({ discountType: 'percentage' })}
-                                className={cn(
-                                    "px-3 py-2 text-xs font-bold transition-colors",
-                                    currentBill.discountType === 'percentage' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                                )}
-                            >
-                                %
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Amount Tendered, Balance & COMPLETE ACTION */}
-            <div className="grid grid-cols-12 gap-4 pt-4 border-t border-dashed border-border items-end">
-                <div className="col-span-12">
-                    <div className="flex justify-between items-center text-sm mb-2">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span className="font-medium">{currency}{subtotal.toFixed(2)}</span>
-                    </div>
-                    {taxResult?.total_tax > 0 && (
-                        <div className="flex justify-between items-center text-sm mb-2">
-                            <span className="text-muted-foreground">Tax</span>
-                            <span className="font-medium">{currency}{taxResult.total_tax.toFixed(2)}</span>
-                        </div>
-                    )}
-                    <div className="flex justify-between items-center text-lg font-bold">
-                        <span>Total</span>
-                        <span>{currency}{grandTotal}</span>
-                    </div>
-                </div>
-
-                <div className="col-span-6 space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Tendered
-                    </Label>
-                    <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">{currency}</div>
-                        <Input
-                            type="text"
-                            placeholder="0.00"
-                            value={currentBill.amountTendered || ''}
-                            onChange={(e) => updateBill({ amountTendered: e.target.value })}
-                            className="pl-7 bg-background border-border font-bold text-lg text-foreground focus:ring-primary"
-                        />
-                    </div>
-                </div>
-                <div className="col-span-6 space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        {parseFloat(currentBill.amountTendered || 0) >= parseFloat(grandTotal) ? "Change" : "Balance"}
-                    </Label>
-                    <div className={cn(
-                        "h-11 px-3 flex items-center justify-between rounded-md border text-lg font-bold transition-colors",
-                        parseFloat(currentBill.amountTendered || 0) >= parseFloat(grandTotal)
-                            ? "bg-success/10 text-success border-success/20"
-                            : "bg-destructive/10 text-destructive border-destructive/20"
-                    )}>
-                        <span className="text-xs opacity-70">{currency}</span>
-                        <span>{Math.abs(parseFloat(grandTotal) - parseFloat(currentBill.amountTendered || 0)).toFixed(2)}</span>
-                    </div>
-                </div>
-                <div className="col-span-12 mt-2">
-                    {/* Complete Sale Button */}
-                    <Button
-                        onClick={onCompleteSale}
-                        className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shadow-primary/20"
-                        disabled={parseFloat(grandTotal) <= 0}
-                    >
-                        Complete Sale
-                    </Button>
-                </div>
-            </div>
-
+        <div className="bg-card border rounded-lg shadow-sm p-5 space-y-5">
             {/* Bill Tabs */}
-            <div className="space-y-2">
+            <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Active Bill
-                    </Label>
+                    <Label className="text-sm font-semibold text-foreground">Active Bills</Label>
+                    <span className="text-xs text-muted-foreground">Ctrl+1/2/3 to switch</span>
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <div className="flex gap-2">
                     {Array.from({ length: tabsCount }).map((_, idx: number) => {
-                        const hasItems = bills[idx]?.items?.length > 0;
+                        const bill = bills[idx];
+                        const hasItems = bill?.items?.length > 0;
                         const isActive = activeTab === idx;
+                        const itemCount = bill?.items?.length || 0;
+                        const billTotal = bill?.items?.reduce((sum: number, item: any) => {
+                            const lineSubtotal = (item.pricePerUnit ?? item.mrp) * item.quantity;
+                            const lineDiscount = item.discountType === 'percentage'
+                                ? (lineSubtotal * Math.max(0, Math.min(100, item.discountValue || 0))) / 100
+                                : Math.max(0, Math.min(lineSubtotal, item.discountValue || 0));
+                            return sum + Math.max(0, lineSubtotal - lineDiscount);
+                        }, 0) || 0;
 
                         return (
-                            <button
-                                key={idx}
-                                onClick={() => setActiveTab(idx)}
-                                className={cn(
-                                    "flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200",
-                                    isActive
-                                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105"
-                                        : hasItems
-                                            ? "bg-warning/20 text-warning border border-warning/30 hover:bg-warning/30"
-                                            : "bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-105"
-                                )}
-                            >
-                                {idx + 1}
-                            </button>
+                            <TooltipProvider key={idx}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            onClick={() => setActiveTab(idx)}
+                                            className={cn(
+                                                "flex flex-col items-center justify-center min-w-[70px] h-16 rounded-lg text-xs font-semibold transition-all duration-200 border-2",
+                                                isActive
+                                                    ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
+                                                    : hasItems
+                                                        ? "bg-warning/10 text-warning border-warning/30 hover:bg-warning/20"
+                                                        : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80 hover:scale-105"
+                                            )}
+                                            aria-label={`Bill ${idx + 1}${hasItems ? ` with ${itemCount} items` : ' empty'}`}
+                                            aria-pressed={isActive}
+                                        >
+                                            <span className="text-lg font-bold">#{idx + 1}</span>
+                                            {hasItems && (
+                                                <span className="text-[10px] opacity-80 mt-0.5">{itemCount} items</span>
+                                            )}
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-xs">
+                                            <p className="font-semibold">Bill #{idx + 1}</p>
+                                            {hasItems ? (
+                                                <p className="text-muted-foreground">{itemCount} items · {currency}{billTotal.toFixed(2)}</p>
+                                            ) : (
+                                                <p className="text-muted-foreground">Empty</p>
+                                            )}
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         );
                     })}
                 </div>
+            </div>
+
+            <Separator />
+
+            {/* Customer Selection */}
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    <Label htmlFor="customer-select" className="text-sm font-semibold text-foreground">
+                        Customer
+                    </Label>
+                </div>
+                <Select value={currentBill.customerId} onValueChange={(val) => updateBill({ customerId: val })}>
+                    <SelectTrigger id="customer-select" className="bg-background" aria-label="Select customer">
+                        <SelectValue placeholder="Walk-in Customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="walk-in">Walk-in Customer</SelectItem>
+                        {customers.map((c: any) => (
+                            <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <Separator />
+
+            {/* Payment Method */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                    <Receipt className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    <Label htmlFor="payment-method" className="text-sm font-semibold text-foreground">
+                        Payment Method
+                    </Label>
+                </div>
+                <Select value={currentBill.paymentMethod} onValueChange={(val) => updateBill({ paymentMethod: val })}>
+                    <SelectTrigger id="payment-method" className="bg-background" aria-label="Select payment method">
+                        <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {paymentMethods.map((method: any) => (
+                            <SelectItem key={method.id} value={String(method.id)}>
+                                <div className="flex items-center gap-2">
+                                    {method.name.toLowerCase() === 'cash' && <Banknote className="h-4 w-4 text-success" aria-hidden="true" />}
+                                    {method.name.toLowerCase() === 'card' && <CreditCard className="h-4 w-4 text-primary" aria-hidden="true" />}
+                                    {method.name.toLowerCase() === 'upi' && <Wallet className="h-4 w-4 text-warning" aria-hidden="true" />}
+                                    <span>{method.name}</span>
+                                </div>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Payment Type</Label>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <HelpCircle className="h-3 w-3 text-muted-foreground" aria-label="Payment type help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="text-xs max-w-[200px]">Full: Complete payment now. Partial: Pay part now, rest later.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+                <div className="flex border border-border rounded-lg overflow-hidden bg-background">
+                    <button
+                        onClick={() => updateBill({ paymentType: 'full' })}
+                        className={cn(
+                            "flex-1 px-4 py-2 text-sm font-semibold transition-colors",
+                            currentBill.paymentType === 'full'
+                                ? "bg-primary text-primary-foreground"
+                                : "text-muted-foreground hover:bg-muted"
+                        )}
+                        aria-pressed={currentBill.paymentType === 'full'}
+                        aria-label="Full payment"
+                    >
+                        Full Payment
+                    </button>
+                    <button
+                        onClick={() => updateBill({ paymentType: 'partial' })}
+                        className={cn(
+                            "flex-1 px-4 py-2 text-sm font-semibold transition-colors border-l border-border",
+                            currentBill.paymentType === 'partial'
+                                ? "bg-primary text-primary-foreground"
+                                : "text-muted-foreground hover:bg-muted"
+                        )}
+                        aria-pressed={currentBill.paymentType === 'partial'}
+                        aria-label="Partial payment"
+                    >
+                        Partial Payment
+                    </button>
+                </div>
+            </div>
+
+            <Separator />
+            {/* Overall Discount */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                    <Percent className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    <Label htmlFor="discount-amount" className="text-sm font-semibold text-foreground">
+                        Discount
+                    </Label>
+                </div>
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium pointer-events-none">
+                            {currentBill.discountType === 'fixed' ? currency : '%'}
+                        </div>
+                        <Input
+                            id="discount-amount"
+                            type="text"
+                            placeholder="0.00"
+                            value={currentBill.overallDiscount || ''}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                    updateBill({ overallDiscount: val === "" ? 0 : parseFloat(val) });
+                                }
+                            }}
+                            className="pl-8 bg-background"
+                            aria-label="Discount amount"
+                        />
+                    </div>
+                    <div className="flex border border-border rounded-lg overflow-hidden bg-background">
+                        <button
+                            onClick={() => updateBill({ discountType: 'fixed' })}
+                            className={cn(
+                                "px-4 py-2 text-sm font-semibold transition-colors",
+                                currentBill.discountType === 'fixed'
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-muted-foreground hover:bg-muted"
+                            )}
+                            aria-pressed={currentBill.discountType === 'fixed'}
+                            aria-label="Fixed discount"
+                        >
+                            <DollarSign className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        <button
+                            onClick={() => updateBill({ discountType: 'percentage' })}
+                            className={cn(
+                                "px-4 py-2 text-sm font-semibold transition-colors border-l border-border",
+                                currentBill.discountType === 'percentage'
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-muted-foreground hover:bg-muted"
+                            )}
+                            aria-pressed={currentBill.discountType === 'percentage'}
+                            aria-label="Percentage discount"
+                        >
+                            <Percent className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <Separator />
+
+            {/* Summary & Checkout */}
+            <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="font-medium tabular-nums">{currency}{subtotal.toFixed(2)}</span>
+                    </div>
+                    {isCalculatingTax && (
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Tax</span>
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" aria-hidden="true" />
+                                <span className="text-xs text-muted-foreground">Calculating...</span>
+                            </div>
+                        </div>
+                    )}
+                    {taxResult?.total_tax > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Tax</span>
+                            <span className="font-medium tabular-nums text-success">{currency}{taxResult.total_tax.toFixed(2)}</span>
+                        </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold">Total</span>
+                        <span className="text-2xl font-bold tabular-nums" aria-live="polite">{currency}{grandTotal}</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                        <Label htmlFor="amount-tendered" className="text-sm font-medium text-muted-foreground">
+                            Tendered
+                        </Label>
+                        <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium pointer-events-none">{currency}</div>
+                            <Input
+                                id="amount-tendered"
+                                type="text"
+                                placeholder="0.00"
+                                value={currentBill.amountTendered || ''}
+                                onChange={(e) => updateBill({ amountTendered: e.target.value })}
+                                className="pl-8 bg-background font-semibold text-base"
+                                aria-label="Amount tendered by customer"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-muted-foreground">
+                            {parseFloat(currentBill.amountTendered || 0) >= parseFloat(grandTotal) ? "Change" : "Balance"}
+                        </Label>
+                        <div className={cn(
+                            "h-10 px-3 flex items-center justify-between rounded-lg border text-base font-bold transition-colors tabular-nums",
+                            parseFloat(currentBill.amountTendered || 0) >= parseFloat(grandTotal)
+                                ? "bg-success/10 text-success border-success/30"
+                                : "bg-muted text-muted-foreground border-border"
+                        )}
+                            aria-live="polite"
+                            aria-label={`${parseFloat(currentBill.amountTendered || 0) >= parseFloat(grandTotal) ? 'Change' : 'Balance'}: ${currency}${Math.abs(parseFloat(grandTotal) - parseFloat(currentBill.amountTendered || 0)).toFixed(2)}`}
+                        >
+                            <span className="text-xs opacity-70">{currency}</span>
+                            <span>{Math.abs(parseFloat(grandTotal) - parseFloat(currentBill.amountTendered || 0)).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <Button
+                    onClick={onCompleteSale}
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-lg shadow-primary/20"
+                    disabled={parseFloat(grandTotal) <= 0 || isProcessingSale}
+                    aria-label="Complete sale and process payment"
+                >
+                    {isProcessingSale ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                            Processing...
+                        </>
+                    ) : (
+                        <>
+                            <Receipt className="mr-2 h-5 w-5" aria-hidden="true" />
+                            Complete Sale
+                        </>
+                    )}
+                </Button>
             </div>
         </div >
     );
