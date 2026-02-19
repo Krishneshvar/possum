@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -12,9 +12,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCreateReturnMutation } from '@/services/returnsApi';
 import { toast } from 'sonner';
 import { useCurrency } from '@/hooks/useCurrency';
+import { AlertCircle, Package, DollarSign } from 'lucide-react';
+import CurrencyText from '@/components/common/CurrencyText';
 
 interface CreateReturnDialogProps {
     open: boolean;
@@ -27,15 +32,49 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
     const currency = useCurrency();
     const [selectedItems, setSelectedItems] = useState<any>({});
     const [reason, setReason] = useState('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [createReturn, { isLoading }] = useCreateReturnMutation();
+
+    const totalRefund = Object.entries(selectedItems).reduce((sum, [itemId, quantity]) => {
+        const item = sale?.items?.find((i: any) => i.id === parseInt(itemId));
+        if (item) {
+            return sum + (item.price_per_unit * Number(quantity));
+        }
+        return sum;
+    }, 0);
+
+    useEffect(() => {
+        if (!open) {
+            setSelectedItems({});
+            setReason('');
+            setErrors({});
+        }
+    }, [open]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key === 'Enter' && open && !isLoading) {
+                e.preventDefault();
+                handleSubmit();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open, isLoading, selectedItems, reason]);
 
     const handleQuantityChange = (itemId: number, value: string, maxQty: number) => {
         const qty = parseInt(value) || 0;
         if (qty < 0) return;
         if (qty > maxQty) {
-            toast.error(`Cannot return more than purchased quantity (${maxQty})`);
+            setErrors(prev => ({ ...prev, [itemId]: `Cannot exceed ${maxQty} items` }));
             return;
         }
+
+        setErrors(prev => {
+            const next = { ...prev };
+            delete next[itemId];
+            return next;
+        });
 
         setSelectedItems((prev: any) => {
             if (qty === 0) {
@@ -58,13 +97,23 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
     };
 
     const handleSubmit = async () => {
+        const newErrors: Record<string, string> = {};
+
         const itemsToReturn = Object.entries(selectedItems).map(([itemId, quantity]) => ({
             saleItemId: parseInt(itemId),
             quantity: Number(quantity)
         }));
 
         if (itemsToReturn.length === 0) {
-            toast.error('Select at least one item to return');
+            newErrors.items = 'Please select at least one item to return';
+        }
+
+        if (!reason.trim()) {
+            newErrors.reason = 'Please provide a reason for the return';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
@@ -72,7 +121,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
             await createReturn({
                 saleId: sale.id,
                 items: itemsToReturn,
-                reason
+                reason: reason.trim()
             }).unwrap();
             toast.success('Return processed successfully');
             onSuccess();
@@ -84,70 +133,178 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Create Return</DialogTitle>
+                    <DialogTitle>Process Return</DialogTitle>
                     <DialogDescription>
-                        Select items to return from Invoice #{sale?.invoice_number}
+                        Select items to return from Invoice <span className="font-mono font-semibold">#{sale?.invoice_number}</span>
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-2">
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                        {sale?.items?.map((item: any) => {
-                            const returnedQty = item.returned_quantity || 0;
-                            const availableQty = item.quantity - returnedQty;
-                            const isSelected = !!selectedItems[item.id];
-
-                            if (availableQty <= 0) return null;
-
-                            return (
-                                <div key={item.id} className="flex items-center space-x-3 border p-3 rounded-md">
-                                    <Checkbox
-                                        id={`item-${item.id}`}
-                                        checked={isSelected}
-                                        onCheckedChange={(checked: boolean) => handleCheckboxChange(item.id, checked, availableQty)}
-                                    />
-                                    <div className="flex-1 space-y-1">
-                                        <Label htmlFor={`item-${item.id}`} className="text-sm font-medium leading-none">
-                                            {item.product_name} - {item.variant_name}
-                                        </Label>
-                                        <p className="text-xs text-muted-foreground">
-                                            Sold at {currency}{item.price_per_unit} x {item.quantity}
+                <div className="flex-1 overflow-y-auto space-y-4 py-2">
+                    {/* Refund Summary Card */}
+                    <Card className="border-primary/20 bg-primary/5">
+                        <CardContent className="pt-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <DollarSign className="h-5 w-5 text-primary" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Total Refund Amount</p>
+                                        <p className="text-2xl font-bold text-primary">
+                                            <CurrencyText value={totalRefund} />
                                         </p>
                                     </div>
-                                    {isSelected && (
-                                        <Input
-                                            type="number"
-                                            className="w-20 h-8"
-                                            value={selectedItems[item.id]}
-                                            onChange={(e) => handleQuantityChange(item.id, e.target.value, availableQty)}
-                                            min="1"
-                                            max={availableQty}
-                                        />
-                                    )}
                                 </div>
-                            );
-                        })}
+                                <div className="text-right">
+                                    <p className="text-sm text-muted-foreground">Items Selected</p>
+                                    <p className="text-xl font-semibold">{Object.keys(selectedItems).length}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {errors.items && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{errors.items}</AlertDescription>
+                        </Alert>
+                    )}
+
+                    {/* Items List */}
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <Label className="text-sm font-semibold">Select Items to Return</Label>
+                        </div>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                            {sale?.items?.map((item: any) => {
+                                const returnedQty = item.returned_quantity || 0;
+                                const availableQty = item.quantity - returnedQty;
+                                const isSelected = !!selectedItems[item.id];
+
+                                if (availableQty <= 0) return null;
+
+                                return (
+                                    <Card key={item.id} className={`border transition-colors ${
+                                        isSelected ? 'border-primary bg-primary/5' : 'border-border'
+                                    }`}>
+                                        <CardContent className="p-4">
+                                            <div className="flex items-start gap-3">
+                                                <Checkbox
+                                                    id={`item-${item.id}`}
+                                                    checked={isSelected}
+                                                    onCheckedChange={(checked: boolean) => handleCheckboxChange(item.id, checked, availableQty)}
+                                                    aria-label={`Select ${item.product_name} - ${item.variant_name}`}
+                                                    className="mt-1"
+                                                />
+                                                <div className="flex-1 space-y-2">
+                                                    <div>
+                                                        <Label htmlFor={`item-${item.id}`} className="text-sm font-semibold cursor-pointer">
+                                                            {item.product_name}
+                                                        </Label>
+                                                        <p className="text-xs text-muted-foreground">{item.variant_name}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                                        <span>Price: {currency}{item.price_per_unit.toFixed(2)}</span>
+                                                        <Separator orientation="vertical" className="h-3" />
+                                                        <span>Available: {availableQty} of {item.quantity}</span>
+                                                        {returnedQty > 0 && (
+                                                            <>
+                                                                <Separator orientation="vertical" className="h-3" />
+                                                                <span className="text-destructive">Returned: {returnedQty}</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    {isSelected && (
+                                                        <div className="flex items-center gap-2 pt-1">
+                                                            <Label htmlFor={`qty-${item.id}`} className="text-xs font-medium">
+                                                                Quantity:
+                                                            </Label>
+                                                            <Input
+                                                                id={`qty-${item.id}`}
+                                                                type="number"
+                                                                className="w-24 h-8 text-sm"
+                                                                value={selectedItems[item.id]}
+                                                                onChange={(e) => handleQuantityChange(item.id, e.target.value, availableQty)}
+                                                                min="1"
+                                                                max={availableQty}
+                                                                aria-label={`Quantity to return for ${item.product_name}`}
+                                                                aria-describedby={errors[item.id] ? `error-${item.id}` : undefined}
+                                                            />
+                                                            <span className="text-sm font-semibold text-primary">
+                                                                = <CurrencyText value={item.price_per_unit * selectedItems[item.id]} />
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {errors[item.id] && (
+                                                        <p id={`error-${item.id}`} className="text-xs text-destructive" role="alert">
+                                                            {errors[item.id]}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
                     </div>
 
+                    {/* Reason Field */}
                     <div className="space-y-2">
-                        <Label htmlFor="reason">Reason for Return</Label>
+                        <Label htmlFor="reason" className="text-sm font-semibold">
+                            Reason for Return <span className="text-destructive">*</span>
+                        </Label>
                         <Textarea
                             id="reason"
-                            placeholder="e.g. Defective, Wrong item, etc."
+                            placeholder="e.g., Defective product, Wrong item shipped, Customer changed mind..."
                             value={reason}
-                            onChange={(e) => setReason(e.target.value)}
+                            onChange={(e) => {
+                                setReason(e.target.value);
+                                if (errors.reason && e.target.value.trim()) {
+                                    setErrors(prev => {
+                                        const next = { ...prev };
+                                        delete next.reason;
+                                        return next;
+                                    });
+                                }
+                            }}
+                            className={errors.reason ? 'border-destructive' : ''}
+                            rows={3}
+                            aria-required="true"
+                            aria-invalid={!!errors.reason}
+                            aria-describedby={errors.reason ? 'reason-error' : undefined}
                         />
+                        {errors.reason && (
+                            <p id="reason-error" className="text-xs text-destructive" role="alert">
+                                {errors.reason}
+                            </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                            This information is required for audit and record-keeping purposes.
+                        </p>
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={isLoading}>
-                        {isLoading ? 'Processing...' : 'Confirm Return'}
+                <DialogFooter className="gap-2">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => onOpenChange(false)}
+                        disabled={isLoading}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={handleSubmit} 
+                        disabled={isLoading || Object.keys(selectedItems).length === 0}
+                        className="min-w-[140px]"
+                    >
+                        {isLoading ? 'Processing...' : `Confirm Return`}
                     </Button>
                 </DialogFooter>
+                <p className="text-xs text-center text-muted-foreground pb-2">
+                    Press <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-muted rounded">Ctrl+Enter</kbd> to submit
+                </p>
             </DialogContent>
         </Dialog>
     );
