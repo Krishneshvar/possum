@@ -28,9 +28,23 @@ const CategoryNode = ({
   return (
     <div className="select-none">
       <div 
-        className="group flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-muted/50 transition-colors"
+        className="group flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-muted/50 transition-colors relative"
         style={{ marginLeft: `${level * 24}px` }}
       >
+        {/* Vertical line */}
+        {level > 0 && (
+          <div 
+            className="absolute left-0 top-0 bottom-0 w-px bg-border"
+            style={{ left: '-12px' }}
+          />
+        )}
+        {/* Horizontal line */}
+        {level > 0 && (
+          <div 
+            className="absolute top-1/2 w-3 h-px bg-border"
+            style={{ left: '-12px' }}
+          />
+        )}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {hasChildren ? (
             <button
@@ -89,7 +103,12 @@ const CategoryNode = ({
       </div>
       
       {hasChildren && isExpanded && (
-        <div className="mt-1">
+        <div className="mt-1 relative">
+          {/* Vertical line for children */}
+          <div 
+            className="absolute top-0 bottom-0 w-px bg-border"
+            style={{ left: `${level * 24 + 12}px` }}
+          />
           {category.subcategories!.map(subcat => (
             <CategoryNode 
               key={subcat.id} 

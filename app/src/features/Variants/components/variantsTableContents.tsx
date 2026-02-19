@@ -1,5 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import CurrencyText from "@/components/common/CurrencyText";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const allColumns = [
     {
@@ -33,11 +38,40 @@ export const allColumns = [
     {
         key: "stock",
         label: "Stock",
-        renderCell: (row: any) => (
-            <Badge variant={row.stock <= row.stock_alert_cap ? "destructive" : "secondary"}>
-                {row.stock}
-            </Badge>
-        ),
+        renderCell: (row: any) => {
+            const stock = row.stock ?? 0;
+            const threshold = row.stock_alert_cap ?? 10;
+            const isLow = stock <= threshold && stock > 0;
+            const isOut = stock <= 0;
+
+            const statusConfig = isOut
+                ? { variant: 'destructive' as const, className: 'bg-red-500 hover:bg-red-600 text-white' }
+                : isLow
+                ? { variant: 'default' as const, className: 'bg-orange-500 hover:bg-orange-600 text-white' }
+                : { variant: 'default' as const, className: 'bg-green-600 hover:bg-green-700 text-white' };
+
+            return (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Badge
+                            variant={statusConfig.variant}
+                            className={`${statusConfig.className} cursor-help font-mono`}
+                        >
+                            {stock}
+                        </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>
+                            {isOut
+                                ? 'Out of stock'
+                                : isLow
+                                ? `Low stock (threshold: ${threshold})`
+                                : `Healthy stock level (threshold: ${threshold})`}
+                        </p>
+                    </TooltipContent>
+                </Tooltip>
+            );
+        },
     },
     {
         key: "status",

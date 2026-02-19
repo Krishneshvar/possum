@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import CurrencyText from "@/components/common/CurrencyText";
 import { Link } from "react-router-dom";
-import { Eye, Printer, RotateCcw, Receipt } from "lucide-react";
+import { Eye, Printer, Receipt } from "lucide-react";
 import ActionsDropdown from "@/components/common/ActionsDropdown";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import DataTable from "@/components/common/DataTable";
@@ -108,6 +108,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
                             >
                                 <Link to={`/sales/${order.id}`}>
                                     <Eye className="h-4 w-4" />
+                                    <span className="sr-only">View details for invoice {order.invoice_number}</span>
                                 </Link>
                             </Button>
                         </TooltipTrigger>
@@ -121,23 +122,13 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
     ];
 
     const renderOrderActions = (order: any) => (
-        <ActionsDropdown>
+        <ActionsDropdown aria-label={`Actions for invoice ${order.invoice_number}`}>
             <DropdownMenuItem asChild>
                 <Link to={`/sales/${order.id}`} className="cursor-pointer">
                     <Receipt className="mr-2 h-4 w-4" />
                     <span>View Full Details</span>
                 </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log('Print invoice', order.id)}>
-                <Printer className="mr-2 h-4 w-4" />
-                <span>Print Invoice</span>
-            </DropdownMenuItem>
-            {order.status === 'completed' && (
-                <DropdownMenuItem onClick={() => console.log('Create return', order.id)}>
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    <span>Create Return</span>
-                </DropdownMenuItem>
-            )}
         </ActionsDropdown>
     );
 

@@ -45,7 +45,7 @@ export default function CategoriesTableView({ categories, onEdit }: CategoriesTa
       label: 'Category Name',
       renderCell: (category: Category) => (
         <div className="flex items-center gap-2">
-          <span style={{ marginLeft: `${(category.depth || 0) * 20}px` }} className="font-medium">
+          <span className="font-medium">
             {category.name}
           </span>
         </div>

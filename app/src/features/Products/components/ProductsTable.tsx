@@ -113,7 +113,24 @@ export default function ProductsTable() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-primary hidden sm:flex"
+            className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+            asChild
+            aria-label={`View ${product.name}`}
+          >
+            <Link to={`/products/${product.id}`}>
+              <Eye className="h-4 w-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>View Details</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
             asChild
             aria-label={`Edit ${product.name}`}
           >
@@ -125,29 +142,46 @@ export default function ProductsTable() {
         <TooltipContent>Edit Product</TooltipContent>
       </Tooltip>
 
-      <ActionsDropdown>
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem asChild>
-          <Link to={`/products/${product.id}`} className="cursor-pointer">
-            <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>View Details</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to={`/products/edit/${product.id}`} className="cursor-pointer">
-            <Edit className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Edit Product</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive cursor-pointer hover:bg-destructive/10"
-          onClick={() => handleDeleteClick(product)}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          <span>Delete Product</span>
-        </DropdownMenuItem>
-      </ActionsDropdown>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hidden md:flex"
+            onClick={() => handleDeleteClick(product)}
+            aria-label={`Delete ${product.name}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Delete Product</TooltipContent>
+      </Tooltip>
+
+      <div className="md:hidden">
+        <ActionsDropdown>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link to={`/products/${product.id}`} className="cursor-pointer">
+              <Eye className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>View Details</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={`/products/edit/${product.id}`} className="cursor-pointer">
+              <Edit className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Edit Product</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive cursor-pointer hover:bg-destructive/10"
+            onClick={() => handleDeleteClick(product)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            <span>Delete Product</span>
+          </DropdownMenuItem>
+        </ActionsDropdown>
+      </div>
     </div>
   )
 

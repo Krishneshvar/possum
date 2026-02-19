@@ -1,9 +1,11 @@
-import { Layers, Package, ClipboardList } from "lucide-react"
+import { Layers, Package, ClipboardList, AlertTriangle, XCircle, TrendingUp } from "lucide-react"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import VariantsTable from "../components/VariantsTable"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import { KeyboardShortcut } from "@/components/common/KeyboardShortcut"
+import { StatCards } from "@/components/common/StatCards"
+import { useGetVariantStatsQuery } from "@/services/productsApi"
 
 const variantsActions = {
   secondary: [
@@ -22,6 +24,34 @@ const variantsActions = {
 
 export default function VariantsPage() {
   const navigate = useNavigate();
+  const { data: stats } = useGetVariantStatsQuery(undefined);
+
+  const statsData = [
+    {
+      title: 'Total Variants',
+      icon: Layers,
+      color: 'text-blue-500',
+      todayValue: stats?.totalVariants ?? 0,
+    },
+    {
+      title: 'Low Stock',
+      icon: AlertTriangle,
+      color: 'text-orange-500',
+      todayValue: stats?.lowStockVariants ?? 0,
+    },
+    {
+      title: 'Inactive',
+      icon: XCircle,
+      color: 'text-slate-500',
+      todayValue: stats?.inactiveVariants ?? 0,
+    },
+    {
+      title: 'Avg Stock Level',
+      icon: TrendingUp,
+      color: 'text-green-500',
+      todayValue: stats?.avgStockLevel ? Math.round(stats.avgStockLevel) : 0,
+    },
+  ];
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,6 +79,8 @@ export default function VariantsPage() {
           <span className="text-muted-foreground/70">to Products</span>
         </div>
       </div>
+
+      <StatCards cardData={statsData} />
 
       <VariantsTable />
     </div>
