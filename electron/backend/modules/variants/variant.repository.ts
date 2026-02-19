@@ -201,7 +201,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     const startIndex = (currentPage! - 1) * itemsPerPage!;
     const sql = `
       SELECT
-        v.id, v.product_id, v.name, v.sku, v.mrp as price, v.cost_price,
+        v.id, v.product_id, v.name, v.sku, v.mrp, v.mrp as price, v.cost_price,
         v.stock_alert_cap, v.is_default, v.status, v.created_at,
         p.name as product_name, p.image_path,
         p.tax_category_id,
@@ -260,7 +260,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
   const sql = `
     SELECT * FROM (
       SELECT 
-        v.id, v.product_id, v.name, v.sku, v.mrp as price, v.cost_price,
+        v.id, v.product_id, v.name, v.sku, v.mrp, v.mrp as price, v.cost_price,
         v.stock_alert_cap, v.is_default, v.status, v.created_at,
         p.name as product_name, p.image_path,
         p.tax_category_id,

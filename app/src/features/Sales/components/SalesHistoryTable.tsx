@@ -38,8 +38,6 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
             key: "invoice_number",
             label: "Invoice #",
             renderCell: (order: any) => <span className="font-mono font-medium text-primary">{order.invoice_number}</span>,
-            sortable: true,
-            sortField: "invoice_number",
         },
         {
             key: "customer_name",
@@ -90,31 +88,31 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
             key: "status",
             label: "Status",
             renderCell: (order: any) => getStatusBadge(order.status),
-            sortable: true,
-            sortField: "status",
         },
         {
             key: "actions",
             label: "Actions",
             renderCell: (order: any) => (
-                <div className="flex items-center gap-2 justify-end">
+                <div className="flex items-center gap-1 justify-end">
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
-                                variant="outline"
-                                size="icon-sm"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
                                 asChild
                                 aria-label={`View details for invoice ${order.invoice_number}`}
                             >
                                 <Link to={`/sales/${order.id}`}>
                                     <Eye className="h-4 w-4" />
-                                    <span className="sr-only">View details for invoice {order.invoice_number}</span>
                                 </Link>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>View Details</TooltipContent>
                     </Tooltip>
-                    {renderOrderActions(order)}
+                    <div className="md:hidden">
+                        {renderOrderActions(order)}
+                    </div>
                 </div>
             ),
             align: "right" as const,
@@ -125,7 +123,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         <ActionsDropdown aria-label={`Actions for invoice ${order.invoice_number}`}>
             <DropdownMenuItem asChild>
                 <Link to={`/sales/${order.id}`} className="cursor-pointer">
-                    <Receipt className="mr-2 h-4 w-4" />
+                    <Eye className="mr-2 h-4 w-4" />
                     <span>View Full Details</span>
                 </Link>
             </DropdownMenuItem>

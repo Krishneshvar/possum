@@ -137,8 +137,6 @@ export default function TransactionsPage() {
     {
       key: 'id',
       label: 'ID',
-      sortable: true,
-      sortField: 'id',
       renderCell: (t: any) => <span className="font-mono text-xs">#{t.id}</span>
     },
     {
@@ -159,14 +157,13 @@ export default function TransactionsPage() {
     {
       key: 'customer_name',
       label: 'Customer',
-      sortable: false,
+      sortable: true,
+      sortField: 'customer_name',
       renderCell: (t: any) => t.customer_name || '-'
     },
     {
       key: 'type',
       label: 'Type',
-      sortable: true,
-      sortField: 'type',
       renderCell: (t: any) => (
         <div className="flex items-center capitalize">
           {getTypeIcon(t.type)}
@@ -195,8 +192,6 @@ export default function TransactionsPage() {
     {
       key: 'status',
       label: 'Status',
-      sortable: true,
-      sortField: 'status',
       className: 'text-center',
       renderCell: (t: any) => (
         <div className="flex justify-center">

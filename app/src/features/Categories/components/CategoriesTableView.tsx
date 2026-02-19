@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Tag, FolderTree } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { useDeleteCategoryMutation, Category } from '@/services/categoriesApi';
 import { toast } from 'sonner';
 import { flattenCategories } from '@/utils/categories.utils';
 import GenericDeleteDialog from '@/components/common/GenericDeleteDialog';
+import ActionsDropdown from '@/components/common/ActionsDropdown';
 import DataTable from "@/components/common/DataTable";
 
 interface CategoriesTableViewProps {
@@ -70,26 +73,54 @@ export default function CategoriesTableView({ categories, onEdit }: CategoriesTa
   ];
 
   const renderActions = (category: Category) => (
-    <div className="flex justify-end gap-2">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={() => onEdit(category)}
-        aria-label={`Edit ${category.name}`}
-        title="Edit category"
-      >
-        <Edit className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => handleDeleteClick(category)}
-        className="text-destructive hover:text-destructive"
-        aria-label={`Delete ${category.name}`}
-        title="Delete category"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+    <div className="flex items-center justify-end gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+            onClick={() => onEdit(category)}
+            aria-label={`Edit ${category.name}`}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Edit Category</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hidden md:flex"
+            onClick={() => handleDeleteClick(category)}
+            aria-label={`Delete ${category.name}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Delete Category</TooltipContent>
+      </Tooltip>
+
+      <div className="md:hidden">
+        <ActionsDropdown>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => onEdit(category)} className="cursor-pointer">
+            <Edit className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Edit Category</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive cursor-pointer hover:bg-destructive/10"
+            onClick={() => handleDeleteClick(category)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            <span>Delete Category</span>
+          </DropdownMenuItem>
+        </ActionsDropdown>
+      </div>
     </div>
   );
 

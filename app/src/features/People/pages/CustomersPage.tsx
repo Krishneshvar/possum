@@ -9,10 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 import GenericPageHeader from '@/components/common/GenericPageHeader';
 import DataTable from "@/components/common/DataTable";
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog";
+import ActionsDropdown from '@/components/common/ActionsDropdown';
+import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { CustomerForm } from '../components/CustomerForm';
 import {
   useGetCustomersQuery,
@@ -103,24 +106,54 @@ export default function CustomersPage() {
   ];
 
   const renderActions = (customer: any) => (
-    <div className="flex items-center gap-2 justify-end">
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => handleOpenEditDialog(customer)}
-        aria-label={`Edit ${customer.name}`}
-      >
-        <Pencil className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={() => handleOpenDeleteDialog(customer)}
-        aria-label={`Delete ${customer.name}`}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+    <div className="flex items-center justify-end gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+            onClick={() => handleOpenEditDialog(customer)}
+            aria-label={`Edit ${customer.name}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Edit Customer</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hidden md:flex"
+            onClick={() => handleOpenDeleteDialog(customer)}
+            aria-label={`Delete ${customer.name}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Delete Customer</TooltipContent>
+      </Tooltip>
+
+      <div className="md:hidden">
+        <ActionsDropdown>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => handleOpenEditDialog(customer)} className="cursor-pointer">
+            <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Edit Customer</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => handleOpenDeleteDialog(customer)}
+            className="cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            <span>Delete Customer</span>
+          </DropdownMenuItem>
+        </ActionsDropdown>
+      </div>
     </div>
   );
 

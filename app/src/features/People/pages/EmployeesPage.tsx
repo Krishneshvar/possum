@@ -20,6 +20,8 @@ import {
 import GenericPageHeader from '@/components/common/GenericPageHeader';
 import DataTable from "@/components/common/DataTable";
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog";
+import ActionsDropdown from '@/components/common/ActionsDropdown';
+import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { EmployeeForm } from '../components/EmployeeForm';
 import {
   useGetUsersQuery,
@@ -147,34 +149,52 @@ export default function EmployeesPage() {
 
   const renderActions = (user: any) => (
     <TooltipProvider>
-      <div className="flex items-center gap-2 justify-end">
+      <div className="flex items-center gap-1 justify-end">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
               onClick={() => handleOpenEditDialog(user)}
               aria-label={`Edit ${user.name}`}
             >
               <Pencil className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Edit employee</TooltipContent>
+          <TooltipContent>Edit Employee</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive hidden md:flex"
               onClick={() => handleOpenDeleteDialog(user)}
               aria-label={`Delete ${user.name}`}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Delete employee</TooltipContent>
+          <TooltipContent>Delete Employee</TooltipContent>
         </Tooltip>
+        <div className="md:hidden">
+          <ActionsDropdown>
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => handleOpenEditDialog(user)} className="cursor-pointer">
+              <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Edit Employee</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => handleOpenDeleteDialog(user)}
+              className="cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete Employee</span>
+            </DropdownMenuItem>
+          </ActionsDropdown>
+        </div>
       </div>
     </TooltipProvider>
   );

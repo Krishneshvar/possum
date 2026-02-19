@@ -2,6 +2,8 @@ import { Eye, Edit, Package2 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGetVariantsQuery } from "@/services/productsApi"
 import { setSearchTerm, setCurrentPage, setSorting } from "../variantsSlice"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
@@ -42,20 +44,58 @@ export default function VariantsTable() {
     )
 
     const renderActions = (variant: any) => (
-        <ActionsDropdown>
-            <DropdownMenuItem asChild>
-                <Link to={`/products/${variant.product_id}`} className="cursor-pointer">
-                    <Eye className="mr-2 h-4 w-4" />
-                    <span>View Product</span>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-                <Link to={`/products/edit/${variant.product_id}`} className="cursor-pointer">
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>Edit Product</span>
-                </Link>
-            </DropdownMenuItem>
-        </ActionsDropdown>
+        <div className="flex items-center justify-end gap-1">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+                        asChild
+                        aria-label={`View product ${variant.product_name}`}
+                    >
+                        <Link to={`/products/${variant.product_id}`}>
+                            <Eye className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>View Product</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+                        asChild
+                        aria-label={`Edit product ${variant.product_name}`}
+                    >
+                        <Link to={`/products/edit/${variant.product_id}`}>
+                            <Edit className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Product</TooltipContent>
+            </Tooltip>
+
+            <div className="md:hidden">
+                <ActionsDropdown>
+                    <DropdownMenuItem asChild>
+                        <Link to={`/products/${variant.product_id}`} className="cursor-pointer">
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>View Product</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link to={`/products/edit/${variant.product_id}`} className="cursor-pointer">
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit Product</span>
+                        </Link>
+                    </DropdownMenuItem>
+                </ActionsDropdown>
+            </div>
+        </div>
     )
 
     return (

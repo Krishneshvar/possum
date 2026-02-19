@@ -187,17 +187,17 @@ export default function PurchaseOrdersPage() {
     if (po.status === 'pending') {
       return (
         <TooltipProvider>
-          <div className="flex items-center gap-2 justify-end">
+          <div className="flex items-center gap-1 justify-end">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleReceive(po.id)}
-                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                  className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 hidden md:flex"
                   aria-label={`Receive purchase order ${po.id}`}
                 >
-                  <PackageCheck className="h-3.5 w-3.5" />
+                  <PackageCheck className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Receive</TooltipContent>
@@ -205,13 +205,13 @@ export default function PurchaseOrdersPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setPoToCancel(po)}
-                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hidden md:flex"
                   aria-label={`Cancel purchase order ${po.id}`}
                 >
-                  <PackageX className="h-3.5 w-3.5" />
+                  <PackageX className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Cancel</TooltipContent>
@@ -219,17 +219,37 @@ export default function PurchaseOrdersPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => navigate(`/purchase/orders/${po.id}`)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
                   aria-label={`View details for purchase order ${po.id}`}
                 >
-                  <Eye className="h-3.5 w-3.5" />
+                  <Eye className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>View</TooltipContent>
             </Tooltip>
+            <div className="md:hidden">
+              <ActionsDropdown>
+                <DropdownMenuItem onClick={() => navigate(`/purchase/orders/${po.id}`)} className="cursor-pointer">
+                  <Eye className="mr-2 h-4 w-4" />
+                  <span>View Details</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleReceive(po.id)} className="cursor-pointer text-green-600">
+                  <PackageCheck className="mr-2 h-4 w-4" />
+                  <span>Receive Order</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setPoToCancel(po)}
+                  className="cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10"
+                >
+                  <PackageX className="mr-2 h-4 w-4" />
+                  <span>Cancel Order</span>
+                </DropdownMenuItem>
+              </ActionsDropdown>
+            </div>
           </div>
         </TooltipProvider>
       );
@@ -237,21 +257,29 @@ export default function PurchaseOrdersPage() {
     
     return (
       <TooltipProvider>
-        <div className="flex justify-end">
+        <div className="flex items-center gap-1 justify-end">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                size="icon"
                 onClick={() => navigate(`/purchase/orders/${po.id}`)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
                 aria-label={`View details for purchase order ${po.id}`}
               >
-                <Eye className="h-3.5 w-3.5" />
+                <Eye className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>View</TooltipContent>
           </Tooltip>
+          <div className="md:hidden">
+            <ActionsDropdown>
+              <DropdownMenuItem onClick={() => navigate(`/purchase/orders/${po.id}`)} className="cursor-pointer">
+                <Eye className="mr-2 h-4 w-4" />
+                <span>View Details</span>
+              </DropdownMenuItem>
+            </ActionsDropdown>
+          </div>
         </div>
       </TooltipProvider>
     );

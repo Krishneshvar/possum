@@ -7,12 +7,13 @@ import { useGetAuditLogsQuery } from '@/services/auditLogApi';
 import { setSearchTerm, setCurrentPage, setSort, setFilter, clearAllFilters, setDateRange } from '../auditLogSlice';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { allColumns } from './auditLogTableContents';
 import { actionFilter, resourceFilter } from '../data/auditLogFiltersConfig';
@@ -69,12 +70,31 @@ export default function AuditLogTable() {
     );
 
     const renderLogActions = (log: any) => (
-        <ActionsDropdown>
-            <DropdownMenuItem onClick={() => handleViewDetails(log)} className="cursor-pointer">
-                <Eye className="mr-2 h-4 w-4" />
-                <span>View Full Details</span>
-            </DropdownMenuItem>
-        </ActionsDropdown>
+        <div className="flex items-center justify-end gap-1">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+                        onClick={() => handleViewDetails(log)}
+                        aria-label="View log details"
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>View Details</TooltipContent>
+            </Tooltip>
+            <div className="md:hidden">
+                <ActionsDropdown>
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleViewDetails(log)} className="cursor-pointer">
+                        <Eye className="mr-2 h-4 w-4" />
+                        <span>View Full Details</span>
+                    </DropdownMenuItem>
+                </ActionsDropdown>
+            </div>
+        </div>
     );
 
     const filtersConfig = [

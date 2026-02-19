@@ -17,13 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useGetSuppliersQuery, useDeleteSupplierMutation } from '@/services/suppliersApi';
 import { SupplierForm } from '../components/SupplierForm';
 import { Plus, Trash2, Edit, Truck, PackageOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 
 export default function SuppliersPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -106,7 +107,8 @@ export default function SuppliersPage() {
     {
       key: 'phone',
       label: 'Phone',
-      sortable: false,
+      sortable: true,
+      sortField: 'phone',
       renderCell: (supplier: any) => <span className="text-sm">{supplier.phone || '-'}</span>
     },
     {
@@ -122,19 +124,55 @@ export default function SuppliersPage() {
   ];
 
   const renderActions = (supplier: any) => (
-    <ActionsDropdown>
-      <DropdownMenuItem onClick={() => handleEditClick(supplier)} className="cursor-pointer">
-        <Edit className="mr-2 h-4 w-4" aria-hidden="true" />
-        <span>Edit Supplier</span>
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        onClick={() => handleDeleteClick(supplier)}
-        className="cursor-pointer text-destructive focus:text-destructive"
-      >
-        <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-        <span>Delete Supplier</span>
-      </DropdownMenuItem>
-    </ActionsDropdown>
+    <div className="flex items-center justify-end gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+            onClick={() => handleEditClick(supplier)}
+            aria-label={`Edit ${supplier.name}`}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Edit Supplier</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hidden md:flex"
+            onClick={() => handleDeleteClick(supplier)}
+            aria-label={`Delete ${supplier.name}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Delete Supplier</TooltipContent>
+      </Tooltip>
+
+      <div className="md:hidden">
+        <ActionsDropdown>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => handleEditClick(supplier)} className="cursor-pointer">
+            <Edit className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Edit Supplier</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => handleDeleteClick(supplier)}
+            className="cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            <span>Delete Supplier</span>
+          </DropdownMenuItem>
+        </ActionsDropdown>
+      </div>
+    </div>
   );
 
   const emptyState = (
