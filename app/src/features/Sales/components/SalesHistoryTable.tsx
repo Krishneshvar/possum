@@ -1,11 +1,13 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import CurrencyText from "@/components/common/CurrencyText";
 import { Link } from "react-router-dom";
-import { Eye } from "lucide-react";
+import { Eye, Printer, RotateCcw, Receipt } from "lucide-react";
 import ActionsDropdown from "@/components/common/ActionsDropdown";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import DataTable from "@/components/common/DataTable";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SalesHistoryTableProps {
     sales: any[];
@@ -53,10 +55,10 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         },
         {
             key: "sale_date",
-            label: "Date",
+            label: "Date & Time",
             renderCell: (order: any) => (
                 <div className="flex flex-col">
-                    <span>{format(new Date(order.sale_date), "MMM dd, yyyy")}</span>
+                    <span className="font-medium">{format(new Date(order.sale_date), "MMM dd, yyyy")}</span>
                     <span className="text-xs text-muted-foreground">{format(new Date(order.sale_date), "hh:mm a")}</span>
                 </div>
             ),
@@ -65,7 +67,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         },
         {
             key: "total_amount",
-            label: "Total",
+            label: "Total Amount",
             renderCell: (order: any) => <CurrencyText value={order.total_amount} className="font-bold" />,
             sortable: true,
             sortField: "total_amount",
@@ -73,12 +75,12 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         },
         {
             key: "payment_status",
-            label: "Payment",
+            label: "Payment Status",
             renderCell: (order: any) => {
                 const isPaid = order.paid_amount >= order.total_amount;
                 const isPartial = order.paid_amount > 0 && order.paid_amount < order.total_amount;
                 return (
-                    <Badge variant={isPaid ? "outline" : isPartial ? "secondary" : "destructive"} className="text-xs">
+                    <Badge variant={isPaid ? "success" : isPartial ? "secondary" : "destructive"} className="text-xs">
                         {isPaid ? "Paid" : isPartial ? "Partial" : "Unpaid"}
                     </Badge>
                 );
@@ -91,22 +93,71 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
             sortable: true,
             sortField: "status",
         },
+        {
+            key: "actions",
+            label: "Actions",
+            renderCell: (order: any) => (
+                <div className="flex items-center gap-2 justify-end">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="icon-sm"
+                                asChild
+                                aria-label={`View details for invoice ${order.invoice_number}`}
+                            >
+                                <Link to={`/sales/${order.id}`}>
+                                    <Eye className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View Details</TooltipContent>
+                    </Tooltip>
+                    {renderOrderActions(order)}
+                </div>
+            ),
+            align: "right" as const,
+        },
     ];
 
     const renderOrderActions = (order: any) => (
         <ActionsDropdown>
             <DropdownMenuItem asChild>
                 <Link to={`/sales/${order.id}`} className="cursor-pointer">
-                    <Eye className="mr-2 h-4 w-4" />
-                    <span>View Details</span>
+                    <Receipt className="mr-2 h-4 w-4" />
+                    <span>View Full Details</span>
                 </Link>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => console.log('Print invoice', order.id)}>
+                <Printer className="mr-2 h-4 w-4" />
+                <span>Print Invoice</span>
+            </DropdownMenuItem>
+            {order.status === 'completed' && (
+                <DropdownMenuItem onClick={() => console.log('Create return', order.id)}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    <span>Create Return</span>
+                </DropdownMenuItem>
+            )}
         </ActionsDropdown>
     );
 
     const emptyState = (
-        <div className="text-center p-8 text-muted-foreground">
-            No sales history found.
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mb-4">
+                <Receipt className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Bills Found</h3>
+            <p className="text-sm text-muted-foreground max-w-md mb-4">
+                {searchTerm 
+                    ? `No bills match your search "${searchTerm}". Try adjusting your search terms.`
+                    : "There are no sales transactions yet. Bills will appear here once you complete sales."
+                }
+            </p>
+            {searchTerm && (
+                <Button variant="outline" size="sm" onClick={() => onSearchChange('')}>
+                    Clear Search
+                </Button>
+            )}
         </div>
     );
 
@@ -121,8 +172,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
             onPageChange={onPageChange}
             searchTerm={searchTerm}
             onSearchChange={onSearchChange}
-            searchPlaceholder="Search invoices or customers..."
-            renderActions={renderOrderActions}
+            searchPlaceholder="Search by invoice number, customer name, or phone..."
             emptyState={emptyState}
         />
     );

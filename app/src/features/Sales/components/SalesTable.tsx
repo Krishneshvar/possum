@@ -97,6 +97,14 @@ export default function SalesTable({
     const resizingColumnRef = useRef<SalesColumnKey | null>(null);
     const startXRef = useRef(0);
     const startWidthRef = useRef(0);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom when items are added
+    useEffect(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+    }, [items.length]);
 
     const totalQuantity = useMemo(() => {
         return items.reduce((sum, item) => sum + item.quantity, 0);
@@ -256,7 +264,12 @@ export default function SalesTable({
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <h3 className="text-sm font-semibold text-foreground">Cart Items</h3>
             </div>
-            <div className="overflow-auto flex-1 flex flex-col min-h-0" role="region" aria-label="Shopping cart items">
+            <div
+                ref={scrollContainerRef}
+                className="overflow-auto flex-1 flex flex-col min-h-0"
+                role="region"
+                aria-label="Shopping cart items"
+            >
                 <Table className="table-fixed w-full" containerClassName="overflow-visible">
                     <colgroup>
                         <col style={{ width: `${columnWidths.sno}px` }} />
@@ -266,7 +279,7 @@ export default function SalesTable({
                         <col style={{ width: `${columnWidths.discount}px` }} />
                         <col style={{ width: `${columnWidths.total}px` }} />
                     </colgroup>
-                    <TableHeader className="bg-muted/30 sticky top-0 z-10">
+                    <TableHeader className="bg-muted sticky top-0 z-10">
                         <TableRow>
                             <TableHead className="relative border border-border font-semibold text-center">
                                 S. No
