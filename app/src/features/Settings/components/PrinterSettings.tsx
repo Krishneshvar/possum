@@ -124,15 +124,6 @@ export default function PrinterSettings() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <Button 
-                                    variant="outline" 
-                                    size="icon" 
-                                    onClick={handleRefreshPrinters} 
-                                    disabled={loading}
-                                    aria-label="Refresh printer list"
-                                >
-                                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
-                                </Button>
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Select the printer to use for printing receipts
@@ -141,6 +132,15 @@ export default function PrinterSettings() {
                     )}
 
                     <div className="flex gap-2 pt-2">
+                        <Button 
+                            variant="outline"
+                            onClick={handleRefreshPrinters} 
+                            disabled={loading}
+                            aria-label="Refresh printer list"
+                        >
+                            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+                            Refresh Printers
+                        </Button>
                         <Button 
                             onClick={handleTestPrint} 
                             disabled={!selectedPrinter || testing || loading}
@@ -158,9 +158,6 @@ export default function PrinterSettings() {
                                 </>
                             )}
                         </Button>
-                        {!selectedPrinter && printers.length > 0 && (
-                            <p className="text-sm text-muted-foreground self-center">Select a printer to test</p>
-                        )}
                     </div>
                 </CardContent>
             </Card>

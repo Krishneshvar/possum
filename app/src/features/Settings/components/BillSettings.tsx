@@ -126,8 +126,8 @@ export default function BillSettings() {
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="58mm">58mm (Thermal)</SelectItem>
-                                                    <SelectItem value="80mm">80mm (Thermal)</SelectItem>
+                                                    <SelectItem value="58mm">58mm (2 inch)</SelectItem>
+                                                    <SelectItem value="80mm">80mm (3 inch)</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
