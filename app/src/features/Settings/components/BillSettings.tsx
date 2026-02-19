@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SectionEditor from "./SectionEditor";
@@ -17,7 +18,6 @@ export default function BillSettings() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        // Fetch existing settings
         async function loadSettings() {
             try {
                 if ((window as any).electronAPI) {
@@ -43,9 +43,8 @@ export default function BillSettings() {
                 await (window as any).electronAPI.saveBillSettings(JSON.parse(JSON.stringify(schema)));
                 toast.success("Bill settings saved successfully");
             } else {
-                // Fallback for browser dev
                 console.log("Saving schema:", schema);
-                toast.success("Settings saved (Simulated)");
+                toast.success("Settings saved successfully");
             }
         } catch (error) {
             console.error("Failed to save settings", error);
@@ -69,97 +68,122 @@ export default function BillSettings() {
         setSchema({ ...schema, sections: newSections });
     };
 
-    if (loading) return <div className="p-8 text-center">Loading settings...</div>;
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-10rem)]">
-            {/* Editor Panel */}
-            <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                <Card className="flex-1 flex flex-col overflow-hidden">
-                    <CardHeader className="pb-3">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle>Bill Configuration</CardTitle>
-                                <CardDescription>Customize your receipt layout</CardDescription>
-                            </div>
-                            <Button onClick={handleSave} disabled={saving}>
-                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save Changes
-                            </Button>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 overflow-y-auto pr-2">
-                        <Tabs defaultValue="layout" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 mb-4">
-                                <TabsTrigger value="layout">Layout & Sections</TabsTrigger>
-                                <TabsTrigger value="general">General Options</TabsTrigger>
-                            </TabsList>
+        <div className="space-y-6">
+            <div className="flex items-start justify-between">
+                <div>
+                    <h2 className="text-lg font-semibold">Bill Structure</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Customize receipt layout and formatting</p>
+                </div>
+                <Button onClick={handleSave} disabled={saving} aria-label="Save bill settings">
+                    {saving ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                            Saving...
+                        </>
+                    ) : (
+                        <>
+                            <Save className="mr-2 h-4 w-4" aria-hidden="true" />
+                            Save Changes
+                        </>
+                    )}
+                </Button>
+            </div>
 
-                            <TabsContent value="general" className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Paper Width</Label>
-                                        <Select
-                                            value={schema.paperWidth}
-                                            onValueChange={(val: any) => setSchema({ ...schema, paperWidth: val })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="58mm">58mm (Thermal)</SelectItem>
-                                                <SelectItem value="80mm">80mm (Thermal)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Date Format</Label>
-                                        <Select
-                                            value={schema.dateFormat}
-                                            onValueChange={(val: any) => setSchema({ ...schema, dateFormat: val })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="standard">Standard (DD/MM/YYYY)</SelectItem>
-                                                <SelectItem value="ISO">ISO (YYYY-MM-DD)</SelectItem>
-                                                <SelectItem value="short">Short</SelectItem>
-                                                <SelectItem value="long">Long</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Time Format</Label>
-                                        <Select
-                                            value={schema.timeFormat}
-                                            onValueChange={(val: any) => setSchema({ ...schema, timeFormat: val })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="12h">12 Hour (AM/PM)</SelectItem>
-                                                <SelectItem value="24h">24 Hour</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Currency Symbol</Label>
-                                        <Input
-                                            value={schema.currency || '₹'}
-                                            onChange={(e) => setSchema({ ...schema, currency: e.target.value })}
-                                            placeholder="e.g. ₹, $, €"
-                                        />
-                                    </div>
-                                </div>
-                            </TabsContent>
+            <Separator />
 
-                            <TabsContent value="layout" className="space-y-4">
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Toggle visibility and reorder sections to match your needs.
-                                </p>
-                                <div className="space-y-2">
+            <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1 space-y-6">
+                    <Tabs defaultValue="layout" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="layout">Layout & Sections</TabsTrigger>
+                            <TabsTrigger value="general">General Options</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="general" className="space-y-4 mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Format Settings</CardTitle>
+                                    <CardDescription>Configure paper size, date/time formats, and currency</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="paperWidth">Paper Width</Label>
+                                            <Select
+                                                value={schema.paperWidth}
+                                                onValueChange={(val: any) => setSchema({ ...schema, paperWidth: val })}
+                                            >
+                                                <SelectTrigger id="paperWidth">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="58mm">58mm (Thermal)</SelectItem>
+                                                    <SelectItem value="80mm">80mm (Thermal)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="dateFormat">Date Format</Label>
+                                            <Select
+                                                value={schema.dateFormat}
+                                                onValueChange={(val: any) => setSchema({ ...schema, dateFormat: val })}
+                                            >
+                                                <SelectTrigger id="dateFormat">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="standard">Standard (DD/MM/YYYY)</SelectItem>
+                                                    <SelectItem value="ISO">ISO (YYYY-MM-DD)</SelectItem>
+                                                    <SelectItem value="short">Short</SelectItem>
+                                                    <SelectItem value="long">Long</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="timeFormat">Time Format</Label>
+                                            <Select
+                                                value={schema.timeFormat}
+                                                onValueChange={(val: any) => setSchema({ ...schema, timeFormat: val })}
+                                            >
+                                                <SelectTrigger id="timeFormat">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="12h">12 Hour (AM/PM)</SelectItem>
+                                                    <SelectItem value="24h">24 Hour</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="currency">Currency Symbol</Label>
+                                            <Input
+                                                id="currency"
+                                                value={schema.currency || '₹'}
+                                                onChange={(e) => setSchema({ ...schema, currency: e.target.value })}
+                                                placeholder="e.g. ₹, $, €"
+                                            />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="layout" className="space-y-4 mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Receipt Sections</CardTitle>
+                                    <CardDescription>Toggle visibility and reorder sections to customize your receipt layout</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
                                     {schema.sections.map((section: any, index: number) => (
                                         <SectionEditor
                                             key={section.id}
@@ -172,20 +196,24 @@ export default function BillSettings() {
                                             onMoveDown={() => moveSection(index, 1)}
                                         />
                                     ))}
-                                </div>
-                            </TabsContent>
-                        </Tabs>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Preview Panel */}
-            <div className="w-full lg:w-[400px] xl:w-[450px] flex-shrink-0 border rounded-lg bg-muted/20 overflow-hidden flex flex-col">
-                <div className="p-3 border-b bg-background font-medium text-sm text-center">
-                    Live Preview ({schema.paperWidth})
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 </div>
-                <div className="flex-1 overflow-auto p-4 flex justify-center bg-gray-100 dark:bg-gray-900">
-                    <BillPreview schema={schema} />
+
+                <div className="w-full lg:w-[400px] flex-shrink-0">
+                    <Card className="sticky top-6">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Live Preview</CardTitle>
+                            <CardDescription>{schema.paperWidth} thermal receipt</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 bg-muted/30">
+                            <div className="flex justify-center">
+                                <BillPreview schema={schema} />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>

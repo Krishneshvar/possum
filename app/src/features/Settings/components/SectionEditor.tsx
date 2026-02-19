@@ -1,3 +1,11 @@
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+
 interface SectionEditorProps {
     section: any;
     index: number;
@@ -20,164 +28,188 @@ export default function SectionEditor({ section, isFirst, isLast, onUpdate, onMo
         });
     };
 
+    const sectionLabel = section.id.replace(/([A-Z])/g, ' $1').trim();
+
     return (
-        <div className="border rounded-md p-4 mb-3 bg-white dark:bg-gray-800 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
+        <div className="border rounded-lg p-4 bg-card shadow-sm">
+            <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                    <input
-                        type="checkbox"
+                    <Checkbox
+                        id={`section-${section.id}`}
                         checked={section.visible}
-                        onChange={(e) => handleChange('visible', e.target.checked)}
-                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        onCheckedChange={(checked) => handleChange('visible', checked)}
+                        aria-label={`Toggle ${sectionLabel} section visibility`}
                     />
-                    <span className="font-medium capitalize text-gray-900 dark:text-gray-100">
-                        {section.id.replace(/([A-Z])/g, ' $1').trim()}
-                    </span>
+                    <Label 
+                        htmlFor={`section-${section.id}`}
+                        className="font-medium capitalize cursor-pointer"
+                    >
+                        {sectionLabel}
+                    </Label>
                 </div>
 
                 <div className="flex gap-1">
-                    <button
+                    <Button
+                        variant="outline"
+                        size="icon"
                         onClick={onMoveUp}
                         disabled={isFirst}
-                        className="p-1 px-2 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50 text-gray-700 font-mono"
-                        title="Move Up"
+                        aria-label={`Move ${sectionLabel} section up`}
+                        className="h-8 w-8"
                     >
-                        ↑
-                    </button>
-                    <button
+                        <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="icon"
                         onClick={onMoveDown}
                         disabled={isLast}
-                        className="p-1 px-2 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50 text-gray-700 font-mono"
-                        title="Move Down"
+                        aria-label={`Move ${sectionLabel} section down`}
+                        className="h-8 w-8"
                     >
-                        ↓
-                    </button>
+                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                    </Button>
                 </div>
             </div>
 
             {section.visible && (
-                <div className="pl-8 pt-2 grid grid-cols-2 gap-4 text-sm">
-                    {section.options.alignment && (
-                        <div>
-                            <label className="block text-gray-500 mb-1">Alignment</label>
-                            <select
-                                value={section.options.alignment}
-                                onChange={(e) => handleOptionChange('alignment', e.target.value)}
-                                className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                            >
-                                <option value="left">Left</option>
-                                <option value="center">Center</option>
-                                <option value="right">Right</option>
-                            </select>
-                        </div>
-                    )}
+                <div className="pl-8 pt-3 space-y-4 border-t">
+                    <div className="grid grid-cols-2 gap-4">
+                        {section.options.alignment && (
+                            <div className="space-y-2">
+                                <Label htmlFor={`${section.id}-alignment`}>Alignment</Label>
+                                <Select
+                                    value={section.options.alignment}
+                                    onValueChange={(val) => handleOptionChange('alignment', val)}
+                                >
+                                    <SelectTrigger id={`${section.id}-alignment`}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="left">Left</SelectItem>
+                                        <SelectItem value="center">Center</SelectItem>
+                                        <SelectItem value="right">Right</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
-                    {section.options.fontSize && (
-                        <div>
-                            <label className="block text-gray-500 mb-1">Font Size</label>
-                            <select
-                                value={section.options.fontSize}
-                                onChange={(e) => handleOptionChange('fontSize', e.target.value)}
-                                className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                            >
-                                <option value="small">Small</option>
-                                <option value="medium">Medium</option>
-                                <option value="large">Large</option>
-                            </select>
-                        </div>
-                    )}
+                        {section.options.fontSize && (
+                            <div className="space-y-2">
+                                <Label htmlFor={`${section.id}-fontSize`}>Font Size</Label>
+                                <Select
+                                    value={section.options.fontSize}
+                                    onValueChange={(val) => handleOptionChange('fontSize', val)}
+                                >
+                                    <SelectTrigger id={`${section.id}-fontSize`}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="small">Small</SelectItem>
+                                        <SelectItem value="medium">Medium</SelectItem>
+                                        <SelectItem value="large">Large</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                    </div>
 
                     {section.id === 'storeHeader' && (
-                        <div className="col-span-2 space-y-3">
-                            <div>
-                                <label className="block text-gray-500 mb-1">Store Name</label>
-                                <input
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="storeName">Store Name</Label>
+                                <Input
+                                    id="storeName"
                                     type="text"
                                     value={section.options.storeName || ''}
                                     onChange={(e) => handleOptionChange('storeName', e.target.value)}
-                                    className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                    placeholder="Enter store name"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-gray-500 mb-1">Store Details (Address, etc.)</label>
-                                <textarea
+                            <div className="space-y-2">
+                                <Label htmlFor="storeDetails">Store Details</Label>
+                                <Textarea
+                                    id="storeDetails"
                                     value={section.options.storeDetails || ''}
                                     onChange={(e) => handleOptionChange('storeDetails', e.target.value)}
                                     rows={2}
-                                    className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                    placeholder="Address, contact information, etc."
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="block text-gray-500 mb-1">Phone</label>
-                                    <input
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone">Phone</Label>
+                                    <Input
+                                        id="phone"
                                         type="text"
                                         value={section.options.phone || ''}
                                         onChange={(e) => handleOptionChange('phone', e.target.value)}
-                                        className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                        placeholder="Phone number"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-gray-500 mb-1">GSTIN</label>
-                                    <input
+                                <div className="space-y-2">
+                                    <Label htmlFor="gst">GSTIN</Label>
+                                    <Input
+                                        id="gst"
                                         type="text"
                                         value={section.options.gst || ''}
                                         onChange={(e) => handleOptionChange('gst', e.target.value)}
-                                        className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                        placeholder="GST number"
                                     />
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     id="showLogo"
                                     checked={section.options.showLogo}
-                                    onChange={(e) => handleOptionChange('showLogo', e.target.checked)}
+                                    onCheckedChange={(checked) => handleOptionChange('showLogo', checked)}
                                 />
-                                <label htmlFor="showLogo" className="text-gray-500">Show Logo</label>
+                                <Label htmlFor="showLogo" className="cursor-pointer">Show Logo</Label>
                             </div>
                             {section.options.showLogo && (
-                                <div>
-                                    <label className="block text-gray-500 mb-1">Logo URL / Base64</label>
-                                    <input
+                                <div className="space-y-2">
+                                    <Label htmlFor="logoUrl">Logo URL / Base64</Label>
+                                    <Input
+                                        id="logoUrl"
                                         type="text"
                                         placeholder="data:image/png;base64,..."
                                         value={section.options.logoUrl || ''}
                                         onChange={(e) => handleOptionChange('logoUrl', e.target.value)}
-                                        className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                                     />
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            const file = e.target.files![0];
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => handleOptionChange('logoUrl', reader.result);
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }}
-                                        className="mt-1 text-xs"
-                                    />
+                                    <div className="space-y-1">
+                                        <Label htmlFor="logoFile" className="text-xs text-muted-foreground">Or upload image</Label>
+                                        <Input
+                                            id="logoFile"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => handleOptionChange('logoUrl', reader.result);
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                            className="text-sm"
+                                        />
+                                    </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-
-
                     {section.id === 'footer' && (
-                        <div className="col-span-2">
-                            <label className="block text-gray-500 mb-1">Footer Text</label>
-                            <textarea
+                        <div className="space-y-2">
+                            <Label htmlFor="footerText">Footer Text</Label>
+                            <Textarea
+                                id="footerText"
                                 value={section.options.text || ''}
                                 onChange={(e) => handleOptionChange('text', e.target.value)}
                                 rows={3}
-                                className="w-full border rounded p-1 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                                placeholder="Thank you message, terms, etc."
                             />
                         </div>
                     )}
-
                 </div>
             )}
         </div>
