@@ -7,15 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { useDeleteProductMutation, useGetProductsQuery } from "@/services/productsApi"
-import { setSearchTerm, setCurrentPage } from "../productsSlice"
+import { setSearchTerm, setCurrentPage, setFilter, clearAllFilters } from "../productsSlice"
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./productsTableContents"
 import DataTable from "@/components/common/DataTable"
+import { statusFilter, stockStatusFilter } from "../data/productsFiltersConfig"
 
 export default function ProductsTable() {
   const dispatch = useDispatch()
-  const { searchTerm, currentPage, itemsPerPage } = useSelector((state: any) => state.products)
+  const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state: any) => state.products)
   const [sort, setSort] = useState({
     sortBy: 'name',
     sortOrder: 'ASC',
@@ -27,6 +28,9 @@ export default function ProductsTable() {
     searchTerm: searchTerm,
     sortBy: sort.sortBy,
     sortOrder: sort.sortOrder,
+    status: filters.status,
+    stockStatus: filters.stockStatus,
+    categories: filters.categories,
   });
 
   const products = data?.products || []
@@ -220,6 +224,11 @@ export default function ProductsTable() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+
+        filtersConfig={[statusFilter, stockStatusFilter]}
+        activeFilters={filters}
+        onFilterChange={(payload) => dispatch(setFilter(payload))}
+        onClearAllFilters={() => dispatch(clearAllFilters())}
 
         emptyState={emptyState}
         renderActions={renderProductActions}

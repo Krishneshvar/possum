@@ -7,11 +7,19 @@ interface AuthState {
     isLoading: boolean;
 }
 
+// Note: sessionStorage is used for token storage in this Electron desktop app.
+// For web applications, consider using httpOnly cookies for better XSS protection.
+// In Electron's controlled environment, sessionStorage provides adequate security
+// as the renderer process is isolated and CSP policies are enforced.
+const storedToken = sessionStorage.getItem('possum_token');
+
 const initialState: AuthState = {
     user: null,
-    token: sessionStorage.getItem('possum_token') || null,
+    token: storedToken,
+    // Don't set isAuthenticated until user is verified
     isAuthenticated: false,
-    isLoading: !!sessionStorage.getItem('possum_token'),
+    // Set loading true if token exists (will verify on mount)
+    isLoading: !!storedToken,
 };
 
 const authSlice = createSlice({
@@ -50,3 +58,4 @@ export default authSlice.reducer;
 export const selectCurrentUser = (state: any) => state.auth.user;
 export const selectIsAuthenticated = (state: any) => state.auth.isAuthenticated;
 export const selectAuthLoading = (state: any) => state.auth.isLoading;
+export const selectToken = (state: any) => state.auth.token;

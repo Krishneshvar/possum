@@ -20,7 +20,7 @@ import authRouter from './modules/auth/auth.routes.js';
 import auditRouter from './modules/audit/audit.routes.js';
 import transactionsRouter from './modules/transactions/transactions.routes.js';
 import { getSaleReturnsController } from './modules/returns/return.controller.js';
-import { authenticate } from './shared/middleware/auth.middleware.js';
+import { authenticate, requirePermission } from './shared/middleware/auth.middleware.js';
 
 /**
  * Register all routes on the Express app
@@ -47,7 +47,7 @@ export function registerRoutes(app: Express) {
     app.use('/api/sales', salesRouter);
 
     // Nested route: Get returns for a specific sale
-    app.get('/api/sales/:saleId/returns', getSaleReturnsController);
+    app.get('/api/sales/:saleId/returns', requirePermission('sales.refund'), getSaleReturnsController);
 
     // Returns
     app.use('/api/returns', returnsRouter);

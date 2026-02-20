@@ -1,30 +1,38 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGetTransactionsQuery } from "@/services/transactionsApi";
+import { TransactionsResponse, useGetTransactionsQuery } from "@/services/transactionsApi";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownLeft, DollarSign, Download, Printer, CheckCircle2, Clock, XCircle } from "lucide-react";
-import DataTable from "@/components/common/DataTable";
+import { ArrowUpRight, ArrowDownLeft, DollarSign, Download, Printer, CheckCircle2, Clock } from "lucide-react";
+import DataTable, { type Column } from "@/components/common/DataTable";
 import CurrencyText from "@/components/common/CurrencyText";
 import GenericPageHeader from "@/components/common/GenericPageHeader";
 import { StatCards } from "@/components/common/StatCards";
 import { KeyboardShortcut } from "@/components/common/KeyboardShortcut";
 
+type TransactionRow = TransactionsResponse['transactions'][number];
+type TransactionStatusFilter = 'completed' | 'pending' | 'cancelled';
+type TransactionTypeFilter = 'payment' | 'refund';
+
+type SortableField = "transaction_date" | "amount" | "status" | "customer_name" | "invoice_number";
+type SortOrder = "ASC" | "DESC";
+
 export default function TransactionsPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [activeFilters, setActiveFilters] = useState<{ status: string[], type: string[] }>({
+  const [activeFilters, setActiveFilters] = useState<{ status: TransactionStatusFilter[], type: TransactionTypeFilter[] }>({
     status: [],
     type: [],
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState({
-    sortBy: "transaction_date",
-    sortOrder: "DESC",
+    sortBy: "transaction_date" as SortableField,
+    sortOrder: "DESC" as SortOrder,
   });
 
-  const { data, isLoading, refetch } = useGetTransactionsQuery({
+  const { data, isLoading, isError, error, refetch } = useGetTransactionsQuery({
     page,
     limit,
     status: activeFilters.status.length > 0 ? activeFilters.status[0] : undefined,
@@ -34,9 +42,17 @@ export default function TransactionsPage() {
     sortOrder: sort.sortOrder,
   });
 
-  const transactions = data?.transactions || [];
+  const transactions: TransactionRow[] = data?.transactions || [];
   const totalPages = data?.totalPages || 1;
   const totalCount = data?.totalCount || 0;
+  const tableError = useMemo(() => {
+    if (!isError || !error) return null;
+    const err = error as FetchBaseQueryError;
+    if (typeof err === 'object' && err && 'data' in err && err.data && typeof err.data === 'object' && 'error' in err.data) {
+      return String((err.data as { error: string }).error);
+    }
+    return 'Failed to load transactions';
+  }, [isError, error]);
 
   const filtersConfig = [
     {
@@ -61,7 +77,11 @@ export default function TransactionsPage() {
   ];
 
   const handleFilterChange = ({ key, value }: { key: string, value: string[] }) => {
-    setActiveFilters((prev) => ({ ...prev, [key]: value }));
+    if (key === 'status') {
+      setActiveFilters((prev) => ({ ...prev, status: value as TransactionStatusFilter[] }));
+    } else if (key === 'type') {
+      setActiveFilters((prev) => ({ ...prev, type: value as TransactionTypeFilter[] }));
+    }
     setPage(1);
   };
 
@@ -71,14 +91,17 @@ export default function TransactionsPage() {
     setPage(1);
   };
 
-  const handleSort = (column: any) => {
-    const order = sort.sortBy === column.sortField && sort.sortOrder === 'ASC' ? 'DESC' : 'ASC';
-    setSort({ sortBy: column.sortField, sortOrder: order });
+  const handleSort = (column: Column) => {
+    if (!column.sortField) return;
+    const sortField = column.sortField as SortableField;
+    const order: SortOrder = sort.sortBy === sortField && sort.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+    setSort({ sortBy: sortField, sortOrder: order });
   };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '-';
     const today = new Date();
     const isToday = date.toDateString() === today.toDateString();
     
@@ -96,11 +119,10 @@ export default function TransactionsPage() {
     });
   };
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): 'default' | 'outline' | 'destructive' | 'secondary' => {
     switch (status) {
       case 'completed': return 'default';
       case 'pending': return 'outline';
-      case 'failed': return 'destructive';
       case 'cancelled': return 'secondary';
       default: return 'secondary';
     }
@@ -128,22 +150,26 @@ export default function TransactionsPage() {
       label: 'Date',
       sortable: true,
       sortField: 'transaction_date',
-      renderCell: (t: any) => (
-        <span className="text-muted-foreground whitespace-nowrap" title={new Date(t.transaction_date).toLocaleString('en-IN')}>
-          {formatDate(t.transaction_date)}
-        </span>
-      )
+      renderCell: (t: TransactionRow) => {
+        const date = new Date(t.transaction_date);
+        const title = Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('en-IN');
+        return (
+          <span className="text-muted-foreground whitespace-nowrap" title={title}>
+            {formatDate(t.transaction_date)}
+          </span>
+        );
+      }
     },
     {
       key: 'id',
       label: 'ID',
-      renderCell: (t: any) => <span className="font-mono text-xs">#{t.id}</span>
+      renderCell: (t: TransactionRow) => <span className="font-mono text-xs">#{t.id}</span>
     },
     {
       key: 'invoice_number',
       label: 'Invoice',
       sortable: false,
-      renderCell: (t: any) => (
+      renderCell: (t: TransactionRow) => (
         <Button
           variant="link"
           className="p-0 h-auto font-medium"
@@ -159,12 +185,12 @@ export default function TransactionsPage() {
       label: 'Customer',
       sortable: true,
       sortField: 'customer_name',
-      renderCell: (t: any) => t.customer_name || '-'
+      renderCell: (t: TransactionRow) => t.customer_name || '-'
     },
     {
       key: 'type',
       label: 'Type',
-      renderCell: (t: any) => (
+      renderCell: (t: TransactionRow) => (
         <div className="flex items-center capitalize">
           {getTypeIcon(t.type)}
           {t.type}
@@ -175,7 +201,7 @@ export default function TransactionsPage() {
       key: 'payment_method_name',
       label: 'Method',
       sortable: false,
-      renderCell: (t: any) => t.payment_method_name
+      renderCell: (t: TransactionRow) => t.payment_method_name || '-'
     },
     {
       key: 'amount',
@@ -183,7 +209,7 @@ export default function TransactionsPage() {
       sortable: true,
       sortField: 'amount',
       className: 'text-right',
-      renderCell: (t: any) => (
+      renderCell: (t: TransactionRow) => (
         <div className={`text-right font-semibold ${t.type === 'refund' ? 'text-red-600' : 'text-green-600'}`}>
           <CurrencyText value={t.amount} />
         </div>
@@ -193,9 +219,8 @@ export default function TransactionsPage() {
       key: 'status',
       label: 'Status',
       className: 'text-center',
-      renderCell: (t: any) => (
+      renderCell: (t: TransactionRow) => (
         <div className="flex justify-center">
-          {/* @ts-ignore */}
           <Badge variant={getStatusVariant(t.status)} className="capitalize px-2.5 py-0.5 text-xs font-medium">
             {t.status}
           </Badge>
@@ -230,13 +255,13 @@ export default function TransactionsPage() {
     
     const completed = transactions.filter(t => t.status === 'completed').length;
     const pending = transactions.filter(t => t.status === 'pending').length;
-    const failed = transactions.filter(t => t.status === 'failed' || t.status === 'cancelled').length;
+    const cancelled = transactions.filter(t => t.status === 'cancelled').length;
 
     return [
       { title: 'Total Payments', icon: ArrowDownLeft, color: 'text-green-500', todayValue: totalPayments, isCurrency: true },
       { title: 'Total Refunds', icon: ArrowUpRight, color: 'text-red-500', todayValue: totalRefunds, isCurrency: true },
       { title: 'Completed', icon: CheckCircle2, color: 'text-blue-500', todayValue: completed },
-      { title: 'Pending/Failed', icon: Clock, color: 'text-yellow-500', todayValue: pending + failed },
+      { title: 'Pending/Cancelled', icon: Clock, color: 'text-yellow-500', todayValue: pending + cancelled },
     ];
   }, [transactions]);
 
@@ -268,9 +293,9 @@ export default function TransactionsPage() {
 
       <DataTable
         data={transactions}
-        // @ts-ignore
         columns={columns}
         isLoading={isLoading}
+        error={tableError}
         onRetry={refetch}
 
         searchTerm={searchTerm}
@@ -294,7 +319,6 @@ export default function TransactionsPage() {
         onClearAllFilters={handleClearFilters}
 
         emptyState={emptyState}
-        // @ts-ignore
         avatarIcon={<DollarSign className="h-4 w-4 text-primary" />}
       />
     </div>

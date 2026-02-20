@@ -5,21 +5,24 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGetVariantsQuery } from "@/services/productsApi"
-import { setSearchTerm, setCurrentPage, setSorting } from "../variantsSlice"
+import { setSearchTerm, setCurrentPage, setSorting, setFilter, clearAllFilters } from "../variantsSlice"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./variantsTableContents"
 import DataTable from "@/components/common/DataTable"
+import { statusFilter, stockStatusFilter } from "../data/variantsFiltersConfig"
 
 export default function VariantsTable() {
     const dispatch = useDispatch()
-    const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder } = useSelector((state: any) => state.variants)
+    const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder, filters } = useSelector((state: any) => state.variants)
 
     const { data, isLoading, isFetching, error, refetch } = useGetVariantsQuery({
         page: currentPage,
         limit: itemsPerPage,
         searchTerm: searchTerm,
         sortBy,
-        sortOrder
+        sortOrder,
+        stockStatus: filters.stockStatus,
+        status: filters.status
     });
 
     const variants = data?.variants || []
@@ -119,6 +122,11 @@ export default function VariantsTable() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
+
+            filtersConfig={[statusFilter, stockStatusFilter]}
+            activeFilters={filters}
+            onFilterChange={(payload) => dispatch(setFilter(payload))}
+            onClearAllFilters={() => dispatch(clearAllFilters())}
 
             emptyState={emptyState}
             renderActions={renderActions}

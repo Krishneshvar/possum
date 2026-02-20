@@ -34,6 +34,14 @@ interface SaleItem {
     variant_name?: string;
 }
 
+function parseCustomerId(value: string): number | undefined {
+    if (!value || value === 'walk-in') {
+        return undefined;
+    }
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+}
+
 export default function SalesPage() {
     const currency = useCurrency();
     const [activeTab, setActiveTab] = useState(0);
@@ -128,7 +136,7 @@ export default function SalesPage() {
             try {
                 const result = await calculateTax({
                     invoice,
-                    customerId: currentBill.customerId ? parseInt(currentBill.customerId) : undefined
+                    customerId: parseCustomerId(currentBill.customerId)
                 }).unwrap();
                 updateBill({ taxResult: result });
             } catch (err) {
@@ -271,7 +279,7 @@ export default function SalesPage() {
                 pricePerUnit: item.pricePerUnit,
                 discount: calculateItemDiscountAmount(item)
             })),
-            customerId: currentBill.customerId ? parseInt(currentBill.customerId) : null,
+            customerId: parseCustomerId(currentBill.customerId) ?? null,
             discount: discountAmount,
             payments: [
                 {
@@ -280,7 +288,8 @@ export default function SalesPage() {
                 }
             ],
             taxMode: 'exclusive', // Default
-            billTaxIds: []
+            billTaxIds: [],
+            fulfillment_status: 'pending'
         };
 
         try {

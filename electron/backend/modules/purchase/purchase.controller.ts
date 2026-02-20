@@ -1,33 +1,39 @@
 import * as purchaseService from './purchase.service.js';
 import { Request, Response, NextFunction } from 'express';
-import { getQueryNumber, getQueryString } from '../../shared/utils/index.js';
-import { logger } from '../../shared/utils/logger.js';
 
 export function getPurchaseOrders(req: Request, res: Response, next: NextFunction) {
     try {
-        const { page, limit, searchTerm, status, sortBy, sortOrder } = req.query;
+        const { page, limit, searchTerm, status, fromDate, toDate, sortBy, sortOrder } = req.query as {
+            page?: number;
+            limit?: number;
+            searchTerm?: string;
+            status?: string;
+            fromDate?: string;
+            toDate?: string;
+            sortBy?: string;
+            sortOrder?: 'ASC' | 'DESC';
+        };
         const pos = purchaseService.getAllPurchaseOrders({
-            page: getQueryNumber(page, 1) || 1,
-            limit: getQueryNumber(limit, 10) || 10,
-            searchTerm: getQueryString(searchTerm),
-            status: getQueryString(status),
-            sortBy: getQueryString(sortBy),
-            sortOrder: getQueryString(sortOrder) as 'ASC' | 'DESC' | undefined
+            page: page ? Number(page) : undefined,
+            limit: limit ? Number(limit) : undefined,
+            searchTerm,
+            status,
+            fromDate,
+            toDate,
+            sortBy,
+            sortOrder
         });
         res.json(pos);
-    } catch (error) {
+    } catch (error: any) {
         next(error);
     }
 }
 
 export function getPurchaseOrderById(req: Request, res: Response, next: NextFunction) {
     try {
-        const po = purchaseService.getPurchaseOrderById(parseInt(req.params.id as string, 10));
+        const po = purchaseService.getPurchaseOrderById(Number(req.params.id));
         res.json(po);
     } catch (error: any) {
-        if (error.message === 'Purchase Order not found') {
-            return res.status(404).json({ error: error.message });
-        }
         next(error);
     }
 }
@@ -50,7 +56,7 @@ export function receivePurchaseOrder(req: Request, res: Response, next: NextFunc
     try {
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
-        const updatedPo = purchaseService.receivePurchaseOrder(parseInt(req.params.id as string, 10), userId);
+        const updatedPo = purchaseService.receivePurchaseOrder(Number(req.params.id), userId);
         res.json(updatedPo);
     } catch (error: any) {
         next(error);
@@ -59,7 +65,8 @@ export function receivePurchaseOrder(req: Request, res: Response, next: NextFunc
 
 export function cancelPurchaseOrder(req: Request, res: Response, next: NextFunction) {
     try {
-        const updatedPo = purchaseService.cancelPurchaseOrder(parseInt(req.params.id as string, 10));
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const updatedPo = purchaseService.cancelPurchaseOrder(Number(req.params.id), req.user.id);
         res.json(updatedPo);
     } catch (error: any) {
         next(error);

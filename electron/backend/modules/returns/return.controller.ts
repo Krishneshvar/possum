@@ -5,18 +5,21 @@
 import * as returnService from './return.service.js';
 import { Request, Response } from 'express';
 import { getQueryNumber, getQueryString } from '../../shared/utils/index.js';
+import { logger } from '../../shared/utils/logger.js';
+
+interface AuthenticatedRequest extends Request {
+    user?: {
+        id: number;
+    };
+}
 
 /**
  * POST /api/returns
  * Create a new return
  */
-export async function createReturnController(req: Request, res: Response) {
+export async function createReturnController(req: AuthenticatedRequest, res: Response) {
     try {
         const { saleId, items, reason } = req.body;
-
-        if (!saleId || !items || !Array.isArray(items) || items.length === 0) {
-            return res.status(400).json({ error: 'Sale ID and at least one item are required.' });
-        }
 
         // Use userId from auth context
         const userId = req.user?.id;
@@ -26,16 +29,27 @@ export async function createReturnController(req: Request, res: Response) {
         }
 
         const result = returnService.createReturn(
-            parseInt(saleId, 10),
+            saleId,
             items,
             reason,
             userId
         );
 
         res.status(201).json(result);
-    } catch (err: any) {
-        console.error('Error creating return:', err);
-        res.status(500).json({ error: err.message || 'Failed to create return.' });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to create return.';
+        const lowerMessage = String(message).toLowerCase();
+        const statusCode = lowerMessage.includes('not found')
+            ? 404
+            : lowerMessage.includes('cannot return')
+                || lowerMessage.includes('invalid')
+                || lowerMessage.includes('required')
+                || lowerMessage.includes('at least one')
+                || lowerMessage.includes('maximum refundable')
+                ? 400
+                : 500;
+        logger.error(`Error creating return for user ${req.user?.id ?? 'unknown'}: ${message}`);
+        res.status(statusCode).json({ error: message });
     }
 }
 
@@ -45,7 +59,7 @@ export async function createReturnController(req: Request, res: Response) {
  */
 export async function getReturnController(req: Request, res: Response) {
     try {
-        const returnId = parseInt(req.params.id as string, 10);
+        const returnId = Number(req.params.id);
         if (isNaN(returnId)) {
             return res.status(400).json({ error: 'Invalid return ID.' });
         }
@@ -55,8 +69,9 @@ export async function getReturnController(req: Request, res: Response) {
             return res.status(404).json({ error: 'Return not found.' });
         }
         res.json(returnDetails);
-    } catch (err) {
-        console.error('Error fetching return:', err);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error(`Error fetching return ${req.params.id}: ${message}`);
         res.status(500).json({ error: 'Failed to retrieve return.' });
     }
 }
@@ -67,15 +82,16 @@ export async function getReturnController(req: Request, res: Response) {
  */
 export async function getSaleReturnsController(req: Request, res: Response) {
     try {
-        const saleId = parseInt(req.params.saleId as string, 10);
+        const saleId = Number(req.params.saleId);
         if (isNaN(saleId)) {
             return res.status(400).json({ error: 'Invalid sale ID.' });
         }
 
         const returns = returnService.getSaleReturns(saleId);
         res.json(returns);
-    } catch (err) {
-        console.error('Error fetching sale returns:', err);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error(`Error fetching sale returns for sale ${req.params.saleId}: ${message}`);
         res.status(500).json({ error: 'Failed to retrieve sale returns.' });
     }
 }
@@ -91,6 +107,7 @@ export async function getReturnsController(req: Request, res: Response) {
             userId,
             startDate,
             endDate,
+            searchTerm,
             page,
             limit
         } = req.query;
@@ -100,13 +117,15 @@ export async function getReturnsController(req: Request, res: Response) {
             userId: getQueryNumber(userId),
             startDate: getQueryString(startDate),
             endDate: getQueryString(endDate),
+            searchTerm: getQueryString(searchTerm),
             currentPage: getQueryNumber(page, 1) || 1,
             itemsPerPage: getQueryNumber(limit, 20) || 20
         });
 
         res.json(returns);
-    } catch (err) {
-        console.error('Error fetching returns:', err);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error(`Error fetching returns list: ${message}`);
         res.status(500).json({ error: 'Failed to retrieve returns.' });
     }
 }

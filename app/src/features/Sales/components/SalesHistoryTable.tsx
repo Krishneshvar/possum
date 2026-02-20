@@ -9,8 +9,10 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import DataTable from "@/components/common/DataTable";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { Sale } from '../../../../types/index.js';
+
 interface SalesHistoryTableProps {
-    sales: any[];
+    sales: Sale[];
     currentPage: number;
     itemsPerPage: number;
     totalPages: number;
@@ -37,12 +39,12 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         {
             key: "invoice_number",
             label: "Invoice #",
-            renderCell: (order: any) => <span className="font-mono font-medium text-primary">{order.invoice_number}</span>,
+            renderCell: (order: Sale) => <span className="font-mono font-medium text-primary">{order.invoice_number}</span>,
         },
         {
             key: "customer_name",
             label: "Customer",
-            renderCell: (order: any) => (
+            renderCell: (order: Sale) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{order.customer_name || "Walk-in Customer"}</span>
                     {order.customer_phone && <span className="text-xs text-muted-foreground">{order.customer_phone}</span>}
@@ -54,7 +56,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         {
             key: "sale_date",
             label: "Date & Time",
-            renderCell: (order: any) => (
+            renderCell: (order: Sale) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{format(new Date(order.sale_date), "MMM dd, yyyy")}</span>
                     <span className="text-xs text-muted-foreground">{format(new Date(order.sale_date), "hh:mm a")}</span>
@@ -66,7 +68,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         {
             key: "total_amount",
             label: "Total Amount",
-            renderCell: (order: any) => <CurrencyText value={order.total_amount} className="font-bold" />,
+            renderCell: (order: Sale) => <CurrencyText value={order.total_amount} className="font-bold" />,
             sortable: true,
             sortField: "total_amount",
             align: "right" as const,
@@ -74,7 +76,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         {
             key: "payment_status",
             label: "Payment Status",
-            renderCell: (order: any) => {
+            renderCell: (order: Sale) => {
                 const isPaid = order.paid_amount >= order.total_amount;
                 const isPartial = order.paid_amount > 0 && order.paid_amount < order.total_amount;
                 return (
@@ -87,12 +89,12 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         {
             key: "status",
             label: "Status",
-            renderCell: (order: any) => getStatusBadge(order.status),
+            renderCell: (order: Sale) => getStatusBadge(order.status),
         },
         {
             key: "actions",
             label: "Actions",
-            renderCell: (order: any) => (
+            renderCell: (order: Sale) => (
                 <div className="flex items-center gap-1 justify-end">
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -119,7 +121,7 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         },
     ];
 
-    const renderOrderActions = (order: any) => (
+    const renderOrderActions = (order: Sale) => (
         <ActionsDropdown aria-label={`Actions for invoice ${order.invoice_number}`}>
             <DropdownMenuItem asChild>
                 <Link to={`/sales/${order.id}`} className="cursor-pointer">
@@ -153,7 +155,6 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
     return (
         <DataTable
             data={sales}
-            // @ts-ignore
             columns={columns}
             isLoading={isLoading}
             currentPage={currentPage}

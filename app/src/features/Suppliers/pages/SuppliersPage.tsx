@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,22 +18,29 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useGetSuppliersQuery, useDeleteSupplierMutation } from '@/services/suppliersApi';
+import { Supplier, useGetSuppliersQuery, useDeleteSupplierMutation } from '@/services/suppliersApi';
 import { SupplierForm } from '../components/SupplierForm';
 import { Plus, Trash2, Edit, Truck, PackageOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+
+type SupplierSortField = 'name' | 'contact_person' | 'phone' | 'email' | 'created_at';
+
+interface SupplierQueryError {
+  error?: string;
+}
 
 export default function SuppliersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState<SupplierSortField>('name');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
 
-  const { data, isLoading, refetch } = useGetSuppliersQuery({
+  const { data, isLoading, error, refetch } = useGetSuppliersQuery({
     page,
     limit,
     searchTerm,
@@ -48,10 +55,10 @@ export default function SuppliersPage() {
   const [deleteSupplier] = useDeleteSupplierMutation();
 
   const [isDataDialogOpen, setIsDataDialogOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<any>(null);
-  const [supplierToDelete, setSupplierToDelete] = useState<any>(null);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
 
-  const handleEditClick = (supplier: any) => {
+  const handleEditClick = (supplier: Supplier) => {
     setEditingSupplier(supplier);
     setIsDataDialogOpen(true);
   };
@@ -61,7 +68,7 @@ export default function SuppliersPage() {
     setIsDataDialogOpen(true);
   };
 
-  const handleDeleteClick = (supplier: any) => {
+  const handleDeleteClick = (supplier: Supplier) => {
     setSupplierToDelete(supplier);
   };
 
@@ -69,18 +76,22 @@ export default function SuppliersPage() {
     if (supplierToDelete) {
       try {
         await deleteSupplier(supplierToDelete.id).unwrap();
-        toast.success('Supplier deleted successfully');
+        toast.success('Supplier archived successfully');
         setSupplierToDelete(null);
       } catch (error) {
-        console.error('Failed to delete supplier:', error);
-        toast.error('Failed to delete supplier');
+        const apiError = error as FetchBaseQueryError & SupplierQueryError;
+        const message = typeof apiError?.data === 'object' && apiError?.data && 'error' in apiError.data
+          ? String((apiError.data as SupplierQueryError).error || 'Failed to delete supplier')
+          : 'Failed to delete supplier';
+        toast.error(message);
       }
     }
   };
 
-  const handleSort = (column: any) => {
+  const handleSort = (column: { sortField?: string }) => {
+    if (!column.sortField) return;
     const order = sortBy === column.sortField && sortOrder === 'ASC' ? 'DESC' : 'ASC';
-    setSortBy(column.sortField);
+    setSortBy(column.sortField as SupplierSortField);
     setSortOrder(order);
   };
 
@@ -90,40 +101,40 @@ export default function SuppliersPage() {
       label: 'Name',
       sortable: true,
       sortField: 'name',
-      renderCell: (supplier: any) => <span className="font-medium">{supplier.name}</span>
+      renderCell: (supplier: Supplier) => <span className="font-medium">{supplier.name}</span>
     },
     {
       key: 'contact_person',
       label: 'Contact Person',
       sortable: false,
-      renderCell: (supplier: any) => <span className="text-muted-foreground">{supplier.contact_person || '-'}</span>
+      renderCell: (supplier: Supplier) => <span className="text-muted-foreground">{supplier.contact_person || '-'}</span>
     },
     {
       key: 'email',
       label: 'Email',
       sortable: false,
-      renderCell: (supplier: any) => <span className="text-sm">{supplier.email || '-'}</span>
+      renderCell: (supplier: Supplier) => <span className="text-sm">{supplier.email || '-'}</span>
     },
     {
       key: 'phone',
       label: 'Phone',
       sortable: true,
       sortField: 'phone',
-      renderCell: (supplier: any) => <span className="text-sm">{supplier.phone || '-'}</span>
+      renderCell: (supplier: Supplier) => <span className="text-sm">{supplier.phone || '-'}</span>
     },
     {
       key: 'address',
       label: 'Address',
       sortable: false,
-      renderCell: (supplier: any) => (
-        <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={supplier.address}>
+      renderCell: (supplier: Supplier) => (
+        <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={supplier.address ?? undefined}>
           {supplier.address || '-'}
         </span>
       )
     },
-  ];
+  ] as const;
 
-  const renderActions = (supplier: any) => (
+  const renderActions = (supplier: Supplier) => (
     <div className="flex items-center justify-end gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
@@ -174,6 +185,21 @@ export default function SuppliersPage() {
       </div>
     </div>
   );
+
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  const supplierErrorMessage = useMemo(() => {
+    if (!error) return null;
+    const apiError = error as FetchBaseQueryError & SupplierQueryError;
+    if (typeof apiError?.data === 'object' && apiError?.data && 'error' in apiError.data) {
+      return String((apiError.data as SupplierQueryError).error || 'Failed to load suppliers');
+    }
+    return 'Failed to load suppliers';
+  }, [error]);
 
   const emptyState = (
     <div className="flex flex-col items-center justify-center p-12 text-center">
@@ -236,9 +262,9 @@ export default function SuppliersPage() {
 
       <DataTable
         data={suppliers}
-        // @ts-ignore
-        columns={columns}
+        columns={[...columns]}
         isLoading={isLoading}
+        error={supplierErrorMessage}
         onRetry={refetch}
 
         searchTerm={searchTerm}
@@ -258,7 +284,6 @@ export default function SuppliersPage() {
 
         emptyState={emptyState}
         renderActions={renderActions}
-        // @ts-ignore
         avatarIcon={<Truck className="h-4 w-4 text-primary" />}
       />
 
@@ -267,13 +292,13 @@ export default function SuppliersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Supplier?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-semibold text-foreground">{supplierToDelete?.name}</span> from your system. Any associated purchase orders will remain but will no longer be linked to this supplier. This action cannot be undone.
+              This will archive <span className="font-semibold text-foreground">{supplierToDelete?.name}</span>. Associated purchase orders will remain intact for historical records.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
-              Delete
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

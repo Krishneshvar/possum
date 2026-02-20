@@ -130,7 +130,7 @@ export default function DashboardPage() {
         <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
 
         <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />
-        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/customers" element={<ProtectedRoute requiredPermissions="customers.manage"><CustomersPage /></ProtectedRoute>} />
         <Route path="/employees" element={<ProtectedRoute requiredPermissions="users.manage"><EmployeesPage /></ProtectedRoute>} />
 
         <Route path="/plugins" element={<ProtectedRoute requiredPermissions="admin"><PluginsPage /></ProtectedRoute>} />

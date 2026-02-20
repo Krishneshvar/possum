@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGetPurchaseOrderByIdQuery, useReceivePurchaseOrderMutation, useCancelPurchaseOrderMutation } from '@/services/purchaseApi';
+import { skipToken } from '@reduxjs/toolkit/query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,16 +28,21 @@ import { ArrowLeft, Calendar, User, Package, CheckCircle, XCircle, Printer, Truc
 import { toast } from 'sonner';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
+import { PurchaseOrderItem } from '@shared/index';
 
 export default function PurchaseOrderDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const currency = useCurrency();
+    const parsedId = Number(id);
+    const hasValidId = Number.isInteger(parsedId) && parsedId > 0;
 
-    const { data: po, isLoading, error } = useGetPurchaseOrderByIdQuery(id);
+    const { data: po, isLoading, error } = useGetPurchaseOrderByIdQuery(hasValidId ? parsedId : skipToken);
     const [receiveOrder, { isLoading: isReceiving }] = useReceivePurchaseOrderMutation();
     const [cancelOrder, { isLoading: isCancelling }] = useCancelPurchaseOrderMutation();
+    const poItems = po?.items ?? [];
 
+    if (!hasValidId) return <div className="p-8 text-center text-red-500">Invalid Purchase Order ID</div>;
     if (isLoading) return <div className="p-8 text-center">Loading Purchase Order...</div>;
     if (error || !po) return <div className="p-8 text-center text-red-500">Failed to load Purchase Order</div>;
 
@@ -72,7 +78,7 @@ export default function PurchaseOrderDetailPage() {
         }
     };
 
-    const totalCost = po.items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_cost), 0);
+    const totalCost = poItems.reduce((sum: number, item: PurchaseOrderItem) => sum + (item.quantity * item.unit_cost), 0);
 
     return (
         <div className="container mx-auto p-4 max-w-5xl space-y-6">
@@ -185,7 +191,7 @@ export default function PurchaseOrderDetailPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {po.items.map((item: any) => (
+                                {poItems.map((item: PurchaseOrderItem) => (
                                     <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
                                         <TableCell className="pl-6">
                                             <div className="flex items-center gap-3 py-1">
@@ -254,11 +260,11 @@ export default function PurchaseOrderDetailPage() {
                         <CardContent className="pt-4 space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Total Items</span>
-                                <span className="font-medium">{po.items.length}</span>
+                                <span className="font-medium">{poItems.length}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Total Quantity</span>
-                                <span className="font-medium">{po.items.reduce((sum: number, i: any) => sum + i.quantity, 0)}</span>
+                                <span className="font-medium">{poItems.reduce((sum: number, i: PurchaseOrderItem) => sum + i.quantity, 0)}</span>
                             </div>
                             <Separator className="bg-border/50 my-2" />
                             <div className="flex justify-between items-center">

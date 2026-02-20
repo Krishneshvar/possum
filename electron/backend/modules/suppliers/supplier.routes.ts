@@ -6,12 +6,12 @@ import { Router } from 'express';
 import * as supplierController from './supplier.controller.js';
 
 import { validate } from '../../shared/middleware/validate.middleware.js';
-import { createSupplierSchema, updateSupplierSchema, getSupplierSchema } from './supplier.schema.js';
+import { createSupplierSchema, updateSupplierSchema, getSupplierSchema, getSuppliersSchema } from './supplier.schema.js';
 import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 
 const router = Router();
 
-router.get('/', requirePermission(['suppliers.manage', 'inventory.manage']), supplierController.getSuppliers);
+router.get('/', requirePermission(['suppliers.manage', 'inventory.manage']), validate(getSuppliersSchema), supplierController.getSuppliers);
 router.post('/', requirePermission('suppliers.manage'), validate(createSupplierSchema), supplierController.createSupplier);
 router.put('/:id', requirePermission('suppliers.manage'), validate(updateSupplierSchema), supplierController.updateSupplier);
 router.delete('/:id', requirePermission('suppliers.manage'), validate(getSupplierSchema), supplierController.deleteSupplier);

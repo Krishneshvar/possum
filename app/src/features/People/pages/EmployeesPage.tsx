@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, UserCog, User } from 'lucide-react';
 import { toast } from 'sonner';
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import type { SerializedError } from '@reduxjs/toolkit';
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,22 +29,39 @@ import {
   useGetUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
-  useDeleteUserMutation
+  useDeleteUserMutation,
+  type UserRecord,
+  type CreateUserPayload
 } from '@/services/usersApi';
+
+type EmployeeFormValues = CreateUserPayload;
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const queryError = error as FetchBaseQueryError;
+  if (queryError && typeof queryError === 'object' && 'data' in queryError) {
+    const data = queryError.data as { error?: string } | undefined;
+    if (data?.error) return data.error;
+  }
+
+  const serializedError = error as SerializedError;
+  if (serializedError?.message) return serializedError.message;
+
+  return fallback;
+}
 
 export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
   const itemsPerPage = 10;
 
-  const { data, isLoading, error, refetch } = useGetUsersQuery({ 
-    search: searchTerm, 
-    page: currentPage, 
-    limit: itemsPerPage,
+  const { data, isLoading, error, refetch } = useGetUsersQuery({
+    searchTerm,
+    currentPage,
+    itemsPerPage,
     sortBy,
     sortOrder
   });
@@ -51,7 +70,7 @@ export default function EmployeesPage() {
   const [deleteUser] = useDeleteUserMutation();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [userToDelete, setUserToDelete] = useState<UserRecord | null>(null);
 
   const users = data?.users || [];
   const totalPages = data?.totalPages || 1;
@@ -61,29 +80,33 @@ export default function EmployeesPage() {
     setIsDialogOpen(true);
   };
 
-  const handleOpenEditDialog = (user: any) => {
+  const handleOpenEditDialog = (user: UserRecord) => {
     setEditingUser(user);
     setIsDialogOpen(true);
   };
 
-  const handleOpenDeleteDialog = (user: any) => {
+  const handleOpenDeleteDialog = (user: UserRecord) => {
     setUserToDelete(user);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: EmployeeFormValues) => {
     try {
       if (editingUser) {
-        await updateUser({ id: editingUser.id, ...values }).unwrap();
+        const updatePayload = {
+          ...values,
+          ...(values.password.trim() ? {} : { password: undefined }),
+        };
+        await updateUser({ id: editingUser.id, ...updatePayload }).unwrap();
         toast.success("Employee updated successfully");
       } else {
         await createUser(values).unwrap();
         toast.success("Employee created successfully");
       }
       setIsDialogOpen(false);
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error?.data?.error || (editingUser ? "Failed to update employee" : "Failed to create employee"));
+    } catch (saveError) {
+      console.error(saveError);
+      toast.error(getApiErrorMessage(saveError, editingUser ? "Failed to update employee" : "Failed to create employee"));
     }
   };
 
@@ -92,16 +115,16 @@ export default function EmployeesPage() {
     try {
       await deleteUser(userToDelete.id).unwrap();
       toast.success("Employee deleted successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to delete employee");
+    } catch (deleteError) {
+      console.error(deleteError);
+      toast.error(getApiErrorMessage(deleteError, "Failed to delete employee"));
     } finally {
       setIsDeleteDialogOpen(false);
       setUserToDelete(null);
     }
   };
 
-  const handleSort = (column: any) => {
+  const handleSort = (column: { sortField?: string; key: string }) => {
     const field = column.sortField || column.key;
     if (sortBy === field) {
       setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
@@ -117,19 +140,19 @@ export default function EmployeesPage() {
       label: 'Name', 
       sortable: true,
       sortField: 'name',
-      renderCell: (u: any) => <span className="font-medium">{u.name}</span> 
+      renderCell: (u: UserRecord) => <span className="font-medium">{u.name}</span>
     },
     { 
       key: 'username', 
       label: 'Username', 
       sortable: true,
       sortField: 'username',
-      renderCell: (u: any) => u.username 
+      renderCell: (u: UserRecord) => u.username
     },
     {
       key: 'is_active',
       label: 'Status',
-      renderCell: (u: any) => (
+      renderCell: (u: UserRecord) => (
         <Badge 
           variant={u.is_active ? "default" : "secondary"}
           aria-label={`Employee status: ${u.is_active ? "Active" : "Inactive"}`}
@@ -143,11 +166,11 @@ export default function EmployeesPage() {
       label: 'Created At',
       sortable: true,
       sortField: 'created_at',
-      renderCell: (u: any) => <span className="text-muted-foreground text-sm">{new Date(u.created_at).toLocaleDateString()}</span>
+      renderCell: (u: UserRecord) => <span className="text-muted-foreground text-sm">{new Date(u.created_at).toLocaleDateString()}</span>
     },
   ];
 
-  const renderActions = (user: any) => (
+  const renderActions = (user: UserRecord) => (
     <TooltipProvider>
       <div className="flex items-center gap-1 justify-end">
         <Tooltip>
@@ -230,7 +253,6 @@ export default function EmployeesPage() {
               label: "Add Employee",
               icon: Plus,
               onClick: handleOpenAddDialog,
-              ariaLabel: "Add new employee (Ctrl+N)",
             }
           }}
         />
@@ -238,11 +260,9 @@ export default function EmployeesPage() {
 
       <DataTable
         data={users}
-        // @ts-ignore
         columns={columns}
         isLoading={isLoading}
-        // @ts-ignore
-        error={error?.message}
+        error={error ? "Failed to load employees" : null}
         onRetry={refetch}
 
         searchTerm={searchTerm}
@@ -259,7 +279,6 @@ export default function EmployeesPage() {
 
         emptyState={emptyState}
         renderActions={renderActions}
-        // @ts-ignore
         avatarIcon={<User className="h-4 w-4 text-primary" />}
       />
 
@@ -269,7 +288,7 @@ export default function EmployeesPage() {
             <DialogTitle>{editingUser ? "Edit Employee" : "Add Employee"}</DialogTitle>
           </DialogHeader>
           <EmployeeForm
-            defaultValues={editingUser}
+            defaultValues={editingUser ?? undefined}
             onSave={handleSave}
             isLoading={isCreating || isUpdating}
           />

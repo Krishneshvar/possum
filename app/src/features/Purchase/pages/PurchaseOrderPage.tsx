@@ -23,7 +23,7 @@ import {
   useCancelPurchaseOrderMutation
 } from '@/services/purchaseApi';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, CheckCircle, XCircle, ShoppingCart, PackageCheck, PackageX } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, PackageX, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 // @ts-ignore
 import CurrencyText from '@/components/common/CurrencyText';
@@ -32,23 +32,31 @@ import DataTable, { Column } from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { PurchaseOrder } from '@shared/index';
+import { Input } from '@/components/ui/input';
+
+type PurchaseSortField = 'id' | 'supplier_name' | 'order_date' | 'status' | 'item_count' | 'total_cost';
+type PurchaseStatusFilter = 'pending' | 'received' | 'cancelled';
 
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilters, setActiveFilters] = useState<{ status: string[] }>({
+  const [activeFilters, setActiveFilters] = useState<{ status: PurchaseStatusFilter[] }>({
     status: [],
   });
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [sortBy, setSortBy] = useState('order_date');
-  const [sortOrder, setSortOrder] = useState('DESC');
+  const [sortBy, setSortBy] = useState<PurchaseSortField>('order_date');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
   const { data, isLoading, refetch } = useGetPurchaseOrdersQuery({
     page,
     limit,
     searchTerm,
     status: activeFilters.status.length > 0 ? activeFilters.status[0] : undefined,
+    fromDate: fromDate || undefined,
+    toDate: toDate || undefined,
     sortBy,
     sortOrder
   });
@@ -84,12 +92,12 @@ export default function PurchaseOrdersPage() {
   };
 
   const handleSort = (column: Column) => {
-    const field = column.sortField || column.key;
+    const field = (column.sortField || column.key) as PurchaseSortField;
     if (sortBy === field) {
-        setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+      setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
     } else {
-        setSortBy(field);
-        setSortOrder('DESC');
+      setSortBy(field);
+      setSortOrder('DESC');
     }
   };
 
@@ -107,13 +115,19 @@ export default function PurchaseOrdersPage() {
   ];
 
   const handleFilterChange = (payload: { key: string; value: string[] }) => {
-    setActiveFilters((prev) => ({ ...prev, [payload.key]: payload.value }));
+    if (payload.key !== 'status') return;
+    const values = payload.value.filter((value): value is PurchaseStatusFilter =>
+      value === 'pending' || value === 'received' || value === 'cancelled'
+    );
+    setActiveFilters((prev) => ({ ...prev, status: values }));
     setPage(1);
   };
 
   const handleClearFilters = () => {
     setActiveFilters({ status: [] });
     setSearchTerm('');
+    setFromDate('');
+    setToDate('');
     setPage(1);
   };
 
@@ -254,7 +268,7 @@ export default function PurchaseOrdersPage() {
         </TooltipProvider>
       );
     }
-    
+
     return (
       <TooltipProvider>
         <div className="flex items-center gap-1 justify-end">
@@ -342,6 +356,37 @@ export default function PurchaseOrdersPage() {
         activeFilters={activeFilters}
         onFilterChange={handleFilterChange}
         onClearAllFilters={handleClearFilters}
+        customFilters={
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setFromDate(e.target.value);
+                  setPage(1);
+                }}
+                className="h-8 w-[140px] pl-8 text-xs focus-visible:ring-1"
+                placeholder="From Date"
+              />
+            </div>
+            <span className="text-muted-foreground text-xs">to</span>
+            <div className="relative">
+              <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setToDate(e.target.value);
+                  setPage(1);
+                }}
+                className="h-8 w-[140px] pl-8 text-xs focus-visible:ring-1"
+                placeholder="To Date"
+              />
+            </div>
+          </div>
+        }
 
         emptyState={emptyState}
         renderActions={renderActions}

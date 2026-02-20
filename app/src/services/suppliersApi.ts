@@ -4,17 +4,20 @@ import { baseQuery } from '../lib/api-client';
 export interface Supplier {
     id: number;
     name: string;
-    contact_person?: string;
-    phone?: string;
-    email?: string;
-    address?: string;
+    contact_person?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
+    gstin?: string | null;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface GetSuppliersParams {
     page?: number;
     limit?: number;
     searchTerm?: string;
-    sortBy?: string;
+    sortBy?: 'name' | 'contact_person' | 'phone' | 'email' | 'created_at';
     sortOrder?: 'ASC' | 'DESC';
 }
 
@@ -54,7 +57,7 @@ export const suppliersApi = createApi({
             }),
             invalidatesTags: ['Suppliers'],
         }),
-        deleteSupplier: builder.mutation<void, number>({
+        deleteSupplier: builder.mutation<{ message: string }, number>({
             query: (id) => ({
                 url: `/suppliers/${id}`,
                 method: 'DELETE',

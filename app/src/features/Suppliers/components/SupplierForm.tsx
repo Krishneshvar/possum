@@ -3,12 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateSupplierMutation, useUpdateSupplierMutation } from '@/services/suppliersApi';
+import { Supplier, useCreateSupplierMutation, useUpdateSupplierMutation } from '@/services/suppliersApi';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
 interface SupplierFormProps {
-    supplier?: any;
+    supplier?: Supplier | null;
     onSuccess: () => void;
     onCancel?: () => void;
 }
@@ -128,8 +128,8 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
                     <Input
                         id="name"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        onBlur={(e) => handleFieldBlur('name', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                        onBlur={(e: React.FocusEvent<HTMLInputElement>) => handleFieldBlur('name', e.target.value)}
                         placeholder="Enter supplier or company name"
                         className={errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
                         disabled={isLoading}
@@ -152,7 +152,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
                     <Input
                         id="contactPerson"
                         value={contactPerson}
-                        onChange={(e) => setContactPerson(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContactPerson(e.target.value)}
                         placeholder="Primary contact name"
                         disabled={isLoading}
                         aria-label="Contact person name"
@@ -173,8 +173,8 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
                             id="phone"
                             type="tel"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            onBlur={(e) => handleFieldBlur('phone', e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+                            onBlur={(e: React.FocusEvent<HTMLInputElement>) => handleFieldBlur('phone', e.target.value)}
                             placeholder="e.g. +1 (555) 123-4567"
                             className={errors.phone ? 'border-destructive focus-visible:ring-destructive' : ''}
                             disabled={isLoading}
@@ -196,8 +196,8 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
                             id="email"
                             type="email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            onBlur={(e) => handleFieldBlur('email', e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                            onBlur={(e: React.FocusEvent<HTMLInputElement>) => handleFieldBlur('email', e.target.value)}
                             placeholder="contact@example.com"
                             className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
                             disabled={isLoading}
@@ -221,7 +221,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
                 <Textarea
                     id="address"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAddress(e.target.value)}
                     placeholder="Street address, city, state, postal code"
                     className="resize-none min-h-[80px]"
                     disabled={isLoading}

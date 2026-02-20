@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { ChangeEvent, useState, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -21,22 +21,37 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { AlertCircle, Package, DollarSign } from 'lucide-react';
 import CurrencyText from '@/components/common/CurrencyText';
 
+interface SaleReturnableItem {
+    id: number;
+    product_name?: string;
+    variant_name?: string;
+    quantity: number;
+    returned_quantity?: number;
+    price_per_unit: number;
+}
+
+interface SaleForReturn {
+    id: number;
+    invoice_number: string;
+    items: SaleReturnableItem[];
+}
+
 interface CreateReturnDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    sale: any;
+    sale: SaleForReturn | null | undefined;
     onSuccess: () => void;
 }
 
 export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess }: CreateReturnDialogProps) {
     const currency = useCurrency();
-    const [selectedItems, setSelectedItems] = useState<any>({});
+    const [selectedItems, setSelectedItems] = useState<Record<number, number>>({});
     const [reason, setReason] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [createReturn, { isLoading }] = useCreateReturnMutation();
 
-    const totalRefund = Object.entries(selectedItems).reduce((sum, [itemId, quantity]) => {
-        const item = sale?.items?.find((i: any) => i.id === parseInt(itemId));
+    const totalRefundEstimate = Object.entries(selectedItems).reduce((sum, [itemId, quantity]) => {
+        const item = sale?.items?.find((i) => i.id === Number(itemId));
         if (item) {
             return sum + (item.price_per_unit * Number(quantity));
         }
@@ -76,7 +91,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
             return next;
         });
 
-        setSelectedItems((prev: any) => {
+        setSelectedItems((prev) => {
             if (qty === 0) {
                 const { [itemId]: _, ...rest } = prev;
                 return rest;
@@ -87,9 +102,9 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
 
     const handleCheckboxChange = (itemId: number, checked: boolean, maxQty: number) => {
         if (checked) {
-            setSelectedItems((prev: any) => ({ ...prev, [itemId]: maxQty }));
+            setSelectedItems((prev) => ({ ...prev, [itemId]: maxQty }));
         } else {
-            setSelectedItems((prev: any) => {
+            setSelectedItems((prev) => {
                 const { [itemId]: _, ...rest } = prev;
                 return rest;
             });
@@ -100,7 +115,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
         const newErrors: Record<string, string> = {};
 
         const itemsToReturn = Object.entries(selectedItems).map(([itemId, quantity]) => ({
-            saleItemId: parseInt(itemId),
+            saleItemId: Number(itemId),
             quantity: Number(quantity)
         }));
 
@@ -118,6 +133,11 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
         }
 
         try {
+            if (!sale?.id) {
+                setErrors((prev) => ({ ...prev, items: 'Sale details are unavailable.' }));
+                return;
+            }
+
             await createReturn({
                 saleId: sale.id,
                 items: itemsToReturn,
@@ -126,8 +146,9 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
             toast.success('Return processed successfully');
             onSuccess();
             onOpenChange(false);
-        } catch (err: any) {
-            toast.error(err?.data?.error || 'Failed to process return');
+        } catch (err: unknown) {
+            const apiError = err as { data?: { error?: string } };
+            toast.error(apiError?.data?.error || 'Failed to process return');
         }
     };
 
@@ -149,9 +170,9 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                                 <div className="flex items-center gap-2">
                                     <DollarSign className="h-5 w-5 text-primary" />
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Total Refund Amount</p>
+                                        <p className="text-sm text-muted-foreground">Estimated Refund Amount</p>
                                         <p className="text-2xl font-bold text-primary">
-                                            <CurrencyText value={totalRefund} />
+                                            <CurrencyText value={totalRefundEstimate} />
                                         </p>
                                     </div>
                                 </div>
@@ -177,7 +198,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                             <Label className="text-sm font-semibold">Select Items to Return</Label>
                         </div>
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                            {sale?.items?.map((item: any) => {
+                            {sale?.items?.map((item) => {
                                 const returnedQty = item.returned_quantity || 0;
                                 const availableQty = item.quantity - returnedQty;
                                 const isSelected = !!selectedItems[item.id];
@@ -200,9 +221,9 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                                                 <div className="flex-1 space-y-2">
                                                     <div>
                                                         <Label htmlFor={`item-${item.id}`} className="text-sm font-semibold cursor-pointer">
-                                                            {item.product_name}
+                                                            {item.product_name ?? 'Unknown product'}
                                                         </Label>
-                                                        <p className="text-xs text-muted-foreground">{item.variant_name}</p>
+                                                        <p className="text-xs text-muted-foreground">{item.variant_name ?? 'Unknown variant'}</p>
                                                     </div>
                                                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                                         <span>Price: {currency}{item.price_per_unit.toFixed(2)}</span>
@@ -225,7 +246,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                                                                 type="number"
                                                                 className="w-24 h-8 text-sm"
                                                                 value={selectedItems[item.id]}
-                                                                onChange={(e) => handleQuantityChange(item.id, e.target.value, availableQty)}
+                                                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleQuantityChange(item.id, e.target.value, availableQty)}
                                                                 min="1"
                                                                 max={availableQty}
                                                                 aria-label={`Quantity to return for ${item.product_name}`}
@@ -259,9 +280,10 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                             id="reason"
                             placeholder="e.g., Defective product, Wrong item shipped, Customer changed mind..."
                             value={reason}
-                            onChange={(e) => {
-                                setReason(e.target.value);
-                                if (errors.reason && e.target.value.trim()) {
+                            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
+                                const nextValue = e.target.value;
+                                setReason(nextValue);
+                                if (errors.reason && nextValue.trim()) {
                                     setErrors(prev => {
                                         const next = { ...prev };
                                         delete next.reason;
@@ -271,6 +293,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                             }}
                             className={errors.reason ? 'border-destructive' : ''}
                             rows={3}
+                            maxLength={500}
                             aria-required="true"
                             aria-invalid={!!errors.reason}
                             aria-describedby={errors.reason ? 'reason-error' : undefined}

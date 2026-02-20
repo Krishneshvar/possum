@@ -94,7 +94,8 @@ export function findSaleById(id: number): Sale | null {
             s.*,
             c.name as customer_name,
             c.phone as customer_phone,
-            u.name as cashier_name
+            c.email as customer_email,
+            u.name as biller_name
         FROM sales s
         LEFT JOIN customers c ON s.customer_id = c.id
         LEFT JOIN users u ON s.user_id = u.id
@@ -240,7 +241,8 @@ export function findSales({
         SELECT 
             s.*,
             c.name as customer_name,
-            u.name as cashier_name
+            c.phone as customer_phone,
+            u.name as biller_name
         FROM sales s
         LEFT JOIN customers c ON s.customer_id = c.id
         LEFT JOIN users u ON s.user_id = u.id
@@ -330,9 +332,18 @@ export function generateInvoiceNumber(): string {
 /**
  * Get all payment methods
  */
-export function findPaymentMethods(): any[] {
+export function findPaymentMethods(): Array<{ id: number; name: string; is_active: number }> {
     const db = getDB();
-    return db.prepare('SELECT * FROM payment_methods WHERE is_active = 1').all();
+    return db.prepare('SELECT * FROM payment_methods WHERE is_active = 1').all() as Array<{ id: number; name: string; is_active: number }>;
+}
+
+/**
+ * Check if payment method exists and is active
+ */
+export function paymentMethodExists(id: number): boolean {
+    const db = getDB();
+    const result = db.prepare('SELECT id FROM payment_methods WHERE id = ? AND is_active = 1').get(id);
+    return !!result;
 }
 
 /**
@@ -351,4 +362,13 @@ export function findSaleItems(saleId: number): SaleItem[] {
         JOIN products p ON v.product_id = p.id
         WHERE si.sale_id = ?
     `).all(saleId) as SaleItem[];
+}
+
+/**
+ * Check if sale exists
+ */
+export function saleExists(id: number): boolean {
+    const db = getDB();
+    const result = db.prepare('SELECT id FROM sales WHERE id = ?').get(id);
+    return !!result;
 }

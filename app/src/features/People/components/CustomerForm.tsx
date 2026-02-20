@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
+import type { Customer, CustomerWritePayload } from '@/services/customersApi';
 
 interface CustomerFormProps {
-    defaultValues?: any;
-    onSave: (values: any) => void;
+    defaultValues?: Customer | null;
+    onSave: (values: CustomerWritePayload) => void;
     isLoading?: boolean;
 }
 

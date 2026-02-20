@@ -7,10 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import RequiredFieldIndicator from '@/components/common/RequiredFieldIndicator';
+import type { CreateUserPayload } from '@/services/usersApi';
 
 interface EmployeeFormProps {
-    defaultValues?: any;
-    onSave: (values: any) => void;
+    defaultValues?: {
+        name?: string;
+        username?: string;
+        is_active?: boolean | number;
+    };
+    onSave: (values: CreateUserPayload) => void;
     isLoading?: boolean;
 }
 
@@ -21,7 +26,7 @@ export function EmployeeForm({ defaultValues, onSave, isLoading }: EmployeeFormP
         password: "",
         is_active: true
     });
-    const [errors, setErrors] = useState<{ name?: string; username?: string }>({});
+    const [errors, setErrors] = useState<{ name?: string; username?: string; password?: string }>({});
 
     useEffect(() => {
         if (defaultValues) {
@@ -29,7 +34,9 @@ export function EmployeeForm({ defaultValues, onSave, isLoading }: EmployeeFormP
                 name: defaultValues.name || "",
                 username: defaultValues.username || "",
                 password: "", // Don't pre-fill password for security/UX
-                is_active: defaultValues.is_active ?? true
+                is_active: defaultValues.is_active === undefined
+                    ? true
+                    : defaultValues.is_active === 1 || defaultValues.is_active === true
             });
         } else {
             setFormData({
@@ -49,11 +56,11 @@ export function EmployeeForm({ defaultValues, onSave, isLoading }: EmployeeFormP
             [name]: type === 'checkbox' ? checked : value
         }));
         if (errors[name as keyof typeof errors]) {
-            setErrors(prev => ({ ...prev, [name]: null }));
+            setErrors(prev => ({ ...prev, [name]: undefined }));
         }
     };
 
-    const validate = () => {
+    const validate = (): { name?: string; username?: string; password?: string } => {
         const newErrors: { name?: string; username?: string; password?: string } = {};
         if (!formData.name || formData.name.length < 2) {
             newErrors.name = "Name must be at least 2 characters.";
@@ -152,7 +159,6 @@ export function EmployeeForm({ defaultValues, onSave, isLoading }: EmployeeFormP
                                 : "Minimum 6 characters required"}
                         </span>
                     </p>
-                    {/* @ts-ignore */}
                     {errors.password && (
                         <p className="text-sm font-medium text-destructive" role="alert">
                             {errors.password}
@@ -176,7 +182,7 @@ export function EmployeeForm({ defaultValues, onSave, isLoading }: EmployeeFormP
                         id="is_active"
                         name="is_active"
                         checked={formData.is_active}
-                        onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                        onCheckedChange={(checked: boolean | 'indeterminate') => setFormData(prev => ({ ...prev, is_active: checked === true }))}
                         aria-label="Set employee account as active"
                     />
                     <Label htmlFor="is_active" className="font-normal cursor-pointer">

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   useGetExpiringLotsQuery
 } from '@/services/inventoryApi';
@@ -38,8 +37,8 @@ export default function InventoryPage() {
   });
 
   // Fetch data
-  const { data: stats, isLoading: statsLoading } = useGetInventoryStatsQuery(undefined);
-  const { data: expiring = [], isLoading: expiringLoading } = useGetExpiringLotsQuery(30);
+  const { data: stats } = useGetInventoryStatsQuery(undefined);
+  const { data: expiring = [] } = useGetExpiringLotsQuery(30);
   const { data: categories = [] } = useGetCategoriesQuery(undefined);
 
   const categoryId = activeFilters.category.length > 0 ? Number(activeFilters.category[0]) : undefined;
@@ -56,7 +55,6 @@ export default function InventoryPage() {
   });
 
   const variants = variantsData?.variants || [];
-  const totalCount = variantsData?.totalCount || 0;
   const totalPages = variantsData?.totalPages || 0;
 
   const handleSort = (column: any) => {
@@ -129,7 +127,8 @@ export default function InventoryPage() {
     {
       key: 'category',
       label: 'Category',
-      sortable: false,
+      sortable: true,
+      sortField: 'c.name',
       renderCell: (v: any) => (
         <Badge variant="outline" className="font-normal bg-background/50">
           {v.category_name || 'Uncategorized'}
@@ -161,7 +160,8 @@ export default function InventoryPage() {
     {
       key: 'threshold',
       label: 'Alert Threshold',
-      sortable: false,
+      sortable: true,
+      sortField: 'v.stock_alert_cap',
       className: 'text-right',
       renderCell: (v: any) => (
         <Tooltip>
@@ -190,8 +190,8 @@ export default function InventoryPage() {
         const statusConfig = isOut
           ? { label: 'Out', variant: 'destructive' as const, className: 'bg-red-500 hover:bg-red-600 text-white' }
           : isLow
-          ? { label: 'Low', variant: 'default' as const, className: 'bg-orange-500 hover:bg-orange-600 text-white' }
-          : { label: 'OK', variant: 'default' as const, className: 'bg-green-600 hover:bg-green-700 text-white' };
+            ? { label: 'Low', variant: 'default' as const, className: 'bg-orange-500 hover:bg-orange-600 text-white' }
+            : { label: 'OK', variant: 'default' as const, className: 'bg-green-600 hover:bg-green-700 text-white' };
 
         return (
           <div className="flex justify-center">
@@ -209,8 +209,8 @@ export default function InventoryPage() {
                   {isOut
                     ? 'No stock available'
                     : isLow
-                    ? `Stock is below threshold (${threshold})`
-                    : 'Stock level is healthy'}
+                      ? `Stock is below threshold (${threshold})`
+                      : 'Stock level is healthy'}
                 </p>
               </TooltipContent>
             </Tooltip>

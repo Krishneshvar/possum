@@ -34,10 +34,46 @@ export default function SaleDetailsPage() {
     const currency = useCurrency();
     const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
 
-    const { data: sale, isLoading, error } = useGetSaleQuery(id);
+    const { data: sale, isLoading, error, refetch } = useGetSaleQuery(id, {
+        skip: !id
+    });
 
-    if (isLoading) return <div className="p-8 text-center">Loading sale details...</div>;
-    if (error || !sale) return <div className="p-8 text-center text-red-500">Failed to load sale details</div>;
+    if (isLoading) {
+        return (
+            <div className="container mx-auto p-4 max-w-5xl">
+                <div className="animate-pulse space-y-6">
+                    <div className="h-8 bg-muted rounded w-1/3"></div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-2 h-64 bg-muted rounded"></div>
+                        <div className="space-y-4">
+                            <div className="h-32 bg-muted rounded"></div>
+                            <div className="h-48 bg-muted rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    
+    if (error || !sale) {
+        return (
+            <div className="container mx-auto p-8 max-w-2xl">
+                <Card>
+                    <CardContent className="pt-6 text-center space-y-4">
+                        <div className="text-destructive text-lg font-semibold">Failed to load sale details</div>
+                        <p className="text-muted-foreground">The sale could not be found or there was an error loading the data.</p>
+                        <div className="flex gap-2 justify-center">
+                            <Button variant="outline" onClick={() => navigate('/sales')}>
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Sales
+                            </Button>
+                            <Button onClick={() => refetch()}>Retry</Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('en-IN', {

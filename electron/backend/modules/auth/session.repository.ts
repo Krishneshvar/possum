@@ -18,6 +18,12 @@ export function create(session: Session): void {
         throw new Error('user_id is required to create a session');
     }
 
+    // Verify user exists and is active
+    const userExists = db.prepare('SELECT id FROM users WHERE id = ? AND is_active = 1 AND deleted_at IS NULL').get(user_id);
+    if (!userExists) {
+        throw new Error('Cannot create session for invalid or inactive user');
+    }
+
     // Generate a unique ID for the session record itself
     const sessionId = uuidv4();
 
@@ -36,13 +42,14 @@ export function create(session: Session): void {
  */
 export function findByToken(token: string): Session | null {
     const db = getDB();
-    const row = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token) as any;
+    const row = db.prepare('SELECT * FROM sessions WHERE token = ?').get(token) as { id: string; user_id: number; token: string; expires_at: number; data: string | null; created_at: string } | undefined;
 
     if (!row) return null;
 
     const rest = row.data ? JSON.parse(row.data) : {};
 
     return {
+        id: row.id,
         ...rest,
         user_id: row.user_id,
         token: row.token,

@@ -6,7 +6,8 @@ interface RateLimitRecord {
 }
 
 // In-memory store for rate limiting
-// Note: This resets on server restart, which is acceptable for an Electron app
+// Note: This resets on server restart. For an Electron desktop app,
+// this is acceptable as it protects against local brute-force attempts.
 const loginAttempts = new Map<string, RateLimitRecord>();
 
 const MAX_ATTEMPTS = 5;

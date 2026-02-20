@@ -5,10 +5,13 @@ import { selectIsAuthenticated, selectCurrentUser, selectAuthLoading } from '@/f
 
 /**
  * ProtectedRoute component
+ * Enforces authentication and authorization for routes
  * 
  * @param {React.ReactNode} children - The protected content
  * @param {string|string[]} requiredPermissions - Optional permissions needed
  * @param {string|string[]} requiredRoles - Optional roles needed
+ * 
+ * Note: Users with 'admin' role bypass all permission and role checks
  */
 export default function ProtectedRoute({ children, requiredPermissions = [], requiredRoles = [] }: { children: React.ReactNode, requiredPermissions?: string | string[], requiredRoles?: string | string[] }) {
     const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -16,7 +19,7 @@ export default function ProtectedRoute({ children, requiredPermissions = [], req
     const isLoading = useSelector(selectAuthLoading);
     const location = useLocation();
 
-    // If still loading and has a token, show nothing or a spinner
+    // If still loading and has a token, show loading spinner
     if (isLoading && !isAuthenticated) {
         return (
             <div className="flex h-screen w-full items-center justify-center">
@@ -30,13 +33,11 @@ export default function ProtectedRoute({ children, requiredPermissions = [], req
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Check permissions if required
-    if (requiredPermissions.length > 0) {
-        // Allow admin role to bypass permission checks
-        if (user?.roles && user.roles.includes('admin')) {
-            return <>{children}</>;
-        }
+    // Admin role bypasses all permission and role checks
+    const isAdmin = user?.roles && user.roles.includes('admin');
 
+    // Check permissions if required
+    if (requiredPermissions.length > 0 && !isAdmin) {
         const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
         const hasPermission = user?.permissions && permissions.every(p => user.permissions.includes(p));
 
@@ -46,12 +47,7 @@ export default function ProtectedRoute({ children, requiredPermissions = [], req
     }
 
     // Check roles if required
-    if (requiredRoles.length > 0) {
-        // Admin also bypasses role checks
-        if (user?.roles && user.roles.includes('admin')) {
-            return <>{children}</>;
-        }
-
+    if (requiredRoles.length > 0 && !isAdmin) {
         const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
         const hasRole = user?.roles && roles.some((r: string) => user.roles.includes(r));
 

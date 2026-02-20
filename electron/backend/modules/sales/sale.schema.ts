@@ -14,7 +14,7 @@ export const createSaleSchema = z.object({
             paymentMethodId: z.number().int().positive(),
             amount: z.number().positive()
         })).optional(),
-        fulfillment_status: z.enum(['pending', 'processing', 'completed', 'cancelled']).optional(),
+        fulfillment_status: z.enum(['pending', 'fulfilled', 'cancelled']).optional(),
         taxMode: z.string().optional(),
         billTaxIds: z.array(z.number()).optional()
     })
@@ -25,7 +25,7 @@ export const addPaymentSchema = z.object({
         id: z.string().regex(/^\d+$/).transform(Number)
     }),
     body: z.object({
-        amount: z.number().positive(),
+        amount: z.number().positive().max(999999.99),
         paymentMethodId: z.number().int().positive()
     })
 });

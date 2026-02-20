@@ -4,16 +4,37 @@
  */
 import { getDB } from '../../shared/db/index.js';
 
+export interface TransactionRecord {
+    id: number;
+    sale_id: number;
+    amount: number;
+    type: 'payment' | 'refund';
+    payment_method_id: number;
+    status: 'completed' | 'pending' | 'cancelled';
+    transaction_date: string;
+    payment_method_name: string | null;
+    invoice_number: string | null;
+    customer_name: string | null;
+}
+
 interface TransactionQueryParams {
     startDate?: string;
     endDate?: string;
-    type?: string;
+    type?: 'payment' | 'refund';
     paymentMethodId?: number;
-    status?: string;
+    status?: 'completed' | 'pending' | 'cancelled';
+    searchTerm?: string;
     currentPage?: number;
     itemsPerPage?: number;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC' | string;
+    sortBy?: 'transaction_date' | 'amount' | 'status' | 'customer_name' | 'invoice_number';
+    sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface PaginatedTransactions {
+    transactions: TransactionRecord[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
 }
 
 /**
@@ -27,14 +48,15 @@ export function findTransactions({
     type,
     paymentMethodId,
     status,
+    searchTerm,
     currentPage = 1,
     itemsPerPage = 20,
     sortBy = 'transaction_date',
     sortOrder = 'DESC'
-}: TransactionQueryParams) {
+}: TransactionQueryParams): PaginatedTransactions {
     const db = getDB();
     const filterClauses: string[] = [];
-    const filterParams: any[] = [];
+    const filterParams: (string | number)[] = [];
 
     if (startDate) {
         // Optimize: Use direct string comparison to utilize index
@@ -65,6 +87,12 @@ export function findTransactions({
         filterParams.push(status);
     }
 
+    if (searchTerm) {
+        filterClauses.push('(s.invoice_number LIKE ? OR COALESCE(c.name, \'\') LIKE ?)');
+        const fuzzyTerm = `%${searchTerm}%`;
+        filterParams.push(fuzzyTerm, fuzzyTerm);
+    }
+
     const whereClause = filterClauses.length > 0
         ? `WHERE ${filterClauses.join(' AND ')}`
         : '';
@@ -72,15 +100,25 @@ export function findTransactions({
     const countResult = db.prepare(`
         SELECT COUNT(*) as total_count
         FROM transactions t
+        LEFT JOIN sales s ON t.sale_id = s.id
+        LEFT JOIN customers c ON s.customer_id = c.id
         ${whereClause}
     `).get(...filterParams) as { total_count: number };
 
     const totalCount = countResult?.total_count ?? 0;
 
     // Validate sortBy
-    const allowedSortFields = ['transaction_date', 'amount', 'status'];
+    const allowedSortFields = ['transaction_date', 'amount', 'status', 'customer_name', 'invoice_number'] as const;
+    const sortFieldMap: Record<(typeof allowedSortFields)[number], string> = {
+        transaction_date: 't.transaction_date',
+        amount: 't.amount',
+        status: 't.status',
+        customer_name: 'c.name',
+        invoice_number: 's.invoice_number'
+    };
     const finalSortBy = allowedSortFields.includes(sortBy!) ? sortBy : 'transaction_date';
-    const finalSortOrder = (sortOrder || 'DESC').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    const finalSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    const orderByColumn = sortFieldMap[finalSortBy];
 
     const offset = (currentPage! - 1) * itemsPerPage!;
 
@@ -91,13 +129,13 @@ export function findTransactions({
             s.invoice_number,
             c.name as customer_name
         FROM transactions t
-        JOIN payment_methods pm ON t.payment_method_id = pm.id
-        JOIN sales s ON t.sale_id = s.id
+        LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+        LEFT JOIN sales s ON t.sale_id = s.id
         LEFT JOIN customers c ON s.customer_id = c.id
         ${whereClause}
-        ORDER BY t.${finalSortBy} ${finalSortOrder}
+        ORDER BY ${orderByColumn} ${finalSortOrder}
         LIMIT ? OFFSET ?
-    `).all(...filterParams, itemsPerPage, offset);
+    `).all(...filterParams, itemsPerPage, offset) as TransactionRecord[];
 
     return {
         transactions,

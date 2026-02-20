@@ -75,7 +75,7 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
     );
 
     const addItem = () => {
-        if (!selectedVariant || quantity <= 0 || unitCost < 0) {
+        if (!selectedVariant || !Number.isInteger(quantity) || quantity <= 0 || !Number.isFinite(unitCost) || unitCost < 0) {
             toast.error('Please select a variant and enter valid quantity and cost');
             return;
         }
@@ -89,13 +89,26 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
             unitCost: unitCost,
         };
 
-        setItems([...items, newItem]);
+        const existingItemIndex = items.findIndex((item) => item.variantId === newItem.variantId);
+        if (existingItemIndex >= 0) {
+            const nextItems = [...items];
+            const existingItem = nextItems[existingItemIndex];
+            nextItems[existingItemIndex] = {
+                ...existingItem,
+                quantity: existingItem.quantity + newItem.quantity,
+                unitCost: newItem.unitCost,
+            };
+            setItems(nextItems);
+            toast.success('Item quantity updated in order');
+        } else {
+            setItems([...items, newItem]);
+            toast.success('Item added to order');
+        }
         onFormChange?.();
         // Reset item entry
         setSelectedVariantId('');
         setQuantity(1);
         setUnitCost(0);
-        toast.success('Item added to order');
     };
 
     const removeItem = (index: number) => {
@@ -120,7 +133,6 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
                     quantity: i.quantity,
                     unit_cost: i.unitCost
                 })),
-                created_by: 1 // TODO: get from auth
             }).unwrap();
 
             toast.success('Purchase Order created successfully');
@@ -145,7 +157,7 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="supplier-select">Supplier *</Label>
-                    <Select value={supplierId} onValueChange={(val) => { setSupplierId(val); onFormChange?.(); }}>
+                    <Select value={supplierId} onValueChange={(val: string) => { setSupplierId(val); onFormChange?.(); }}>
                         <SelectTrigger id="supplier-select" aria-label="Select supplier">
                             <SelectValue placeholder="Choose a supplier" />
                         </SelectTrigger>
@@ -238,7 +250,7 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
                                 type="number"
                                 min="1"
                                 value={quantity}
-                                onChange={e => setQuantity(Number(e.target.value))}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity(Number(e.target.value))}
                                 aria-label="Order quantity"
                             />
                         </div>
@@ -250,7 +262,7 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
                                 min="0"
                                 step="0.01"
                                 value={unitCost}
-                                onChange={e => setUnitCost(Number(e.target.value))}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUnitCost(Number(e.target.value))}
                                 aria-label="Unit cost"
                             />
                         </div>
@@ -258,7 +270,7 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
                             <Button 
                                 type="button" 
                                 onClick={addItem} 
-                                disabled={!selectedVariant || quantity <= 0 || unitCost < 0} 
+                                disabled={!selectedVariant || !Number.isInteger(quantity) || quantity <= 0 || !Number.isFinite(unitCost) || unitCost < 0}
                                 className="w-full"
                                 aria-label="Add item to order"
                             >

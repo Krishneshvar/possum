@@ -4,10 +4,13 @@ import { baseQuery } from '../lib/api-client';
 export interface Customer {
     id: number;
     name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    loyalty_points?: number;
     is_tax_exempt?: boolean;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface GetCustomersParams {
@@ -24,6 +27,13 @@ export interface GetCustomersResponse {
     totalPages: number;
     page: number;
     limit: number;
+}
+
+export interface CustomerWritePayload {
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
 }
 
 export const customersApi = createApi({
@@ -48,7 +58,7 @@ export const customersApi = createApi({
             query: (id) => `/customers/${id}`,
             providesTags: (result, error, id) => [{ type: 'Customer', id }],
         }),
-        createCustomer: builder.mutation<Customer, Partial<Customer>>({
+        createCustomer: builder.mutation<Customer, CustomerWritePayload>({
             query: (body) => ({
                 url: '/customers',
                 method: 'POST',
@@ -56,7 +66,7 @@ export const customersApi = createApi({
             }),
             invalidatesTags: [{ type: 'Customer', id: 'LIST' }],
         }),
-        updateCustomer: builder.mutation<Customer, Partial<Customer> & { id: number }>({
+        updateCustomer: builder.mutation<Customer, Partial<CustomerWritePayload> & { id: number }>({
             query: ({ id, ...body }) => ({
                 url: `/customers/${id}`,
                 method: 'PUT',

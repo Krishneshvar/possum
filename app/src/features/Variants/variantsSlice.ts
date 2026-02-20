@@ -6,6 +6,10 @@ interface VariantsState {
     itemsPerPage: number;
     sortBy: string;
     sortOrder: string;
+    filters: {
+        stockStatus: string[];
+        status: string[];
+    };
 }
 
 const initialState: VariantsState = {
@@ -14,6 +18,10 @@ const initialState: VariantsState = {
     itemsPerPage: 10,
     sortBy: 'p.name',
     sortOrder: 'ASC',
+    filters: {
+        stockStatus: [],
+        status: [],
+    },
 };
 
 const variantsSlice = createSlice({
@@ -31,11 +39,22 @@ const variantsSlice = createSlice({
             state.sortBy = action.payload.sortBy;
             state.sortOrder = action.payload.sortOrder;
         },
-        resetFilters: (state) => {
+        setFilter: (state, action) => {
+            const { key, value } = action.payload;
+            // @ts-ignore
+            state.filters[key] = value;
+            state.currentPage = 1;
+        },
+        clearAllFilters: (state) => {
+            state.filters = initialState.filters;
+            state.currentPage = 1;
+            state.searchTerm = '';
+        },
+        resetFilters: () => {
             return initialState;
         },
     },
 });
 
-export const { setSearchTerm, setCurrentPage, setSorting, resetFilters } = variantsSlice.actions;
+export const { setSearchTerm, setCurrentPage, setSorting, setFilter, clearAllFilters, resetFilters } = variantsSlice.actions;
 export default variantsSlice.reducer;

@@ -3,7 +3,7 @@
  * Handles all database operations for users
  */
 import { getDB } from '../../shared/db/index.js';
-import { User, Role } from '../../../../types/index.js';
+import { User, Role, Permission } from '../../../../types/index.js';
 
 export interface UserFilter {
     searchTerm?: string;
@@ -17,6 +17,13 @@ export interface PaginatedUsers {
     users: User[];
     totalCount: number;
     totalPages: number;
+}
+
+interface CreateUserInput {
+    name: string;
+    username: string;
+    password_hash: string;
+    is_active?: number;
 }
 
 /**
@@ -123,7 +130,7 @@ export function updateUserById(id: number, { name, username, password_hash, is_a
     updates.push('updated_at = CURRENT_TIMESTAMP');
 
     if (updates.length > 1) { // >1 because updated_at is always there
-        const stmt = db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`);
+        const stmt = db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ? AND deleted_at IS NULL`);
         stmt.run(...params, id);
     }
     return findUserById(id);
@@ -134,9 +141,70 @@ export function updateUserById(id: number, { name, username, password_hash, is_a
  */
 export function softDeleteUser(id: number): boolean {
     const db = getDB();
-    const stmt = db.prepare('UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
+    const stmt = db.prepare('UPDATE users SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL');
     const result = stmt.run(id);
     return result.changes > 0;
+}
+
+/**
+ * Insert user and assign roles atomically
+ */
+export function insertUserWithRoles(
+    userData: CreateUserInput,
+    roleIds: number[] = []
+): User | undefined {
+    const db = getDB();
+    const insertUserStmt = db.prepare(`
+        INSERT INTO users (name, username, password_hash, is_active)
+        VALUES (?, ?, ?, ?)
+    `);
+    const insertRoleStmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
+
+    const transaction = db.transaction((payload: CreateUserInput, roles: number[]) => {
+        const result = insertUserStmt.run(
+            payload.name,
+            payload.username,
+            payload.password_hash,
+            payload.is_active ?? 1
+        );
+        const userId = Number(result.lastInsertRowid);
+
+        for (const roleId of roles) {
+            insertRoleStmt.run(userId, roleId);
+        }
+
+        return userId;
+    });
+
+    const userId = transaction(userData, roleIds);
+    return findUserById(userId);
+}
+
+/**
+ * Update user and optionally replace roles atomically
+ */
+export function updateUserWithRolesById(
+    id: number,
+    data: Partial<User>,
+    roleIds?: number[]
+): User | undefined {
+    const db = getDB();
+    const deleteRolesStmt = db.prepare('DELETE FROM user_roles WHERE user_id = ?');
+    const insertRoleStmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)');
+
+    const transaction = db.transaction((userId: number, updateData: Partial<User>, nextRoleIds?: number[]) => {
+        updateUserById(userId, updateData);
+
+        if (nextRoleIds !== undefined) {
+            deleteRolesStmt.run(userId);
+            for (const roleId of nextRoleIds) {
+                insertRoleStmt.run(userId, roleId);
+            }
+        }
+    });
+
+    transaction(id, data, roleIds);
+    return findUserById(id);
 }
 
 /**
@@ -195,7 +263,7 @@ export function getAllRoles(): Role[] {
     return db.prepare('SELECT * FROM roles ORDER BY name ASC').all() as Role[];
 }
 
-export function getAllPermissions(): { id: number; key: string; description: string }[] {
+export function getAllPermissions(): Permission[] {
     const db = getDB();
-    return db.prepare('SELECT * FROM permissions ORDER BY key ASC').all() as { id: number; key: string; description: string }[];
+    return db.prepare('SELECT * FROM permissions ORDER BY key ASC').all() as Permission[];
 }

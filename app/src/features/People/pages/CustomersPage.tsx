@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Users, User } from 'lucide-react';
 import { toast } from 'sonner';
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import type { SerializedError } from '@reduxjs/toolkit';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 import GenericPageHeader from '@/components/common/GenericPageHeader';
 import DataTable from "@/components/common/DataTable";
+import type { Column } from '@/components/common/DataTable';
 import GenericDeleteDialog from "@/components/common/GenericDeleteDialog";
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
@@ -21,15 +24,34 @@ import {
   useGetCustomersQuery,
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
-  useDeleteCustomerMutation
+  useDeleteCustomerMutation,
+  type Customer,
+  type CustomerWritePayload
 } from '@/services/customersApi';
+
+function getApiErrorMessage(error: unknown): string {
+  const fallback = 'An unexpected error occurred';
+
+  if (!error || typeof error !== 'object') {
+    return fallback;
+  }
+
+  const fetchError = error as FetchBaseQueryError;
+  if ('data' in fetchError && fetchError.data && typeof fetchError.data === 'object') {
+    const data = fetchError.data as { error?: string };
+    return data.error || fallback;
+  }
+
+  const serialized = error as SerializedError;
+  return serialized.message || fallback;
+}
 
 export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'created_at'>('name');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
   const itemsPerPage = 10;
 
@@ -39,7 +61,7 @@ export default function CustomersPage() {
   const [deleteCustomer] = useDeleteCustomerMutation();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<any>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
 
   const customers = data?.customers || [];
   const totalPages = data?.totalPages || 1;
@@ -49,17 +71,17 @@ export default function CustomersPage() {
     setIsDialogOpen(true);
   };
 
-  const handleOpenEditDialog = (customer: any) => {
+  const handleOpenEditDialog = (customer: Customer) => {
     setEditingCustomer(customer);
     setIsDialogOpen(true);
   };
 
-  const handleOpenDeleteDialog = (customer: any) => {
+  const handleOpenDeleteDialog = (customer: Customer) => {
     setCustomerToDelete(customer);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: CustomerWritePayload) => {
     try {
       if (editingCustomer) {
         await updateCustomer({ id: editingCustomer.id, ...values }).unwrap();
@@ -70,8 +92,7 @@ export default function CustomersPage() {
       }
       setIsDialogOpen(false);
     } catch (error) {
-      console.error(error);
-      toast.error(editingCustomer ? "Failed to update customer" : "Failed to create customer");
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -81,31 +102,33 @@ export default function CustomersPage() {
       await deleteCustomer(customerToDelete.id).unwrap();
       toast.success("Customer deleted successfully");
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to delete customer");
+      toast.error(getApiErrorMessage(error));
     } finally {
       setIsDeleteDialogOpen(false);
       setCustomerToDelete(null);
     }
   };
 
-  const handleSort = (column: any) => {
+  const handleSort = (column: Column) => {
+    if (!['name', 'email', 'created_at'].includes(column.key)) {
+      return;
+    }
     if (column.key === sortBy) {
       setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
     } else {
-      setSortBy(column.key);
+      setSortBy(column.key as 'name' | 'email' | 'created_at');
       setSortOrder('ASC');
     }
   };
 
-  const columns = [
-    { key: 'name', label: 'Name', sortable: true, renderCell: (c: any) => <span className="font-medium">{c.name}</span> },
-    { key: 'phone', label: 'Phone', renderCell: (c: any) => c.phone || '-' },
-    { key: 'email', label: 'Email', sortable: true, renderCell: (c: any) => c.email || '-' },
-    { key: 'address', label: 'Address', renderCell: (c: any) => <div className="max-w-[200px] truncate">{c.address || '-'}</div> },
+  const columns: Column[] = [
+    { key: 'name', label: 'Name', sortable: true, renderCell: (c) => <span className="font-medium">{c.name}</span> },
+    { key: 'phone', label: 'Phone', renderCell: (c) => c.phone || '-' },
+    { key: 'email', label: 'Email', sortable: true, renderCell: (c) => c.email || '-' },
+    { key: 'address', label: 'Address', renderCell: (c) => <div className="max-w-[200px] truncate">{c.address || '-'}</div> },
   ];
 
-  const renderActions = (customer: any) => (
+  const renderActions = (customer: Customer) => (
     <div className="flex items-center justify-end gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
@@ -193,11 +216,9 @@ export default function CustomersPage() {
 
       <DataTable
         data={customers}
-        // @ts-ignore
         columns={columns}
         isLoading={isLoading}
-        // @ts-ignore
-        error={error?.message}
+        error={error ? getApiErrorMessage(error) : null}
         onRetry={refetch}
 
         searchTerm={searchTerm}
@@ -214,7 +235,6 @@ export default function CustomersPage() {
 
         emptyState={emptyState}
         renderActions={renderActions}
-        // @ts-ignore
         avatarIcon={<User className="h-4 w-4 text-primary" />}
       />
 

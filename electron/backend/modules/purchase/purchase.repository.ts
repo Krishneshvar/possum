@@ -34,8 +34,14 @@ export interface PurchaseOrderQueryOptions {
     limit?: number;
     searchTerm?: string;
     status?: string;
+    fromDate?: string;
+    toDate?: string;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC' | string;
+}
+
+interface CountRow {
+    count: number;
 }
 
 export interface CreatePOItem {
@@ -50,15 +56,21 @@ export interface CreatePOData {
     items: CreatePOItem[];
 }
 
+function dbError(message: string, statusCode: number): Error & { statusCode: number } {
+    const error = new Error(message) as Error & { statusCode: number };
+    error.statusCode = statusCode;
+    return error;
+}
+
 /**
  * Get all purchase orders with pagination, search, status filter and sorting
  */
-export function getAllPurchaseOrders({ page = 1, limit = 10, searchTerm = '', status = '', sortBy = 'order_date', sortOrder = 'DESC' }: PurchaseOrderQueryOptions = {}) {
+export function getAllPurchaseOrders({ page = 1, limit = 10, searchTerm = '', status = '', fromDate = '', toDate = '', sortBy = 'order_date', sortOrder = 'DESC' }: PurchaseOrderQueryOptions = {}) {
     const db = getDB();
-    const offset = (page! - 1) * limit!;
+    const offset = (page - 1) * limit;
 
     let whereClause = 'WHERE 1=1';
-    const params: any[] = [];
+    const params: Array<string | number> = [];
 
     if (searchTerm) {
         whereClause += ` AND (s.name LIKE ? OR po.id LIKE ?)`;
@@ -68,6 +80,16 @@ export function getAllPurchaseOrders({ page = 1, limit = 10, searchTerm = '', st
     if (status && status !== 'all') {
         whereClause += ` AND po.status = ?`;
         params.push(status);
+    }
+
+    if (fromDate) {
+        whereClause += ` AND po.order_date >= ?`;
+        params.push(fromDate);
+    }
+
+    if (toDate) {
+        whereClause += ` AND po.order_date <= ?`;
+        params.push(`${toDate} 23:59:59`);
     }
 
     // Map sort fields to actual columns
@@ -88,7 +110,7 @@ export function getAllPurchaseOrders({ page = 1, limit = 10, searchTerm = '', st
         LEFT JOIN suppliers s ON po.supplier_id = s.id
         ${whereClause}
     `;
-    const totalCount = (db.prepare(countQuery).get(...params) as any).count;
+    const totalCount = (db.prepare(countQuery).get(...params) as CountRow).count;
 
     const dataQuery = `
         SELECT 
@@ -109,7 +131,7 @@ export function getAllPurchaseOrders({ page = 1, limit = 10, searchTerm = '', st
     return {
         purchaseOrders,
         totalCount,
-        totalPages: Math.ceil(totalCount / limit!),
+        totalPages: Math.ceil(totalCount / limit),
         page,
         limit
     };
@@ -167,11 +189,27 @@ export function createPurchaseOrder({ supplier_id, created_by, items }: CreatePO
         VALUES (?, ?, ?, ?)
     `);
 
+    const supplierExistsStmt = db.prepare(`
+        SELECT id FROM suppliers WHERE id = ? AND deleted_at IS NULL
+    `);
+    const variantExistsStmt = db.prepare(`
+        SELECT id FROM variants WHERE id = ?
+    `);
+
     const transaction = db.transaction((po: Omit<CreatePOData, 'items'>, itemList: CreatePOItem[]) => {
+        const supplier = supplierExistsStmt.get(po.supplier_id) as { id: number } | undefined;
+        if (!supplier) {
+            throw dbError(`Supplier ${po.supplier_id} not found`, 400);
+        }
+
         const result = insertPo.run(po.supplier_id, po.created_by);
-        const poId = result.lastInsertRowid;
+        const poId = Number(result.lastInsertRowid);
 
         for (const item of itemList) {
+            const variant = variantExistsStmt.get(item.variant_id) as { id: number } | undefined;
+            if (!variant) {
+                throw dbError(`Variant ${item.variant_id} not found`, 400);
+            }
             insertItem.run(poId, item.variant_id, item.quantity, item.unit_cost);
         }
         return poId;
@@ -191,12 +229,12 @@ export function receivePurchaseOrder(poId: number, userId: number = 1) {
     const numericPoId = Number(poId);
     const numericUserId = Number(userId);
 
-    // 1. Get PO Items
-    const items = db.prepare('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?').all(numericPoId) as PurchaseOrderItem[];
-
-    if (items.length === 0) {
-        throw new Error(`Purchase Order ${numericPoId} has no items`);
-    }
+    const pendingPurchaseOrderStmt = db.prepare(`
+        SELECT id FROM purchase_orders WHERE id = ? AND status = 'pending'
+    `);
+    const purchaseOrderItemsStmt = db.prepare(`
+        SELECT * FROM purchase_order_items WHERE purchase_order_id = ?
+    `);
 
     const updatePoParams = db.prepare(`
         UPDATE purchase_orders 
@@ -227,12 +265,26 @@ export function receivePurchaseOrder(poId: number, userId: number = 1) {
     `);
 
     const transaction = db.transaction(() => {
+        const pendingPo = pendingPurchaseOrderStmt.get(numericPoId) as { id: number } | undefined;
+        if (!pendingPo) {
+            throw dbError(`Purchase Order ${numericPoId} not found or already processed`, 404);
+        }
+
+        const items = purchaseOrderItemsStmt.all(numericPoId) as PurchaseOrderItem[];
+        if (items.length === 0) {
+            throw dbError(`Purchase Order ${numericPoId} has no items`, 400);
+        }
+
         const result = updatePoParams.run(numericPoId);
         if (result.changes === 0) {
-            throw new Error(`Purchase Order ${numericPoId} not found or already received`);
+            throw dbError(`Purchase Order ${numericPoId} not found or already processed`, 409);
         }
 
         for (const item of items) {
+            if (item.quantity <= 0 || item.unit_cost < 0) {
+                throw dbError(`Purchase Order ${numericPoId} has invalid item data`, 500);
+            }
+
             // Create inventory lot
             const lotResult = insertLot.run(
                 item.variant_id,
@@ -240,7 +292,7 @@ export function receivePurchaseOrder(poId: number, userId: number = 1) {
                 item.unit_cost,
                 item.id
             );
-            const lotId = lotResult.lastInsertRowid;
+            const lotId = Number(lotResult.lastInsertRowid);
 
             // Create adjustment (reason: confirm_receive)
             insertAdjustment.run(

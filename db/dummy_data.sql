@@ -41,18 +41,18 @@ INSERT INTO categories (name, parent_id) VALUES
 ('Jeans', 17),
 ('Shorts', 17);
 
-INSERT INTO suppliers (name, contact_person, phone, email) VALUES
-('Global Foods Inc.', 'Jane Doe', '555-1001', 'jane.doe@globalfoods.com'),
-('Tech Wholesale Co.', 'John Smith', '555-1002', 'john.smith@techwholesale.com'),
-('Book Distributors LLC', 'Emily White', '555-1003', 'emily.white@bookdistributors.com'),
-('Fashion Hub Ltd.', 'Michael Green', '555-1004', 'michael.green@fashionhub.com'),
-('Daily Essentials Corp.', 'Sarah Brown', '555-1005', 'sarah.brown@dailyessentials.com'),
-('Fresh Produce Farms', 'David Wilson', '555-1006', 'david.wilson@freshproduce.com'),
-('Bakery Supplies Inc.', 'Jessica Turner', '555-1007', 'jessica.turner@bakerysupplies.com'),
-('Wholesale Cleaning Co.', 'Robert Hall', '555-1008', 'robert.hall@wholesalecleaning.com'),
-('Dairy King', 'Maria Rodriguez', '555-1009', 'maria.rodriguez@dairyking.com'),
-('Eco-Friendly Goods', 'Chris Evans', '555-1010', 'chris.evans@ecogoods.com'),
-('Global Electronics', 'Olivia Davis', '555-1011', 'olivia.davis@globalelectronics.com');
+INSERT INTO suppliers (name, contact_person, phone, email, address, gstin) VALUES
+('Global Foods Inc.', 'Jane Doe', '555-1001', 'jane.doe@globalfoods.com', '123 Supply Lane, Food City', '10AAAAA0000A1Z5'),
+('Tech Wholesale Co.', 'John Smith', '555-1002', 'john.smith@techwholesale.com', '456 Tech Blvd, Silicon Valley', '10BBBBB0000B1Z5'),
+('Book Distributors LLC', 'Emily White', '555-1003', 'emily.white@bookdistributors.com', '789 Read Rd, Booktown', '10CCCCC0000C1Z5'),
+('Fashion Hub Ltd.', 'Michael Green', '555-1004', 'michael.green@fashionhub.com', '101 Style St, Fashion Vista', '10DDDDD0000D1Z5'),
+('Daily Essentials Corp.', 'Sarah Brown', '555-1005', 'sarah.brown@dailyessentials.com', '202 Daily Dr, Everytown', '10EEEEE0000E1Z5'),
+('Fresh Produce Farms', 'David Wilson', '555-1006', 'david.wilson@freshproduce.com', '303 Farm Ln, Countryside', '10FFFFF0000F1Z5'),
+('Bakery Supplies Inc.', 'Jessica Turner', '555-1007', 'jessica.turner@bakerysupplies.com', '404 Bread Way, Bakerstown', '10GGGGG0000G1Z5'),
+('Wholesale Cleaning Co.', 'Robert Hall', '555-1008', 'robert.hall@wholesalecleaning.com', '505 Clean Ct, Spotless City', '10HHHHH0000H1Z5'),
+('Dairy King', 'Maria Rodriguez', '555-1009', 'maria.rodriguez@dairyking.com', '606 Milk Ave, Cowtown', '10IIIII0000I1Z5'),
+('Eco-Friendly Goods', 'Chris Evans', '555-1010', 'chris.evans@ecogoods.com', '707 Green St, Eco Village', '10JJJJJ0000J1Z5'),
+('Global Electronics', 'Olivia Davis', '555-1011', 'olivia.davis@globalelectronics.com', '808 Circuit Rd, Electro City', '10KKKKK0000K1Z5');
 
 INSERT INTO customers (name, phone, email, address) VALUES
 ('Alice Johnson', '555-2001', 'alice.j@email.com', '123 Main St, Anytown'),

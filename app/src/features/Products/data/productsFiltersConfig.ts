@@ -2,9 +2,9 @@ export const stockStatusFilter = {
     key: "stockStatus",
     label: "Stock Status",
     options: [
-        { label: "In Stock", value: "ok" },
-        { label: "Low Stock", value: "low" },
-        { label: "Out of Stock", value: "out" },
+        { label: "In Stock", value: "in-stock" },
+        { label: "Low Stock", value: "low-stock" },
+        { label: "Out of Stock", value: "out-of-stock" },
     ],
 };
 

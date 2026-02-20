@@ -1,18 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetReturnsQuery } from '@/services/returnsApi';
+import { ReturnItem, ReturnRecord, useGetReturnsQuery } from '@/services/returnsApi';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw, ChevronDown, ChevronRight, Package } from 'lucide-react';
 import DataTable from '@/components/common/DataTable';
 import CurrencyText from '@/components/common/CurrencyText';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 
 export default function ReturnsPage() {
     const navigate = useNavigate();
@@ -24,11 +18,10 @@ export default function ReturnsPage() {
     const { data, isLoading, isError, refetch } = useGetReturnsQuery({
         page,
         limit,
-        // @ts-ignore
         searchTerm,
     });
 
-    const returns = data?.returns || [];
+    const returns = data?.returns ?? [];
     const totalPages = data?.totalPages || 1;
     const totalCount = data?.totalCount || 0;
 
@@ -59,7 +52,7 @@ export default function ReturnsPage() {
             key: 'expand',
             label: '',
             sortable: false,
-            renderCell: (ret: any) => (
+            renderCell: (ret: ReturnRecord) => (
                 <Button
                     variant="ghost"
                     size="sm"
@@ -80,13 +73,13 @@ export default function ReturnsPage() {
             key: 'id',
             label: 'Return ID',
             sortable: false,
-            renderCell: (ret: any) => <span className="font-mono text-xs font-medium">#{ret.id}</span>
+            renderCell: (ret: ReturnRecord) => <span className="font-mono text-xs font-medium">#{ret.id}</span>
         },
         {
             key: 'created_at',
             label: 'Date & Time',
             sortable: false,
-            renderCell: (ret: any) => (
+            renderCell: (ret: ReturnRecord) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{formatDate(ret.created_at).split(',')[0]}</span>
                     <span className="text-xs text-muted-foreground">{formatDate(ret.created_at).split(',')[1]}</span>
@@ -97,7 +90,7 @@ export default function ReturnsPage() {
             key: 'invoice_number',
             label: 'Original Invoice',
             sortable: false,
-            renderCell: (ret: any) => (
+            renderCell: (ret: ReturnRecord) => (
                 <Button
                     variant="link"
                     className="p-0 h-auto font-medium text-primary hover:underline"
@@ -114,7 +107,7 @@ export default function ReturnsPage() {
             key: 'items_count',
             label: 'Items',
             sortable: false,
-            renderCell: (ret: any) => (
+            renderCell: (ret: ReturnRecord) => (
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -136,7 +129,7 @@ export default function ReturnsPage() {
             key: 'processed_by_name',
             label: 'Processed By',
             sortable: false,
-            renderCell: (ret: any) => (
+            renderCell: (ret: ReturnRecord) => (
                 <div className="flex items-center gap-2">
                     <div 
                         className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary"
@@ -153,7 +146,7 @@ export default function ReturnsPage() {
             label: 'Refund Amount',
             sortable: false,
             className: 'text-right',
-            renderCell: (ret: any) => (
+            renderCell: (ret: ReturnRecord) => (
                 <div className="text-right">
                     <div className="font-bold text-destructive text-base">
                         -<CurrencyText value={ret.total_refund} />
@@ -165,7 +158,7 @@ export default function ReturnsPage() {
             key: 'reason',
             label: 'Reason',
             sortable: false,
-            renderCell: (ret: any) => (
+            renderCell: (ret: ReturnRecord) => (
                 ret.reason ? (
                     <TooltipProvider>
                         <Tooltip>
@@ -186,7 +179,7 @@ export default function ReturnsPage() {
         },
     ];
 
-    const renderActions = (ret: any) => (
+    const renderActions = (ret: ReturnRecord) => (
         <Button
             variant="ghost"
             size="sm"
@@ -198,7 +191,7 @@ export default function ReturnsPage() {
         </Button>
     );
 
-    const renderExpandedContent = (ret: any) => {
+    const renderExpandedContent = (ret: ReturnRecord) => {
         if (!expandedRows.has(ret.id)) return null;
 
         return (
@@ -209,8 +202,8 @@ export default function ReturnsPage() {
                         Returned Items
                     </h4>
                     <div className="space-y-2">
-                        {ret.items?.map((item: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between bg-background rounded-md p-3 border border-border/50">
+                        {ret.items?.map((item: ReturnItem) => (
+                            <div key={item.id} className="flex items-center justify-between bg-background rounded-md p-3 border border-border/50">
                                 <div className="flex-1">
                                     <p className="text-sm font-medium">{item.product_name}</p>
                                     <p className="text-xs text-muted-foreground">{item.variant_name}</p>
@@ -226,7 +219,7 @@ export default function ReturnsPage() {
                                     </div>
                                     <div className="text-right min-w-[80px]">
                                         <p className="text-muted-foreground text-xs">Refund</p>
-                                        <p className="font-bold text-destructive">-<CurrencyText value={item.quantity * item.price_per_unit} /></p>
+                                        <p className="font-bold text-destructive">-<CurrencyText value={item.refund_amount} /></p>
                                     </div>
                                 </div>
                             </div>
@@ -270,15 +263,13 @@ export default function ReturnsPage() {
 
             <div className="flex-1 overflow-hidden">
                 <DataTable
-                    data={returns.map((ret: any) => ({
+                    data={returns.map((ret: ReturnRecord) => ({
                         ...ret,
                         expandedContent: renderExpandedContent(ret)
                     }))}
-                    // @ts-ignore
                     columns={columns}
                     isLoading={isLoading}
-                    // @ts-ignore
-                    error={isError?.message}
+                    error={isError ? 'Failed to load returns.' : null}
                     onRetry={refetch}
 
                     searchTerm={searchTerm}
@@ -294,7 +285,6 @@ export default function ReturnsPage() {
 
                     emptyState={emptyState}
                     renderActions={renderActions}
-                    // @ts-ignore
                     avatarIcon={<RotateCcw className="h-4 w-4 text-primary" />}
                 />
             </div>

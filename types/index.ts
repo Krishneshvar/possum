@@ -119,7 +119,8 @@ export interface Sale extends BaseEntity {
   // Joined fields
   customer_name?: string;
   customer_phone?: string;
-  cashier_name?: string;
+  customer_email?: string;
+  biller_name?: string;
   items: SaleItem[];
   transactions?: Transaction[];
 }
@@ -147,9 +148,9 @@ export interface SaleItem extends BaseEntity {
 export interface Transaction extends BaseEntity {
   sale_id: number;
   amount: number;
-  type: string;
+  type: 'payment' | 'refund';
   payment_method_id: number;
-  status: string;
+  status: 'completed' | 'pending' | 'cancelled';
   transaction_date: string;
   payment_method_name?: string;
 }

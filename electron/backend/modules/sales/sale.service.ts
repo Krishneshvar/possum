@@ -38,10 +38,10 @@ export async function createSale({
     userId,
     discount = 0,
     payments = [],
-    taxMode = 'item', // Deprecated but kept for signature
-    billTaxIds = [], // Deprecated
+    taxMode = 'item',
+    billTaxIds = [],
     fulfillment_status = 'pending',
-    token // Added token for permission check
+    token
 }: CreateSaleParams): Promise<Sale> {
     if (!token) {
         throw new Error('Unauthorized: Service requires token for permission check');
@@ -53,6 +53,21 @@ export async function createSale({
     const userPermissions = session.permissions || [];
     if (!userPermissions.includes('sales.create')) {
         throw new Error('Forbidden: Missing required permission sales.create');
+    }
+
+    if (discount < 0) {
+        throw new Error('Discount cannot be negative');
+    }
+
+    if (payments.length > 0) {
+        for (const payment of payments) {
+            if (payment.amount <= 0) {
+                throw new Error('Payment amount must be positive');
+            }
+            if (!saleRepository.paymentMethodExists(payment.paymentMethodId)) {
+                throw new Error(`Invalid payment method: ${payment.paymentMethodId}`);
+            }
+        }
     }
 
     // Pre-fetch variant data asynchronously (Parallel & Non-blocking)
@@ -175,12 +190,12 @@ export async function createSale({
         // Calculate paid amount from payments
         const paidAmount = payments.reduce((sum, p) => sum.add(p.amount), new Decimal(0));
 
-        // Determine status
-        let statusIdx: 'draft' | 'paid' | 'partially_paid' = 'draft';
+        // Determine status based on payment
+        let status: 'draft' | 'paid' | 'partially_paid' = 'draft';
         if (paidAmount.gte(totalAmount)) {
-            statusIdx = 'paid';
+            status = 'paid';
         } else if (paidAmount.gt(0)) {
-            statusIdx = 'partially_paid';
+            status = 'partially_paid';
         }
 
         // Generate invoice number
@@ -193,7 +208,7 @@ export async function createSale({
             paid_amount: paidAmount.toNumber(),
             discount,
             total_tax: totalTax.toNumber(),
-            status: statusIdx,
+            status,
             fulfillment_status,
             customer_id: customerId,
             user_id: userId
@@ -231,13 +246,10 @@ export async function createSale({
         }
 
         // Log sale creation
-        (auditService as any).logAction(
+        auditService.logCreate(
             userId,
-            'sales.create',
-            'SALE',
+            'sales',
             newSaleId,
-            null, // oldData
-            null, // newData
             {
                 invoice_number: invoiceNumber,
                 total_amount: totalAmount.toNumber(),
@@ -257,8 +269,15 @@ export async function createSale({
 /**
  * Get a sale by ID
  */
-export function getSale(id: number): Sale | null {
-    return saleRepository.findSaleById(id);
+export function getSale(id: number, userId?: number): Sale | null {
+    const sale = saleRepository.findSaleById(id);
+    
+    // Log sale view for audit trail
+    if (sale && userId) {
+        auditService.logAction(userId, 'VIEW', 'sales', id, { invoice_number: sale.invoice_number });
+    }
+    
+    return sale;
 }
 
 /**
@@ -284,6 +303,14 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
         throw new Error('Forbidden: Missing required permission sales.create');
     }
 
+    if (amount <= 0) {
+        throw new Error('Payment amount must be positive');
+    }
+
+    if (!saleRepository.paymentMethodExists(paymentMethodId)) {
+        throw new Error(`Invalid payment method: ${paymentMethodId}`);
+    }
+
     return transaction(() => {
         const sale = saleRepository.findSaleById(saleId);
         if (!sale) {
@@ -298,6 +325,10 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
             throw new Error('Cannot add payment to refunded sale');
         }
 
+        if (sale.status === 'paid') {
+            throw new Error('Sale is already fully paid');
+        }
+
         // Insert transaction
         saleRepository.insertTransaction({
             sale_id: saleId,
@@ -309,6 +340,11 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
 
         // Update paid amount
         const newPaidAmount = new Decimal(sale.paid_amount).add(amount);
+        
+        if (newPaidAmount.gt(sale.total_amount)) {
+            throw new Error(`Payment amount exceeds remaining balance. Remaining: ${new Decimal(sale.total_amount).sub(sale.paid_amount).toFixed(2)}`);
+        }
+        
         saleRepository.updateSalePaidAmount(saleId, newPaidAmount.toNumber());
 
         // Update status if fully paid
@@ -318,15 +354,21 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
             newStatus = 'paid';
         }
 
+        // Get payment method name for logging
+        const paymentMethods = saleRepository.findPaymentMethods();
+        const paymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId);
+
         // Log payment addition
-        (auditService as any).logAction(
+        auditService.logCreate(
             userId,
-            'ADD_PAYMENT',
-            'SALE',
-            saleId,
-            null,
-            null,
-            { amount, new_status: newStatus }
+            'transactions',
+            0,
+            { 
+                sale_id: saleId, 
+                amount, 
+                payment_method: paymentMethod?.name || 'Unknown',
+                new_status: newStatus 
+            }
         );
 
         return { newPaidAmount: newPaidAmount.toNumber(), status: newStatus };
@@ -378,13 +420,12 @@ export function cancelSale(saleId: number, userId: number, token?: string): { su
         saleRepository.updateSaleStatus(saleId, 'cancelled');
 
         // Log sale cancellation
-        (auditService as any).logAction(
+        auditService.logUpdate(
             userId,
-            'sales.refund',
-            'SALE',
+            'sales',
             saleId,
-            null,
-            null,
+            { status: sale.status },
+            { status: 'cancelled' },
             { reason: 'Cancellation' }
         );
 
@@ -423,13 +464,12 @@ export function fulfillSale(saleId: number, userId: number, token?: string): { s
         saleRepository.updateFulfillmentStatus(saleId, 'fulfilled');
 
         // Log fulfillment
-        (auditService as any).logAction(
+        auditService.logUpdate(
             userId,
-            'sales.create',
-            'SALE',
+            'sales',
             saleId,
-            null,
-            null,
+            { fulfillment_status: sale.fulfillment_status },
+            { fulfillment_status: 'fulfilled' },
             null
         );
 

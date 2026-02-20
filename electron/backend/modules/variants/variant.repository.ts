@@ -11,7 +11,8 @@ import { ValidationError } from '../../shared/errors/index.js';
 export interface VariantQueryOptions {
   searchTerm?: string;
   categoryId?: number;
-  stockStatus?: 'low' | 'out' | 'ok' | string;
+  stockStatus?: 'low' | 'out' | 'ok' | string | string[];
+  status?: 'active' | 'inactive' | 'discontinued' | string | string[];
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC' | string;
   currentPage?: number;
@@ -43,7 +44,7 @@ export function insertVariant(productId: number, variant: VariantInput) {
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  
+
   return stmt.run(
     productId,
     variant.name,
@@ -137,7 +138,7 @@ export function updateVariantById(variant: VariantInput & { id: number }) {
     SET name = ?, sku = ?, mrp = ?, cost_price = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND deleted_at IS NULL
   `);
-  
+
   return stmt.run(
     variant.name,
     variant.sku || null,
@@ -162,7 +163,7 @@ export function softDeleteVariant(id: number) {
 /**
  * Find variants with filtering, pagination, and sorting
  */
-export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
+export async function findVariants({ searchTerm, categoryId, stockStatus, status, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
   const db = getDB();
   const filterClauses: string[] = [];
   const filterParams: any[] = [];
@@ -180,15 +181,35 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     filterParams.push(categoryId);
   }
 
+  if (status) {
+    const statusArray = Array.isArray(status) ? status : [status];
+    if (statusArray.length > 0) {
+      const placeholders = statusArray.map(() => '?').join(',');
+      filterClauses.push(`v.status IN (${placeholders})`);
+      filterParams.push(...statusArray);
+    }
+  }
+
   const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
 
   let stockFilterClause = '';
-  if (stockStatus === 'low') {
-    stockFilterClause = 'WHERE current_stock <= stock_alert_cap AND current_stock > 0';
-  } else if (stockStatus === 'out') {
-    stockFilterClause = 'WHERE current_stock = 0';
-  } else if (stockStatus === 'ok') {
-    stockFilterClause = 'WHERE current_stock > stock_alert_cap';
+  if (stockStatus) {
+    const statusArray = Array.isArray(stockStatus) ? stockStatus : [stockStatus];
+    const conditions: string[] = [];
+
+    statusArray.forEach(s => {
+      if (s === 'low') {
+        conditions.push('current_stock <= stock_alert_cap AND current_stock > 0');
+      } else if (s === 'out') {
+        conditions.push('current_stock = 0');
+      } else if (s === 'ok') {
+        conditions.push('current_stock > stock_alert_cap');
+      }
+    });
+
+    if (conditions.length > 0) {
+      stockFilterClause = `WHERE ${conditions.map(c => `(${c})`).join(' OR ')}`;
+    }
   }
 
   const sortMap: Record<string, string> = {
@@ -199,7 +220,9 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     'price': 'price',
     'v.cost_price': 'cost_price',
     'v.created_at': 'created_at',
-    'stock': 'stock'
+    'stock': 'stock',
+    'c.name': 'category_name',
+    'v.stock_alert_cap': 'stock_alert_cap'
   };
 
   const safeSortBy = sortMap[sortBy] || 'product_name';

@@ -35,7 +35,7 @@ export async function addVariantController(req: Request, res: Response) {
             stock: stock ? parseInt(String(stock), 10) : undefined,
             userId: req.user.id
         });
-        
+
         if (newVariant.changes === 0) {
             return res.status(400).json({ error: 'Failed to add variant.' });
         }
@@ -76,7 +76,7 @@ export async function updateVariantController(req: Request, res: Response) {
             stock: stock !== undefined ? parseInt(String(stock), 10) : undefined,
             userId: req.user.id
         });
-        
+
         if (changes.changes === 0) {
             return res.status(404).json({ error: 'Variant not found or no changes made.' });
         }
@@ -122,6 +122,7 @@ export async function getVariantsController(req: Request, res: Response) {
             searchTerm,
             categoryId,
             stockStatus,
+            status,
             sortBy,
             sortOrder,
             page,
@@ -131,7 +132,8 @@ export async function getVariantsController(req: Request, res: Response) {
         const result = await variantService.getVariants({
             searchTerm: getQueryString(searchTerm) || '',
             categoryId: getQueryNumber(categoryId),
-            stockStatus: getQueryString(stockStatus),
+            stockStatus: stockStatus as string | string[],
+            status: status as string | string[],
             sortBy: getQueryString(sortBy) || 'p.name',
             sortOrder: (getQueryString(sortOrder) as 'ASC' | 'DESC') || 'ASC',
             currentPage: getQueryNumber(page, 1) || 1,

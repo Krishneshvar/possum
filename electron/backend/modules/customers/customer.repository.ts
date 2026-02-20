@@ -5,11 +5,20 @@
 import { getDB } from '../../shared/db/index.js';
 import { Customer } from '../../../../types/index.js';
 
+export interface CustomerWriteFields {
+  name?: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+}
+
 export interface CustomerFilter {
   searchTerm?: string;
+  page?: number;
+  limit?: number;
   currentPage?: number;
   itemsPerPage?: number;
-  sortBy?: string;
+  sortBy?: 'name' | 'email' | 'created_at';
   sortOrder?: 'ASC' | 'DESC';
 }
 
@@ -17,6 +26,35 @@ export interface PaginatedCustomers {
   customers: Customer[];
   totalCount: number;
   totalPages: number;
+  page: number;
+  limit: number;
+}
+
+interface CustomerRow {
+  id: number;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  loyalty_points: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+function toCustomer(row: CustomerRow): Customer {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone ?? undefined,
+    email: row.email ?? undefined,
+    address: row.address ?? undefined,
+    loyalty_points: row.loyalty_points ?? 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    deleted_at: row.deleted_at,
+    is_tax_exempt: 0,
+  };
 }
 
 /**
@@ -24,28 +62,40 @@ export interface PaginatedCustomers {
  * @param {Object} params - Filter and pagination params
  * @returns {Object} Customers list with pagination info
  */
-export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10, sortBy = 'name', sortOrder = 'ASC' }: CustomerFilter): PaginatedCustomers {
+export function findCustomers({
+  searchTerm,
+  page,
+  limit,
+  currentPage = 1,
+  itemsPerPage = 10,
+  sortBy = 'name',
+  sortOrder = 'ASC'
+}: CustomerFilter): PaginatedCustomers {
   const db = getDB();
   const filterClauses: string[] = [];
-  const filterParams: any[] = [];
+  const filterParams: Array<string | number> = [];
+  const safeSearchTerm = searchTerm?.trim();
+  const safePageInput = page ?? currentPage;
+  const safeLimitInput = limit ?? itemsPerPage;
+  const safePage = Math.max(1, Number.isFinite(safePageInput) ? safePageInput : 1);
+  const safeLimit = Math.max(1, Math.min(1000, Number.isFinite(safeLimitInput) ? safeLimitInput : 10));
 
   filterClauses.push(`deleted_at IS NULL`);
 
-  if (searchTerm) {
+  if (safeSearchTerm) {
     // Search by name, id (if numeric), phone, or email
-    // Use proper typing or separate logic
-    const isNumeric = /^\d+$/.test(searchTerm);
+    const isNumeric = /^\d+$/.test(safeSearchTerm);
     if (isNumeric) {
       filterClauses.push(`(name LIKE ? OR id = ? OR phone LIKE ?)`);
-      filterParams.push(`%${searchTerm}%`, parseInt(searchTerm), `%${searchTerm}%`);
+      filterParams.push(`%${safeSearchTerm}%`, Number.parseInt(safeSearchTerm, 10), `%${safeSearchTerm}%`);
     } else {
       filterClauses.push(`(name LIKE ? OR email LIKE ? OR phone LIKE ?)`);
-      filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+      filterParams.push(`%${safeSearchTerm}%`, `%${safeSearchTerm}%`, `%${safeSearchTerm}%`);
     }
   }
 
   const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
-  const allowedSortFields = ['name', 'email'];
+  const allowedSortFields: Array<NonNullable<CustomerFilter['sortBy']>> = ['name', 'email', 'created_at'];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'name';
   const order = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
@@ -64,24 +114,29 @@ export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10, 
       phone,
       email,
       address,
-      created_at
+      loyalty_points,
+      created_at,
+      updated_at,
+      deleted_at
     FROM customers
     ${whereClause}
     ORDER BY ${sortField} ${order}
     LIMIT ? OFFSET ?
   `;
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedParams = [...filterParams, itemsPerPage, startIndex];
+  const startIndex = (safePage - 1) * safeLimit;
+  const paginatedParams = [...filterParams, safeLimit, startIndex];
 
-  const paginatedCustomers = db.prepare(paginatedQuery).all(...paginatedParams) as Customer[];
+  const paginatedCustomers = (db.prepare(paginatedQuery).all(...paginatedParams) as CustomerRow[]).map(toCustomer);
 
-  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const totalPages = totalCount > 0 ? Math.ceil(totalCount / safeLimit) : 1;
 
   return {
     customers: paginatedCustomers,
     totalCount: totalCount,
-    totalPages
+    totalPages,
+    page: safePage,
+    limit: safeLimit,
   };
 }
 
@@ -92,13 +147,20 @@ export function findCustomers({ searchTerm, currentPage = 1, itemsPerPage = 10, 
  */
 export function findCustomerById(id: number): Customer | undefined {
   const db = getDB();
-  return db.prepare('SELECT * FROM customers WHERE id = ? AND deleted_at IS NULL').get(id) as Customer | undefined;
+  const row = db
+    .prepare(`
+      SELECT id, name, phone, email, address, loyalty_points, created_at, updated_at, deleted_at
+      FROM customers
+      WHERE id = ? AND deleted_at IS NULL
+    `)
+    .get(id) as CustomerRow | undefined;
+  return row ? toCustomer(row) : undefined;
 }
 
 /**
  * Insert a new customer
  */
-export function insertCustomer({ name, phone, email, address }: Partial<Customer>): Customer | undefined {
+export function insertCustomer({ name, phone, email, address }: CustomerWriteFields): Customer | undefined {
   const db = getDB();
   const stmt = db.prepare(`
         INSERT INTO customers (name, phone, email, address)
@@ -111,7 +173,7 @@ export function insertCustomer({ name, phone, email, address }: Partial<Customer
 /**
  * Update a customer
  */
-export function updateCustomerById(id: number, { name, phone, email, address }: Partial<Customer>): Customer | undefined {
+export function updateCustomerById(id: number, { name, phone, email, address }: CustomerWriteFields): Customer | undefined {
   const db = getDB();
   const updates: string[] = [];
   const params: any[] = [];
@@ -135,7 +197,7 @@ export function updateCustomerById(id: number, { name, phone, email, address }: 
 
   if (updates.length > 0) {
     params.push(id); // push id for WHERE clause
-    const stmt = db.prepare(`UPDATE customers SET ${updates.join(', ')} WHERE id = ?`);
+    const stmt = db.prepare(`UPDATE customers SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`);
     stmt.run(...params);
   }
   return findCustomerById(id);
@@ -146,7 +208,7 @@ export function updateCustomerById(id: number, { name, phone, email, address }: 
  */
 export function softDeleteCustomer(id: number): boolean {
   const db = getDB();
-  const stmt = db.prepare('UPDATE customers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
+  const stmt = db.prepare('UPDATE customers SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL');
   const result = stmt.run(id);
   return result.changes > 0;
 }

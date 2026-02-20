@@ -1,29 +1,42 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
 
-export interface User {
+export interface UserRecord {
     id: number;
+    name: string;
     username: string;
-    email: string;
-    role: string;
-    is_active: boolean;
+    is_active: number;
     created_at: string;
+    updated_at?: string;
 }
 
 export interface GetUsersResponse {
-    users: User[];
+    users: UserRecord[];
     totalCount: number;
-    currentPage: number;
     totalPages: number;
 }
 
 export interface GetUsersParams {
-    page?: number;
-    limit?: number;
-    search?: string;
-    role?: string;
+    currentPage?: number;
+    itemsPerPage?: number;
+    searchTerm?: string;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface CreateUserPayload {
+    name: string;
+    username: string;
+    password: string;
+    is_active?: boolean;
+}
+
+export interface UpdateUserPayload {
+    id: number;
+    name?: string;
+    username?: string;
+    password?: string;
+    is_active?: boolean;
 }
 
 export const usersApi = createApi({
@@ -34,7 +47,13 @@ export const usersApi = createApi({
         getUsers: builder.query<GetUsersResponse, GetUsersParams>({
             query: (params) => ({
                 url: '/users',
-                params,
+                params: {
+                    searchTerm: params.searchTerm,
+                    currentPage: params.currentPage,
+                    itemsPerPage: params.itemsPerPage,
+                    sortBy: params.sortBy,
+                    sortOrder: params.sortOrder,
+                },
             }),
             providesTags: (result) =>
                 result
@@ -44,11 +63,11 @@ export const usersApi = createApi({
                     ]
                     : [{ type: 'User', id: 'LIST' }],
         }),
-        getUserById: builder.query<User, number>({
+        getUserById: builder.query<UserRecord, number>({
             query: (id) => `/users/${id}`,
             providesTags: (result, error, id) => [{ type: 'User', id }],
         }),
-        createUser: builder.mutation<User, Partial<User>>({
+        createUser: builder.mutation<UserRecord, CreateUserPayload>({
             query: (body) => ({
                 url: '/users',
                 method: 'POST',
@@ -56,7 +75,7 @@ export const usersApi = createApi({
             }),
             invalidatesTags: [{ type: 'User', id: 'LIST' }],
         }),
-        updateUser: builder.mutation<User, Partial<User> & { id: number }>({
+        updateUser: builder.mutation<UserRecord, UpdateUserPayload>({
             query: ({ id, ...body }) => ({
                 url: `/users/${id}`,
                 method: 'PUT',

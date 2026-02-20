@@ -11,6 +11,7 @@ interface AuthenticatedRequest extends Request {
         id: number;
     };
     token?: string;
+    permissions?: string[];
 }
 
 /**
@@ -23,7 +24,7 @@ export async function createSale(req: AuthenticatedRequest, res: Response) {
 
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
-        const token = (req as any).token; // From middleware
+        const token = req.token;
 
         const result = await SaleService.createSale({
             items,
@@ -65,6 +66,14 @@ export async function getSales(req: Request, res: Response) {
             sortOrder
         } = req.query;
 
+        // Validate date formats if provided
+        if (startDate && typeof startDate === 'string' && !/^\d{4}-\d{2}-\d{2}/.test(startDate)) {
+            return res.status(400).json({ error: 'Invalid startDate format. Expected YYYY-MM-DD', code: 'INVALID_DATE' });
+        }
+        if (endDate && typeof endDate === 'string' && !/^\d{4}-\d{2}-\d{2}/.test(endDate)) {
+            return res.status(400).json({ error: 'Invalid endDate format. Expected YYYY-MM-DD', code: 'INVALID_DATE' });
+        }
+
         // Convert page and limit to numbers and map to what repository expects
         const params = {
             status: getQueryArray(status),
@@ -75,27 +84,40 @@ export async function getSales(req: Request, res: Response) {
             currentPage: getQueryNumber(page, 1) || 1,
             itemsPerPage: getQueryNumber(limit, 10) || 10,
             sortBy: getQueryString(sortBy),
-            sortOrder: getQueryString(sortOrder) as 'ASC' | 'DESC' | undefined,
+            sortOrder: (getQueryString(sortOrder)?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC') as 'ASC' | 'DESC',
             fulfillmentStatus: getQueryArray(fulfillmentStatus)
         };
 
         const result = await SaleService.getSales(params);
-        res.json(result);
+        
+        // Transform to match frontend expectations
+        res.json({
+            sales: result.sales,
+            totalRecords: result.totalCount,
+            totalPages: result.totalPages,
+            currentPage: result.currentPage
+        });
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message, code: 'INTERNAL_ERROR' });
     }
 }
 
 /**
  * GET /api/sales/:id
  */
-export async function getSale(req: Request, res: Response) {
+export async function getSale(req: AuthenticatedRequest, res: Response) {
     try {
-        const result = await SaleService.getSale(parseInt(req.params.id as string, 10));
-        if (!result) return res.status(404).json({ error: 'Sale not found' });
+        const saleId = parseInt(req.params.id as string, 10);
+        if (isNaN(saleId)) {
+            return res.status(400).json({ error: 'Invalid sale ID', code: 'INVALID_ID' });
+        }
+        
+        const userId = req.user?.id;
+        const result = await SaleService.getSale(saleId, userId);
+        if (!result) return res.status(404).json({ error: 'Sale not found', code: 'NOT_FOUND' });
         res.json(result);
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message, code: 'INTERNAL_ERROR' });
     }
 }
 
@@ -105,19 +127,24 @@ export async function getSale(req: Request, res: Response) {
 export async function updateSale(req: AuthenticatedRequest, res: Response) {
     try {
         const { status } = req.body;
-        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session', code: 'UNAUTHORIZED' });
         const userId = req.user.id;
-        const token = (req as any).token;
+        const token = req.token;
         const saleId = parseInt(req.params.id as string, 10);
+
+        if (isNaN(saleId)) {
+            return res.status(400).json({ error: 'Invalid sale ID', code: 'INVALID_ID' });
+        }
 
         if (status === 'cancelled') {
             const result = await SaleService.cancelSale(saleId, userId, token);
             return res.json(result);
         }
 
-        res.status(400).json({ error: 'Update not supported except cancellation' });
+        res.status(400).json({ error: 'Update not supported except cancellation', code: 'INVALID_OPERATION' });
     } catch (error: any) {
-        res.status(400).json({ error: error.message });
+        const statusCode = error.message.includes('not found') ? 404 : 400;
+        res.status(statusCode).json({ error: error.message, code: error.code || 'UPDATE_FAILED' });
     }
 }
 
@@ -125,7 +152,7 @@ export async function deleteSale(req: AuthenticatedRequest, res: Response) {
     try {
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
-        const token = (req as any).token;
+        const token = req.token;
         const saleId = parseInt(req.params.id as string, 10);
 
         const result = await SaleService.cancelSale(saleId, userId, token);
@@ -149,7 +176,7 @@ export async function fulfillSale(req: AuthenticatedRequest, res: Response) {
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
         const saleId = parseInt(req.params.id as string, 10);
-        const token = (req as any).token;
+        const token = req.token;
         const result = await SaleService.fulfillSale(saleId, userId, token);
         res.json(result);
     } catch (error: any) {
@@ -161,9 +188,14 @@ export async function addPayment(req: AuthenticatedRequest, res: Response) {
     try {
         const saleId = parseInt(req.params.id as string, 10);
         const { amount, paymentMethodId } = req.body;
-        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        
+        if (isNaN(saleId)) {
+            return res.status(400).json({ error: 'Invalid sale ID', code: 'INVALID_ID' });
+        }
+        
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session', code: 'UNAUTHORIZED' });
         const userId = req.user.id;
-        const token = (req as any).token;
+        const token = req.token;
 
         const result = await SaleService.addPayment({
             saleId,
@@ -174,6 +206,7 @@ export async function addPayment(req: AuthenticatedRequest, res: Response) {
         });
         res.json(result);
     } catch (error: any) {
-        res.status(400).json({ error: error.message });
+        const statusCode = error.message.includes('not found') ? 404 : 400;
+        res.status(statusCode).json({ error: error.message, code: error.code || 'PAYMENT_FAILED' });
     }
 }

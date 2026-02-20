@@ -1,10 +1,14 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
+import { Sale } from '../../../types/index';
 
 export const salesApi = createApi({
     reducerPath: 'salesApi',
     baseQuery,
     tagTypes: ['Sale', 'PaymentMethod'],
+    refetchOnMountOrArgChange: 30,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
     endpoints: (builder) => ({
         // Create a new sale
         createSale: builder.mutation({
@@ -32,7 +36,7 @@ export const salesApi = createApi({
         }),
 
         // Get single sale details
-        getSale: builder.query({
+        getSale: builder.query<Sale, string | undefined>({
             query: (id) => `/sales/${id}`,
             providesTags: (result, error, id) => [{ type: 'Sale', id }],
         }),
@@ -53,8 +57,9 @@ export const salesApi = createApi({
         // Cancel a sale
         cancelSale: builder.mutation({
             query: (saleId) => ({
-                url: `/sales/${saleId}/cancel`,
+                url: `/sales/${saleId}`,
                 method: 'PUT',
+                body: { status: 'cancelled' },
             }),
             invalidatesTags: (result, error, saleId) => [
                 { type: 'Sale', id: saleId },
