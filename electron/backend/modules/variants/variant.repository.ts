@@ -102,6 +102,24 @@ export async function findVariantById(id: number): Promise<Variant | null> {
 }
 
 /**
+ * Find a single variant by ID synchronously (for validation)
+ * @param {number} id - Variant ID
+ * @returns {Variant|null} Variant without stock or null
+ */
+export function findVariantByIdSync(id: number): Omit<Variant, 'stock'> | null {
+  const db = getDB();
+  const variant = db.prepare(`
+      SELECT
+        id, product_id, name, sku, mrp as price, cost_price,
+        stock_alert_cap, is_default, status, created_at, updated_at, deleted_at
+      FROM variants
+      WHERE id = ? AND deleted_at IS NULL
+  `).get(id) as Variant | undefined;
+
+  return variant || null;
+}
+
+/**
  * Update a variant (without stock - stock is derived)
  * @param {Object} variant - Variant data with id
  * @returns {Object} Update result

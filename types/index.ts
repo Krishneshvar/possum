@@ -31,7 +31,7 @@ export interface Product extends BaseEntity {
   description?: string;
   category_id?: number | null;
   tax_category_id?: number | null;
-  status: 'active' | 'archived' | 'draft' | string;
+  status: 'active' | 'inactive' | 'discontinued';
   image_path?: string | null;
   category_name?: string; // joined
   stock?: number; // derived
@@ -41,13 +41,14 @@ export interface Product extends BaseEntity {
 export interface Variant extends BaseEntity {
   product_id: number;
   name: string;
-  sku?: string;
-  price: number;
+  sku?: string | null;
+  price: number; // Maps to mrp in DB
+  mrp?: number; // Alias for price
   cost_price?: number;
   stock_alert_cap?: number;
   is_default: number; // 0 or 1
   barcode?: string;
-  status?: string; // Added
+  status?: 'active' | 'inactive' | 'discontinued';
   taxes?: string; // JSON string from DB or joined
   image_path?: string; // Joined from product?
   stock?: number; // Derived

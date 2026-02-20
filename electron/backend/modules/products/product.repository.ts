@@ -35,7 +35,7 @@ export function insertProduct({ name, description, category_id, tax_category_id,
     INSERT INTO products (name, description, category_id, tax_category_id, status, image_path)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
-    return stmt.run(name, description, category_id, tax_category_id, status ?? 'active', image_path);
+    return stmt.run(name, description, category_id || null, tax_category_id || null, status ?? 'active', image_path || null);
 }
 
 /**

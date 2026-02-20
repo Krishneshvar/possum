@@ -63,6 +63,8 @@ export async function getProductsController(req: Request, res: Response) {
  * Create a new product with variants
  */
 export async function createProductController(req: Request, res: Response) {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+    
     const { name, category_id, description, status, variants, taxIds } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -100,12 +102,11 @@ export async function createProductController(req: Request, res: Response) {
     }
 
     try {
-        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
 
         const newProduct = productService.createProductWithVariants({
             name,
-            category_id: category_id ? parseInt(category_id, 10) : 0, // Should handle null better
+            category_id: category_id ? parseInt(category_id, 10) : null,
             description: description || null,
             status: status || 'active',
             image_path,
@@ -117,7 +118,7 @@ export async function createProductController(req: Request, res: Response) {
     } catch (err: any) {
         console.error('Error creating product:', err);
         if (image_path) {
-            try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
+            try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { console.error('Failed to cleanup image:', e); }
         }
         res.status(500).json({ error: 'Failed to create product.', details: err.message });
     }
@@ -146,6 +147,8 @@ export async function getProductDetails(req: Request, res: Response) {
  * Update a product
  */
 export async function updateProductController(req: Request, res: Response) {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+    
     const { id } = req.params;
     const { name, category_id, description, status, variants, taxIds } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : undefined;
@@ -168,15 +171,21 @@ export async function updateProductController(req: Request, res: Response) {
         parsedVariants = undefined;
     }
 
-    const productData = { name, category_id, description, status, variants: parsedVariants, taxIds: parsedTaxIds };
+    const productData = { 
+        name, 
+        category_id: category_id !== undefined ? (category_id ? parseInt(category_id, 10) : null) : undefined, 
+        description, 
+        status, 
+        variants: parsedVariants, 
+        taxIds: parsedTaxIds 
+    };
 
     try {
-        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
         const changes = productService.updateProduct(parseInt(id as string, 10), productData, image_path, userId);
         if (changes.changes === 0) {
             if (image_path) {
-                try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
+                try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { console.error('Failed to cleanup image:', e); }
             }
             return res.status(404).json({ error: 'Product not found or no changes made.' });
         }
@@ -184,9 +193,10 @@ export async function updateProductController(req: Request, res: Response) {
     } catch (err: any) {
         console.error('Error updating product:', err);
         if (image_path) {
-            try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { /* ignore */ }
+            try { fs.unlinkSync(path.join(basePath, image_path)); } catch (e) { console.error('Failed to cleanup image:', e); }
         }
-        res.status(500).json({ error: 'Failed to update product.', details: err.message });
+        const statusCode = err.message === 'Product not found' ? 404 : 500;
+        res.status(statusCode).json({ error: 'Failed to update product.', details: err.message });
     }
 }
 
@@ -195,6 +205,8 @@ export async function updateProductController(req: Request, res: Response) {
  * Delete a product
  */
 export async function deleteProductController(req: Request, res: Response) {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+    
     const { id } = req.params;
     const productId = parseInt(id as string, 10);
     if (isNaN(productId)) {
@@ -202,15 +214,15 @@ export async function deleteProductController(req: Request, res: Response) {
     }
 
     try {
-        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         const userId = req.user.id;
         const changes = productService.deleteProduct(productId, userId);
         if (changes.changes === 0) {
             return res.status(404).json({ error: 'Product not found.' });
         }
         res.status(204).end();
-    } catch (err) {
+    } catch (err: any) {
         console.error('Error deleting product:', err);
-        res.status(500).json({ error: 'Failed to delete product.' });
+        const statusCode = err.message === 'Product not found' ? 404 : 500;
+        res.status(statusCode).json({ error: 'Failed to delete product.', details: err.message });
     }
 }

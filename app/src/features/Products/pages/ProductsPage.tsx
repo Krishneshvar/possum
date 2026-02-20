@@ -37,13 +37,22 @@ const productActions = {
 
 export default function ProductsPage() {
   const navigate = useNavigate();
-  const { data: productsData } = useGetProductsQuery({ page: 1, limit: 9999 });
-  const { data: categories } = useGetCategoriesQuery(undefined);
+  const { data: productsData, error: productsError, isLoading: productsLoading } = useGetProductsQuery({ page: 1, limit: 9999 });
+  const { data: categories, error: categoriesError } = useGetCategoriesQuery(undefined);
 
   const statsData = useMemo(() => {
-    const products = productsData?.products || [];
+    if (productsLoading || !productsData) {
+      return [
+        { title: 'Total Products', icon: Box, color: 'text-blue-500', todayValue: 0 },
+        { title: 'Active Products', icon: Layers, color: 'text-purple-500', todayValue: 0 },
+        { title: 'Categories', icon: Tags, color: 'text-green-500', todayValue: 0 },
+        { title: 'Low Stock', icon: AlertTriangle, color: 'text-orange-500', todayValue: 0 },
+      ];
+    }
+
+    const products = productsData.products || [];
     const activeProducts = products.filter(p => p.status === 'active').length;
-    const lowStock = products.filter(p => p.stock <= p.stock_alert_cap).length;
+    const lowStock = products.filter(p => (p.stock ?? 0) <= (p.stock_alert_cap ?? 10)).length;
 
     return [
       { title: 'Total Products', icon: Box, color: 'text-blue-500', todayValue: products.length },
@@ -51,7 +60,7 @@ export default function ProductsPage() {
       { title: 'Categories', icon: Tags, color: 'text-green-500', todayValue: categories?.length || 0 },
       { title: 'Low Stock', icon: AlertTriangle, color: 'text-orange-500', todayValue: lowStock },
     ];
-  }, [productsData, categories]);
+  }, [productsData, categories, productsLoading]);
 
   // Keyboard shortcut: Ctrl/Cmd + K to add new product
   useEffect(() => {
@@ -65,6 +74,14 @@ export default function ProductsPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
+
+  if (productsError || categoriesError) {
+    return (
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
+        <div className="text-red-500">Error loading products. Please try again later.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">

@@ -3,7 +3,7 @@
  * Contains business logic for product operations
  */
 import * as productRepository from './product.repository.js';
-import * as variantRepository from '../variants/variant.repository.js';
+import * as variantRepository from './variant.repository.js';
 import * as variantService from '../variants/variant.service.js';
 import * as inventoryService from '../inventory/inventory.service.js';
 import * as auditService from '../audit/audit.service.js';
@@ -37,9 +37,18 @@ interface CreateProductParams {
  * @returns {Object} The created product ID
  */
 export function createProductWithVariants({ name, description, category_id, status, image_path, variants, taxIds, userId }: CreateProductParams) {
+    if (!variants || variants.length === 0) {
+        throw new Error('At least one variant is required');
+    }
+
     const tx = transaction(() => {
         const productInfo = productRepository.insertProduct({
-            name, description, category_id, status, image_path
+            name, 
+            description, 
+            category_id: category_id || null, 
+            tax_category_id: (taxIds && taxIds.length > 0) ? taxIds[0] : null,
+            status, 
+            image_path
         });
 
         const newProductId = Number(productInfo.lastInsertRowid);
@@ -57,11 +66,6 @@ export function createProductWithVariants({ name, description, category_id, stat
                     userId: userId
                 });
             }
-        }
-
-        // Set product taxes if provided
-        if (taxIds && taxIds.length > 0) {
-            productRepository.setProductTaxes(newProductId, taxIds);
         }
 
         // Log product creation
@@ -123,23 +127,21 @@ export async function getProducts(params: ProductFilter) {
  */
 export function updateProduct(productId: number, productData: any, newImagePath: string | undefined, userId: number) {
     const tx = transaction(() => {
-        // Get old product data for audit log
+        // Verify product exists
         const oldProduct = productRepository.findProductById(productId);
+        if (!oldProduct) {
+            throw new Error('Product not found');
+        }
 
-        // If new image is provided, delete old one
+        // Handle image update
         if (newImagePath) {
-            if (oldProduct && oldProduct.image_path) {
-                const oldImagePath = path.join(basePath, oldProduct.image_path);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
-                }
-            }
             productData.image_path = newImagePath;
         }
 
         // Update product taxes if provided
         if (productData.taxIds !== undefined) {
-            productRepository.setProductTaxes(productId, productData.taxIds || []);
+            const taxCategoryId = (productData.taxIds && productData.taxIds.length > 0) ? productData.taxIds[0] : null;
+            productData.tax_category_id = taxCategoryId;
             delete productData.taxIds;
         }
 
@@ -147,17 +149,37 @@ export function updateProduct(productId: number, productData: any, newImagePath:
         if (productData.variants && Array.isArray(productData.variants)) {
             for (const variant of productData.variants) {
                 if (variant.id) {
-                    // Update existing variant (including stock adjustment in variantService)
-                    variantService.updateVariant(variant);
+                    // Verify variant belongs to this product
+                    const existingVariant = variantRepository.findVariantByIdSync(variant.id);
+                    if (!existingVariant) {
+                        throw new Error(`Variant ${variant.id} not found`);
+                    }
+                    if (existingVariant.product_id !== productId) {
+                        throw new Error(`Variant ${variant.id} does not belong to product ${productId}`);
+                    }
+                    // Update existing variant
+                    variantService.updateVariant({ ...variant, userId });
                 } else {
                     // Add new variant
-                    variantService.addVariant(productId, variant);
+                    variantService.addVariant(productId, { ...variant, userId });
                 }
             }
             delete productData.variants;
         }
 
         const result = productRepository.updateProductById(productId, productData);
+
+        // Delete old image after successful update
+        if (newImagePath && oldProduct.image_path) {
+            const oldImagePath = path.join(basePath, oldProduct.image_path);
+            if (fs.existsSync(oldImagePath)) {
+                try {
+                    fs.unlinkSync(oldImagePath);
+                } catch (err) {
+                    console.error('Failed to delete old image:', err);
+                }
+            }
+        }
 
         // Log product update
         if (result.changes > 0) {
@@ -177,22 +199,33 @@ export function updateProduct(productId: number, productData: any, newImagePath:
  * @returns {Object} Delete result
  */
 export function deleteProduct(id: number, userId: number) {
-    const product = productRepository.findProductImagePath(id);
-    const oldProduct = productRepository.findProductById(id);
-
-    if (product && product.image_path) {
-        const filePath = path.join(basePath, product.image_path);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+    const tx = transaction(() => {
+        const oldProduct = productRepository.findProductById(id);
+        if (!oldProduct) {
+            throw new Error('Product not found');
         }
-    }
 
-    const result = productRepository.softDeleteProduct(id);
+        const result = productRepository.softDeleteProduct(id);
 
-    // Log product deletion
-    if (result.changes > 0) {
-        auditService.logDelete(userId, 'products', id, oldProduct);
-    }
+        // Delete image after successful soft delete
+        if (result.changes > 0 && oldProduct.image_path) {
+            const filePath = path.join(basePath, oldProduct.image_path);
+            if (fs.existsSync(filePath)) {
+                try {
+                    fs.unlinkSync(filePath);
+                } catch (err) {
+                    console.error('Failed to delete product image:', err);
+                }
+            }
+        }
 
-    return result;
+        // Log product deletion
+        if (result.changes > 0) {
+            auditService.logDelete(userId, 'products', id, oldProduct);
+        }
+
+        return result;
+    });
+
+    return tx();
 }
