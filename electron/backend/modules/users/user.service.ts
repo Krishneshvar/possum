@@ -5,6 +5,7 @@ import * as UserRepository from './user.repository.js';
 import * as AuthService from '../auth/auth.service.js';
 import * as auditService from '../audit/audit.service.js';
 import { User, Role, Permission } from '../../../../types/index.js';
+import { hashPassword } from '../../shared/utils/password.js';
 
 interface CreateUserInput {
     username: string;
@@ -54,7 +55,7 @@ export async function createUser(data: CreateUserInput): Promise<User> {
     const existing = UserRepository.findUserByUsername(username);
     if (existing) throw new Error('Username already exists');
 
-    const password_hash = await AuthService.hashPassword(data.password);
+    const password_hash = await hashPassword(data.password);
     if (data.role_id !== undefined) {
         ensureRoleExists(data.role_id);
     }
@@ -100,7 +101,7 @@ export async function updateUser(id: number, data: UpdateUserInput): Promise<Use
     const { password, role_id, updatedBy, ...restData } = data;
     const updateData: Partial<User> = { ...restData };
     if (password) {
-        updateData.password_hash = await AuthService.hashPassword(password);
+        updateData.password_hash = await hashPassword(password);
     }
     if (role_id !== undefined) {
         ensureRoleExists(role_id);

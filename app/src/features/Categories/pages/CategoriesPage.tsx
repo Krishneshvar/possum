@@ -11,7 +11,7 @@ import CategoriesTableView from '../components/CategoriesTableView';
 import CategoriesTreeView from '../components/CategoriesTreeView';
 import AddOrEditCategoryModal from '../components/AddOrEditCategoryModal';
 import { useGetCategoriesQuery, Category } from '@/services/categoriesApi';
-import { flattenCategories } from '@/utils/categories.utils';
+import { flattenCategories, FlattenedCategory } from '@/utils/categories.utils';
 
 export default function CategoriesPage() {
   const [view, setView] = useState<'tree' | 'table'>('tree');
@@ -26,11 +26,11 @@ export default function CategoriesPage() {
     if (!searchTerm.trim()) return categories;
     
     const searchLower = searchTerm.toLowerCase();
-    const flatList = flattenCategories(categories);
+    const flatList: FlattenedCategory[] = flattenCategories(categories);
     const matchedIds = new Set(
       flatList
-        .filter(cat => cat.name.toLowerCase().includes(searchLower))
-        .map(cat => cat.id)
+        .filter((cat: FlattenedCategory) => cat.name.toLowerCase().includes(searchLower))
+        .map((cat: FlattenedCategory) => cat.id)
     );
 
     // Recursive filter that includes parents of matched items

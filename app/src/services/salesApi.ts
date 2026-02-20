@@ -7,8 +7,6 @@ export const salesApi = createApi({
     baseQuery,
     tagTypes: ['Sale', 'PaymentMethod'],
     refetchOnMountOrArgChange: 30,
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
     endpoints: (builder) => ({
         // Create a new sale
         createSale: builder.mutation({

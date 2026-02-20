@@ -27,6 +27,16 @@ import { BaseEntity } from '../../../../types/index.js';
 import { getDB } from '../../shared/db/index.js';
 
 /**
+ * Reusable stock calculation SQL fragment
+ * Stock = SUM(inventory_lots.quantity) + SUM(inventory_adjustments.quantity_change)
+ * Excludes 'confirm_receive' adjustments that are already counted in lots
+ */
+const STOCK_CALCULATION_SQL = `
+    COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+    + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
+`;
+
+/**
  * Get computed stock for a variant
  * Stock = SUM(inventory_lots.quantity) + SUM(inventory_adjustments.quantity_change)
  * @param {number} variantId - Variant ID
@@ -216,10 +226,7 @@ export function findLowStockVariants(): any[] {
                 p.id as product_id,
                 p.name as product_name,
                 p.image_path,
-                (
-                    COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
-                    + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
-                ) AS current_stock
+                (${STOCK_CALCULATION_SQL}) AS current_stock
             FROM variants v
             JOIN products p ON v.product_id = p.id
             WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
@@ -261,22 +268,19 @@ export function findExpiringLots(days: number = 30): any[] {
 export function getInventoryStats(): any {
     const db = getDB();
     return db.prepare(`
-        WITH VariantStock AS(
-        SELECT 
+        WITH VariantStock AS (
+            SELECT 
                 v.id,
-        v.stock_alert_cap,
-        (
-            COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
-        + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
-    ) AS current_stock
+                v.stock_alert_cap,
+                (${STOCK_CALCULATION_SQL}) AS current_stock
             FROM variants v
             JOIN products p ON v.product_id = p.id
             WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
         )
-    SELECT
-    COALESCE(SUM(current_stock), 0) as totalItemsInStock,
-        COUNT(CASE WHEN current_stock = 0 THEN 1 END) as productsWithNoStock,
-        COUNT(CASE WHEN current_stock <= stock_alert_cap THEN 1 END) as productsWithLowStock
+        SELECT
+            COALESCE(SUM(current_stock), 0) as totalItemsInStock,
+            COUNT(CASE WHEN current_stock = 0 THEN 1 END) as productsWithNoStock,
+            COUNT(CASE WHEN current_stock <= stock_alert_cap THEN 1 END) as productsWithLowStock
         FROM VariantStock
-        `).get();
+    `).get();
 }

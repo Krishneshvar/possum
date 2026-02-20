@@ -1,6 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface VariantsState {
+export interface VariantsState {
     searchTerm: string;
     currentPage: number;
     itemsPerPage: number;
@@ -28,20 +28,19 @@ const variantsSlice = createSlice({
     name: 'variants',
     initialState,
     reducers: {
-        setSearchTerm: (state, action) => {
+        setSearchTerm: (state, action: PayloadAction<string>) => {
             state.searchTerm = action.payload;
             state.currentPage = 1;
         },
-        setCurrentPage: (state, action) => {
+        setCurrentPage: (state, action: PayloadAction<number>) => {
             state.currentPage = action.payload;
         },
-        setSorting: (state, action) => {
+        setSorting: (state, action: PayloadAction<{ sortBy: string; sortOrder: string }>) => {
             state.sortBy = action.payload.sortBy;
             state.sortOrder = action.payload.sortOrder;
         },
-        setFilter: (state, action) => {
+        setFilter: (state, action: PayloadAction<{ key: keyof VariantsState['filters']; value: string[] }>) => {
             const { key, value } = action.payload;
-            // @ts-ignore
             state.filters[key] = value;
             state.currentPage = 1;
         },

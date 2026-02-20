@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import CurrencyText from "@/components/common/CurrencyText";
 import { Link } from "react-router-dom";
-import { Eye, Printer, Receipt } from "lucide-react";
+import { Eye, Receipt } from "lucide-react";
 import ActionsDropdown from "@/components/common/ActionsDropdown";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import DataTable from "@/components/common/DataTable";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getStatusBadgeVariant, getPaymentStatusBadgeVariant, getPaymentStatusLabel } from '../utils/saleStatus.utils';
 
 import { Sale } from '../../../../types/index.js';
 
@@ -23,17 +24,6 @@ interface SalesHistoryTableProps {
 }
 
 export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, totalPages, onPageChange, isLoading, searchTerm, onSearchChange }: SalesHistoryTableProps) {
-    const getStatusBadge = (status: string) => {
-        let variant: "default" | "secondary" | "destructive" | "outline" | "success" = "secondary";
-        switch (status) {
-            case 'completed': variant = 'success'; break;
-            case 'pending': variant = 'secondary'; break;
-            case 'cancelled': variant = 'destructive'; break;
-            case 'refunded': variant = 'outline'; break;
-            default: variant = 'secondary';
-        }
-        return <Badge variant={variant} className="capitalize">{status}</Badge>;
-    };
 
     const columns = [
         {
@@ -76,20 +66,20 @@ export default function SalesHistoryTable({ sales, currentPage, itemsPerPage, to
         {
             key: "payment_status",
             label: "Payment Status",
-            renderCell: (order: Sale) => {
-                const isPaid = order.paid_amount >= order.total_amount;
-                const isPartial = order.paid_amount > 0 && order.paid_amount < order.total_amount;
-                return (
-                    <Badge variant={isPaid ? "success" : isPartial ? "secondary" : "destructive"} className="text-xs">
-                        {isPaid ? "Paid" : isPartial ? "Partial" : "Unpaid"}
-                    </Badge>
-                );
-            },
+            renderCell: (order: Sale) => (
+                <Badge variant={getPaymentStatusBadgeVariant(order.paid_amount, order.total_amount)} className="text-xs">
+                    {getPaymentStatusLabel(order.paid_amount, order.total_amount)}
+                </Badge>
+            ),
         },
         {
             key: "status",
             label: "Status",
-            renderCell: (order: Sale) => getStatusBadge(order.status),
+            renderCell: (order: Sale) => (
+                <Badge variant={getStatusBadgeVariant(order.status)} className="capitalize">
+                    {order.status}
+                </Badge>
+            ),
         },
         {
             key: "actions",

@@ -309,24 +309,16 @@ export function insertTransaction(transactionData: Partial<Transaction>): { last
 }
 
 /**
- * Generate next invoice number
+ * Get last sale for invoice number generation
  */
-export function generateInvoiceNumber(): string {
+export function getLastSale(): { invoice_number: string } | undefined {
     const db = getDB();
-    const result = db.prepare(`
+    return db.prepare(`
         SELECT invoice_number 
         FROM sales 
         ORDER BY id DESC 
         LIMIT 1
     `).get() as { invoice_number: string } | undefined;
-
-    if (!result) {
-        return 'INV-001';
-    }
-
-    const lastNum = parseInt(result.invoice_number.replace('INV-', ''), 10);
-    const nextNum = lastNum + 1;
-    return `INV-${String(nextNum).padStart(3, '0')}`;
 }
 
 /**

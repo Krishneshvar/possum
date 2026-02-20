@@ -4,18 +4,19 @@
  */
 import { Decimal } from 'decimal.js';
 import * as saleRepository from './sale.repository.js';
-import * as inventoryRepository from '../inventory/inventory.repository.js';
 import * as inventoryService from '../inventory/inventory.service.js';
-import * as productFlowRepository from '../productFlow/productFlow.repository.js';
-import * as productRepository from '../products/product.repository.js';
 import * as auditService from '../audit/audit.service.js';
-import * as customerRepository from '../customers/customer.repository.js';
 import { taxEngine } from '../taxes/tax.engine.js';
-import { findVariantById } from '../variants/variant.repository.js';
 import { transaction } from '../../shared/db/index.js';
-import { getComputedStock, getComputedStockBatch } from '../../shared/utils/inventoryHelpers.js';
-import * as AuthService from '../auth/auth.service.js';
 import { Invoice, InvoiceItem, Variant, Customer, Sale, SaleItem, INVENTORY_REASONS } from '../../../../types/index.js';
+import { 
+    fetchVariantsBatch, 
+    fetchProductById, 
+    fetchCustomerById,
+    validatePaymentMethod,
+    getVariantStock
+} from './sale.dependencies.js';
+import { generateInvoiceNumber } from './sale.utils.js';
 
 interface CreateSaleParams {
     items: { variantId: number; quantity: number; discount?: number; pricePerUnit?: number }[];
@@ -43,17 +44,6 @@ export async function createSale({
     fulfillment_status = 'pending',
     token
 }: CreateSaleParams): Promise<Sale> {
-    if (!token) {
-        throw new Error('Unauthorized: Service requires token for permission check');
-    }
-
-    const session = AuthService.getSession(token);
-    if (!session) throw new Error('Unauthorized: Invalid session');
-
-    const userPermissions = session.permissions || [];
-    if (!userPermissions.includes('sales.create')) {
-        throw new Error('Forbidden: Missing required permission sales.create');
-    }
 
     if (discount < 0) {
         throw new Error('Discount cannot be negative');
@@ -64,21 +54,14 @@ export async function createSale({
             if (payment.amount <= 0) {
                 throw new Error('Payment amount must be positive');
             }
-            if (!saleRepository.paymentMethodExists(payment.paymentMethodId)) {
+            if (!validatePaymentMethod(payment.paymentMethodId)) {
                 throw new Error(`Invalid payment method: ${payment.paymentMethodId}`);
             }
         }
     }
 
-    // Pre-fetch variant data asynchronously (Parallel & Non-blocking)
     const variantIds = items.map(item => item.variantId);
-    const variantPromises = variantIds.map(id => findVariantById(id));
-    const variantsList = await Promise.all(variantPromises);
-
-    const preFetchedVariantMap = new Map<number, Variant>();
-    variantsList.forEach(v => {
-        if (v) preFetchedVariantMap.set(v.id!, v);
-    });
+    const preFetchedVariantMap = await fetchVariantsBatch(variantIds);
 
     const saleId = transaction(() => {
         // LOCKING & VALIDATION: Move stock check INSIDE transaction to prevent race conditions.
@@ -86,8 +69,7 @@ export async function createSale({
             const variant = preFetchedVariantMap.get(item.variantId);
             if (!variant) throw new Error(`Variant not found: ${item.variantId}`);
 
-            // Fetch FRESH stock inside transaction
-            const currentStock = inventoryRepository.getStockByVariantId(item.variantId);
+            const currentStock = getVariantStock(item.variantId);
             if (currentStock < item.quantity) {
                 const error = new Error(`Insufficient stock for ${variant.name}. Available: ${currentStock}, Requested: ${item.quantity}`);
                 (error as any).code = 'INSUFFICIENT_STOCK';
@@ -120,7 +102,7 @@ export async function createSale({
         for (let i = 0; i < tempItems.length; i++) {
             const item = tempItems[i];
             const variant = preFetchedVariantMap.get(item.variantId)!;
-            const product = productRepository.findProductById(variant.product_id);
+            const product = fetchProductById(variant.product_id);
 
             let itemGlobalDiscount = new Decimal(0);
             if (grossTotal.gt(0) && globalDiscountToDistribute.gt(0)) {
@@ -151,8 +133,7 @@ export async function createSale({
 
         let customer: Customer | null = null;
         if (customerId) {
-            const found = customerRepository.findCustomerById(customerId);
-            if (found) customer = found;
+            customer = fetchCustomerById(customerId);
         }
 
         // 3. Calculate Taxes on Discounted Amounts
@@ -198,8 +179,7 @@ export async function createSale({
             status = 'partially_paid';
         }
 
-        // Generate invoice number
-        const invoiceNumber = saleRepository.generateInvoiceNumber();
+        const invoiceNumber = generateInvoiceNumber();
 
         // Insert sale
         const saleResult = saleRepository.insertSale({
@@ -291,23 +271,12 @@ export function getSales(params: saleRepository.SaleFilter): saleRepository.Pagi
  * Add payment to an existing sale
  */
 export function addPayment({ saleId, amount, paymentMethodId, userId, token }: { saleId: number; amount: number; paymentMethodId: number; userId: number; token?: string }): { newPaidAmount: number, status: string } {
-    if (!token) {
-        throw new Error('Unauthorized: Service requires token for permission check');
-    }
-
-    const session = AuthService.getSession(token);
-    if (!session) throw new Error('Unauthorized: Invalid session');
-
-    const userPermissions = session.permissions || [];
-    if (!userPermissions.includes('sales.create')) {
-        throw new Error('Forbidden: Missing required permission sales.create');
-    }
 
     if (amount <= 0) {
         throw new Error('Payment amount must be positive');
     }
 
-    if (!saleRepository.paymentMethodExists(paymentMethodId)) {
+    if (!validatePaymentMethod(paymentMethodId)) {
         throw new Error(`Invalid payment method: ${paymentMethodId}`);
     }
 
@@ -379,14 +348,6 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
  * Cancel a sale
  */
 export function cancelSale(saleId: number, userId: number, token?: string): { success: boolean, message: string } {
-    if (!token) {
-        throw new Error('Unauthorized: Service requires token for permission check');
-    }
-
-    const session = AuthService.getSession(token);
-    if (!session || !(session.permissions || []).includes('sales.refund')) {
-        throw new Error('Forbidden: Missing required permission sales.refund');
-    }
 
     return transaction(() => {
         const sale = saleRepository.findSaleById(saleId);
@@ -437,14 +398,6 @@ export function cancelSale(saleId: number, userId: number, token?: string): { su
  * Fulfill a sale/order
  */
 export function fulfillSale(saleId: number, userId: number, token?: string): { success: boolean, message: string } {
-    if (!token) {
-        throw new Error('Unauthorized: Service requires token for permission check');
-    }
-
-    const session = AuthService.getSession(token);
-    if (!session || !(session.permissions || []).includes('sales.create')) {
-        throw new Error('Forbidden: Missing required permission sales.create');
-    }
 
     return transaction(() => {
         const sale = saleRepository.findSaleById(saleId);

@@ -3,7 +3,7 @@
  */
 import { Request, Response } from 'express';
 import * as AuthService from './auth.service.js';
-import * as AuditService from '../audit/audit.service.js';
+import { authEvents } from './auth.events.js';
 
 export async function login(req: Request, res: Response) {
     try {
@@ -17,22 +17,23 @@ export async function login(req: Request, res: Response) {
 
         const result = await AuthService.login(username, password);
 
-        // Log the login event
-        AuditService.logLogin(result.user.id!, {
+        authEvents.emit('auth', {
+            type: 'login',
+            userId: result.user.id,
             username: result.user.username,
-            timestamp: new Date().toISOString(),
-            ip: req.ip || req.socket.remoteAddress || 'unknown'
+            ip: req.ip || req.socket.remoteAddress || 'unknown',
+            timestamp: new Date().toISOString()
         });
 
         res.json(result);
     } catch (error: any) {
-        // Log failed login attempt
         const { username } = req.body;
         if (username) {
-            AuditService.logAction(null as any, 'login_failed', 'auth', null, null, null, {
+            authEvents.emit('auth', {
+                type: 'login_failed',
                 username,
-                timestamp: new Date().toISOString(),
-                ip: req.ip || req.socket.remoteAddress || 'unknown'
+                ip: req.ip || req.socket.remoteAddress || 'unknown',
+                timestamp: new Date().toISOString()
             });
         }
         res.status(401).json({ 
@@ -44,7 +45,6 @@ export async function login(req: Request, res: Response) {
 
 export async function me(req: Request, res: Response) {
     try {
-        // userId is attached to req by auth middleware
         const userId = req.user?.id;
         if (!userId) {
             return res.status(401).json({ 
@@ -65,7 +65,6 @@ export async function me(req: Request, res: Response) {
 
 export async function logout(req: Request, res: Response) {
     try {
-        // userId and token are attached to req by auth middleware
         const userId = req.user?.id;
         const token = req.token;
 
@@ -74,9 +73,11 @@ export async function logout(req: Request, res: Response) {
         }
 
         if (userId) {
-             AuditService.logLogout(userId, {
-                timestamp: new Date().toISOString(),
-                ip: req.ip || req.socket.remoteAddress || 'unknown'
+            authEvents.emit('auth', {
+                type: 'logout',
+                userId,
+                ip: req.ip || req.socket.remoteAddress || 'unknown',
+                timestamp: new Date().toISOString()
             });
         }
 

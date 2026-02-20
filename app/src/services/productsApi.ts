@@ -38,7 +38,7 @@ export const productsApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Product', 'Variant', 'Stock'],
+  tagTypes: ['Product', 'Variant'],
   endpoints: (builder) => ({
     getProducts: builder.query({
       query: (params) => {
@@ -180,30 +180,8 @@ export const productsApi = createApi({
           ? [
             ...result.variants.map(({ id }: { id: number }) => ({ type: 'Variant' as const, id })),
             { type: 'Variant', id: 'LIST' },
-            { type: 'Stock', id: 'LIST' },
           ]
-          : [{ type: 'Variant', id: 'LIST' }, { type: 'Stock', id: 'LIST' }],
-    }),
-    getVariantStats: builder.query({
-      query: () => '/variants/stats',
-      providesTags: ['Variant', 'Stock'],
-    }),
-    getInventoryStats: builder.query({
-      query: () => '/inventory/stats',
-      providesTags: ['Stock', 'Variant'],
-    }),
-    createAdjustment: builder.mutation({
-      query: (body) => ({
-        url: '/inventory/adjustments',
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: (result, error, { variantId }) => [
-        { type: 'Variant', id: variantId },
-        { type: 'Variant', id: 'LIST' },
-        'Variant',
-        'Stock',
-      ],
+          : [{ type: 'Variant', id: 'LIST' }],
     }),
   }),
 });
@@ -218,7 +196,4 @@ export const {
   useUpdateVariantMutation,
   useDeleteVariantMutation,
   useGetVariantsQuery,
-  useGetVariantStatsQuery,
-  useGetInventoryStatsQuery,
-  useCreateAdjustmentMutation,
 } = productsApi;

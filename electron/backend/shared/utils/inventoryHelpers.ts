@@ -3,6 +3,7 @@
  * Provides stock calculation and validation functions
  */
 import { getDB } from '../db/index.js';
+import * as inventoryRepository from '../../modules/inventory/inventory.repository.js';
 
 /**
  * Get computed stock for a variant
@@ -13,20 +14,8 @@ import { getDB } from '../db/index.js';
 export async function getComputedStock(variantId: number): Promise<number> {
     return new Promise((resolve) => {
         setImmediate(() => {
-            const db = getDB();
-            const stmt = db.prepare(`
-                SELECT 
-                    COALESCE(
-                        (SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = ?),
-                        0
-                    ) + COALESCE(
-                        (SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = ? AND reason != 'confirm_receive'),
-                        0
-                    ) AS stock
-            `);
-
-            const result = stmt.get(variantId, variantId) as { stock: number } | undefined;
-            resolve(result?.stock ?? 0);
+            const stock = inventoryRepository.getStockByVariantId(variantId);
+            resolve(stock);
         });
     });
 }
@@ -43,28 +32,9 @@ export async function getComputedStockBatch(variantIds: number[]): Promise<Recor
 
     return new Promise((resolve) => {
         setImmediate(() => {
-            const db = getDB();
-            const placeholders = variantIds.map(() => '?').join(',');
-
-            const stmt = db.prepare(`
-                SELECT 
-                    v.id as variant_id,
-                    COALESCE(
-                        (SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id),
-                        0
-                    ) + COALESCE(
-                        (SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND reason != 'confirm_receive'),
-                        0
-                    ) AS stock
-                FROM variants v
-                WHERE v.id IN (${placeholders})
-            `);
-
-            const results = stmt.all(...variantIds) as Array<{ variant_id: number; stock: number }>;
-
             const stockMap: Record<number, number> = {};
-            for (const row of results) {
-                stockMap[row.variant_id] = row.stock;
+            for (const variantId of variantIds) {
+                stockMap[variantId] = inventoryRepository.getStockByVariantId(variantId);
             }
             resolve(stockMap);
         });

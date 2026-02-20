@@ -1,12 +1,14 @@
-interface Category {
-  id: number;
-  name: string;
-  subcategories?: Category[];
-  [key: string]: any;
-  depth?: number;
+import type { Category } from '@shared/index.js';
+
+export interface FlattenedCategory extends Category {
+  depth: number;
 }
 
-export const flattenCategories = (categories: Category[], result: Category[] = [], depth = 0): Category[] => {
+export const flattenCategories = (
+  categories: Category[], 
+  result: FlattenedCategory[] = [], 
+  depth = 0
+): FlattenedCategory[] => {
   for (const category of categories) {
     result.push({ ...category, depth });
     if (category.subcategories && category.subcategories.length > 0) {

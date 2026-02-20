@@ -3,10 +3,62 @@
  * Contains business logic for inventory operations
  */
 import * as inventoryRepository from './inventory.repository.js';
-import * as productFlowRepository from '../productFlow/productFlow.repository.js';
-import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
 import { VALID_INVENTORY_REASONS, INVENTORY_REASONS } from '../../../../types/index.js';
+
+// Lazy-loaded cross-module dependencies to reduce coupling
+let productFlowService: any = null;
+let auditService: any = null;
+
+const getProductFlowService = async () => {
+    if (!productFlowService) {
+        productFlowService = await import('../productFlow/productFlow.service.js');
+    }
+    return productFlowService;
+};
+
+const getAuditService = async () => {
+    if (!auditService) {
+        auditService = await import('../audit/audit.service.js');
+    }
+    return auditService;
+};
+
+// Post-transaction event queue for cross-module operations
+type PostTransactionEvent = {
+    type: 'productFlow' | 'audit';
+    data: any;
+};
+
+const postTransactionQueue: PostTransactionEvent[] = [];
+
+function queueProductFlow(data: any) {
+    postTransactionQueue.push({ type: 'productFlow', data });
+}
+
+function queueAudit(data: any) {
+    postTransactionQueue.push({ type: 'audit', data });
+}
+
+async function processPostTransactionQueue() {
+    const events = [...postTransactionQueue];
+    postTransactionQueue.length = 0;
+
+    for (const event of events) {
+        try {
+            if (event.type === 'productFlow') {
+                const service = await getProductFlowService();
+                service.logProductFlow(event.data);
+            } else if (event.type === 'audit') {
+                const service = await getAuditService();
+                service.logCreate(event.data.userId, event.data.tableName, event.data.rowId, event.data.newData);
+            }
+        } catch (error) {
+            console.error(`Failed to process post-transaction event:`, error);
+            // Don't throw - cross-module logging failures shouldn't break inventory operations
+        }
+    }
+}
 
 /**
  * Get stock for a variant
@@ -59,42 +111,42 @@ export function adjustInventory({
     referenceId?: number | null;
     userId: number;
 }) {
-    // Valid reasons: 'sale', 'return', 'confirm_receive', 'spoilage', 'damage', 'theft', 'correction'
+    // Validate reason before transaction
     const validReasons = VALID_INVENTORY_REASONS as unknown as string[];
     if (!validReasons.includes(reason)) {
         throw new Error(`Invalid adjustment reason: ${reason}. Must be one of: ${validReasons.join(', ')}`);
     }
 
+    // Validate stock availability BEFORE transaction for negative adjustments
+    if (quantityChange < 0) {
+        const currentStock = inventoryRepository.getStockByVariantId(variantId);
+        if (currentStock + quantityChange < 0) {
+            const error = new Error(`Insufficient stock. Available: ${currentStock}, Requested adjustment: ${quantityChange}`);
+            (error as any).code = 'INSUFFICIENT_STOCK';
+            throw error;
+        }
+    }
+
     const tx = transaction(() => {
-        // Validate stock availability for negative adjustments INSIDE transaction
-        if (quantityChange < 0) {
-            const currentStock = inventoryRepository.getStockByVariantId(variantId);
-            if (currentStock + quantityChange < 0) {
-                const error = new Error(`Insufficient stock. Available: ${currentStock}, Requested adjustment: ${quantityChange}`);
-                (error as any).code = 'INSUFFICIENT_STOCK';
-                throw error;
-            }
+        // Handle FIFO deduction if no lotId is provided for negative adjustment
+        if (quantityChange < 0 && !lotId) {
+            deductStockInternal({
+                variantId,
+                quantity: Math.abs(quantityChange),
+                userId,
+                reason,
+                referenceType,
+                referenceId
+            });
 
-            // Feature: Automatically handle FIFO deduction if no lotId is provided for a negative adjustment
-            if (!lotId) {
-                deductStockInternal({
-                    variantId,
-                    quantity: Math.abs(quantityChange),
-                    userId,
-                    reason,
-                    referenceType,
-                    referenceId
-                });
-
-                const newStock = inventoryRepository.getStockByVariantId(variantId);
-                return {
-                    id: 0, // Multiple adjustments created
-                    variantId,
-                    quantityChange,
-                    reason,
-                    newStock
-                };
-            }
+            const newStock = inventoryRepository.getStockByVariantId(variantId);
+            return {
+                id: 0, // Multiple adjustments created
+                variantId,
+                quantityChange,
+                reason,
+                newStock
+            };
         }
 
         // Create inventory adjustment
@@ -108,29 +160,33 @@ export function adjustInventory({
             adjusted_by: userId
         });
 
-        // Log to product flow
+        const adjustmentId = Number(adjustmentResult.lastInsertRowid);
+        const newStock = inventoryRepository.getStockByVariantId(variantId);
+
+        // Queue cross-module operations for post-transaction execution
         const eventType = reason === INVENTORY_REASONS.SALE ? 'sale'
             : reason === INVENTORY_REASONS.RETURN ? 'return'
                 : reason === INVENTORY_REASONS.CONFIRM_RECEIVE ? 'adjustment'
                     : 'adjustment';
 
-        productFlowRepository.insertProductFlow({
-            variant_id: variantId,
-            event_type: eventType,
+        queueProductFlow({
+            variantId,
+            eventType,
             quantity: quantityChange,
-            reference_type: referenceType || 'adjustment',
-            reference_id: referenceId || Number(adjustmentResult.lastInsertRowid)
+            referenceType: referenceType || 'adjustment',
+            referenceId: referenceId || adjustmentId
         });
 
-        const adjustmentId = Number(adjustmentResult.lastInsertRowid);
-        const newStock = inventoryRepository.getStockByVariantId(variantId);
-
-        // Log inventory adjustment
-        auditService.logCreate(userId, 'inventory_adjustments', adjustmentId, {
-            variant_id: variantId,
-            quantity_change: quantityChange,
-            reason,
-            new_stock: newStock
+        queueAudit({
+            userId,
+            tableName: 'inventory_adjustments',
+            rowId: adjustmentId,
+            newData: {
+                variant_id: variantId,
+                quantity_change: quantityChange,
+                reason,
+                new_stock: newStock
+            }
         });
 
         return {
@@ -142,7 +198,9 @@ export function adjustInventory({
         };
     });
 
-    return tx.immediate();
+    const result = tx.immediate();
+    processPostTransactionQueue(); // Fire and forget
+    return result;
 }
 
 /**
@@ -212,24 +270,28 @@ export function receiveInventory({
             adjusted_by: userId
         });
 
-        // Log to product flow
-        productFlowRepository.insertProductFlow({
-            variant_id: variantId,
-            event_type: 'purchase',
-            quantity,
-            reference_type: 'purchase_order_item',
-            reference_id: purchaseOrderItemId
-        });
-
         const newStock = inventoryRepository.getStockByVariantId(variantId);
 
-        // Log inventory receipt
-        auditService.logCreate(userId, 'inventory_lots', lotId, {
-            variant_id: variantId,
+        // Queue cross-module operations
+        queueProductFlow({
+            variantId,
+            eventType: 'purchase',
             quantity,
-            unit_cost: unitCost,
-            batch_number: batchNumber,
-            new_stock: newStock
+            referenceType: 'purchase_order_item',
+            referenceId: purchaseOrderItemId
+        });
+
+        queueAudit({
+            userId,
+            tableName: 'inventory_lots',
+            rowId: lotId,
+            newData: {
+                variant_id: variantId,
+                quantity,
+                unit_cost: unitCost,
+                batch_number: batchNumber,
+                new_stock: newStock
+            }
         });
 
         return {
@@ -240,7 +302,9 @@ export function receiveInventory({
         };
     });
 
-    return tx.immediate();
+    const result = tx.immediate();
+    processPostTransactionQueue(); // Fire and forget
+    return result;
 }
 
 /**
@@ -295,13 +359,14 @@ function deductStockInternal({
         });
     }
 
+    // Queue product flow logging
     const eventType = reason === INVENTORY_REASONS.SALE ? 'sale' : 'adjustment';
-    productFlowRepository.insertProductFlow({
-        variant_id: variantId,
-        event_type: eventType,
+    queueProductFlow({
+        variantId,
+        eventType,
         quantity: -quantity,
-        reference_type: referenceType || 'adjustment',
-        reference_id: referenceId
+        referenceType: referenceType || 'adjustment',
+        referenceId
     });
 
     return { success: true, deducted: quantity };
@@ -322,7 +387,9 @@ export function deductStock(params: {
 }) {
     if (params.quantity <= 0) return { success: true, deducted: 0 };
     const tx = transaction(() => deductStockInternal(params));
-    return tx.immediate();
+    const result = tx.immediate();
+    processPostTransactionQueue(); // Fire and forget
+    return result;
 }
 
 /**
@@ -388,19 +455,22 @@ export function restoreStock({
             });
         }
 
+        // Queue product flow logging
         const eventType = reason === INVENTORY_REASONS.RETURN ? 'return' : 'adjustment';
-        productFlowRepository.insertProductFlow({
-            variant_id: variantId,
-            event_type: eventType,
+        queueProductFlow({
+            variantId,
+            eventType,
             quantity: quantity,
-            reference_type: newReferenceType || 'adjustment',
-            reference_id: newReferenceId
+            referenceType: newReferenceType || 'adjustment',
+            referenceId: newReferenceId
         });
 
         return { success: true, restored: quantity };
     });
 
-    return tx.immediate();
+    const result = tx.immediate();
+    processPostTransactionQueue(); // Fire and forget
+    return result;
 }
 
 /**

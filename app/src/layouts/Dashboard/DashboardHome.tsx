@@ -17,10 +17,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGetDailyStatsQuery, useGetTopProductsQuery, useGetLowStockItemsQuery } from '@/services/dashboardApi';
 import { useCurrency } from '@/hooks/useCurrency';
+import { getTodayDate } from '@/utils/date.utils';
 
 export default function DashboardHome() {
   const currency = useCurrency();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDate();
   
   const { data: dailyStats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useGetDailyStatsQuery(today);
   const { data: topProducts, isLoading: productsLoading, isError: productsError, refetch: refetchProducts } = useGetTopProductsQuery({

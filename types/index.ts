@@ -57,6 +57,7 @@ export interface Category extends BaseEntity {
   name: string;
   description?: string;
   parent_id?: number | null;
+  subcategories?: Category[];
 }
 
 export interface Customer extends BaseEntity {

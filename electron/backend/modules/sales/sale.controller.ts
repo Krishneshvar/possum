@@ -40,8 +40,7 @@ export async function createSale(req: AuthenticatedRequest, res: Response) {
 
         res.status(201).json(result);
     } catch (error: any) {
-        // Check for specific errors
-        if (error.message && error.message.includes('Insufficient stock')) {
+        if (error.message?.includes('Insufficient stock')) {
             return res.status(400).json({ error: error.message, code: 'INSUFFICIENT_STOCK' });
         }
         res.status(400).json({ error: error.message });
@@ -66,7 +65,6 @@ export async function getSales(req: Request, res: Response) {
             sortOrder
         } = req.query;
 
-        // Validate date formats if provided
         if (startDate && typeof startDate === 'string' && !/^\d{4}-\d{2}-\d{2}/.test(startDate)) {
             return res.status(400).json({ error: 'Invalid startDate format. Expected YYYY-MM-DD', code: 'INVALID_DATE' });
         }
@@ -74,7 +72,6 @@ export async function getSales(req: Request, res: Response) {
             return res.status(400).json({ error: 'Invalid endDate format. Expected YYYY-MM-DD', code: 'INVALID_DATE' });
         }
 
-        // Convert page and limit to numbers and map to what repository expects
         const params = {
             status: getQueryArray(status),
             customerId: getQueryNumber(customerId),
@@ -89,8 +86,6 @@ export async function getSales(req: Request, res: Response) {
         };
 
         const result = await SaleService.getSales(params);
-        
-        // Transform to match frontend expectations
         res.json({
             sales: result.sales,
             totalRecords: result.totalCount,

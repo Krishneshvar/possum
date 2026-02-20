@@ -6,13 +6,11 @@ import {
 } from 'react-router-dom';
 
 import { AppSidebar } from "@/layouts/Sidebar/AppSidebar";
-import DashboardHome from './DashboardHome';
+import DashboardHome from '@/layouts/Dashboard/DashboardHome';
 import { SiteHeader } from '@/components/common/SiteHeader';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Separator } from '@/components/ui/separator';
-import { useDispatch, useSelector } from 'react-redux';
-import { useGetMeQuery } from '@/services/authApi';
-import { setUser, setLoading, selectIsAuthenticated, selectCurrentUser } from '@/features/Auth/authSlice';
+import { useAuthInitialization } from '@/features/Auth/hooks/useAuth';
 
 import LoginPage from '@/features/Auth/pages/LoginPage';
 import ProtectedRoute from '@/features/Auth/components/ProtectedRoute';
@@ -66,29 +64,8 @@ const MainLayout = () => {
   );
 };
 
-export default function DashboardPage() {
-  const dispatch = useDispatch();
-  const token = sessionStorage.getItem('possum_token');
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const currentUser = useSelector(selectCurrentUser);
-
-  // Try to load user if token exists but not authenticated in state
-  const { data: user, isLoading, isError } = useGetMeQuery(undefined, {
-    skip: !token || (isAuthenticated && !!currentUser)
-  });
-
-  React.useEffect(() => {
-    if (user) {
-      dispatch(setUser(user));
-    } else if (isError) {
-      dispatch(setUser(null));
-      sessionStorage.removeItem('possum_token');
-    }
-
-    if (!isLoading) {
-      dispatch(setLoading(false));
-    }
-  }, [user, isError, isLoading, dispatch]);
+export default function AppRoutes() {
+  useAuthInitialization();
 
   return (
     <Routes>

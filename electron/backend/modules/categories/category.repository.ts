@@ -1,18 +1,5 @@
-/**
- * Category Repository
- * Handles all database operations for categories
- */
 import { getDB } from '../../shared/db/index.js';
-
-export interface Category {
-    id: number;
-    name: string;
-    parent_id: number | null;
-    created_at?: string;
-    updated_at?: string;
-    deleted_at?: string | null;
-    subcategories?: Category[];
-}
+import type { Category } from '../../../../../types/index.js';
 
 /**
  * Get all categories ordered by name

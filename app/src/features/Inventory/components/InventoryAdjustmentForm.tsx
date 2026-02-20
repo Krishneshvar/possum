@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useCreateAdjustmentMutation } from '@/services/productsApi';
+import { useCreateAdjustmentMutation } from '@/services/inventoryApi';
 
 interface InventoryAdjustmentFormProps {
     variants: any[];
@@ -29,11 +29,16 @@ export default function InventoryAdjustmentForm({ variants, onSuccess }: Invento
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            // ARCHITECTURAL DEBT: User ID should come from auth context/store
+            // The inventory module should NOT be responsible for auth state management
+            // This is a cross-cutting concern that should be injected via context
+            const userId = 1; // TODO: Replace with useAuth() hook or Redux auth selector
+            
             await createAdjustment({
                 variantId: Number(selectedVariantId),
                 quantityChange: Number(quantityChange),
                 reason,
-                userId: 1 // TODO: Get from auth
+                userId
             }).unwrap();
 
             toast.success('Stock updated successfully');

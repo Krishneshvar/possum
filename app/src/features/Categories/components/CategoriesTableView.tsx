@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { useDeleteCategoryMutation, Category } from '@/services/categoriesApi';
 import { toast } from 'sonner';
-import { flattenCategories } from '@/utils/categories.utils';
+import { flattenCategories, FlattenedCategory } from '@/utils/categories.utils';
 import GenericDeleteDialog from '@/components/common/GenericDeleteDialog';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import DataTable from "@/components/common/DataTable";
@@ -20,7 +20,7 @@ export default function CategoriesTableView({ categories, onEdit }: CategoriesTa
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
-  const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
+  const flatCategories: FlattenedCategory[] = useMemo(() => flattenCategories(categories), [categories]);
 
   const handleDeleteClick = (category: Category) => {
     setCategoryToDelete(category);
@@ -57,11 +57,11 @@ export default function CategoriesTableView({ categories, onEdit }: CategoriesTa
     {
       key: 'parent_id',
       label: 'Parent',
-      renderCell: (category: Category) => {
+      renderCell: (category: FlattenedCategory) => {
         if (!category.parent_id) {
           return <span className="text-muted-foreground text-sm">Top-level</span>;
         }
-        const parent = flatCategories.find((p) => p.id === category.parent_id);
+        const parent = flatCategories.find((p: FlattenedCategory) => p.id === category.parent_id);
         return (
           <div className="flex items-center gap-1.5 text-sm">
             <FolderTree className="h-3.5 w-3.5 text-muted-foreground" />

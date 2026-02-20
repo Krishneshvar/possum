@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
-  useGetExpiringLotsQuery
+  useGetExpiringLotsQuery,
+  useGetInventoryStatsQuery,
 } from '@/services/inventoryApi';
-import { useGetVariantsQuery, useGetInventoryStatsQuery } from '@/services/productsApi';
+import { useGetVariantsQuery } from '@/services/productsApi';
 import { useGetCategoriesQuery } from '@/services/categoriesApi';
 import StockAdjustmentCell from '../components/StockAdjustmentCell';
 import {

@@ -4,8 +4,9 @@ import { useSelector, useDispatch } from "react-redux"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useGetVariantsQuery } from "@/services/productsApi"
-import { setSearchTerm, setCurrentPage, setSorting, setFilter, clearAllFilters } from "../variantsSlice"
+import { useGetVariantsQuery } from "@/services/variantsApi"
+import { setSearchTerm, setCurrentPage, setSorting, setFilter, clearAllFilters, VariantsState } from "../variantsSlice"
+import { RootState } from "@/store/store"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./variantsTableContents"
 import DataTable from "@/components/common/DataTable"
@@ -13,7 +14,7 @@ import { statusFilter, stockStatusFilter } from "../data/variantsFiltersConfig"
 
 export default function VariantsTable() {
     const dispatch = useDispatch()
-    const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder, filters } = useSelector((state: any) => state.variants)
+    const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder, filters } = useSelector((state: RootState) => state.variants)
 
     const { data, isLoading, isFetching, error, refetch } = useGetVariantsQuery({
         page: currentPage,
@@ -33,7 +34,7 @@ export default function VariantsTable() {
         dispatch(setCurrentPage(page))
     }
 
-    const handleSort = (column: any) => {
+    const handleSort = (column: { sortField: string }) => {
         const order = sortBy === column.sortField && sortOrder === 'ASC' ? 'DESC' : 'ASC';
         dispatch(setSorting({ sortBy: column.sortField, sortOrder: order }))
     }
@@ -46,7 +47,7 @@ export default function VariantsTable() {
         </div>
     )
 
-    const renderActions = (variant: any) => (
+    const renderActions = (variant: { product_id: number; product_name: string }) => (
         <div className="flex items-center justify-end gap-1">
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -104,11 +105,9 @@ export default function VariantsTable() {
     return (
         <DataTable
             data={variants}
-            // @ts-ignore
             columns={allColumns}
             isLoading={isDataLoading}
-            // @ts-ignore
-            error={error?.message}
+            error={error && 'message' in error ? (error as { message: string }).message : undefined}
             onRetry={refetch}
 
             searchTerm={searchTerm}
@@ -125,7 +124,7 @@ export default function VariantsTable() {
 
             filtersConfig={[statusFilter, stockStatusFilter]}
             activeFilters={filters}
-            onFilterChange={(payload) => dispatch(setFilter(payload))}
+            onFilterChange={(payload) => dispatch(setFilter(payload as { key: keyof VariantsState['filters']; value: string[] }))}
             onClearAllFilters={() => dispatch(clearAllFilters())}
 
             emptyState={emptyState}

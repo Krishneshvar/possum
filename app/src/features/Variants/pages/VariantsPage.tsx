@@ -5,7 +5,7 @@ import VariantsTable from "../components/VariantsTable"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
 import { KeyboardShortcut } from "@/components/common/KeyboardShortcut"
 import { StatCards } from "@/components/common/StatCards"
-import { useGetVariantStatsQuery } from "@/services/productsApi"
+import { useGetVariantStatsQuery } from "@/services/variantsApi"
 
 const variantsActions = {
   secondary: [

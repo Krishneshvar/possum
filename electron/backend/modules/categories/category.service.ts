@@ -1,9 +1,5 @@
-/**
- * Category Service
- * Contains business logic for category operations
- */
+import type { Category } from '../../../../../types/index.js';
 import * as categoryRepository from './category.repository.js';
-import { Category } from './category.repository.js';
 
 /**
  * Build a tree structure from flat categories

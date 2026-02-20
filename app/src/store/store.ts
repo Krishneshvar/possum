@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { productsApi } from '../services/productsApi';
+import { variantsApi } from '../services/variantsApi';
 import { categoriesApi } from '../services/categoriesApi';
 import { customersApi } from '../services/customersApi';
 import { inventoryApi } from '../services/inventoryApi';
@@ -24,6 +25,7 @@ import settingsReducer from '../features/Settings/settingsSlice';
 export const store = configureStore({
     reducer: {
         [productsApi.reducerPath]: productsApi.reducer,
+        [variantsApi.reducerPath]: variantsApi.reducer,
         [categoriesApi.reducerPath]: categoriesApi.reducer,
         [customersApi.reducerPath]: customersApi.reducer,
         [inventoryApi.reducerPath]: inventoryApi.reducer,
@@ -48,6 +50,7 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(
             productsApi.middleware,
+            variantsApi.middleware,
             categoriesApi.middleware,
             customersApi.middleware,
             inventoryApi.middleware,

@@ -1,13 +1,18 @@
-// categoriesApi.ts
-
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
+import type { Category } from '@shared/index.js';
 
-export interface Category {
-    id: number;
-    name: string;
-    parent_id?: number | null;
-    subcategories?: Category[];
+export type { Category };
+
+interface CreateCategoryDTO {
+  name: string;
+  parentId?: number | null;
+}
+
+interface UpdateCategoryDTO {
+  id: number;
+  name?: string;
+  parentId?: number | null;
 }
 
 export const categoriesApi = createApi({
@@ -25,7 +30,7 @@ export const categoriesApi = createApi({
           ]
           : [{ type: 'Category', id: 'LIST' }],
     }),
-    addCategory: builder.mutation<Category, Partial<Category>>({
+    addCategory: builder.mutation<Category, CreateCategoryDTO>({
       query: (body) => ({
         url: '/categories',
         method: 'POST',
@@ -34,7 +39,7 @@ export const categoriesApi = createApi({
       // Invalidate the 'LIST' tag to refetch all categories after a new one is added
       invalidatesTags: [{ type: 'Category', id: 'LIST' }],
     }),
-    updateCategory: builder.mutation<Category, Partial<Category> & { id: number }>({
+    updateCategory: builder.mutation<Category, UpdateCategoryDTO>({
       query: ({ id, ...body }) => ({
         url: `/categories/${id}`,
         method: 'PUT',

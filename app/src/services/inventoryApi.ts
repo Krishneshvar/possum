@@ -47,6 +47,27 @@ export const inventoryApi = createApi({
             providesTags: ['ExpiringLot'],
         }),
 
+        // Get inventory stats
+        getInventoryStats: builder.query({
+            query: () => '/inventory/stats',
+            providesTags: ['Stock'],
+        }),
+
+        // Create inventory adjustment
+        createAdjustment: builder.mutation({
+            query: (body) => ({
+                url: '/inventory/adjustments',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: (result, error, { variantId }) => [
+                { type: 'Stock', id: variantId },
+                { type: 'Adjustment', id: variantId },
+                'Stock',
+                'LowStock',
+            ],
+        }),
+
         // Receive inventory
         receiveInventory: builder.mutation({
             query: (body: ReceiveInventoryParams) => ({
@@ -69,5 +90,7 @@ export const {
     useGetVariantAdjustmentsQuery,
     useGetLowStockAlertsQuery,
     useGetExpiringLotsQuery,
+    useGetInventoryStatsQuery,
+    useCreateAdjustmentMutation,
     useReceiveInventoryMutation,
 } = inventoryApi;

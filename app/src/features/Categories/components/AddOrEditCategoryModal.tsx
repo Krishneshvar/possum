@@ -17,7 +17,7 @@ import {
   useGetCategoriesQuery,
   Category
 } from '@/services/categoriesApi';
-import { flattenCategories } from '@/utils/categories.utils';
+import { flattenCategories, FlattenedCategory } from '@/utils/categories.utils';
 import {
   Select,
   SelectContent,
@@ -40,7 +40,7 @@ export default function AddOrEditCategoryModal({ isOpen, onClose, editingCategor
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useGetCategoriesQuery();
-  const flatCategories = flattenCategories(categories);
+  const flatCategories: FlattenedCategory[] = flattenCategories(categories);
 
   const [addCategory, { isLoading: isAdding }] = useAddCategoryMutation();
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
@@ -95,7 +95,7 @@ export default function AddOrEditCategoryModal({ isOpen, onClose, editingCategor
     }
   };
 
-  const filteredCategories = flatCategories.filter(cat => cat.id !== (editingCategory?.id));
+  const filteredCategories: FlattenedCategory[] = flatCategories.filter(cat => cat.id !== (editingCategory?.id));
   const hasCategories = filteredCategories.length > 0;
 
   return (
@@ -156,7 +156,7 @@ export default function AddOrEditCategoryModal({ isOpen, onClose, editingCategor
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="null">None (top-level category)</SelectItem>
-                {filteredCategories.map((cat) => (
+                {filteredCategories.map((cat: FlattenedCategory) => (
                   <SelectItem key={cat.id} value={String(cat.id)}>
                     {'  '.repeat(cat.depth || 0)}{cat.name}
                   </SelectItem>

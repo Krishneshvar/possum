@@ -2,37 +2,35 @@
  * Auth Service
  * Handles login, session management, and password security
  */
-import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import * as UserRepository from '../users/user.repository.js';
 import * as SessionRepository from './session.repository.js';
-import { User, Session } from '../../../../types/index.js';
+import { Session } from '../../../../types/index.js';
+import { AuthUser, LoginResponse } from './auth.types.js';
+import { hashPassword, verifyPassword } from '../../shared/utils/password.js';
 
 const SESSION_DURATION_SECONDS = 30 * 60; // 30 minutes
-
-// Pre-calculated hash for "password" (cost 10) to prevent timing attacks
-// generated with: bcrypt.hash('password', 10)
 const DUMMY_HASH = '$2b$10$InCX8UtTmhbQP3NuHPaRAeCdfZeaIngIzsAjWjbAYxjprs6WHcoAG';
 
-/**
- * Hash password using bcrypt
- */
-export async function hashPassword(password: string): Promise<string> {
-    const saltRounds = 10;
-    return await bcrypt.hash(password, saltRounds);
+function buildAuthUser(userId: number): AuthUser {
+  const user = UserRepository.findUserById(userId);
+  if (!user || user.is_active === 0 || user.deleted_at) {
+    throw new Error('User not found or inactive');
+  }
+
+  const permissions = UserRepository.getUserPermissions(userId);
+  const roles = UserRepository.getUserRoles(userId).map(r => r.name);
+
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    roles,
+    permissions
+  };
 }
 
-/**
- * Verify password using bcrypt
- */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-    return await bcrypt.compare(password, hash);
-}
-
-/**
- * Create a new session for a user
- */
-function createSession(user: { id: number; name: string; username: string; roles: string[]; permissions: string[] }): string {
+function createSession(user: AuthUser): string {
     const token = uuidv4();
     const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
 
@@ -51,12 +49,7 @@ function createSession(user: { id: number; name: string; username: string; roles
     return token;
 }
 
-/**
- * Get session by token
- * Also handles expiration and auto-renewal
- * Refreshes user permissions on each call to ensure consistency
- */
-export function getSession(token: string): { id: number; name: string; username: string; roles: string[]; permissions: string[] } | null {
+export function getSession(token: string): AuthUser | null {
     if (!token) return null;
 
     const now = Math.floor(Date.now() / 1000);
@@ -82,11 +75,9 @@ export function getSession(token: string): { id: number; name: string; username:
         return null;
     }
 
-    // Refresh permissions from database to ensure consistency
     const permissions = UserRepository.getUserPermissions(session.user_id);
     const roles = UserRepository.getUserRoles(session.user_id).map(r => r.name);
 
-    // Slide expiration on activity
     const newExpiresAt = now + SESSION_DURATION_SECONDS;
     SessionRepository.updateExpiration(token, newExpiresAt);
 
@@ -99,80 +90,33 @@ export function getSession(token: string): { id: number; name: string; username:
     };
 }
 
-/**
- * End a session (logout)
- */
 export function endSession(token: string): void {
     SessionRepository.deleteByToken(token);
 }
 
-/**
- * Login user and return token + user info
- */
-export async function login(username: string, password: string): Promise<{ user: Partial<User>, token: string }> {
+export async function login(username: string, password: string): Promise<LoginResponse> {
     const user = UserRepository.findUserByUsername(username);
-
-    // Prevent timing attacks (username enumeration) by always verifying a password
-    // even if the user does not exist.
     const userPasswordHash = (user && user.is_active !== 0 && !user.deleted_at) ? (user.password_hash || '') : DUMMY_HASH;
-
     const isValid = await verifyPassword(password, userPasswordHash);
 
     if (!user || user.is_active === 0 || user.deleted_at || !isValid) {
         throw new Error('Invalid username or password');
     }
 
-    // Get permissions
-    const permissions = UserRepository.getUserPermissions(user.id);
-    const roles = UserRepository.getUserRoles(user.id).map(r => r.name);
-
-    const userData: any = {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        roles, // string[]
-        permissions
-    };
-
+    const userData = buildAuthUser(user.id);
     const token = createSession(userData);
 
-    return {
-        user: userData,
-        token
-    };
+    return { user: userData, token };
 }
 
-/**
- * Get current user from token (via session)
- */
-export async function me(userId: number): Promise<Partial<User>> {
-    const user = UserRepository.findUserById(userId);
-    if (!user || user.is_active === 0) {
-        throw new Error('User not found or inactive');
-    }
-
-    const permissions = UserRepository.getUserPermissions(user.id);
-    const roles = UserRepository.getUserRoles(user.id).map(r => r.name);
-
-    return {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        roles: roles as any,
-        permissions
-    };
+export async function me(userId: number): Promise<AuthUser> {
+    return buildAuthUser(userId);
 }
 
-/**
- * Clear all sessions
- */
 export function clearAllSessions(): void {
     SessionRepository.deleteAll();
 }
 
-/**
- * Revoke all sessions for a specific user
- */
 export function revokeUserSessions(userId: number): void {
     SessionRepository.deleteByUserId(userId);
 }

@@ -34,3 +34,30 @@ export function getVariantFlowSummary(variantId: number) {
 export function getFlowByReference(referenceType: string, referenceId: number) {
     return productFlowRepository.findFlowByReference(referenceType, referenceId);
 }
+
+/**
+ * Log a product flow event
+ * @param {Object} params - Flow event parameters
+ * @returns {Object} Insert result
+ */
+export function logProductFlow({
+    variantId,
+    eventType,
+    quantity,
+    referenceType,
+    referenceId
+}: {
+    variantId: number;
+    eventType: string;
+    quantity: number;
+    referenceType?: string | null;
+    referenceId?: number | null;
+}) {
+    return productFlowRepository.insertProductFlow({
+        variant_id: variantId,
+        event_type: eventType,
+        quantity,
+        reference_type: referenceType,
+        reference_id: referenceId
+    });
+}

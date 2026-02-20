@@ -27,6 +27,7 @@ import { ArrowLeft, Printer, ShoppingBag, User, Calendar, CreditCard, RotateCcw 
 import { useCurrency } from '@/hooks/useCurrency';
 import CreateReturnDialog from '../components/CreateReturnDialog';
 import { useState } from 'react';
+import { getStatusBadgeVariant } from '../utils/saleStatus.utils';
 
 export default function SaleDetailsPage() {
     const { id } = useParams();
@@ -85,15 +86,7 @@ export default function SaleDetailsPage() {
         });
     };
 
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-            case 'completed': return 'default'; // Success usually maps to default/primary or explicit success variant if configured
-            case 'pending': return 'secondary'; // Warning
-            case 'cancelled': return 'destructive';
-            case 'refunded': return 'outline';
-            default: return 'secondary';
-        }
-    };
+    const getStatusVariant = getStatusBadgeVariant;
 
     return (
         <div className="container mx-auto p-4 max-w-5xl space-y-6">
