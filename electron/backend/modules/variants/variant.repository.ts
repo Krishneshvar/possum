@@ -6,6 +6,7 @@
 import { getDB } from '../../shared/db/index.js';
 import { getComputedStock, getComputedStockBatch } from '../../shared/utils/inventoryHelpers.js';
 import { Variant } from '../../../../types/index.js';
+import { ValidationError } from '../../shared/errors/index.js';
 
 export interface VariantQueryOptions {
   searchTerm?: string;
@@ -17,13 +18,24 @@ export interface VariantQueryOptions {
   itemsPerPage?: number;
 }
 
+interface VariantInput {
+  name: string;
+  sku?: string | null;
+  price: number;
+  cost_price: number;
+  stock_alert_cap?: number;
+  is_default?: number;
+  status?: string;
+}
+
 /**
  * Insert a new variant (without stock - stock comes from inventory operations)
- * @param {number} productId - Parent product ID
- * @param {Object} variant - Variant data
- * @returns {Object} Insert result
  */
-export function insertVariant(productId: number, variant: Partial<Variant>) {
+export function insertVariant(productId: number, variant: VariantInput) {
+  if (!productId || !variant.name || variant.price == null || variant.cost_price == null) {
+    throw new ValidationError('Product ID, name, price, and cost_price are required');
+  }
+
   const db = getDB();
   const stmt = db.prepare(`
     INSERT INTO variants (
@@ -31,27 +43,24 @@ export function insertVariant(productId: number, variant: Partial<Variant>) {
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  // Map variant.price to mrp column
+  
   return stmt.run(
     productId,
     variant.name,
-    variant.sku,
+    variant.sku || null,
     variant.price,
     variant.cost_price,
     variant.stock_alert_cap ?? 10,
-    variant.is_default ? 1 : 0,
+    variant.is_default ?? 0,
     variant.status ?? 'active'
   );
 }
 
 /**
  * Find all variants for a product with computed stock
- * @param {number} productId - Product ID
- * @returns {Promise<Variant[]>} Variants list with stock
  */
 export async function findVariantsByProductId(productId: number): Promise<Variant[]> {
   const db = getDB();
-  // Map mrp to price
   const variants = db.prepare(`
       SELECT
         id, product_id, name, sku, mrp as price, cost_price,
@@ -75,12 +84,9 @@ export async function findVariantsByProductId(productId: number): Promise<Varian
 
 /**
  * Find a single variant by ID with computed stock
- * @param {number} id - Variant ID
- * @returns {Promise<Variant|null>} Variant with stock or null
  */
 export async function findVariantById(id: number): Promise<Variant | null> {
   const db = getDB();
-  // Map mrp to price
   const variant = db.prepare(`
       SELECT
         id, product_id, name, sku, mrp as price, cost_price,
@@ -103,8 +109,6 @@ export async function findVariantById(id: number): Promise<Variant | null> {
 
 /**
  * Find a single variant by ID synchronously (for validation)
- * @param {number} id - Variant ID
- * @returns {Variant|null} Variant without stock or null
  */
 export function findVariantByIdSync(id: number): Omit<Variant, 'stock'> | null {
   const db = getDB();
@@ -121,43 +125,42 @@ export function findVariantByIdSync(id: number): Omit<Variant, 'stock'> | null {
 
 /**
  * Update a variant (without stock - stock is derived)
- * @param {Object} variant - Variant data with id
- * @returns {Object} Update result
  */
-export function updateVariantById(variant: Partial<Variant> & { id: number }) {
+export function updateVariantById(variant: VariantInput & { id: number }) {
+  if (!variant.id || !variant.name || variant.price == null || variant.cost_price == null) {
+    throw new ValidationError('ID, name, price, and cost_price are required');
+  }
+
   const db = getDB();
   const stmt = db.prepare(`
     UPDATE variants
     SET name = ?, sku = ?, mrp = ?, cost_price = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND deleted_at IS NULL
   `);
+  
   return stmt.run(
     variant.name,
-    variant.sku,
-    variant.price, // Map price to mrp
+    variant.sku || null,
+    variant.price,
     variant.cost_price,
     variant.stock_alert_cap ?? 10,
-    variant.status,
-    variant.is_default ? 1 : 0,
+    variant.status ?? 'active',
+    variant.is_default ?? 0,
     variant.id
   );
 }
 
 /**
  * Soft delete a variant
- * @param {number} id - Variant ID
- * @returns {Object} Delete result
  */
 export function softDeleteVariant(id: number) {
   const db = getDB();
-  const stmt = db.prepare('UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?');
+  const stmt = db.prepare('UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL');
   return stmt.run(id);
 }
 
 /**
  * Find variants with filtering, pagination, and sorting
- * @param {Object} params - Query parameters
- * @returns {Promise<Object>} Paginated variants data
  */
 export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
   const db = getDB();
@@ -188,13 +191,12 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     stockFilterClause = 'WHERE current_stock > stock_alert_cap';
   }
 
-  const allowSortColumns = ['p.name', 'v.name', 'v.sku', 'v.mrp', 'v.cost_price', 'v.created_at', 'stock'];
   const sortMap: Record<string, string> = {
     'p.name': 'product_name',
     'v.name': 'name',
     'v.sku': 'sku',
-    'v.mrp': 'mrp', // Sort by mrp
-    'price': 'mrp', // Alias for price
+    'v.mrp': 'price',
+    'price': 'price',
     'v.cost_price': 'cost_price',
     'v.created_at': 'created_at',
     'stock': 'stock'
@@ -207,7 +209,6 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
   const hasStockFilter = Boolean(stockStatus);
 
   if (!isStockSort && !hasStockFilter) {
-    // FAST PATH: Query without stock calculation first
     const countSql = `
       SELECT COUNT(*) as total
       FROM variants v
@@ -219,7 +220,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     const startIndex = (currentPage! - 1) * itemsPerPage!;
     const sql = `
       SELECT
-        v.id, v.product_id, v.name, v.sku, v.mrp, v.mrp as price, v.cost_price,
+        v.id, v.product_id, v.name, v.sku, v.mrp as price, v.cost_price,
         v.stock_alert_cap, v.is_default, v.status, v.created_at,
         p.name as product_name, p.image_path,
         p.tax_category_id,
@@ -228,7 +229,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
       JOIN products p ON v.product_id = p.id
       LEFT JOIN categories c ON p.category_id = c.id
       ${whereClause}
-      ORDER BY ${safeSortBy === 'mrp' ? 'price' : safeSortBy} ${safeSortOrder}
+      ORDER BY ${safeSortBy} ${safeSortOrder}
       LIMIT ? OFFSET ?
     `;
 
@@ -257,7 +258,6 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
     };
   }
 
-  // SLOW PATH: Existing logic
   const countSql = `
     SELECT COUNT(*) as total FROM (
       SELECT
@@ -278,7 +278,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
   const sql = `
     SELECT * FROM (
       SELECT 
-        v.id, v.product_id, v.name, v.sku, v.mrp, v.mrp as price, v.cost_price,
+        v.id, v.product_id, v.name, v.sku, v.mrp as price, v.cost_price,
         v.stock_alert_cap, v.is_default, v.status, v.created_at,
         p.name as product_name, p.image_path,
         p.tax_category_id,
@@ -292,7 +292,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
       LEFT JOIN categories c ON p.category_id = c.id
       ${whereClause}
     ) ${stockFilterClause === '' ? '' : stockFilterClause.replace(/current_stock/g, 'stock')}
-    ORDER BY ${safeSortBy === 'stock' ? 'stock' : (safeSortBy === 'mrp' ? 'price' : safeSortBy)} ${safeSortOrder}
+    ORDER BY ${safeSortBy} ${safeSortOrder}
     LIMIT ? OFFSET ?
   `;
 
@@ -300,7 +300,7 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
 
   const variants = rows.map((v: any) => ({
     ...v,
-    stock: v.stock // already joined
+    stock: v.stock
   })) as Variant[];
 
   if (variants.length === 0) {
@@ -320,7 +320,6 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, sortBy
 
 /**
  * Get variant statistics
- * @returns {Promise<Object>} Variant statistics
  */
 export async function getVariantStats(): Promise<{
   totalVariants: number;

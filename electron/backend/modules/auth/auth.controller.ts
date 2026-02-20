@@ -25,7 +25,7 @@ export async function login(req: Request, res: Response) {
         // Log failed login attempt
         const { username } = req.body;
         if (username) {
-            AuditService.logEvent('auth', 'login_failed', null, {
+            AuditService.logAction(0, 'login_failed', 'auth', null, null, null, {
                 username,
                 timestamp: new Date().toISOString(),
                 ip: req.ip || req.socket.remoteAddress

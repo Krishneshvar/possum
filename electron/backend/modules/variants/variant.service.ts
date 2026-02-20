@@ -3,32 +3,92 @@
  * Contains business logic for variant operations
  */
 import * as variantRepository from './variant.repository.js';
-import * as inventoryService from '../inventory/inventory.service.js';
 import * as inventoryRepository from '../inventory/inventory.repository.js';
+import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
 import { buildImageUrl } from '../../shared/utils/index.js';
 import { VariantQueryOptions } from './variant.repository.js';
 import { Variant, INVENTORY_REASONS } from '../../../../types/index.js';
+import { ValidationError } from '../../shared/errors/index.js';
+import { logger } from '../../shared/utils/logger.js';
+
+interface AddVariantInput {
+    productId: number;
+    name: string;
+    sku?: string | null;
+    price: number;
+    cost_price: number;
+    stock_alert_cap?: number;
+    is_default?: boolean;
+    status?: 'active' | 'inactive' | 'discontinued';
+    stock?: number;
+    userId: number;
+}
+
+interface UpdateVariantInput {
+    id: number;
+    name: string;
+    sku?: string | null;
+    price: number;
+    cost_price: number;
+    stock_alert_cap?: number;
+    is_default?: boolean;
+    status?: 'active' | 'inactive' | 'discontinued';
+    stock?: number;
+    userId: number;
+}
 
 /**
  * Add a variant to a product
- * @param {number} productId - Parent product ID
- * @param {Object} variantData - Variant data
- * @returns {Object} Insert result
  */
-export function addVariant(productId: number, variantData: Partial<Variant> & { stock?: number; userId?: number }) {
+export function addVariant(input: AddVariantInput) {
+    if (!input.productId || !input.name || input.price == null || input.cost_price == null || !input.userId) {
+        throw new ValidationError('Product ID, name, price, cost_price, and userId are required');
+    }
+
+    if (input.price < 0 || input.cost_price < 0) {
+        throw new ValidationError('Price and cost_price must be non-negative');
+    }
+
     const tx = transaction(() => {
-        const result = variantRepository.insertVariant(productId, variantData);
+        const result = variantRepository.insertVariant(input.productId, {
+            name: input.name,
+            sku: input.sku,
+            price: input.price,
+            cost_price: input.cost_price,
+            stock_alert_cap: input.stock_alert_cap ?? 10,
+            is_default: input.is_default ? 1 : 0,
+            status: input.status ?? 'active'
+        });
         const variantId = Number(result.lastInsertRowid);
 
-        if (variantData.stock && variantData.stock > 0) {
-            inventoryService.receiveInventory({
-                variantId,
-                quantity: parseInt(String(variantData.stock), 10),
-                unitCost: parseFloat(String(variantData.cost_price || 0)),
-                userId: variantData.userId!
+        auditService.logCreate(input.userId, 'variants', variantId, {
+            product_id: input.productId,
+            name: input.name,
+            sku: input.sku,
+            price: input.price,
+            cost_price: input.cost_price
+        });
+
+        if (input.stock && input.stock > 0) {
+            const lotResult = inventoryRepository.insertInventoryLot({
+                variant_id: variantId,
+                quantity: parseInt(String(input.stock), 10),
+                unit_cost: input.cost_price
             });
+            const lotId = Number(lotResult.lastInsertRowid);
+
+            inventoryRepository.insertInventoryAdjustment({
+                variant_id: variantId,
+                lot_id: lotId,
+                quantity_change: parseInt(String(input.stock), 10),
+                reason: INVENTORY_REASONS.CONFIRM_RECEIVE,
+                adjusted_by: input.userId
+            });
+
+            logger.info(`Initial stock ${input.stock} added for variant ${variantId}`);
         }
+
         return result;
     });
     return tx();
@@ -36,26 +96,54 @@ export function addVariant(productId: number, variantData: Partial<Variant> & { 
 
 /**
  * Update a variant
- * @param {Object} variantData - Variant data with id
- * @returns {Object} Update result
  */
-export function updateVariant(variantData: Partial<Variant> & { id: number; stock?: number; userId?: number }) {
-    const tx = transaction(() => {
-        const result = variantRepository.updateVariantById(variantData);
+export function updateVariant(input: UpdateVariantInput) {
+    if (!input.id || !input.name || input.price == null || input.cost_price == null || !input.userId) {
+        throw new ValidationError('ID, name, price, cost_price, and userId are required');
+    }
 
-        if (variantData.stock !== undefined) {
-            const targetStock = parseInt(String(variantData.stock), 10);
-            if (!isNaN(targetStock)) {
-                const currentStock = inventoryRepository.getStockByVariantId(variantData.id);
+    if (input.price < 0 || input.cost_price < 0) {
+        throw new ValidationError('Price and cost_price must be non-negative');
+    }
+
+    const existing = variantRepository.findVariantByIdSync(input.id);
+    if (!existing) {
+        throw new ValidationError('Variant not found');
+    }
+
+    const tx = transaction(() => {
+        const result = variantRepository.updateVariantById({
+            id: input.id,
+            name: input.name,
+            sku: input.sku,
+            price: input.price,
+            cost_price: input.cost_price,
+            stock_alert_cap: input.stock_alert_cap ?? 10,
+            is_default: input.is_default ? 1 : 0,
+            status: input.status ?? 'active'
+        });
+
+        auditService.logUpdate(input.userId, 'variants', input.id, existing, {
+            name: input.name,
+            sku: input.sku,
+            price: input.price,
+            cost_price: input.cost_price
+        });
+
+        if (input.stock !== undefined) {
+            const targetStock = parseInt(String(input.stock), 10);
+            if (!isNaN(targetStock) && targetStock >= 0) {
+                const currentStock = inventoryRepository.getStockByVariantId(input.id);
                 const diff = targetStock - currentStock;
 
                 if (diff !== 0) {
-                    inventoryService.adjustInventory({
-                        variantId: variantData.id,
-                        quantityChange: diff,
+                    inventoryRepository.insertInventoryAdjustment({
+                        variant_id: input.id,
+                        quantity_change: diff,
                         reason: INVENTORY_REASONS.CORRECTION,
-                        userId: variantData.userId!
+                        adjusted_by: input.userId
                     });
+                    logger.info(`Stock adjusted for variant ${input.id}: ${diff > 0 ? '+' : ''}${diff}`);
                 }
             }
         }
@@ -66,17 +154,27 @@ export function updateVariant(variantData: Partial<Variant> & { id: number; stoc
 
 /**
  * Delete a variant (soft delete)
- * @param {number} id - Variant ID
- * @returns {Object} Delete result
  */
-export function deleteVariant(id: number) {
-    return variantRepository.softDeleteVariant(id);
+export function deleteVariant(id: number, userId: number) {
+    if (!id || !userId) {
+        throw new ValidationError('ID and userId are required');
+    }
+
+    const existing = variantRepository.findVariantByIdSync(id);
+    if (!existing) {
+        throw new ValidationError('Variant not found');
+    }
+
+    const result = variantRepository.softDeleteVariant(id);
+    
+    auditService.logDelete(userId, 'variants', id, existing);
+    logger.info(`Variant ${id} soft deleted by user ${userId}`);
+    
+    return result;
 }
 
 /**
  * Get variants with filtering, pagination and sorting
- * @param {Object} params - Query parameters
- * @returns {Object} Paginated variants with image URLs
  */
 export async function getVariants(params: VariantQueryOptions) {
     const result = await variantRepository.findVariants(params);
@@ -93,7 +191,6 @@ export async function getVariants(params: VariantQueryOptions) {
 
 /**
  * Get variant statistics
- * @returns {Promise<Object>} Variant statistics
  */
 export async function getVariantStats() {
     return await variantRepository.getVariantStats();

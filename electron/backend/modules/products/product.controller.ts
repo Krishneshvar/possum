@@ -108,7 +108,7 @@ export async function createProductController(req: Request, res: Response) {
             name,
             category_id: category_id ? parseInt(category_id, 10) : null,
             description: description || null,
-            status: status || 'active',
+            status: (status || 'active') as 'active' | 'inactive' | 'discontinued',
             image_path,
             variants: parsedVariants,
             taxIds: parsedTaxIds,

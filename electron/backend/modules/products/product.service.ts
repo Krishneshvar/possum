@@ -3,7 +3,7 @@
  * Contains business logic for product operations
  */
 import * as productRepository from './product.repository.js';
-import * as variantRepository from './variant.repository.js';
+import * as variantRepository from '../variants/variant.repository.js';
 import * as variantService from '../variants/variant.service.js';
 import * as inventoryService from '../inventory/inventory.service.js';
 import * as auditService from '../audit/audit.service.js';
@@ -23,8 +23,8 @@ const basePath = path.join(__dirname, '../../../../..');
 interface CreateProductParams {
     name: string;
     description: string;
-    category_id: number;
-    status: string;
+    category_id: number | null;
+    status: 'active' | 'inactive' | 'discontinued';
     image_path: string | null;
     variants: any[];
     taxIds: number[];

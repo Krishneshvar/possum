@@ -43,12 +43,11 @@ export interface Variant extends BaseEntity {
   name: string;
   sku?: string | null;
   price: number; // Maps to mrp in DB
-  mrp?: number; // Alias for price
-  cost_price?: number;
-  stock_alert_cap?: number;
+  cost_price: number;
+  stock_alert_cap: number;
   is_default: number; // 0 or 1
   barcode?: string;
-  status?: 'active' | 'inactive' | 'discontinued';
+  status: 'active' | 'inactive' | 'discontinued';
   taxes?: string; // JSON string from DB or joined
   image_path?: string; // Joined from product?
   stock?: number; // Derived
