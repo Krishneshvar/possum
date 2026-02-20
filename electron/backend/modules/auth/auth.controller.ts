@@ -22,6 +22,15 @@ export async function login(req: Request, res: Response) {
 
         res.json(result);
     } catch (error: any) {
+        // Log failed login attempt
+        const { username } = req.body;
+        if (username) {
+            AuditService.logEvent('auth', 'login_failed', null, {
+                username,
+                timestamp: new Date().toISOString(),
+                ip: req.ip || req.socket.remoteAddress
+            });
+        }
         res.status(401).json({ error: error.message });
     }
 }

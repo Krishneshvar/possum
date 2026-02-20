@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { logout } from "@/features/Auth/authSlice";
+import { useLogoutMutation } from "@/services/authApi";
 
 import { sidebarData } from "@/data/sidebarData";
 
@@ -36,9 +37,15 @@ export function SiteHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [logoutMutation] = useLogoutMutation();
   const pageTitle = getPageTitle(location.pathname, sidebarData);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutMutation().unwrap();
+    } catch (error) {
+      // Ignore error, logout locally anyway
+    }
     dispatch(logout());
     navigate("/login");
   };

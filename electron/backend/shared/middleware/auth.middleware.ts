@@ -16,7 +16,8 @@ declare global {
  * Middleware to verify session token
  */
 export function authenticate(req: Request, res: Response, next: NextFunction) {
-    if (req.path.startsWith('/auth/')) {
+    // Only skip auth for login endpoint
+    if (req.path === '/auth/login') {
         return next();
     }
 

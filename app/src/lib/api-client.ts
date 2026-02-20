@@ -8,7 +8,7 @@ export const API_BASE = 'http://localhost:3001/api';
 export const baseQuery = fetchBaseQuery({
     baseUrl: API_BASE,
     prepareHeaders: (headers, { getState }) => {
-        const token = (getState() as any).auth?.token || localStorage.getItem('possum_token');
+        const token = (getState() as any).auth?.token || sessionStorage.getItem('possum_token');
         if (token) {
             headers.set('Authorization', `Bearer ${token}`);
         }

@@ -14,6 +14,10 @@ export function create(session: Session): void {
     const db = getDB();
     const { user_id, token, expires_at, ...rest } = session;
 
+    if (!user_id) {
+        throw new Error('user_id is required to create a session');
+    }
+
     // Generate a unique ID for the session record itself
     const sessionId = uuidv4();
 
@@ -76,4 +80,12 @@ export function deleteExpired(now: number): void {
 export function deleteAll(): void {
     const db = getDB();
     db.prepare('DELETE FROM sessions').run();
+}
+
+/**
+ * Delete all sessions for a specific user
+ */
+export function deleteByUserId(userId: number): void {
+    const db = getDB();
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
 }

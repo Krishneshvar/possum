@@ -56,11 +56,8 @@ export function getSession(token: string): any | null {
 
     const now = Math.floor(Date.now() / 1000);
 
-    // Periodically clean up expired sessions (lazy cleanup)
-    // Roughly 10% of calls to getSession will trigger a cleanup
-    if (Math.random() < 0.1) {
-        SessionRepository.deleteExpired(now);
-    }
+    // Clean up expired sessions on every call for consistency
+    SessionRepository.deleteExpired(now);
 
     const session = SessionRepository.findByToken(token);
     if (!session) return null;
@@ -96,11 +93,11 @@ export async function login(username: string, password: string): Promise<{ user:
 
     // Prevent timing attacks (username enumeration) by always verifying a password
     // even if the user does not exist.
-    const userPasswordHash = (user && user.is_active !== 0) ? (user.password_hash || '') : DUMMY_HASH;
+    const userPasswordHash = (user && user.is_active !== 0 && !user.deleted_at) ? (user.password_hash || '') : DUMMY_HASH;
 
     const isValid = await verifyPassword(password, userPasswordHash);
 
-    if (!user || user.is_active === 0 || !isValid) {
+    if (!user || user.is_active === 0 || user.deleted_at || !isValid) {
         throw new Error('Invalid username or password');
     }
 
@@ -128,12 +125,10 @@ export async function login(username: string, password: string): Promise<{ user:
  * Get current user from token (via session)
  */
 export async function me(userId: number): Promise<Partial<User>> {
-    // This function was used to refresh user data.
-    // Now we can just use the session or re-fetch from DB if needed.
-    // Assuming the caller has the token, they can just use getSession.
-    // But if we need fresh data from DB:
     const user = UserRepository.findUserById(userId);
-    if (!user) throw new Error('User not found');
+    if (!user || user.is_active === 0) {
+        throw new Error('User not found or inactive');
+    }
 
     const permissions = UserRepository.getUserPermissions(user.id);
     const roles = UserRepository.getUserRoles(user.id).map(r => r.name);
@@ -148,8 +143,15 @@ export async function me(userId: number): Promise<Partial<User>> {
 }
 
 /**
- * Clear all sessions (on app restart if needed)
+ * Clear all sessions
  */
 export function clearAllSessions(): void {
     SessionRepository.deleteAll();
+}
+
+/**
+ * Revoke all sessions for a specific user
+ */
+export function revokeUserSessions(userId: number): void {
+    SessionRepository.deleteByUserId(userId);
 }
