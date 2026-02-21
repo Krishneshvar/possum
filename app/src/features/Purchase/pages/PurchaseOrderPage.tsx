@@ -31,7 +31,7 @@ import DataTable, { Column } from '@/components/common/DataTable';
 // @ts-ignore
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { PurchaseOrder } from '@shared/index';
+import type { PurchaseOrder } from '@shared/index';
 import { Input } from '@/components/ui/input';
 
 type PurchaseSortField = 'id' | 'supplier_name' | 'order_date' | 'status' | 'item_count' | 'total_cost';

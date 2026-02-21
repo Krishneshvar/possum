@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
-import { PurchaseOrder } from '@shared/index';
+import type { PurchaseOrder } from '@shared/index';
 
 interface PurchaseOrdersQueryParams {
     page?: number;

@@ -1,8 +1,8 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
-import { Supplier } from '../../../types/index.js';
+import { type Supplier } from '@shared/index';
 
-export { Supplier };
+export type { Supplier };
 
 export interface GetSuppliersParams {
     page?: number;

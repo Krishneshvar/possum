@@ -28,7 +28,7 @@ import { ArrowLeft, Calendar, User, Package, CheckCircle, XCircle, Printer, Truc
 import { toast } from 'sonner';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
-import { PurchaseOrderItem } from '@shared/index';
+import type { PurchaseOrderItem } from '@shared/index';
 
 export default function PurchaseOrderDetailPage() {
     const { id } = useParams();
@@ -84,10 +84,10 @@ export default function PurchaseOrderDetailPage() {
         <div className="container mx-auto p-4 max-w-5xl space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => navigate('/purchase')} 
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate('/purchase')}
                         className="shrink-0"
                         aria-label="Back to purchase orders"
                     >
@@ -111,10 +111,10 @@ export default function PurchaseOrderDetailPage() {
                         <>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="text-destructive hover:text-destructive hover:bg-destructive/10" 
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                         disabled={isCancelling || isReceiving}
                                         aria-label="Cancel purchase order"
                                     >
@@ -143,10 +143,10 @@ export default function PurchaseOrderDetailPage() {
                                 </AlertDialogContent>
                             </AlertDialog>
 
-                            <Button 
-                                size="sm" 
-                                className="bg-green-600 hover:bg-green-700 text-white" 
-                                onClick={handleReceive} 
+                            <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={handleReceive}
                                 disabled={isReceiving || isCancelling}
                                 aria-label="Receive purchase order and update inventory"
                             >
