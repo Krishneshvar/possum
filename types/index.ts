@@ -65,8 +65,6 @@ export interface Customer extends BaseEntity {
   email?: string;
   phone?: string;
   address?: string;
-  is_tax_exempt: number; // 0 or 1
-  type?: string; // 'retail', 'wholesale', etc.
   loyalty_points?: number;
 }
 
@@ -285,6 +283,20 @@ export const MANUAL_INVENTORY_REASONS = [
   INVENTORY_REASONS.RETURN,
   INVENTORY_REASONS.CONFIRM_RECEIVE,
 ];
+
+// Supplier Types
+export interface Supplier {
+  id: number;
+  name: string;
+  contact_person?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  gstin?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+}
 
 // Purchase Order Types
 export interface PurchaseOrder {

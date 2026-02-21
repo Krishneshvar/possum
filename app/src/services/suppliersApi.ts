@@ -1,17 +1,8 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
+import { Supplier } from '../../../types/index.js';
 
-export interface Supplier {
-    id: number;
-    name: string;
-    contact_person?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    address?: string | null;
-    gstin?: string | null;
-    created_at?: string;
-    updated_at?: string;
-}
+export { Supplier };
 
 export interface GetSuppliersParams {
     page?: number;

@@ -53,7 +53,6 @@ function toCustomer(row: CustomerRow): Customer {
     created_at: row.created_at,
     updated_at: row.updated_at,
     deleted_at: row.deleted_at,
-    is_tax_exempt: 0,
   };
 }
 

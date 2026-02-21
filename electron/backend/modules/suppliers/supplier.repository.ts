@@ -3,19 +3,9 @@
  * Database operations for suppliers
  */
 import { getDB } from '../../shared/db/index.js';
+import { Supplier } from '../../../../types/index.js';
 
-export interface Supplier {
-    id: number;
-    name: string;
-    contact_person?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    address?: string | null;
-    gstin?: string | null;
-    created_at?: string;
-    updated_at?: string;
-    deleted_at?: string | null;
-}
+export { Supplier };
 
 export interface SupplierQueryOptions {
     page?: number;

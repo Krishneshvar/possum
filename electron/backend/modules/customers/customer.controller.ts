@@ -4,40 +4,14 @@
  */
 import { NextFunction, Request, Response } from 'express';
 import * as CustomerService from './customer.service.js';
-
-function getQueryNumber(param: unknown, defaultValue: number): number {
-    if (typeof param === 'number' && Number.isFinite(param)) {
-        return param;
-    }
-    if (typeof param === 'string') {
-        const parsed = Number.parseInt(param, 10);
-        return Number.isNaN(parsed) ? defaultValue : parsed;
-    }
-    return defaultValue;
-}
-
-function getQueryString(param: unknown): string | undefined {
-    if (typeof param === 'string') {
-        return param;
-    }
-    return undefined;
-}
+import * as CustomerRepository from './customer.repository.js';
 
 /**
  * Get customers with search and pagination
  */
 export async function getCustomers(req: Request, res: Response, next: NextFunction) {
     try {
-        const { searchTerm, page, limit, currentPage, itemsPerPage, sortBy, sortOrder } = req.query;
-
-        const params = {
-            searchTerm: getQueryString(searchTerm),
-            page: getQueryNumber(page, getQueryNumber(currentPage, 1)),
-            limit: getQueryNumber(limit, getQueryNumber(itemsPerPage, 10)),
-            sortBy: getQueryString(sortBy) as 'name' | 'email' | 'created_at' | undefined,
-            sortOrder: getQueryString(sortOrder) as 'ASC' | 'DESC' | undefined
-        };
-
+        const params = req.query as CustomerRepository.CustomerFilter;
         const result = await CustomerService.getCustomers(params);
         res.json(result);
     } catch (error) {

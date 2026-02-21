@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { extractErrorMessage } from '@/utils/error.utils';
 
 type SupplierSortField = 'name' | 'contact_person' | 'phone' | 'email' | 'created_at';
 
@@ -79,11 +79,7 @@ export default function SuppliersPage() {
         toast.success('Supplier archived successfully');
         setSupplierToDelete(null);
       } catch (error) {
-        const apiError = error as FetchBaseQueryError & SupplierQueryError;
-        const message = typeof apiError?.data === 'object' && apiError?.data && 'error' in apiError.data
-          ? String((apiError.data as SupplierQueryError).error || 'Failed to delete supplier')
-          : 'Failed to delete supplier';
-        toast.error(message);
+        toast.error(extractErrorMessage(error, 'Failed to delete supplier'));
       }
     }
   };
@@ -194,11 +190,7 @@ export default function SuppliersPage() {
 
   const supplierErrorMessage = useMemo(() => {
     if (!error) return null;
-    const apiError = error as FetchBaseQueryError & SupplierQueryError;
-    if (typeof apiError?.data === 'object' && apiError?.data && 'error' in apiError.data) {
-      return String((apiError.data as SupplierQueryError).error || 'Failed to load suppliers');
-    }
-    return 'Failed to load suppliers';
+    return extractErrorMessage(error, 'Failed to load suppliers');
   }, [error]);
 
   const emptyState = (

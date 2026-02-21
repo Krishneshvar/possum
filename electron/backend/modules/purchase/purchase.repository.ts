@@ -3,31 +3,7 @@
  * Database operations for purchase orders
  */
 import { getDB } from '../../shared/db/index.js';
-
-export interface PurchaseOrder {
-    id: number;
-    supplier_id: number;
-    status: 'pending' | 'received' | 'cancelled';
-    order_date: string;
-    received_date?: string | null;
-    created_by: number;
-    supplier_name?: string;
-    created_by_name?: string;
-    item_count?: number;
-    total_cost?: number;
-    items?: PurchaseOrderItem[];
-}
-
-export interface PurchaseOrderItem {
-    id: number;
-    purchase_order_id: number;
-    variant_id: number;
-    quantity: number;
-    unit_cost: number;
-    variant_name?: string;
-    sku?: string;
-    product_name?: string;
-}
+import { PurchaseOrder, PurchaseOrderItem } from '@shared/index';
 
 export interface PurchaseOrderQueryOptions {
     page?: number;
