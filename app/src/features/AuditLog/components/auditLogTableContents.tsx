@@ -1,27 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import type { AuditLog } from '@shared/index';
+import { parseJson } from "@/utils/json.utils";
+
+const ACTION_BADGE_STYLES: Record<string, string> = {
+    create: "bg-success/10 text-success border-success/20",
+    update: "bg-info/10 text-info border-info/20",
+    delete: "bg-destructive/10 text-destructive border-destructive/20",
+    login: "bg-primary/10 text-primary border-primary/20",
+    logout: "bg-warning/10 text-warning border-warning/20",
+};
 
 const getActionBadge = (action: string) => {
-    let className = "bg-secondary text-secondary-foreground";
-    switch (action) {
-        case 'create':
-            className = "bg-success/10 text-success border-success/20";
-            break;
-        case 'update':
-            // @ts-ignore
-            className = "bg-info/10 text-info border-info/20";
-            break;
-        case 'delete':
-            className = "bg-destructive/10 text-destructive border-destructive/20";
-            break;
-        case 'login':
-            className = "bg-primary/10 text-primary border-primary/20";
-            break;
-        case 'logout':
-            className = "bg-warning/10 text-warning border-warning/20";
-            break;
-    }
-
+    const className = ACTION_BADGE_STYLES[action] || "bg-secondary text-secondary-foreground";
     return (
         <Badge variant="outline" className={`${className} font-medium capitalize`}>
             {action}
@@ -35,13 +26,13 @@ export const allColumns = [
         label: "Time",
         sortable: true,
         sortField: "created_at",
-        renderCell: (log: any) => (
+        renderCell: (log: AuditLog) => (
             <div className="flex flex-col">
                 <span className="font-medium text-foreground">
-                    {format(new Date(log.created_at), "MMM dd, yyyy")}
+                    {format(new Date(log.created_at!), "MMM dd, yyyy")}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                    {format(new Date(log.created_at), "hh:mm:ss a")}
+                    {format(new Date(log.created_at!), "hh:mm:ss a")}
                 </span>
             </div>
         ),
@@ -51,19 +42,19 @@ export const allColumns = [
         label: "User",
         sortable: true,
         sortField: "user_name",
-        renderCell: (log: any) => (
+        renderCell: (log: AuditLog) => (
             <p className="font-semibold leading-none text-foreground">{log.user_name || "System"}</p>
         ),
     },
     {
         key: "action",
         label: "Action",
-        renderCell: (log: any) => getActionBadge(log.action),
+        renderCell: (log: AuditLog) => getActionBadge(log.action),
     },
     {
         key: "table_name",
         label: "Resource",
-        renderCell: (log: any) => (
+        renderCell: (log: AuditLog) => (
             log.table_name ? (
                 <div className="flex flex-col">
                     <span className="text-sm font-medium capitalize">{log.table_name.replace(/_/g, ' ')}</span>
@@ -77,15 +68,11 @@ export const allColumns = [
     {
         key: "details",
         label: "Details",
-        renderCell: (log: any) => {
+        renderCell: (log: AuditLog) => {
             let details = "";
             if (log.action === 'login' || log.action === 'logout') {
-                try {
-                    const eventDetails = JSON.parse(log.event_details || '{}');
-                    details = eventDetails.ip ? `IP: ${eventDetails.ip}` : "Session event";
-                } catch (e) {
-                    details = "Session event";
-                }
+                const eventDetails = parseJson(log.event_details);
+                details = eventDetails?.ip ? `IP: ${eventDetails.ip}` : "Session event";
             } else {
                 details = `Modified ${log.table_name || 'record'}`;
             }

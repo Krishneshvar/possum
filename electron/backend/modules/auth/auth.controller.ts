@@ -3,7 +3,7 @@
  */
 import { Request, Response } from 'express';
 import * as AuthService from './auth.service.js';
-import { authEvents } from './auth.events.js';
+import * as AuditService from '../audit/audit.service.js';
 
 export async function login(req: Request, res: Response) {
     try {
@@ -17,9 +17,7 @@ export async function login(req: Request, res: Response) {
 
         const result = await AuthService.login(username, password);
 
-        authEvents.emit('auth', {
-            type: 'login',
-            userId: result.user.id,
+        AuditService.logLogin(result.user.id, {
             username: result.user.username,
             ip: req.ip || req.socket.remoteAddress || 'unknown',
             timestamp: new Date().toISOString()
@@ -29,8 +27,7 @@ export async function login(req: Request, res: Response) {
     } catch (error: any) {
         const { username } = req.body;
         if (username) {
-            authEvents.emit('auth', {
-                type: 'login_failed',
+            AuditService.logAction(0, 'login_failed', 'auth', null, null, null, {
                 username,
                 ip: req.ip || req.socket.remoteAddress || 'unknown',
                 timestamp: new Date().toISOString()
@@ -73,9 +70,7 @@ export async function logout(req: Request, res: Response) {
         }
 
         if (userId) {
-            authEvents.emit('auth', {
-                type: 'logout',
-                userId,
+            AuditService.logLogout(userId, {
                 ip: req.ip || req.socket.remoteAddress || 'unknown',
                 timestamp: new Date().toISOString()
             });

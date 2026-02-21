@@ -27,7 +27,11 @@ export function getDailyReport(date: string): DailyReport {
  */
 export function getMonthlyReport(year: number, month: number): MonthlyReport {
     const summary = reportsRepository.getMonthlySalesReport(year, month);
-    const breakdown = reportsRepository.getDailyBreakdownForMonth(year, month);
+    const breakdown = reportsRepository.getDailyBreakdownForMonth(year, month).map(item => ({
+        ...item,
+        name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        sales: item.total_sales
+    }));
 
     return {
         year,
@@ -45,7 +49,11 @@ export function getMonthlyReport(year: number, month: number): MonthlyReport {
  */
 export function getYearlyReport(year: number): YearlyReport {
     const summary = reportsRepository.getYearlySalesReport(year);
-    const breakdown = reportsRepository.getMonthlyBreakdownForYear(year);
+    const breakdown = reportsRepository.getMonthlyBreakdownForYear(year).map(item => ({
+        ...item,
+        name: new Date(2000, parseInt(item.month) - 1, 1).toLocaleDateString('en-US', { month: 'short' }),
+        sales: item.total_sales
+    }));
 
     return {
         year,
@@ -76,28 +84,4 @@ export function getSalesByPaymentMethod(startDate: string, endDate: string): Pay
     return reportsRepository.getSalesByPaymentMethod(startDate, endDate);
 }
 
-interface CacheReportData {
-    total_sales: number;
-    total_tax: number;
-    total_discount: number;
-    total_transactions: number;
-}
 
-/**
- * Cache a report for faster retrieval
- * @param {string} reportType - Report type (daily/monthly/yearly)
- * @param {string} periodStart - Period start date
- * @param {string} periodEnd - Period end date
- * @param {CacheReportData} data - Report data
- */
-export function cacheReport(reportType: string, periodStart: string, periodEnd: string, data: CacheReportData) {
-    return reportsRepository.upsertSalesReport({
-        report_type: reportType,
-        period_start: periodStart,
-        period_end: periodEnd,
-        total_sales: data.total_sales,
-        total_tax: data.total_tax,
-        total_discount: data.total_discount,
-        total_transactions: data.total_transactions
-    });
-}

@@ -18,7 +18,9 @@ export function getDailySalesReport(date: string): SalesReportSummary {
             COALESCE(SUM(total_amount), 0) as total_sales,
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount,
-            COALESCE(SUM(paid_amount), 0) as total_collected
+            COALESCE(SUM(paid_amount), 0) as total_collected,
+            COALESCE(SUM(total_amount) - SUM(total_tax), 0) as net_sales,
+            CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(total_amount), 0) / COUNT(*) ELSE 0 END as average_sale
         FROM sales
         WHERE date(sale_date) = ?
           AND status NOT IN ('cancelled', 'draft')
@@ -40,7 +42,9 @@ export function getMonthlySalesReport(year: number, month: number): SalesReportS
             COALESCE(SUM(total_amount), 0) as total_sales,
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount,
-            COALESCE(SUM(paid_amount), 0) as total_collected
+            COALESCE(SUM(paid_amount), 0) as total_collected,
+            COALESCE(SUM(total_amount) - SUM(total_tax), 0) as net_sales,
+            CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(total_amount), 0) / COUNT(*) ELSE 0 END as average_sale
         FROM sales
         WHERE strftime('%Y-%m', sale_date) = ?
           AND status NOT IN ('cancelled', 'draft')
@@ -60,7 +64,9 @@ export function getYearlySalesReport(year: number): SalesReportSummary {
             COALESCE(SUM(total_amount), 0) as total_sales,
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount,
-            COALESCE(SUM(paid_amount), 0) as total_collected
+            COALESCE(SUM(paid_amount), 0) as total_collected,
+            COALESCE(SUM(total_amount) - SUM(total_tax), 0) as net_sales,
+            CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(total_amount), 0) / COUNT(*) ELSE 0 END as average_sale
         FROM sales
         WHERE strftime('%Y', sale_date) = ?
           AND status NOT IN ('cancelled', 'draft')
@@ -164,52 +170,4 @@ export function getSalesByPaymentMethod(startDate: string, endDate: string): Pay
     `).all(startDate, endDate) as PaymentMethodStat[];
 }
 
-interface UpsertReportParams {
-    report_type: string;
-    period_start: string;
-    period_end: string;
-    total_sales: number;
-    total_tax: number;
-    total_discount: number;
-    total_transactions: number;
-}
 
-/**
- * Cache a report in sales_reports table
- * @param {Object} reportData - Report data
- * @returns {Object} Insert result
- */
-export function upsertSalesReport({
-    report_type,
-    period_start,
-    period_end,
-    total_sales,
-    total_tax,
-    total_discount,
-    total_transactions
-}: UpsertReportParams) {
-    const db = getDB();
-
-    // Check if report exists
-    const existing = db.prepare(`
-        SELECT id FROM sales_reports 
-        WHERE report_type = ? AND period_start = ? AND period_end = ?
-    `).get(report_type, period_start, period_end) as { id: number } | undefined;
-
-    if (existing) {
-        return db.prepare(`
-            UPDATE sales_reports
-            SET total_sales = ?, total_tax = ?, total_discount = ?, 
-                total_transactions = ?, generated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        `).run(total_sales, total_tax, total_discount, total_transactions, existing.id);
-    }
-
-    return db.prepare(`
-        INSERT INTO sales_reports (
-            report_type, period_start, period_end,
-            total_sales, total_tax, total_discount, total_transactions
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(report_type, period_start, period_end, total_sales, total_tax, total_discount, total_transactions);
-}

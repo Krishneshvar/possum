@@ -203,10 +203,12 @@ export interface PrinterConfig {
 export interface AuditLog extends BaseEntity {
   user_id: number;
   action: string;
-  entity_type: string;
-  entity_id: number;
-  details?: string; // JSON
-  ip_address?: string;
+  table_name: string | null;
+  row_id: number | null;
+  old_data: string | null; // JSON string
+  new_data: string | null; // JSON string
+  event_details: string | null; // JSON string
+  user_name?: string; // Joined from users table
 }
 
 export interface Session {
@@ -331,6 +333,8 @@ export interface SalesReportSummary {
   total_tax: number;
   total_discount: number;
   total_collected: number;
+  net_sales?: number;
+  average_sale?: number;
 }
 
 export interface DailyReport extends SalesReportSummary {
@@ -345,6 +349,8 @@ export interface MonthlyReport {
   summary: SalesReportSummary;
   breakdown: Array<{
       date: string;
+      name: string;
+      sales: number;
       total_transactions: number;
       total_sales: number;
       total_tax: number;
@@ -358,6 +364,8 @@ export interface YearlyReport {
   summary: SalesReportSummary;
   breakdown: Array<{
       month: string;
+      name: string;
+      sales: number;
       total_transactions: number;
       total_sales: number;
       total_tax: number;

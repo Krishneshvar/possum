@@ -1,28 +1,6 @@
 import * as auditRepository from './audit.repository.js';
 import { AuditLogFilters } from './audit.repository.js';
 import { logger } from '../../shared/utils/logger.js';
-import { authEvents } from '../auth/auth.events.js';
-
-authEvents.on('auth', (event) => {
-    if (event.type === 'login' && event.userId) {
-        logLogin(event.userId, {
-            username: event.username,
-            timestamp: event.timestamp,
-            ip: event.ip
-        });
-    } else if (event.type === 'logout' && event.userId) {
-        logLogout(event.userId, {
-            timestamp: event.timestamp,
-            ip: event.ip
-        });
-    } else if (event.type === 'login_failed') {
-        logAction(0, 'login_failed', 'auth', null, null, null, {
-            username: event.username,
-            timestamp: event.timestamp,
-            ip: event.ip
-        });
-    }
-});
 
 /**
  * Log an action to the audit trail

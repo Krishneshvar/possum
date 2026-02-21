@@ -50,13 +50,9 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/useCurrency';
 
-import {
-    useGetDailyReportQuery,
-    useGetMonthlyReportQuery,
-    useGetYearlyReportQuery,
-    useGetTopProductsQuery,
-    useGetSalesByPaymentMethodQuery
-} from '@/services/reportsApi';
+import { useGetTopProductsQuery, useGetSalesByPaymentMethodQuery } from '@/services/reportsApi';
+import { useReportData } from '../hooks/useReportData';
+import { ReportMetricCard } from '../components/ReportMetricCard';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -68,13 +64,15 @@ export default function SalesReportPage() {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-    const dailyQuery = useGetDailyReportQuery(selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '', { skip: reportType !== 'daily' || !selectedDate });
-    const monthlyQuery = useGetMonthlyReportQuery({ year: selectedYear, month: selectedMonth }, { skip: reportType !== 'monthly' });
-    const yearlyQuery = useGetYearlyReportQuery(selectedYear, { skip: reportType !== 'yearly' });
+    const { data: currentData, isLoading, isError, refetch: refetchReport } = useReportData({
+        reportType,
+        selectedDate,
+        selectedMonth,
+        selectedYear
+    });
 
-    const currentData: any = reportType === 'daily' ? dailyQuery.data :
-        reportType === 'monthly' ? monthlyQuery.data :
-            yearlyQuery.data;
+    const summary = currentData?.summary || {};
+    const chartData = currentData?.breakdown || [];
 
     const startDate = reportType === 'yearly' ? `${selectedYear}-01-01` :
         reportType === 'monthly' ? `${selectedYear}-${selectedMonth.padStart(2, '0')}-01` :
@@ -87,20 +85,10 @@ export default function SalesReportPage() {
     const topProductsData = useGetTopProductsQuery({ startDate, endDate, limit: 5 });
     const salesByPaymentData = useGetSalesByPaymentMethodQuery({ startDate, endDate });
 
-    const summary = currentData?.summary || {};
-    const chartData = currentData?.breakdown || [];
-
     const formatCurrency = (val: number) => `${currency}${val?.toFixed(2)}`;
 
-    const isLoading = reportType === 'daily' ? dailyQuery.isLoading :
-        reportType === 'monthly' ? monthlyQuery.isLoading : yearlyQuery.isLoading;
-    const isError = reportType === 'daily' ? dailyQuery.isError :
-        reportType === 'monthly' ? monthlyQuery.isError : yearlyQuery.isError;
-
     const refetch = () => {
-        if (reportType === 'daily') dailyQuery.refetch();
-        else if (reportType === 'monthly') monthlyQuery.refetch();
-        else yearlyQuery.refetch();
+        refetchReport();
         topProductsData.refetch();
         salesByPaymentData.refetch();
     };
@@ -249,64 +237,34 @@ export default function SalesReportPage() {
             )}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-32" />
-                        ) : (
-                            <div className="text-2xl font-bold">{formatCurrency(summary.total_sales || 0)}</div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">Gross revenue including tax</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Net Sales</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-32" />
-                        ) : (
-                            <div className="text-2xl font-bold">{formatCurrency((summary.total_sales || 0) - (summary.total_tax || 0))}</div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">Revenue after tax deduction</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-                        <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-20" />
-                        ) : (
-                            <div className="text-2xl font-bold">{summary.total_transactions || 0}</div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">Completed orders</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Average Sale</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-28" />
-                        ) : (
-                            <div className="text-2xl font-bold">
-                                {formatCurrency(summary.total_transactions ? (summary.total_sales / summary.total_transactions) : 0)}
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">Per transaction</p>
-                    </CardContent>
-                </Card>
+                <ReportMetricCard
+                    title="Total Sales"
+                    value={formatCurrency(summary.total_sales || 0)}
+                    description="Gross revenue including tax"
+                    icon={DollarSign}
+                    isLoading={isLoading}
+                />
+                <ReportMetricCard
+                    title="Net Sales"
+                    value={formatCurrency(summary.net_sales || 0)}
+                    description="Revenue after tax deduction"
+                    icon={TrendingUp}
+                    isLoading={isLoading}
+                />
+                <ReportMetricCard
+                    title="Transactions"
+                    value={String(summary.total_transactions || 0)}
+                    description="Completed orders"
+                    icon={CreditCard}
+                    isLoading={isLoading}
+                />
+                <ReportMetricCard
+                    title="Average Sale"
+                    value={formatCurrency(summary.average_sale || 0)}
+                    description="Per transaction"
+                    icon={DollarSign}
+                    isLoading={isLoading}
+                />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
