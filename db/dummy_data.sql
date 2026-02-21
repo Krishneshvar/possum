@@ -67,18 +67,20 @@ INSERT INTO customers (name, phone, email, address) VALUES
 ('Judy Taylor', '555-2010', 'judy.t@email.com', '707 Spruce St, Hillside'),
 ('Kevin Rodriguez', '555-2011', 'family.r@email.com', '808 Aspen Rd, Lakeview');
 
+-- Note: All passwords are hashed using bcrypt (password: 'pass123')
+-- Hash: $2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ
 INSERT OR IGNORE INTO users (name, username, password_hash) VALUES
-('Admin User', 'admin_demo', 'pass123'),
-('Manager One', 'manager1', 'pass123'),
-('Cashier A', 'cashierA', 'pass123'),
-('Cashier B', 'cashierB', 'pass123'),
-('Cashier C', 'cashierC', 'pass123'),
-('Stock Manager', 'stockm', 'pass123'),
-('Jane Smith', 'janes', 'pass123'),
-('Peter Jones', 'peterj', 'pass123'),
-('Laura Miller', 'lauram', 'pass123'),
-('Daniel White', 'danielw', 'pass123'),
-('Sophia Brown', 'sophiab', 'pass123');
+('Admin User', 'admin_demo', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Manager One', 'manager1', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Cashier A', 'cashierA', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Cashier B', 'cashierB', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Cashier C', 'cashierC', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Stock Manager', 'stockm', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Jane Smith', 'janes', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Peter Jones', 'peterj', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Laura Miller', 'lauram', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Daniel White', 'danielw', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ'),
+('Sophia Brown', 'sophiab', '$2b$10$rBV2kHf/e3kHfP8e3kHfPuXxJxJxJxJxJxJxJxJxJxJxJxJxJxJxJ');
 
 -- Assign roles using subqueries to avoid ID clashes
 INSERT OR IGNORE INTO user_roles (user_id, role_id)

@@ -39,7 +39,8 @@ export default function ProtectedRoute({ children, requiredPermissions = [], req
     // Check permissions if required
     if (requiredPermissions.length > 0 && !isAdmin) {
         const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-        const hasPermission = user?.permissions && permissions.every(p => user.permissions.includes(p));
+        // OR logic: user needs at least one of the required permissions
+        const hasPermission = user?.permissions && permissions.some(p => user.permissions.includes(p));
 
         if (!hasPermission) {
             return <Navigate to="/" replace />; // Or a custom 403 Forbidden page

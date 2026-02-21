@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as AuthService from '../../modules/auth/auth.service.js';
+import { hasAnyPermission, isAdmin } from '../rbac/rbac.service.js';
 
 // Extend Express Request
 declare global {
@@ -66,29 +67,77 @@ export function requirePermission(permission: string | string[]) {
             });
         }
 
-        const userPermissions = req.permissions!;
-        const userRoles = (req.user as any).roles || [];
+        const userContext = {
+            id: (req.user as any).id,
+            roles: (req.user as any).roles || [],
+            permissions: req.permissions
+        };
         
-        // Admin role bypasses all permission checks
-        if (userRoles.includes('admin')) {
-            return next();
-        }
-
-        let hasAccess = false;
-
-        if (Array.isArray(permission)) {
-            hasAccess = permission.some(p => userPermissions.includes(p));
-        } else {
-            hasAccess = userPermissions.includes(permission);
-        }
+        const permissions = Array.isArray(permission) ? permission : [permission];
+        const hasAccess = hasAnyPermission(userContext, permissions);
 
         if (!hasAccess) {
             return res.status(403).json({ 
-                error: `Forbidden: Missing required permission (${Array.isArray(permission) ? permission.join(' OR ') : permission})`,
+                error: `Forbidden: Missing required permission (${permissions.join(' OR ')})`,
                 code: 'INSUFFICIENT_PERMISSIONS'
             });
         }
 
         next();
     };
+}
+
+/**
+ * Middleware to require specific role
+ * Supports single string or array of strings (OR logic)
+ */
+export function requireRole(role: string | string[]) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (!req.user) {
+            return res.status(401).json({ 
+                error: 'Unauthorized: User not authenticated',
+                code: 'NOT_AUTHENTICATED'
+            });
+        }
+
+        const userRoles = (req.user as any).roles || [];
+        const roles = Array.isArray(role) ? role : [role];
+        const hasAccess = roles.some(r => userRoles.includes(r));
+
+        if (!hasAccess) {
+            return res.status(403).json({ 
+                error: `Forbidden: Missing required role (${roles.join(' OR ')})`,
+                code: 'INSUFFICIENT_ROLE'
+            });
+        }
+
+        next();
+    };
+}
+
+/**
+ * Middleware to require admin role
+ */
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+    if (!req.user) {
+        return res.status(401).json({ 
+            error: 'Unauthorized: User not authenticated',
+            code: 'NOT_AUTHENTICATED'
+        });
+    }
+
+    const userContext = {
+        id: (req.user as any).id,
+        roles: (req.user as any).roles || [],
+        permissions: req.permissions || []
+    };
+
+    if (!isAdmin(userContext)) {
+        return res.status(403).json({ 
+            error: 'Forbidden: Admin access required',
+            code: 'ADMIN_REQUIRED'
+        });
+    }
+
+    next();
 }

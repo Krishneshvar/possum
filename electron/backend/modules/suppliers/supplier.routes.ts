@@ -11,7 +11,7 @@ import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 
 const router = Router();
 
-router.get('/', requirePermission(['suppliers.manage', 'inventory.manage']), validate(getSuppliersSchema), supplierController.getSuppliers);
+router.get('/', requirePermission(['suppliers.view', 'suppliers.manage', 'purchase.view', 'purchase.manage']), validate(getSuppliersSchema), supplierController.getSuppliers);
 router.post('/', requirePermission('suppliers.manage'), validate(createSupplierSchema), supplierController.createSupplier);
 router.put('/:id', requirePermission('suppliers.manage'), validate(updateSupplierSchema), supplierController.updateSupplier);
 router.delete('/:id', requirePermission('suppliers.manage'), validate(getSupplierSchema), supplierController.deleteSupplier);

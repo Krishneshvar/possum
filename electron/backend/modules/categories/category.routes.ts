@@ -12,9 +12,9 @@ import {
 
 const router = Router();
 
-router.get('/', getCategoriesController);
-router.post('/', requirePermission('products.manage'), validate(createCategorySchema), createCategoryController);
-router.put('/:id', requirePermission('products.manage'), validate(updateCategorySchema), updateCategoryController);
-router.delete('/:id', requirePermission('products.manage'), validate(getCategorySchema), deleteCategoryController);
+router.get('/', requirePermission(['categories.view', 'categories.manage', 'products.view', 'products.manage', 'sales.create']), getCategoriesController);
+router.post('/', requirePermission('categories.manage'), validate(createCategorySchema), createCategoryController);
+router.put('/:id', requirePermission('categories.manage'), validate(updateCategorySchema), updateCategoryController);
+router.delete('/:id', requirePermission('categories.manage'), validate(getCategorySchema), deleteCategoryController);
 
 export default router;

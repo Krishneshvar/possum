@@ -21,15 +21,15 @@ import {
 const router = Router();
 
 // Create return
-router.post('/', requirePermission('sales.refund'), validate(createReturnSchema), createReturnController);
+router.post('/', requirePermission(['sales.refund', 'returns.manage']), validate(createReturnSchema), createReturnController);
 
 // Get returns for a sale
-router.get('/sale/:saleId', requirePermission('sales.refund'), validate(getSaleReturnsSchema), getSaleReturnsController);
+router.get('/sale/:saleId', requirePermission(['sales.refund', 'returns.view', 'returns.manage']), validate(getSaleReturnsSchema), getSaleReturnsController);
 
 // Get returns list
-router.get('/', requirePermission('sales.refund'), validate(getReturnsQuerySchema), getReturnsController);
+router.get('/', requirePermission(['returns.view', 'returns.manage', 'sales.refund']), validate(getReturnsQuerySchema), getReturnsController);
 
 // Get return details
-router.get('/:id', requirePermission('sales.refund'), validate(getReturnSchema), getReturnController);
+router.get('/:id', requirePermission(['returns.view', 'returns.manage', 'sales.refund']), validate(getReturnSchema), getReturnController);
 
 export default router;

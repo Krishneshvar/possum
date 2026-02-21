@@ -6,6 +6,6 @@ import { getTransactionsSchema } from './transactions.schema.js';
 
 const router = Router();
 
-router.get('/', requirePermission(['reports.view', 'sales.view', 'sales.create']), validate(getTransactionsSchema), getTransactionsController);
+router.get('/', requirePermission(['transactions.view', 'sales.view', 'sales.create']), validate(getTransactionsSchema), getTransactionsController);
 
 export default router;

@@ -26,6 +26,12 @@ export interface Permission {
   description?: string;
 }
 
+export interface UserPermissionOverride {
+  user_id: number;
+  permission_id: number;
+  granted: number; // 1 = granted, 0 = revoked
+}
+
 export interface Product extends BaseEntity {
   name: string;
   description?: string;

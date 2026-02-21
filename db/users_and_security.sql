@@ -11,28 +11,30 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS roles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL UNIQUE
+  name TEXT NOT NULL UNIQUE,
+  description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS permissions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  key TEXT NOT NULL UNIQUE
+  key TEXT NOT NULL UNIQUE,
+  description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS role_permissions (
   role_id INTEGER NOT NULL,
   permission_id INTEGER NOT NULL,
   PRIMARY KEY (role_id, permission_id),
-  FOREIGN KEY (role_id) REFERENCES roles(id),
-  FOREIGN KEY (permission_id) REFERENCES permissions(id)
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+  FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
   user_id INTEGER NOT NULL,
   role_id INTEGER NOT NULL,
   PRIMARY KEY (user_id, role_id),
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (role_id) REFERENCES roles(id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_name ON users(name);
@@ -53,3 +55,17 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+
+CREATE TABLE IF NOT EXISTS user_permissions (
+  user_id INTEGER NOT NULL,
+  permission_id INTEGER NOT NULL,
+  granted INTEGER NOT NULL DEFAULT 1 CHECK(granted IN (0,1)),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, permission_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_permissions_permission_id ON user_permissions(permission_id);

@@ -17,12 +17,12 @@ import { createProductSchema, updateProductSchema, getProductSchema } from './pr
 
 const router = Router();
 
-// Allow anyone who can sell or view reports to see products
-router.get('/', requirePermission(['reports.view', 'sales.create', 'products.manage']), getProductsController);
+// Allow anyone who can sell or view products to see products
+router.get('/', requirePermission(['products.view', 'products.manage', 'sales.create']), getProductsController);
 
 // Image upload handling via multer
 router.post('/', requirePermission('products.manage'), upload.single('image'), validate(createProductSchema), createProductController);
-router.get('/:id', requirePermission(['reports.view', 'sales.create', 'products.manage']), validate(getProductSchema), getProductDetails);
+router.get('/:id', requirePermission(['products.view', 'products.manage', 'sales.create']), validate(getProductSchema), getProductDetails);
 router.put('/:id', requirePermission('products.manage'), upload.single('image'), validate(updateProductSchema), updateProductController);
 router.delete('/:id', requirePermission('products.manage'), validate(getProductSchema), deleteProductController);
 

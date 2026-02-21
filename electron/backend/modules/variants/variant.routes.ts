@@ -11,8 +11,8 @@ import {
 const router = Router();
 
 // Routes for variants
-router.get('/stats', requirePermission(['reports.view', 'sales.create', 'products.manage']), getVariantStatsController);
-router.get('/', requirePermission(['reports.view', 'sales.create', 'products.manage']), getVariantsController);
+router.get('/stats', requirePermission(['products.view', 'products.manage', 'sales.create']), getVariantStatsController);
+router.get('/', requirePermission(['products.view', 'products.manage', 'sales.create']), getVariantsController);
 router.post('/', requirePermission('products.manage'), addVariantController);
 router.put('/:id', requirePermission('products.manage'), updateVariantController);
 router.delete('/:id', requirePermission('products.manage'), deleteVariantController);

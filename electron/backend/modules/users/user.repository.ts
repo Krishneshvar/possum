@@ -204,7 +204,22 @@ export function updateUserWithRolesById(
     });
 
     transaction(id, data, roleIds);
+    
+    // Invalidate user sessions when roles change to force re-authentication
+    if (roleIds !== undefined) {
+        invalidateUserSessions(id);
+    }
+    
     return findUserById(id);
+}
+
+/**
+ * Invalidate all sessions for a user (used when roles/permissions change)
+ */
+function invalidateUserSessions(userId: number): void {
+    const db = getDB();
+    const stmt = db.prepare('DELETE FROM sessions WHERE user_id = ?');
+    stmt.run(userId);
 }
 
 /**
@@ -222,19 +237,44 @@ export function getUserRoles(userId: number): Role[] {
 }
 
 /**
- * Get all permissions for a user (via their roles)
+ * Get all permissions for a user (via their roles + user-specific overrides)
  */
 export function getUserPermissions(userId: number): string[] {
     const db = getDB();
-    const query = `
+    
+    // Get permissions from roles
+    const rolePermissions = db.prepare(`
         SELECT DISTINCT p.key
         FROM permissions p
         JOIN role_permissions rp ON p.id = rp.permission_id
         JOIN user_roles ur ON rp.role_id = ur.role_id
         WHERE ur.user_id = ?
-    `;
-    const results = db.prepare(query).all(userId) as { key: string }[];
-    return results.map(p => p.key);
+    `).all(userId) as { key: string }[];
+    
+    const rolePermKeys = new Set(rolePermissions.map(p => p.key));
+    
+    // Get user-specific permission overrides (if table exists)
+    try {
+        const userOverrides = db.prepare(`
+            SELECT p.key, up.granted
+            FROM permissions p
+            JOIN user_permissions up ON p.id = up.permission_id
+            WHERE up.user_id = ?
+        `).all(userId) as { key: string; granted: number }[];
+        
+        // Apply overrides: granted=1 adds permission, granted=0 removes it
+        for (const override of userOverrides) {
+            if (override.granted === 1) {
+                rolePermKeys.add(override.key);
+            } else {
+                rolePermKeys.delete(override.key);
+            }
+        }
+    } catch (error) {
+        // Table doesn't exist yet, skip user-specific permissions
+    }
+    
+    return Array.from(rolePermKeys);
 }
 
 /**
@@ -253,6 +293,65 @@ export function assignUserRoles(userId: number, roleIds: number[]): void {
     });
 
     transaction(userId, roleIds);
+}
+
+/**
+ * Grant or revoke a specific permission for a user
+ */
+export function setUserPermission(
+    userId: number,
+    permissionId: number,
+    granted: boolean,
+    modifiedBy?: number
+): void {
+    const db = getDB();
+    try {
+        const stmt = db.prepare(`
+            INSERT OR REPLACE INTO user_permissions (user_id, permission_id, granted, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        `);
+        stmt.run(userId, permissionId, granted ? 1 : 0);
+        
+        // Invalidate user sessions to force re-authentication with new permissions
+        invalidateUserSessions(userId);
+    } catch (error) {
+        // Table might not exist yet (migration not run)
+        throw new Error('User-specific permissions not available. Database schema may need updating.');
+    }
+}
+
+/**
+ * Remove a user-specific permission override
+ */
+export function removeUserPermission(userId: number, permissionId: number): void {
+    const db = getDB();
+    try {
+        const stmt = db.prepare('DELETE FROM user_permissions WHERE user_id = ? AND permission_id = ?');
+        stmt.run(userId, permissionId);
+        
+        // Invalidate user sessions to force re-authentication
+        invalidateUserSessions(userId);
+    } catch (error) {
+        // Table might not exist yet
+    }
+}
+
+/**
+ * Get user-specific permission overrides
+ */
+export function getUserPermissionOverrides(userId: number): Array<{ permission_id: number; key: string; granted: number }> {
+    const db = getDB();
+    try {
+        const query = `
+            SELECT up.permission_id, p.key, up.granted
+            FROM user_permissions up
+            JOIN permissions p ON up.permission_id = p.id
+            WHERE up.user_id = ?
+        `;
+        return db.prepare(query).all(userId) as Array<{ permission_id: number; key: string; granted: number }>;
+    } catch (error) {
+        return [];
+    }
 }
 
 /**

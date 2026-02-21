@@ -10,8 +10,8 @@ import { createPurchaseOrderSchema, getPurchaseOrderSchema, getPurchaseOrdersSch
 
 const router = Router();
 
-router.get('/', requirePermission('purchase.manage'), validate(getPurchaseOrdersSchema), purchaseController.getPurchaseOrders);
-router.get('/:id', requirePermission('purchase.manage'), validate(getPurchaseOrderSchema), purchaseController.getPurchaseOrderById);
+router.get('/', requirePermission(['purchase.view', 'purchase.manage']), validate(getPurchaseOrdersSchema), purchaseController.getPurchaseOrders);
+router.get('/:id', requirePermission(['purchase.view', 'purchase.manage']), validate(getPurchaseOrderSchema), purchaseController.getPurchaseOrderById);
 router.post('/', requirePermission('purchase.manage'), validate(createPurchaseOrderSchema), purchaseController.createPurchaseOrder);
 router.post('/:id/receive', requirePermission('purchase.manage'), validate(getPurchaseOrderSchema), purchaseController.receivePurchaseOrder);
 router.post('/:id/cancel', requirePermission('purchase.manage'), validate(getPurchaseOrderSchema), purchaseController.cancelPurchaseOrder);

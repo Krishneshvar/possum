@@ -79,41 +79,41 @@ export default function AppRoutes() {
         <Route path="/sales/orders" element={<ProtectedRoute requiredPermissions="sales.view"><OrdersPage /></ProtectedRoute>} />
         <Route path="/sales/history" element={<ProtectedRoute requiredPermissions="sales.view"><SalesHistoryPage /></ProtectedRoute>} />
         <Route path="/sales/history/:saleId" element={<ProtectedRoute requiredPermissions="sales.view"><SaleDetailsPage /></ProtectedRoute>} />
-        <Route path="/transactions" element={<ProtectedRoute requiredPermissions="sales.view"><TransactionsPage /></ProtectedRoute>} />
-        <Route path="/returns" element={<ProtectedRoute requiredPermissions="sales.refund"><ReturnsPage /></ProtectedRoute>} />
+        <Route path="/transactions" element={<ProtectedRoute requiredPermissions="transactions.view"><TransactionsPage /></ProtectedRoute>} />
+        <Route path="/returns" element={<ProtectedRoute requiredPermissions={['returns.view', 'sales.refund']}><ReturnsPage /></ProtectedRoute>} />
 
 
         <Route path="/reports" element={<ProtectedRoute requiredPermissions="reports.view"><ReportsPage /></ProtectedRoute>} />
         <Route path="/reports/sales" element={<ProtectedRoute requiredPermissions="reports.view"><SalesReportPage /></ProtectedRoute>} />
 
-        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/products" element={<ProtectedRoute requiredPermissions="products.view"><ProductsPage /></ProtectedRoute>} />
         <Route path="/products/add" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
         <Route path="/products/edit/:productId" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />
-        <Route path="/products/:productId" element={<ProductDetailsPage />} />
+        <Route path="/products/:productId" element={<ProtectedRoute requiredPermissions="products.view"><ProductDetailsPage /></ProtectedRoute>} />
 
         <Route path="/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
-        <Route path="/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
-        <Route path="/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
+        <Route path="/variants" element={<ProtectedRoute requiredPermissions="products.view"><VariantsPage /></ProtectedRoute>} />
+        <Route path="/categories" element={<ProtectedRoute requiredPermissions="categories.view"><CategoriesPage /></ProtectedRoute>} />
 
         <Route path="/products/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
-        <Route path="/products/variants" element={<ProtectedRoute requiredPermissions="products.manage"><VariantsPage /></ProtectedRoute>} />
-        <Route path="/products/flow" element={<ProtectedRoute requiredPermissions="products.manage"><ProductFlowPage /></ProtectedRoute>} />
-        <Route path="/products/categories" element={<ProtectedRoute requiredPermissions="products.manage"><CategoriesPage /></ProtectedRoute>} />
+        <Route path="/products/variants" element={<ProtectedRoute requiredPermissions="products.view"><VariantsPage /></ProtectedRoute>} />
+        <Route path="/products/flow" element={<ProtectedRoute requiredPermissions="inventory.view"><ProductFlowPage /></ProtectedRoute>} />
+        <Route path="/products/categories" element={<ProtectedRoute requiredPermissions="categories.view"><CategoriesPage /></ProtectedRoute>} />
 
-        <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
-        <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrdersPage /></ProtectedRoute>} />
+        <Route path="/purchase" element={<ProtectedRoute requiredPermissions="purchase.view"><PurchaseOrdersPage /></ProtectedRoute>} />
+        <Route path="/purchase/orders" element={<ProtectedRoute requiredPermissions="purchase.view"><PurchaseOrdersPage /></ProtectedRoute>} />
         <Route path="/purchase/orders/create" element={<ProtectedRoute requiredPermissions="purchase.manage"><CreatePurchaseOrderPage /></ProtectedRoute>} />
-        <Route path="/purchase/orders/:id" element={<ProtectedRoute requiredPermissions="purchase.manage"><PurchaseOrderDetailPage /></ProtectedRoute>} />
-        <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.manage"><SuppliersPage /></ProtectedRoute>} />
+        <Route path="/purchase/orders/:id" element={<ProtectedRoute requiredPermissions="purchase.view"><PurchaseOrderDetailPage /></ProtectedRoute>} />
+        <Route path="/suppliers" element={<ProtectedRoute requiredPermissions="suppliers.view"><SuppliersPage /></ProtectedRoute>} />
 
         <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />
-        <Route path="/customers" element={<ProtectedRoute requiredPermissions="customers.manage"><CustomersPage /></ProtectedRoute>} />
+        <Route path="/customers" element={<ProtectedRoute requiredPermissions="customers.view"><CustomersPage /></ProtectedRoute>} />
         <Route path="/employees" element={<ProtectedRoute requiredPermissions="users.manage"><EmployeesPage /></ProtectedRoute>} />
 
-        <Route path="/plugins" element={<ProtectedRoute requiredPermissions="admin"><PluginsPage /></ProtectedRoute>} />
+        <Route path="/plugins" element={<ProtectedRoute requiredPermissions="settings.manage"><PluginsPage /></ProtectedRoute>} />
         <Route path="/help" element={<HelpPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/audit-log" element={<ProtectedRoute requiredPermissions="admin"><AuditLogPage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute requiredPermissions="settings.view"><SettingsPage /></ProtectedRoute>} />
+        <Route path="/audit-log" element={<ProtectedRoute requiredPermissions="audit.view"><AuditLogPage /></ProtectedRoute>} />
       </Route>
     </Routes>
   );
