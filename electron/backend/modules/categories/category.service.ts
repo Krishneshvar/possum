@@ -1,4 +1,4 @@
-import type { Category } from '../../../../../types/index.js';
+import type { Category } from '../../../../types/index.js';
 import * as categoryRepository from './category.repository.js';
 
 /**

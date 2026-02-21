@@ -72,9 +72,10 @@ export function logCreate(userId: number, tableName: string, rowId: number, newD
  * @param {number} rowId - Updated row ID
  * @param {Object} oldData - Previous data
  * @param {Object} newData - Updated data
+ * @param {Object} eventDetails - Additional event context (optional)
  */
-export function logUpdate(userId: number, tableName: string, rowId: number, oldData: any, newData: any) {
-    return logAction(userId, 'update', tableName, rowId, oldData, newData);
+export function logUpdate(userId: number, tableName: string, rowId: number, oldData: any, newData: any, eventDetails: any = null) {
+    return logAction(userId, 'update', tableName, rowId, oldData, newData, eventDetails);
 }
 
 /**

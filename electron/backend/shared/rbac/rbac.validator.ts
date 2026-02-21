@@ -3,9 +3,9 @@
  * Validates that database permissions match the code registry
  */
 
-import { getDB } from '../shared/db/index.js';
-import { ALL_PERMISSIONS, PERMISSIONS } from '../shared/rbac/permissions.js';
-import { ROLE_DEFINITIONS, ROLES } from '../shared/rbac/roles.js';
+import { getDB } from '../../shared/db/index.js';
+import { ALL_PERMISSIONS, PERMISSIONS } from '../../shared/rbac/permissions.js';
+import { ROLE_DEFINITIONS, ROLES } from '../../shared/rbac/roles.js';
 
 interface ValidationResult {
   valid: boolean;
@@ -29,7 +29,7 @@ export function validatePermissions(): ValidationResult {
   const dbPermissionKeys = dbPermissions.map(p => p.key);
 
   // Check for missing permissions in database
-  const missingInDb = ALL_PERMISSIONS.filter(p => !dbPermissionKeys.includes(p));
+  const missingInDb = ALL_PERMISSIONS.filter((p: string) => !dbPermissionKeys.includes(p));
   if (missingInDb.length > 0) {
     result.valid = false;
     result.errors.push(`Missing permissions in database: ${missingInDb.join(', ')}`);
@@ -102,16 +102,16 @@ export function validateRolePermissions(): ValidationResult {
       WHERE rp.role_id = ?
     `).all(role.id) as { key: string }[];
     
-    const dbPermKeys = dbPerms.map(p => p.key);
+    const dbPermKeys = dbPerms.map((p: { key: string }) => p.key);
 
     // Check for missing permissions
-    const missingPerms = roleDef.permissions.filter(p => !dbPermKeys.includes(p));
+    const missingPerms = (roleDef as any).permissions.filter((p: string) => !dbPermKeys.includes(p));
     if (missingPerms.length > 0) {
       result.warnings.push(`Role ${roleName} missing permissions in DB: ${missingPerms.join(', ')}`);
     }
 
     // Check for extra permissions
-    const extraPerms = dbPermKeys.filter(p => !roleDef.permissions.includes(p));
+    const extraPerms = dbPermKeys.filter((p: string) => !(roleDef as any).permissions.includes(p));
     if (extraPerms.length > 0) {
       result.warnings.push(`Role ${roleName} has extra permissions in DB: ${extraPerms.join(', ')}`);
     }

@@ -72,6 +72,8 @@ export interface Customer extends BaseEntity {
   phone?: string;
   address?: string;
   loyalty_points?: number;
+  is_tax_exempt?: boolean;
+  type?: string;
 }
 
 // Deprecated Invoice/InvoiceItem in favor of Sale/SaleItem to match DB
@@ -126,6 +128,7 @@ export interface Sale extends BaseEntity {
   customer_phone?: string;
   customer_email?: string;
   biller_name?: string;
+  cashier_name?: string;
   items: SaleItem[];
   transactions?: Transaction[];
 }

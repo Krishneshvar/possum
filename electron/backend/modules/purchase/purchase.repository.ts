@@ -3,7 +3,7 @@
  * Database operations for purchase orders
  */
 import { getDB } from '../../shared/db/index.js';
-import { PurchaseOrder, PurchaseOrderItem } from '@shared/index';
+import { PurchaseOrder, PurchaseOrderItem } from '../../../../types/index.js';
 
 export interface PurchaseOrderQueryOptions {
     page?: number;

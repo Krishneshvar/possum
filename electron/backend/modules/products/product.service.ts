@@ -158,10 +158,10 @@ export function updateProduct(productId: number, productData: any, newImagePath:
                         throw new Error(`Variant ${variant.id} does not belong to product ${productId}`);
                     }
                     // Update existing variant
-                    variantService.updateVariant({ ...variant, userId });
+                    variantService.updateVariant({ id: variant.id, ...variant, userId });
                 } else {
                     // Add new variant
-                    variantService.addVariant(productId, { ...variant, userId });
+                    variantService.addVariant({ productId, ...variant, userId });
                 }
             }
             delete productData.variants;

@@ -1,5 +1,5 @@
 import { getDB } from '../../shared/db/index.js';
-import type { Category } from '../../../../../types/index.js';
+import type { Category } from '../../../../types/index.js';
 
 /**
  * Get all categories ordered by name
