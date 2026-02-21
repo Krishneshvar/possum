@@ -4,7 +4,7 @@
  */
 import * as variantService from './variant.service.js';
 import { Request, Response } from 'express';
-import { getQueryNumber, getQueryString } from '../../shared/utils/index.js';
+import { getQueryNumber, getQueryString, getQueryArray } from '../../shared/utils/index.js';
 import { logger } from '../../shared/utils/logger.js';
 
 /**
@@ -121,6 +121,7 @@ export async function getVariantsController(req: Request, res: Response) {
         const {
             searchTerm,
             categoryId,
+            categories,
             stockStatus,
             status,
             sortBy,
@@ -132,6 +133,7 @@ export async function getVariantsController(req: Request, res: Response) {
         const result = await variantService.getVariants({
             searchTerm: getQueryString(searchTerm) || '',
             categoryId: getQueryNumber(categoryId),
+            categories: getQueryArray(categories),
             stockStatus: stockStatus as string | string[],
             status: status as string | string[],
             sortBy: getQueryString(sortBy) || 'p.name',

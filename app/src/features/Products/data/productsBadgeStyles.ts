@@ -8,7 +8,7 @@ export const stockStatusStyles: Record<string, string> = {
 export const statusStyles: Record<string, string> = {
     active: 'bg-blue-100 text-blue-800',
     inactive: 'bg-gray-100 text-gray-800',
-    archived: 'bg-purple-100 text-purple-800',
+    discontinued: 'bg-purple-100 text-purple-800',
 };
 
 export const productStatusBadges = statusStyles;

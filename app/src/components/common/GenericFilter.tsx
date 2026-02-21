@@ -1,9 +1,8 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
 interface FilterOption {
@@ -61,27 +60,35 @@ export default function GenericFilter({
                                 <ChevronDown className="ml-2 h-4 w-4" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-56 p-3" align="start">
-                            <div className="space-y-2">
-                                {filter.options.map((option) => {
-                                    const isChecked = (activeFilters[filter.key] as string[] || []).includes(option.value);
-                                    return (
-                                        <div key={option.value} className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id={`${filter.key}-${option.value}`}
-                                                checked={isChecked}
-                                                onCheckedChange={() => toggleOption(filter.key, option.value)}
-                                            />
-                                            <label
-                                                htmlFor={`${filter.key}-${option.value}`}
-                                                className="text-sm cursor-pointer flex-1"
-                                            >
-                                                {option.label}
-                                            </label>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                        <PopoverContent className="w-[200px] p-0" align="start">
+                            <Command>
+                                <CommandInput placeholder={`Search ${filter.label}...`} />
+                                <CommandList>
+                                    <CommandEmpty>No results found.</CommandEmpty>
+                                    <CommandGroup className="p-1">
+                                        {filter.options.map((option) => {
+                                            const isChecked = (activeFilters[filter.key] as string[] || []).includes(option.value);
+                                            return (
+                                                <CommandItem
+                                                    key={option.value}
+                                                    onSelect={() => toggleOption(filter.key, option.value)}
+                                                    className="flex items-center px-2 py-1.5"
+                                                >
+                                                    <div className={cn(
+                                                        "mr-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-primary transition-colors",
+                                                        isChecked
+                                                            ? "bg-primary text-primary-foreground"
+                                                            : "opacity-50 [&_svg]:invisible"
+                                                    )}>
+                                                        <Check className={cn("h-4 w-4")} />
+                                                    </div>
+                                                    <span className="truncate">{option.label}</span>
+                                                </CommandItem>
+                                            );
+                                        })}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
                         </PopoverContent>
                     </Popover>
                 );

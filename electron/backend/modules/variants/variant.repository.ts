@@ -11,6 +11,7 @@ import { ValidationError } from '../../shared/errors/index.js';
 export interface VariantQueryOptions {
   searchTerm?: string;
   categoryId?: number;
+  categories?: (number | string)[];
   stockStatus?: 'low' | 'out' | 'ok' | string | string[];
   status?: 'active' | 'inactive' | 'discontinued' | string | string[];
   sortBy?: string;
@@ -52,7 +53,7 @@ export function insertVariant(productId: number, variant: VariantInput) {
     variant.price,
     variant.cost_price,
     variant.stock_alert_cap ?? 10,
-    variant.is_default ?? 0,
+    Number(variant.is_default ?? 0),
     variant.status ?? 'active'
   );
 }
@@ -146,7 +147,7 @@ export function updateVariantById(variant: VariantInput & { id: number }) {
     variant.cost_price,
     variant.stock_alert_cap ?? 10,
     variant.status ?? 'active',
-    variant.is_default ?? 0,
+    Number(variant.is_default ?? 0),
     variant.id
   );
 }
@@ -163,7 +164,7 @@ export function softDeleteVariant(id: number) {
 /**
  * Find variants with filtering, pagination, and sorting
  */
-export async function findVariants({ searchTerm, categoryId, stockStatus, status, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
+export async function findVariants({ searchTerm, categoryId, categories, stockStatus, status, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
   const db = getDB();
   const filterClauses: string[] = [];
   const filterParams: any[] = [];
@@ -176,7 +177,11 @@ export async function findVariants({ searchTerm, categoryId, stockStatus, status
     filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
   }
 
-  if (categoryId) {
+  if (categories && categories.length > 0) {
+    const placeholders = categories.map(() => '?').join(',');
+    filterClauses.push(`p.category_id IN (${placeholders})`);
+    filterParams.push(...categories);
+  } else if (categoryId) {
     filterClauses.push(`p.category_id = ?`);
     filterParams.push(categoryId);
   }

@@ -9,6 +9,7 @@ export interface VariantsState {
     filters: {
         stockStatus: string[];
         status: string[];
+        categories: string[];
     };
 }
 
@@ -21,6 +22,7 @@ const initialState: VariantsState = {
     filters: {
         stockStatus: [],
         status: [],
+        categories: [],
     },
 };
 

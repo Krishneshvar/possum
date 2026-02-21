@@ -27,9 +27,9 @@ import {
 } from '@/components/ui/select';
 
 interface AddOrEditCategoryModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    editingCategory?: Category | null;
+  isOpen: boolean;
+  onClose: () => void;
+  editingCategory?: Category | null;
 }
 
 export default function AddOrEditCategoryModal({ isOpen, onClose, editingCategory }: AddOrEditCategoryModalProps) {
@@ -104,8 +104,8 @@ export default function AddOrEditCategoryModal({ isOpen, onClose, editingCategor
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Category' : 'Create New Category'}</DialogTitle>
           <DialogDescription id="category-modal-description">
-            {isEditMode 
-              ? 'Update the category name or change its parent category.' 
+            {isEditMode
+              ? 'Update the category name or change its parent category.'
               : 'Categories help organize your products. You can create nested categories by selecting a parent.'}
           </DialogDescription>
         </DialogHeader>
@@ -148,33 +148,33 @@ export default function AddOrEditCategoryModal({ isOpen, onClose, editingCategor
               value={parentId === null ? 'null' : String(parentId)}
               disabled={!hasCategories || isSaving}
             >
-              <SelectTrigger 
-                id="parent-category" 
+              <SelectTrigger
+                id="parent-category"
                 aria-label="Select parent category"
               >
                 <SelectValue placeholder="None (top-level category)" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" side="bottom" className="max-h-[200px]">
                 <SelectItem value="null">None (top-level category)</SelectItem>
                 {filteredCategories.map((cat: FlattenedCategory) => (
                   <SelectItem key={cat.id} value={String(cat.id)}>
-                    {'  '.repeat(cat.depth || 0)}{cat.name}
+                    {'\u00A0\u00A0'.repeat(cat.depth || 0)}{cat.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              {hasCategories 
-                ? 'Optional: Select a parent to create a subcategory' 
+              {hasCategories
+                ? 'Optional: Select a parent to create a subcategory'
                 : 'Create your first category as a top-level category'}
             </p>
           </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               disabled={isSaving}
             >
@@ -182,8 +182,8 @@ export default function AddOrEditCategoryModal({ isOpen, onClose, editingCategor
             </Button>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSaving 
-                ? (isEditMode ? 'Updating...' : 'Creating...') 
+              {isSaving
+                ? (isEditMode ? 'Updating...' : 'Creating...')
                 : (isEditMode ? 'Update Category' : 'Create Category')}
             </Button>
           </div>

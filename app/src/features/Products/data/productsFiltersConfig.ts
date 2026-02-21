@@ -14,7 +14,7 @@ export const statusFilter = {
     options: [
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
-        { label: "Archived", value: "archived" },
+        { label: "Discontinued", value: "discontinued" },
     ],
 };
 

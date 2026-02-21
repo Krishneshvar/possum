@@ -3,6 +3,10 @@ import { toast } from 'sonner';
 import { Loader2, Package, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { MANUAL_INVENTORY_REASONS, INVENTORY_REASON_LABELS, INVENTORY_REASONS } from '@shared/index';
 
+import { useDispatch } from 'react-redux';
+import { productsApi } from '@/services/productsApi';
+import { variantsApi } from '@/services/variantsApi';
+
 import {
     Dialog,
     DialogContent,
@@ -45,6 +49,7 @@ export default function StockAdjustmentDialog({
     sku,
     threshold = 10
 }: StockAdjustmentDialogProps) {
+    const dispatch = useDispatch();
     const [createAdjustment, { isLoading }] = useCreateAdjustmentMutation();
     const [adjustmentType, setAdjustmentType] = useState<'set' | 'adjust'>('adjust');
     const [quantityChange, setQuantityChange] = useState('');
@@ -82,13 +87,16 @@ export default function StockAdjustmentDialog({
             // The inventory module should NOT be responsible for auth state management
             // This is a cross-cutting concern that should be injected via context
             const userId = 1; // TODO: Replace with useAuth() hook or Redux auth selector
-            
+
             await createAdjustment({
                 variantId,
                 quantityChange: diff,
                 reason,
                 userId
             }).unwrap();
+
+            dispatch(productsApi.util.invalidateTags([{ type: 'Variant', id: variantId }, { type: 'Variant', id: 'LIST' }]));
+            dispatch(variantsApi.util.invalidateTags([{ type: 'Variant', id: variantId }, { type: 'Variant', id: 'LIST' }, 'VariantStats']));
 
             toast.success(`Stock updated successfully: ${currentStock} → ${calculatedNewStock}`);
             onOpenChange(false);
@@ -176,7 +184,7 @@ export default function StockAdjustmentDialog({
                                     id="quantity"
                                     type="number"
                                     value={quantityChange}
-                                    onChange={(e) => setQuantityChange(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantityChange(e.target.value)}
                                     placeholder="e.g., 10 or -5"
                                     className="text-lg font-semibold tabular-nums pr-10"
                                     autoFocus
@@ -194,7 +202,7 @@ export default function StockAdjustmentDialog({
                                 id="quantity"
                                 type="number"
                                 value={newStock}
-                                onChange={(e) => setNewStock(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStock(e.target.value)}
                                 placeholder="Enter new stock level"
                                 className="text-lg font-semibold tabular-nums"
                                 autoFocus

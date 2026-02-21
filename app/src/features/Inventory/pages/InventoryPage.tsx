@@ -6,6 +6,7 @@ import {
 } from '@/services/inventoryApi';
 import { useGetVariantsQuery } from '@/services/productsApi';
 import { useGetCategoriesQuery } from '@/services/categoriesApi';
+import { flattenCategories } from '@/utils/categories.utils';
 import StockAdjustmentCell from '../components/StockAdjustmentCell';
 import {
   AlertTriangle,
@@ -93,7 +94,7 @@ export default function InventoryPage() {
       key: 'category',
       label: 'Category',
       placeholder: 'Filter by Category',
-      options: categories.map((cat: any) => ({
+      options: flattenCategories(categories).map((cat: any) => ({
         label: cat.name,
         value: cat.id.toString()
       })),

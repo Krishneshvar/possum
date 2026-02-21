@@ -12,7 +12,9 @@ import GenericDeleteDialog from "@/components/common/GenericDeleteDialog"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./productsTableContents"
 import DataTable from "@/components/common/DataTable"
-import { statusFilter, stockStatusFilter } from "../data/productsFiltersConfig"
+import { statusFilter, stockStatusFilter, categoryFilter } from "../data/productsFiltersConfig"
+import { useGetCategoriesQuery } from "@/services/categoriesApi"
+import { flattenCategories } from "@/utils/categories.utils"
 
 export default function ProductsTable() {
   const dispatch = useDispatch()
@@ -21,6 +23,8 @@ export default function ProductsTable() {
     sortBy: 'name',
     sortOrder: 'ASC',
   });
+
+  const { data: categoriesData } = useGetCategoriesQuery();
 
   const { data, isLoading, isFetching, error, refetch } = useGetProductsQuery({
     page: currentPage,
@@ -225,7 +229,11 @@ export default function ProductsTable() {
         totalPages={totalPages}
         onPageChange={handlePageChange}
 
-        filtersConfig={[statusFilter, stockStatusFilter]}
+        filtersConfig={[
+          statusFilter,
+          stockStatusFilter,
+          categoryFilter(flattenCategories(categoriesData || []))
+        ]}
         activeFilters={filters}
         onFilterChange={(payload) => dispatch(setFilter(payload))}
         onClearAllFilters={() => dispatch(clearAllFilters())}

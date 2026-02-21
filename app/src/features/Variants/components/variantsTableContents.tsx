@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import CurrencyText from "@/components/common/CurrencyText";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 export const allColumns = [
@@ -24,7 +24,7 @@ export const allColumns = [
     {
         key: "mrp",
         label: "MRP",
-        renderCell: (row: any) => <CurrencyText value={row.mrp} />,
+        renderCell: (row: any) => <CurrencyText value={row.price} />,
         sortable: true,
         sortField: 'v.mrp',
     },
@@ -47,8 +47,8 @@ export const allColumns = [
             const statusConfig = isOut
                 ? { variant: 'destructive' as const, className: 'bg-red-500 hover:bg-red-600 text-white' }
                 : isLow
-                ? { variant: 'default' as const, className: 'bg-orange-500 hover:bg-orange-600 text-white' }
-                : { variant: 'default' as const, className: 'bg-green-600 hover:bg-green-700 text-white' };
+                    ? { variant: 'default' as const, className: 'bg-orange-500 hover:bg-orange-600 text-white' }
+                    : { variant: 'default' as const, className: 'bg-green-600 hover:bg-green-700 text-white' };
 
             return (
                 <Tooltip>
@@ -65,8 +65,8 @@ export const allColumns = [
                             {isOut
                                 ? 'Out of stock'
                                 : isLow
-                                ? `Low stock (threshold: ${threshold})`
-                                : `Healthy stock level (threshold: ${threshold})`}
+                                    ? `Low stock (threshold: ${threshold})`
+                                    : `Healthy stock level (threshold: ${threshold})`}
                         </p>
                     </TooltipContent>
                 </Tooltip>

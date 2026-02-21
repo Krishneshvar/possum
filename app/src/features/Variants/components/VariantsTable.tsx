@@ -6,15 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGetVariantsQuery } from "@/services/variantsApi"
 import { setSearchTerm, setCurrentPage, setSorting, setFilter, clearAllFilters, VariantsState } from "../variantsSlice"
-import { RootState } from "@/store/store"
+import type { RootState } from "@/store/store"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./variantsTableContents"
 import DataTable from "@/components/common/DataTable"
-import { statusFilter, stockStatusFilter } from "../data/variantsFiltersConfig"
+import { statusFilter, stockStatusFilter, categoryFilter } from "../data/variantsFiltersConfig"
+import { useGetCategoriesQuery } from "@/services/categoriesApi"
+import { flattenCategories } from "@/utils/categories.utils"
 
 export default function VariantsTable() {
     const dispatch = useDispatch()
-    const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder, filters } = useSelector((state: RootState) => state.variants)
+    const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder, filters } = useSelector((state: any) => state.variants)
+
+    const { data: categoriesData } = useGetCategoriesQuery();
 
     const { data, isLoading, isFetching, error, refetch } = useGetVariantsQuery({
         page: currentPage,
@@ -23,7 +27,8 @@ export default function VariantsTable() {
         sortBy,
         sortOrder,
         stockStatus: filters.stockStatus,
-        status: filters.status
+        status: filters.status,
+        categories: filters.categories
     });
 
     const variants = data?.variants || []
@@ -34,7 +39,7 @@ export default function VariantsTable() {
         dispatch(setCurrentPage(page))
     }
 
-    const handleSort = (column: { sortField: string }) => {
+    const handleSort = (column: any) => {
         const order = sortBy === column.sortField && sortOrder === 'ASC' ? 'DESC' : 'ASC';
         dispatch(setSorting({ sortBy: column.sortField, sortOrder: order }))
     }
@@ -122,7 +127,11 @@ export default function VariantsTable() {
             totalPages={totalPages}
             onPageChange={handlePageChange}
 
-            filtersConfig={[statusFilter, stockStatusFilter]}
+            filtersConfig={[
+                statusFilter,
+                stockStatusFilter,
+                categoryFilter(flattenCategories(categoriesData || []))
+            ]}
             activeFilters={filters}
             onFilterChange={(payload) => dispatch(setFilter(payload as { key: keyof VariantsState['filters']; value: string[] }))}
             onClearAllFilters={() => dispatch(clearAllFilters())}
