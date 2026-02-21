@@ -36,6 +36,7 @@ import SuppliersPage from '@/features/Suppliers/pages/SuppliersPage';
 import PeoplePage from '@/features/People/pages/PeoplePage';
 import CustomersPage from '@/features/People/pages/CustomersPage';
 import EmployeesPage from '@/features/People/pages/EmployeesPage';
+import ManageRolesPermissionsPage from '@/features/People/pages/ManageRolesPermissionsPage';
 import PurchaseOrderDetailPage from '@/features/Purchase/pages/PurchaseOrderDetailPage';
 import AuditLogPage from '@/features/AuditLog/pages/AuditLogPage';
 
@@ -109,6 +110,7 @@ export default function AppRoutes() {
         <Route path="/people" element={<ProtectedRoute requiredPermissions="users.view"><PeoplePage /></ProtectedRoute>} />
         <Route path="/customers" element={<ProtectedRoute requiredPermissions="customers.view"><CustomersPage /></ProtectedRoute>} />
         <Route path="/employees" element={<ProtectedRoute requiredPermissions="users.manage"><EmployeesPage /></ProtectedRoute>} />
+        <Route path="/employees/:userId/roles" element={<ProtectedRoute requiredPermissions="users.manage"><ManageRolesPermissionsPage /></ProtectedRoute>} />
 
         <Route path="/plugins" element={<ProtectedRoute requiredPermissions="settings.manage"><PluginsPage /></ProtectedRoute>} />
         <Route path="/help" element={<HelpPage />} />

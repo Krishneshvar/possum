@@ -149,3 +149,47 @@ export async function getRoles(): Promise<Role[]> {
 export async function getPermissions(): Promise<Permission[]> {
     return UserRepository.getAllPermissions();
 }
+
+export async function getUserRoles(userId: number): Promise<Role[]> {
+    const user = await getUserById(userId);
+    return UserRepository.getUserRoles(userId);
+}
+
+export async function updateUserRoles(userId: number, roleIds: number[]): Promise<void> {
+    const user = await getUserById(userId);
+    
+    // Validate all role IDs exist
+    const allRoles = UserRepository.getAllRoles();
+    for (const roleId of roleIds) {
+        if (!allRoles.some(r => r.id === roleId)) {
+            throw new Error(`Invalid role ID: ${roleId}`);
+        }
+    }
+    
+    UserRepository.assignUserRoles(userId, roleIds);
+    AuthService.revokeUserSessions(userId);
+}
+
+export async function getUserPermissionOverrides(userId: number): Promise<Array<{ permission_id: number; key: string; granted: number }>> {
+    const user = await getUserById(userId);
+    return UserRepository.getUserPermissionOverrides(userId);
+}
+
+export async function updateUserPermissions(userId: number, permissions: Array<{ permissionId: number; granted: boolean }>): Promise<void> {
+    const user = await getUserById(userId);
+    
+    // Validate all permission IDs exist
+    const allPermissions = UserRepository.getAllPermissions();
+    for (const perm of permissions) {
+        if (!allPermissions.some(p => p.id === perm.permissionId)) {
+            throw new Error(`Invalid permission ID: ${perm.permissionId}`);
+        }
+    }
+    
+    // Apply each permission override
+    for (const perm of permissions) {
+        UserRepository.setUserPermission(userId, perm.permissionId, perm.granted);
+    }
+    
+    AuthService.revokeUserSessions(userId);
+}

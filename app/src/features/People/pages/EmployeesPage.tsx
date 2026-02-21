@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, UserCog, User } from 'lucide-react';
+import { Plus, Pencil, Trash2, UserCog, User, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { SerializedError } from '@reduxjs/toolkit';
 
@@ -50,6 +51,7 @@ function getApiErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function EmployeesPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
@@ -88,6 +90,10 @@ export default function EmployeesPage() {
   const handleOpenDeleteDialog = (user: UserRecord) => {
     setUserToDelete(user);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleOpenRolesDialog = (user: UserRecord) => {
+    navigate(`/employees/${user.id}/roles`);
   };
 
   const handleSave = async (values: EmployeeFormValues) => {
@@ -179,6 +185,20 @@ export default function EmployeesPage() {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
+              onClick={() => handleOpenRolesDialog(user)}
+              aria-label={`Manage roles for ${user.name}`}
+            >
+              <Shield className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Manage Roles & Permissions</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
               onClick={() => handleOpenEditDialog(user)}
               aria-label={`Edit ${user.name}`}
             >
@@ -204,6 +224,11 @@ export default function EmployeesPage() {
         <div className="md:hidden">
           <ActionsDropdown>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => handleOpenRolesDialog(user)} className="cursor-pointer">
+              <Shield className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Manage Roles & Permissions</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleOpenEditDialog(user)} className="cursor-pointer">
               <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Edit Employee</span>

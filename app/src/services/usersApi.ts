@@ -39,6 +39,24 @@ export interface UpdateUserPayload {
     is_active?: boolean;
 }
 
+export interface Role {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+export interface Permission {
+    id: number;
+    key: string;
+    description?: string;
+}
+
+export interface UserPermissionOverride {
+    permission_id: number;
+    key: string;
+    granted: number;
+}
+
 export const usersApi = createApi({
     reducerPath: 'usersApi',
     baseQuery,
@@ -96,6 +114,42 @@ export const usersApi = createApi({
                 { type: 'User', id: 'LIST' },
             ],
         }),
+        getRoles: builder.query<Role[], void>({
+            query: () => '/users/roles',
+        }),
+        getPermissions: builder.query<Permission[], void>({
+            query: () => '/users/permissions',
+        }),
+        getUserRoles: builder.query<Role[], number>({
+            query: (userId) => `/users/${userId}/roles`,
+            providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
+        }),
+        updateUserRoles: builder.mutation<void, { userId: number; roleIds: number[] }>({
+            query: ({ userId, roleIds }) => ({
+                url: `/users/${userId}/roles`,
+                method: 'PUT',
+                body: { roleIds },
+            }),
+            invalidatesTags: (result, error, { userId }) => [
+                { type: 'User', id: userId },
+                { type: 'User', id: 'LIST' },
+            ],
+        }),
+        getUserPermissions: builder.query<UserPermissionOverride[], number>({
+            query: (userId) => `/users/${userId}/permissions`,
+            providesTags: (result, error, userId) => [{ type: 'User', id: userId }],
+        }),
+        updateUserPermissions: builder.mutation<void, { userId: number; permissions: Array<{ permissionId: number; granted: boolean }> }>({
+            query: ({ userId, permissions }) => ({
+                url: `/users/${userId}/permissions`,
+                method: 'PUT',
+                body: { permissions },
+            }),
+            invalidatesTags: (result, error, { userId }) => [
+                { type: 'User', id: userId },
+                { type: 'User', id: 'LIST' },
+            ],
+        }),
     }),
 });
 
@@ -105,4 +159,10 @@ export const {
     useCreateUserMutation,
     useUpdateUserMutation,
     useDeleteUserMutation,
+    useGetRolesQuery,
+    useGetPermissionsQuery,
+    useGetUserRolesQuery,
+    useUpdateUserRolesMutation,
+    useGetUserPermissionsQuery,
+    useUpdateUserPermissionsMutation,
 } = usersApi;
