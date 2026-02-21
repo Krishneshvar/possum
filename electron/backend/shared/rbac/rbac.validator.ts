@@ -4,7 +4,7 @@
  */
 
 import { getDB } from '../../shared/db/index.js';
-import { ALL_PERMISSIONS, PERMISSIONS } from '../../shared/rbac/permissions.js';
+import { ALL_PERMISSIONS, PERMISSIONS, Permission } from '../../shared/rbac/permissions.js';
 import { ROLE_DEFINITIONS, ROLES } from '../../shared/rbac/roles.js';
 
 interface ValidationResult {
@@ -29,14 +29,14 @@ export function validatePermissions(): ValidationResult {
   const dbPermissionKeys = dbPermissions.map(p => p.key);
 
   // Check for missing permissions in database
-  const missingInDb = ALL_PERMISSIONS.filter((p: string) => !dbPermissionKeys.includes(p));
+  const missingInDb = ALL_PERMISSIONS.filter((p: string) => !dbPermissionKeys.includes(p as Permission));
   if (missingInDb.length > 0) {
     result.valid = false;
     result.errors.push(`Missing permissions in database: ${missingInDb.join(', ')}`);
   }
 
   // Check for extra permissions in database (not in code)
-  const extraInDb = dbPermissionKeys.filter(p => !ALL_PERMISSIONS.includes(p));
+  const extraInDb = dbPermissionKeys.filter((p: string) => !ALL_PERMISSIONS.includes(p as Permission));
   if (extraInDb.length > 0) {
     result.warnings.push(`Extra permissions in database (not in code registry): ${extraInDb.join(', ')}`);
   }

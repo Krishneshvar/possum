@@ -317,7 +317,7 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
         saleRepository.updateSalePaidAmount(saleId, newPaidAmount.toNumber());
 
         // Update status if fully paid
-        let newStatus = sale.status;
+        let newStatus: string = sale.status;
         if (newPaidAmount.gte(sale.total_amount)) {
             saleRepository.updateSaleStatus(saleId, 'paid');
             newStatus = 'paid';
