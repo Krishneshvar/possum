@@ -5,9 +5,11 @@
 import { Decimal } from 'decimal.js';
 import * as returnRepository from './return.repository.js';
 import * as saleRepository from '../sales/sale.repository.js';
+import * as saleService from '../sales/sale.service.js';
 import * as inventoryService from '../inventory/inventory.service.js';
 import * as auditService from '../audit/audit.service.js';
 import { transaction } from '../../shared/db/index.js';
+import { calculateRefunds, calculateTotalRefund } from './return.calculator.js';
 import type { ReturnFilters } from './return.repository.js';
 import type { SaleItem } from '../../../../types/index.js';
 
@@ -29,6 +31,7 @@ interface CreateReturnItem {
  */
 export function createReturn(saleId: number, items: CreateReturnItem[], reason: string, userId: number) {
     const tx = transaction(() => {
+        // Validate inputs
         if (!Number.isInteger(saleId) || saleId <= 0) {
             throw new Error('Invalid sale ID');
         }
@@ -38,18 +41,17 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
         if (typeof reason !== 'string' || reason.trim().length === 0) {
             throw new Error('Return reason is required');
         }
+        if (!Array.isArray(items) || items.length === 0) {
+            throw new Error('At least one return item is required');
+        }
 
-        // Validate sale
+        // Validate sale exists
         const sale = saleRepository.findSaleById(saleId);
         if (!sale) {
             throw new Error('Sale not found');
         }
 
-        if (!Array.isArray(items) || items.length === 0) {
-            throw new Error('At least one return item is required');
-        }
-
-        // Merge duplicate saleItemIds from payload to prevent over-return in a single request.
+        // Aggregate duplicate saleItemIds to prevent over-return
         const aggregatedItems = new Map<number, number>();
         for (const item of items) {
             if (!Number.isInteger(item.saleItemId) || item.saleItemId <= 0) {
@@ -64,23 +66,14 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
             );
         }
 
-        let billItemsSubtotal = new Decimal(0);
-        sale.items.forEach((si: SaleItem) => {
-            const lineSubtotal = new Decimal(si.price_per_unit).mul(si.quantity).sub(si.discount_amount);
-            billItemsSubtotal = billItemsSubtotal.add(lineSubtotal);
-        });
-
-        // Calculate refund amounts
-        let totalRefund = new Decimal(0);
-        const processedItems: CreateReturnItem[] = [];
-
+        // Validate return quantities and prepare items
+        const returnItems = [];
         for (const [saleItemId, requestedQuantity] of aggregatedItems.entries()) {
             const saleItem = sale.items.find((si: SaleItem) => si.id === saleItemId);
             if (!saleItem) {
                 throw new Error(`Sale item ${saleItemId} not found in sale`);
             }
 
-            // Check if quantity is valid
             const alreadyReturned = returnRepository.getTotalReturnedQuantity(saleItemId);
             const availableToReturn = saleItem.quantity - alreadyReturned;
 
@@ -91,38 +84,26 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
                 );
             }
 
-            // Calculate refund for this item:
-            // 1. Line subtotal (what the items cost after line-level discount)
-            const linePricePerUnit = new Decimal(saleItem.price_per_unit);
-            const lineQuantity = new Decimal(saleItem.quantity);
-            const lineDiscountAmount = new Decimal(saleItem.discount_amount);
-            const lineSubtotal = linePricePerUnit.mul(lineQuantity).sub(lineDiscountAmount);
-
-            // 2. Pro-rated global discount for this line
-            const saleGlobalDiscount = new Decimal(sale.discount);
-            const lineGlobalDiscount = billItemsSubtotal.gt(0)
-                ? lineSubtotal.div(billItemsSubtotal).mul(saleGlobalDiscount)
-                : new Decimal(0);
-
-            // 3. Line Net Paid
-            const lineNetPaid = lineSubtotal.sub(lineGlobalDiscount);
-
-            // 4. Refund for the returned quantity
-            const refundAmount = lineNetPaid.div(lineQuantity).mul(requestedQuantity).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
-
-            totalRefund = totalRefund.add(refundAmount);
-
-            processedItems.push({
-                sale_item_id: saleItemId,
+            returnItems.push({
+                saleItemId,
                 quantity: requestedQuantity,
-                refund_amount: refundAmount.toNumber(),
-                variant_id: saleItem.variant_id,
-                saleItemId: saleItemId
+                variantId: saleItem.variant_id
             });
         }
 
-        if (totalRefund.gt(new Decimal(sale.paid_amount))) {
-            throw new Error(`Cannot refund ${totalRefund.toFixed(2)}. Maximum refundable amount is ${new Decimal(sale.paid_amount).toFixed(2)}.`);
+        // Calculate refund amounts using calculator
+        const refundCalculations = calculateRefunds(
+            returnItems,
+            sale.items,
+            sale.discount
+        );
+        const totalRefund = calculateTotalRefund(refundCalculations);
+
+        // Validate refund amount
+        if (totalRefund > sale.paid_amount) {
+            throw new Error(
+                `Cannot refund ${totalRefund.toFixed(2)}. Maximum refundable amount is ${new Decimal(sale.paid_amount).toFixed(2)}.`
+            );
         }
 
         // Create return record
@@ -133,22 +114,22 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
         });
         const returnId = Number(returnResult.lastInsertRowid);
 
-        // Create return items and adjust inventory
-        for (const item of processedItems) {
+        // Create return items and restore inventory
+        for (const refundItem of refundCalculations) {
             const returnItemResult = returnRepository.insertReturnItem({
                 return_id: returnId,
-                sale_item_id: item.sale_item_id!,
-                quantity: item.quantity,
-                refund_amount: item.refund_amount!
+                sale_item_id: refundItem.saleItemId,
+                quantity: refundItem.quantity,
+                refund_amount: refundItem.refundAmount
             });
             const returnItemId = Number(returnItemResult.lastInsertRowid);
 
-            // Restore inventory using the original sale item's lot adjustments
+            // Restore inventory
             inventoryService.restoreStock({
-                variantId: item.variant_id!,
+                variantId: refundItem.variantId,
                 referenceType: 'sale_item',
-                referenceId: item.sale_item_id!,
-                quantity: item.quantity,
+                referenceId: refundItem.saleItemId,
+                quantity: refundItem.quantity,
                 userId,
                 reason: 'return',
                 newReferenceType: 'return_item',
@@ -156,45 +137,26 @@ export function createReturn(saleId: number, items: CreateReturnItem[], reason: 
             });
         }
 
-        // Create refund transaction
-        // Prefer a completed payment transaction for method attribution; fallback to active cash/default method id=1.
-        const paymentTx = sale.transactions?.find((t) => t.type === 'payment' && t.status === 'completed');
-        const activeMethods = saleRepository.findPaymentMethods();
-        const fallbackPaymentMethodId = activeMethods.length > 0 ? activeMethods[0].id : 1;
-        const paymentMethodId = paymentTx?.payment_method_id && saleRepository.paymentMethodExists(paymentTx.payment_method_id)
-            ? paymentTx.payment_method_id
-            : fallbackPaymentMethodId;
-
-        saleRepository.insertTransaction({
-            sale_id: saleId,
-            amount: -totalRefund.toNumber(), // Negative amount for refund
-            type: 'refund',
-            payment_method_id: paymentMethodId,
-            status: 'completed'
+        // Process sale refund (transaction, paid amount, status)
+        saleService.processSaleRefund({
+            saleId,
+            refundAmount: totalRefund,
+            userId
         });
-
-        // Update sale paid amount
-        const newPaidAmount = new Decimal(sale.paid_amount).sub(totalRefund);
-        saleRepository.updateSalePaidAmount(saleId, newPaidAmount.toNumber());
-
-        // Update sale status if fully refunded
-        if (newPaidAmount.lte(0) && sale.total_amount > 0) {
-            saleRepository.updateSaleStatus(saleId, 'refunded');
-        }
 
         // Log return creation
         auditService.logCreate(userId, 'returns', returnId, {
             sale_id: saleId,
-            total_refund: totalRefund.toNumber(),
-            item_count: processedItems.length,
+            total_refund: totalRefund,
+            item_count: refundCalculations.length,
             reason
         });
 
         return {
             id: returnId,
             saleId,
-            totalRefund: totalRefund.toNumber(),
-            itemCount: processedItems.length
+            totalRefund,
+            itemCount: refundCalculations.length
         };
     });
 

@@ -436,3 +436,66 @@ export function fulfillSale(saleId: number, userId: number, token?: string): { s
 export function getPaymentMethods(): any[] {
     return saleRepository.findPaymentMethods();
 }
+
+/**
+ * Process refund for a sale (called by Returns module)
+ * Handles transaction creation, paid amount update, and status change
+ */
+export function processSaleRefund({
+    saleId,
+    refundAmount,
+    userId
+}: {
+    saleId: number;
+    refundAmount: number;
+    userId: number;
+}): { success: boolean } {
+    if (refundAmount <= 0) {
+        throw new Error('Refund amount must be positive');
+    }
+
+    return transaction(() => {
+        const sale = saleRepository.findSaleById(saleId);
+        if (!sale) {
+            throw new Error('Sale not found');
+        }
+
+        if (new Decimal(refundAmount).gt(sale.paid_amount)) {
+            throw new Error(
+                `Cannot refund ${refundAmount}. Maximum refundable amount is ${sale.paid_amount}.`
+            );
+        }
+
+        // Determine payment method for refund transaction
+        const paymentTx = sale.transactions?.find(
+            (t) => t.type === 'payment' && t.status === 'completed'
+        );
+        const activeMethods = saleRepository.findPaymentMethods();
+        const fallbackPaymentMethodId = activeMethods.length > 0 ? activeMethods[0].id : 1;
+        const paymentMethodId =
+            paymentTx?.payment_method_id &&
+            saleRepository.paymentMethodExists(paymentTx.payment_method_id)
+                ? paymentTx.payment_method_id
+                : fallbackPaymentMethodId;
+
+        // Create refund transaction
+        saleRepository.insertTransaction({
+            sale_id: saleId,
+            amount: -refundAmount,
+            type: 'refund',
+            payment_method_id: paymentMethodId,
+            status: 'completed'
+        });
+
+        // Update sale paid amount
+        const newPaidAmount = new Decimal(sale.paid_amount).sub(refundAmount);
+        saleRepository.updateSalePaidAmount(saleId, newPaidAmount.toNumber());
+
+        // Update sale status if fully refunded
+        if (newPaidAmount.lte(0) && sale.total_amount > 0) {
+            saleRepository.updateSaleStatus(saleId, 'refunded');
+        }
+
+        return { success: true };
+    }).immediate();
+}
