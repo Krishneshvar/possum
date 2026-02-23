@@ -1,12 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": [ "ESNext" ],
     "outDir": "dist",
     "rootDir": ".",
     "strict": true,
@@ -16,15 +13,14 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "allowJs": true,
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": [
-        "types/*"
-      ]
-    }
+    "baseUrl": "."
   },
   "include": [
+    "core/**/*.ts",
+    "database/**/*.ts",
+    "shared-types/**/*.ts",
+    "rbac/**/*.ts",
+    "tax-engine/**/*.ts",
     "electron/**/*.ts",
     "types/**/*.ts",
     "electron/backend/shims.d.ts"
@@ -34,6 +30,7 @@
     "dist",
     "node_modules",
     "electron/dist",
-    "electron/preload.ts"
+    "electron/preload.ts",
+    "electron/backend/modules_old"
   ]
 }

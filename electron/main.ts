@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import { printBillHtml } from './print/printController.js';
 import { printInvoice, getPrinters } from './backend/services/printService.js';
 import fs from 'fs/promises';
-import * as AuthService from './backend/modules/auth/auth.service.js';
+import { getSession } from '../core/index.js';
 
 dotenv.config();
 const isDev = !app.isPackaged;
@@ -35,7 +35,7 @@ function createWindow() {
 
 // Security Middleware Helpers
 function requireAuth(token: string) {
-    const session = AuthService.getSession(token);
+    const session = getSession(token);
     if (!session) {
         throw new Error('Unauthorized: Invalid or expired session');
     }

@@ -4,8 +4,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { printBillHtml } from '../../print/printController.js';
 import { renderBill, DEFAULT_BILL_SCHEMA, RenderData, BillSchema } from '../utils/billRenderer.js';
-import * as saleService from '../modules/sales/sale.service.js';
-import * as AuthService from '../modules/auth/auth.service.js';
+import { getSale, getSession } from '../../../core/index.js';
 import { Sale, SaleItem } from '../../../types/index.js';
 
 // Helper to get settings path
@@ -34,7 +33,7 @@ export async function printInvoice(invoiceId: number, token: string): Promise<{ 
         if (!token) {
             throw new Error('Unauthorized: No token provided');
         }
-        const session = AuthService.getSession(token);
+        const session = getSession(token);
         if (!session) {
             throw new Error('Unauthorized: Invalid session');
         }
@@ -55,7 +54,7 @@ export async function printInvoice(invoiceId: number, token: string): Promise<{ 
         console.log(`[PrintService] Printing invoice ID: ${invoiceId}`);
 
         // 1. Fetch Invoice Data
-        const sale = saleService.getSale(invoiceId);
+        const sale = getSale(invoiceId);
         if (!sale) {
             throw new Error(`Invoice with ID ${invoiceId} not found.`);
         }

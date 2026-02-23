@@ -3,23 +3,23 @@
  * All module routes are registered here
  */
 import { Express } from 'express';
-import productsRouter from './modules/products/product.routes.js';
-import categoriesRouter from './modules/categories/category.routes.js';
-import customersRouter from './modules/customers/customer.routes.js';
-import inventoryRouter from './modules/inventory/inventory.routes.js';
-import salesRouter from './modules/sales/sale.routes.js';
-import returnsRouter from './modules/returns/return.routes.js';
-import productFlowRouter from './modules/productFlow/productFlow.routes.js';
-import reportsRouter from './modules/reports/reports.routes.js';
-import taxesRouter from './modules/taxes/tax.routes.js';
-import variantsRouter from './modules/variants/variant.routes.js';
-import usersRouter from './modules/users/user.routes.js';
-import suppliersRouter from './modules/suppliers/supplier.routes.js';
-import purchaseRouter from './modules/purchase/purchase.routes.js';
-import authRouter from './modules/auth/auth.routes.js';
-import auditRouter from './modules/audit/audit.routes.js';
-import transactionsRouter from './modules/transactions/transactions.routes.js';
-import { getSaleReturnsController } from './modules/returns/return.controller.js';
+import productsRouter from './routes/products/product.routes.js';
+import categoriesRouter from './routes/categories/category.routes.js';
+import customersRouter from './routes/customers/customer.routes.js';
+import inventoryRouter from './routes/inventory/inventory.routes.js';
+import salesRouter from './routes/sales/sale.routes.js';
+import returnsRouter from './routes/returns/return.routes.js';
+import productFlowRouter from './routes/productFlow/productFlow.routes.js';
+import reportsRouter from './routes/reports/reports.routes.js';
+import taxesRouter from './routes/taxes/tax.routes.js';
+import variantsRouter from './routes/variants/variant.routes.js';
+import usersRouter from './routes/users/user.routes.js';
+import suppliersRouter from './routes/suppliers/supplier.routes.js';
+import purchaseRouter from './routes/purchase/purchase.routes.js';
+import authRouter from './routes/auth/auth.routes.js';
+import auditRouter from './routes/audit/audit.routes.js';
+import transactionsRouter from './routes/transactions/transactions.routes.js';
+import { getSaleReturnsController } from './routes/returns/return.controller.js';
 import { authenticate, requirePermission } from './shared/middleware/auth.middleware.js';
 
 /**

@@ -3,15 +3,16 @@
  * Provides stock calculation and validation functions
  */
 import { getDB } from '../db/index.js';
-import * as inventoryRepository from '../../modules/inventory/inventory.repository.js';
+import type { IInventoryRepository } from '../../../../core/index.js';
 
 /**
  * Get computed stock for a variant
  * Stock = SUM(inventory_lots.quantity) + SUM(inventory_adjustments.quantity_change)
  * @param {number} variantId - Variant ID
+ * @param {IInventoryRepository} inventoryRepository - Inventory repository instance
  * @returns {Promise<number>} Computed stock quantity
  */
-export async function getComputedStock(variantId: number): Promise<number> {
+export async function getComputedStock(variantId: number, inventoryRepository: IInventoryRepository): Promise<number> {
     return new Promise((resolve) => {
         setImmediate(() => {
             const stock = inventoryRepository.getStockByVariantId(variantId);
@@ -23,9 +24,10 @@ export async function getComputedStock(variantId: number): Promise<number> {
 /**
  * Get computed stock for multiple variants
  * @param {number[]} variantIds - Array of variant IDs
+ * @param {IInventoryRepository} inventoryRepository - Inventory repository instance
  * @returns {Promise<Record<number, number>>} Map of variantId -> stock
  */
-export async function getComputedStockBatch(variantIds: number[]): Promise<Record<number, number>> {
+export async function getComputedStockBatch(variantIds: number[], inventoryRepository: IInventoryRepository): Promise<Record<number, number>> {
     if (!variantIds || variantIds.length === 0) {
         return {};
     }
@@ -45,10 +47,11 @@ export async function getComputedStockBatch(variantIds: number[]): Promise<Recor
  * Validate that sufficient stock is available
  * @param {number} variantId - Variant ID
  * @param {number} requiredQty - Required quantity
+ * @param {IInventoryRepository} inventoryRepository - Inventory repository instance
  * @throws {Error} If insufficient stock
  */
-export async function validateStockAvailable(variantId: number, requiredQty: number): Promise<void> {
-    const currentStock = await getComputedStock(variantId);
+export async function validateStockAvailable(variantId: number, requiredQty: number, inventoryRepository: IInventoryRepository): Promise<void> {
+    const currentStock = await getComputedStock(variantId, inventoryRepository);
     if (currentStock < requiredQty) {
         const error = new Error(`Insufficient stock for variant ${variantId}. Available: ${currentStock}, Required: ${requiredQty}`);
         (error as any).code = 'INSUFFICIENT_STOCK';
@@ -61,10 +64,11 @@ export async function validateStockAvailable(variantId: number, requiredQty: num
 /**
  * Get stock status for a variant based on stock_alert_cap
  * @param {number} variantId - Variant ID
+ * @param {IInventoryRepository} inventoryRepository - Inventory repository instance
  * @returns {Promise<Object>} Stock status with quantity and status label
  */
-export async function getStockStatus(variantId: number): Promise<{ stock: number; status: string; alertCap: number }> {
-    const stock = await getComputedStock(variantId);
+export async function getStockStatus(variantId: number, inventoryRepository: IInventoryRepository): Promise<{ stock: number; status: string; alertCap: number }> {
+    const stock = await getComputedStock(variantId, inventoryRepository);
 
     return new Promise((resolve) => {
         setImmediate(() => {

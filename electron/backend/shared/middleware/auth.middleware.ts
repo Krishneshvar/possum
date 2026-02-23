@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as AuthService from '../../modules/auth/auth.service.js';
+import { getSession } from '../../../../core/index.js';
 import { hasAnyPermission, isAdmin } from '../rbac/rbac.service.js';
 
 // Extend Express Request
@@ -38,7 +38,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
         });
     }
 
-    const session = AuthService.getSession(token);
+    const session = getSession(token);
     if (!session) {
         return res.status(401).json({ 
             error: 'Unauthorized: Session expired or invalid',
