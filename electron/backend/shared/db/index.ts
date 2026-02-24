@@ -29,6 +29,11 @@ export function initDB(): Database.Database {
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
     db.pragma('busy_timeout = 5000');
+    
+    // Verify foreign keys are enabled
+    const fkStatus = db.pragma('foreign_keys', { simple: true });
+    console.log('Foreign keys enabled:', fkStatus);
+    
     dbInstance = db;
 
     return db;

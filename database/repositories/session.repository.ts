@@ -14,23 +14,30 @@ export class SessionRepository implements ISessionRepository {
     }
 
     // Verify user exists and is active
-    const userExists = db.prepare('SELECT id FROM users WHERE id = ? AND is_active = 1 AND deleted_at IS NULL').get(user_id);
-    if (!userExists) {
-        throw new Error('Cannot create session for invalid or inactive user');
-    }
+    try {
+        const userExists = db.prepare('SELECT id FROM users WHERE id = ? AND is_active = 1 AND deleted_at IS NULL').get(user_id);
+        if (!userExists) {
+            throw new Error(`Cannot create session for invalid or inactive user (user_id: ${user_id})`);
+        }
 
-    // Generate a unique ID for the session record itself
-    const sessionId = uuidv4();
+        // Generate a unique ID for the session record itself
+        const sessionId = uuidv4();
 
-    // We store the full session data (including user's numeric id if present in rest)
-    // in the 'data' JSON column to restore the object exactly as it was.
-    const stmt = db.prepare(`
-        INSERT INTO sessions (id, user_id, token, expires_at, data)
-        VALUES (?, ?, ?, ?, ?)
-    `);
+        // We store the full session data (including user's numeric id if present in rest)
+        // in the 'data' JSON column to restore the object exactly as it was.
+        const stmt = db.prepare(`
+            INSERT INTO sessions (id, user_id, token, expires_at, data)
+            VALUES (?, ?, ?, ?, ?)
+        `);
 
         stmt.run(sessionId, user_id, token, expires_at, JSON.stringify(rest));
+    } catch (error: any) {
+        console.error('Session creation error:', error.message);
+        console.error('user_id:', user_id, 'type:', typeof user_id);
+        console.error('Session object:', JSON.stringify(session, null, 2));
+        throw error;
     }
+}
 
     findByToken(token: string): Session | null {
     const db = getDB();

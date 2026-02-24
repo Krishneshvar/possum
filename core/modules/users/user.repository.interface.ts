@@ -24,6 +24,7 @@ export interface IUserRepository {
   getAllRoles(): Role[];
   getAllPermissions(): Permission[];
   getUserRoles(userId: number): Role[];
+  getUserPermissions(userId: number): string[];
   assignUserRoles(userId: number, roleIds: number[]): void;
   getUserPermissionOverrides(userId: number): Array<{ permission_id: number; key: string; granted: number }>;
   setUserPermission(userId: number, permissionId: number, granted: boolean): void;

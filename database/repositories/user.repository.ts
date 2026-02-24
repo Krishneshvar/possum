@@ -92,6 +92,42 @@ export class UserRepository implements IUserRepository {
     return db.prepare('SELECT r.id, r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = ?').all(userId) as Role[];
   }
 
+  getUserPermissions(userId: number): string[] {
+    const db = getDB();
+    // Get permissions from roles
+    const rolePermissions = db.prepare(`
+      SELECT DISTINCT p.key
+      FROM permissions p
+      JOIN role_permissions rp ON p.id = rp.permission_id
+      JOIN user_roles ur ON rp.role_id = ur.role_id
+      WHERE ur.user_id = ?
+    `).all(userId) as Array<{ key: string }>;
+
+    const permissionSet = new Set(rolePermissions.map(p => p.key));
+
+    // Apply user-specific permission overrides if the table exists
+    try {
+      const overrides = db.prepare(`
+        SELECT p.key, up.granted
+        FROM user_permissions up
+        JOIN permissions p ON up.permission_id = p.id
+        WHERE up.user_id = ?
+      `).all(userId) as Array<{ key: string; granted: number }>;
+
+      overrides.forEach(override => {
+        if (override.granted === 1) {
+          permissionSet.add(override.key);
+        } else {
+          permissionSet.delete(override.key);
+        }
+      });
+    } catch {
+      // user_permissions table might not exist in older schemas
+    }
+
+    return Array.from(permissionSet);
+  }
+
   assignUserRoles(userId: number, roleIds: number[]): void {
     const db = getDB();
     const tx = db.transaction(() => {
