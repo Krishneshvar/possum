@@ -139,7 +139,7 @@ export async function getVariantsController(req: Request, res: Response) {
             sortBy: getQueryString(sortBy) || 'p.name',
             sortOrder: (getQueryString(sortOrder) as 'ASC' | 'DESC') || 'ASC',
             currentPage: getQueryNumber(page, 1) || 1,
-            itemsPerPage: getQueryNumber(limit, 10) || 10
+            itemsPerPage: Math.min(getQueryNumber(limit, 10) || 10, 1000)
         });
 
         res.json(result);

@@ -38,7 +38,10 @@ import {
   logUpdate,
   logDelete,
   adjustInventory,
-  getVariantStock
+  getVariantStock,
+  receiveInventory,
+  addVariant,
+  updateVariant
 } from '../../core/index.js';
 
 // Database repositories
@@ -159,7 +162,7 @@ export function startServer(): void {
   
   // Initialize Product Service
   const productRepository = new ProductRepository();
-  initProductService(productRepository, variantRepository, { addVariant: variantRepository.insertVariant.bind(variantRepository) }, { adjustStock: adjustInventory }, auditService, transaction, buildImageUrl);
+  initProductService(productRepository, variantRepository, { addVariant, updateVariant }, { receiveInventory }, auditService, transaction, buildImageUrl);
   
   // Initialize Auth Service
   const sessionRepository = new SessionRepository();

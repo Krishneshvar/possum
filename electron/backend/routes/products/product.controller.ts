@@ -42,7 +42,7 @@ export async function getProductsController(req: Request, res: Response) {
             status: statusArray,
             categories: categoryIds,
             currentPage: getQueryNumber(page, 1) || 1,
-            itemsPerPage: getQueryNumber(limit, 10) || 10,
+            itemsPerPage: Math.min(getQueryNumber(limit, 10) || 10, 100),
             sortBy: getQueryString(sortBy) || 'name',
             sortOrder: getQueryString(sortOrder) || 'ASC',
         });
@@ -55,12 +55,26 @@ export async function getProductsController(req: Request, res: Response) {
 }
 
 /**
+ * GET /api/products/stats
+ * Get product statistics
+ */
+export async function getProductStatsController(req: Request, res: Response) {
+    try {
+        const stats = await productService.getProductStats();
+        res.json(stats);
+    } catch (err) {
+        console.error('Error fetching product stats:', err);
+        res.status(500).json({ error: 'Failed to retrieve product statistics.' });
+    }
+}
+
+/**
  * POST /api/products
  * Create a new product with variants
  */
 export async function createProductController(req: Request, res: Response) {
     if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
-    
+
     const { name, category_id, description, status, variants, taxIds } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -144,7 +158,7 @@ export async function getProductDetails(req: Request, res: Response) {
  */
 export async function updateProductController(req: Request, res: Response) {
     if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
-    
+
     const { id } = req.params;
     const { name, category_id, description, status, variants, taxIds } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : undefined;
@@ -167,13 +181,13 @@ export async function updateProductController(req: Request, res: Response) {
         parsedVariants = undefined;
     }
 
-    const productData = { 
-        name, 
-        category_id: category_id !== undefined ? (category_id ? parseInt(category_id, 10) : null) : undefined, 
-        description, 
-        status, 
-        variants: parsedVariants, 
-        taxIds: parsedTaxIds 
+    const productData = {
+        name,
+        category_id: category_id !== undefined ? (category_id ? parseInt(category_id, 10) : null) : undefined,
+        description,
+        status,
+        variants: parsedVariants,
+        taxIds: parsedTaxIds
     };
 
     try {
@@ -202,7 +216,7 @@ export async function updateProductController(req: Request, res: Response) {
  */
 export async function deleteProductController(req: Request, res: Response) {
     if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
-    
+
     const { id } = req.params;
     const productId = parseInt(id as string, 10);
     if (isNaN(productId)) {

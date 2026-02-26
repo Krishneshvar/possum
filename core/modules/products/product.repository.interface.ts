@@ -19,4 +19,5 @@ export interface IProductRepository {
     findProductWithVariants(productId: number): Promise<any>;
     findProductTaxes(productId: number): any[];
     setProductTaxes(productId: number, taxIds: number[]): void;
+    getProductStats(): Promise<any>;
 }

@@ -8,7 +8,8 @@ import {
     createProductController,
     getProductDetails,
     updateProductController,
-    deleteProductController
+    deleteProductController,
+    getProductStatsController
 } from './product.controller.js';
 import { requirePermission } from '../../shared/middleware/auth.middleware.js';
 import { upload } from '../../shared/middleware/upload.middleware.js';
@@ -18,6 +19,8 @@ import { createProductSchema, updateProductSchema, getProductSchema } from './pr
 const router = Router();
 
 // Allow anyone who can sell or view products to see products
+router.get('/stats', requirePermission(['products.view', 'products.manage', 'sales.create']), getProductStatsController);
+
 router.get('/', requirePermission(['products.view', 'products.manage', 'sales.create']), getProductsController);
 
 // Image upload handling via multer

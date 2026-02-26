@@ -56,11 +56,11 @@ export function createProductWithVariants({ name, description, category_id, stat
 
     const tx = transaction(() => {
         const productInfo = productRepository.insertProduct({
-            name, 
-            description, 
-            category_id: category_id || null, 
+            name,
+            description,
+            category_id: category_id || null,
             tax_category_id: (taxIds && taxIds.length > 0) ? taxIds[0] : null,
-            status, 
+            status,
             image_path
         });
 
@@ -70,15 +70,8 @@ export function createProductWithVariants({ name, description, category_id, stat
             const variantResult = variantRepository.insertVariant(newProductId, variant);
             const variantId = Number(variantResult.lastInsertRowid);
 
-            // If initial stock is provided, receive it
-            if (variant.stock && variant.stock > 0) {
-                inventoryService.receiveInventory({
-                    variantId,
-                    quantity: parseInt(variant.stock, 10),
-                    unitCost: parseFloat(variant.cost_price || 0),
-                    userId: userId
-                });
-            }
+            // Skip initial stock during product creation
+            // Stock should be added separately via inventory management
         }
 
         // Log product creation
@@ -129,6 +122,14 @@ export async function getProducts(params: ProductFilter) {
         ...productsData,
         products: productsWithImageUrls
     };
+}
+
+/**
+ * Get product statistics
+ * @returns {Promise<Object>} Product statistics
+ */
+export async function getProductStats() {
+    return productRepository.getProductStats();
 }
 
 /**

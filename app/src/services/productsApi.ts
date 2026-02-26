@@ -60,6 +60,10 @@ export const productsApi = createApi({
           ]
           : [{ type: 'Product', id: 'LIST' }],
     }),
+    getProductStats: builder.query<any, void>({
+      query: () => '/products/stats',
+      providesTags: ['Product'],
+    }),
     getProduct: builder.query({
       query: (id) => `/products/${id}`,
       providesTags: (result, error, id) => [
@@ -196,4 +200,5 @@ export const {
   useUpdateVariantMutation,
   useDeleteVariantMutation,
   useGetVariantsQuery,
+  useGetProductStatsQuery,
 } = productsApi;

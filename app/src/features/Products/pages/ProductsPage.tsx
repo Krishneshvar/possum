@@ -1,7 +1,7 @@
 import { Download, Package, Plus, Upload } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
-import { useGetProductsQuery } from "@/services/productsApi"
+import { useGetProductStatsQuery } from "@/services/productsApi"
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
 
 import ProductsTable from "../components/ProductsTable"
@@ -37,11 +37,11 @@ const productActions = {
 
 export default function ProductsPage() {
   const navigate = useNavigate();
-  const { data: productsData, error: productsError, isLoading: productsLoading } = useGetProductsQuery({ page: 1, limit: 9999 });
+  const { data: stats, isLoading: statsLoading, error: statsError } = useGetProductStatsQuery();
   const { data: categories, error: categoriesError } = useGetCategoriesQuery(undefined);
 
   const statsData = useMemo(() => {
-    if (productsLoading || !productsData) {
+    if (statsLoading || !stats) {
       return [
         { title: 'Total Products', icon: Box, color: 'text-blue-500', todayValue: 0 },
         { title: 'Active Products', icon: Layers, color: 'text-purple-500', todayValue: 0 },
@@ -50,17 +50,13 @@ export default function ProductsPage() {
       ];
     }
 
-    const products = productsData.products || [];
-    const activeProducts = products.filter(p => p.status === 'active').length;
-    const lowStock = products.filter(p => (p.stock ?? 0) <= (p.stock_alert_cap ?? 10)).length;
-
     return [
-      { title: 'Total Products', icon: Box, color: 'text-blue-500', todayValue: products.length },
-      { title: 'Active Products', icon: Layers, color: 'text-purple-500', todayValue: activeProducts },
+      { title: 'Total Products', icon: Box, color: 'text-blue-500', todayValue: stats.totalProducts || 0 },
+      { title: 'Active Products', icon: Layers, color: 'text-purple-500', todayValue: stats.activeProducts || 0 },
       { title: 'Categories', icon: Tags, color: 'text-green-500', todayValue: categories?.length || 0 },
-      { title: 'Low Stock', icon: AlertTriangle, color: 'text-orange-500', todayValue: lowStock },
+      { title: 'Low Stock', icon: AlertTriangle, color: 'text-orange-500', todayValue: stats.lowStockProducts || 0 },
     ];
-  }, [productsData, categories, productsLoading]);
+  }, [stats, categories, statsLoading]);
 
   // Keyboard shortcut: Ctrl/Cmd + K to add new product
   useEffect(() => {
@@ -75,7 +71,7 @@ export default function ProductsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
-  if (productsError || categoriesError) {
+  if (statsError || categoriesError) {
     return (
       <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-2 mb-6 w-full max-w-7xl overflow-hidden mx-auto">
         <div className="text-red-500">Error loading products. Please try again later.</div>
