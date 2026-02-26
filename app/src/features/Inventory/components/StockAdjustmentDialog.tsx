@@ -117,13 +117,13 @@ export default function StockAdjustmentDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]" aria-describedby="stock-adjustment-description">
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5 text-primary" />
                         Adjust Stock Level
                     </DialogTitle>
-                    <DialogDescription id="stock-adjustment-description">
+                    <DialogDescription>
                         Update inventory quantity for this product variant
                     </DialogDescription>
                 </DialogHeader>

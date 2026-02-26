@@ -22,6 +22,7 @@ import AddOrEditProductPage from '@/features/Products/pages/AddOrEditProductPage
 import OrdersPage from '@/features/Orders/pages/OrdersPage';
 import CategoriesPage from '@/features/Categories/pages/CategoriesPage';
 import InventoryPage from '@/features/Inventory/pages/InventoryPage';
+import StockHistoryPage from '@/features/Inventory/pages/StockHistoryPage';
 import VariantsPage from '@/features/Variants/pages/VariantsPage';
 import SalesHistoryPage from '@/features/Sales/pages/SalesHistoryPage';
 import SaleDetailsPage from '@/features/Sales/pages/SaleDetailsPage';
@@ -93,6 +94,7 @@ export default function AppRoutes() {
         <Route path="/products/:productId" element={<ProtectedRoute requiredPermissions="products.view"><ProductDetailsPage /></ProtectedRoute>} />
 
         <Route path="/inventory" element={<ProtectedRoute requiredPermissions="inventory.view"><InventoryPage /></ProtectedRoute>} />
+        <Route path="/inventory/history" element={<ProtectedRoute requiredPermissions="inventory.view"><StockHistoryPage /></ProtectedRoute>} />
         <Route path="/variants" element={<ProtectedRoute requiredPermissions="products.view"><VariantsPage /></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute requiredPermissions="categories.view"><CategoriesPage /></ProtectedRoute>} />
 

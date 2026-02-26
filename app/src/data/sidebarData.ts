@@ -44,6 +44,10 @@ export const sidebarData = {
           url: "/inventory",
         },
         {
+          title: "Stock History",
+          url: "/inventory/history",
+        },
+        {
           title: "Categories",
           url: "/categories",
         },

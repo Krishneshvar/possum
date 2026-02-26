@@ -11,15 +11,15 @@ let auditService: any;
 let transaction: any;
 
 export function initInventoryService(
-  repo: IInventoryRepository,
-  pfService: any,
-  audit: any,
-  txFn: any
+    repo: IInventoryRepository,
+    pfService: any,
+    audit: any,
+    txFn: any
 ) {
-  inventoryRepository = repo;
-  productFlowService = pfService;
-  auditService = audit;
-  transaction = txFn;
+    inventoryRepository = repo;
+    productFlowService = pfService;
+    auditService = audit;
+    transaction = txFn;
 }
 
 /**
@@ -49,6 +49,21 @@ export function getVariantLots(variantId: number) {
  */
 export function getVariantAdjustments(variantId: number, options: { limit?: number; offset?: number } = {}) {
     return inventoryRepository.findAdjustmentsByVariantId(variantId, options);
+}
+
+/**
+ * Get all stock adjustments (paginated, searchable, filterable)
+ */
+export function getAllAdjustments(options: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    reason?: string;
+    variantId?: number | null;
+    sortBy?: string;
+    sortOrder?: string;
+} = {}) {
+    return inventoryRepository.findAllAdjustments(options);
 }
 
 /**

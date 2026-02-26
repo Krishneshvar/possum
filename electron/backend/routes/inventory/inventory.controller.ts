@@ -194,3 +194,26 @@ export async function getInventoryStatsController(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to retrieve inventory stats.' });
     }
 }
+
+/**
+ * GET /api/inventory/history
+ * Get all stock adjustments (paginated, searchable, filterable)
+ */
+export async function getStockHistoryController(req: Request, res: Response) {
+    try {
+        const { search, reason, variantId, limit, offset, sortBy, sortOrder } = req.query;
+        const result = inventoryService.getAllAdjustments({
+            search: typeof search === 'string' ? search : undefined,
+            reason: typeof reason === 'string' ? reason : undefined,
+            variantId: variantId ? parseInt(String(variantId), 10) : null,
+            limit: getQueryNumber(limit, 50) || 50,
+            offset: getQueryNumber(offset, 0) || 0,
+            sortBy: typeof sortBy === 'string' ? sortBy : undefined,
+            sortOrder: typeof sortOrder === 'string' ? sortOrder : undefined,
+        });
+        res.json(result);
+    } catch (err) {
+        console.error('Error fetching stock history:', err);
+        res.status(500).json({ error: 'Failed to retrieve stock history.' });
+    }
+}

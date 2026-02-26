@@ -1,7 +1,3 @@
-/**
- * Inventory Routes
- * Defines API routes for inventory operations
- */
 import { Router } from 'express';
 import {
     getVariantStockController,
@@ -11,7 +7,8 @@ import {
     getLowStockAlertsController,
     getExpiringLotsController,
     receiveInventoryController,
-    getInventoryStatsController
+    getInventoryStatsController,
+    getStockHistoryController
 } from './inventory.controller.js';
 
 import { validate } from '../../shared/middleware/validate.middleware.js';
@@ -38,4 +35,8 @@ router.post('/receive', requirePermission('inventory.manage'), validate(receiveI
 // Stats endpoint
 router.get('/stats', requirePermission(['inventory.manage', 'inventory.view', 'reports.view']), getInventoryStatsController);
 
+// Stock history endpoint
+router.get('/history', requirePermission(['inventory.manage', 'inventory.view', 'reports.view']), getStockHistoryController);
+
 export default router;
+

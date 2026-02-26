@@ -41,7 +41,8 @@ import {
   getVariantStock,
   receiveInventory,
   addVariant,
-  updateVariant
+  updateVariant,
+  logProductFlow
 } from '../../core/index.js';
 
 // Database repositories
@@ -116,8 +117,7 @@ export function startServer(): void {
 
   // Initialize Inventory Service
   const inventoryRepository = new InventoryRepository();
-  const productFlowService = { logProductFlow: (data: any) => productFlowRepository.insertProductFlow(data) };
-  initInventoryService(inventoryRepository, productFlowService, auditService, transaction);
+  initInventoryService(inventoryRepository, { logProductFlow }, auditService, transaction);
 
   // Initialize Variant Service
   const variantRepository = new VariantRepository();

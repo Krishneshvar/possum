@@ -81,6 +81,25 @@ export const inventoryApi = createApi({
                 'LowStock',
             ],
         }),
+
+        // Get all stock adjustments (history)
+        getStockHistory: builder.query<
+            { adjustments: any[]; total: number },
+            { limit?: number; offset?: number; search?: string; reason?: string; variantId?: number; sortBy?: string; sortOrder?: string; }
+        >({
+            query: ({ limit = 50, offset = 0, search, reason, variantId, sortBy, sortOrder } = {}) => {
+                const params = new URLSearchParams();
+                params.set('limit', String(limit));
+                params.set('offset', String(offset));
+                if (search) params.set('search', search);
+                if (reason) params.set('reason', reason);
+                if (variantId) params.set('variantId', String(variantId));
+                if (sortBy) params.set('sortBy', sortBy);
+                if (sortOrder) params.set('sortOrder', sortOrder);
+                return `/inventory/history?${params.toString()}`;
+            },
+            providesTags: ['Adjustment'],
+        }),
     }),
 });
 
@@ -93,4 +112,5 @@ export const {
     useGetInventoryStatsQuery,
     useCreateAdjustmentMutation,
     useReceiveInventoryMutation,
+    useGetStockHistoryQuery,
 } = inventoryApi;
