@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { History, Package, Search } from 'lucide-react';
-
-import { Card, CardContent } from '@/components/ui/card';
+import { History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+
 import { useGetStockHistoryQuery } from '@/services/inventoryApi';
 import GenericPageHeader from '@/components/common/GenericPageHeader';
 import DataTable from '@/components/common/DataTable';
@@ -109,7 +106,8 @@ export default function StockHistoryPage() {
                 columns={allColumns}
                 isLoading={isDataLoading}
                 error={error ? 'Failed to fetch stock history' : undefined}
-                onRetry={refetch}
+                onRefresh={refetch}
+                isRefreshing={isFetching}
 
                 searchTerm={searchTerm}
                 onSearchChange={handleSearchChange}

@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import { Package, Plus, Pencil, Trash2, FolderTree } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, FolderTree, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from "@/components/ui/button";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
     Dialog,
     DialogContent,
@@ -99,7 +105,7 @@ export default function CategoriesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<CategoryWithSub | undefined>(undefined);
 
-    const { data: categories = [], isLoading } = useGetCategoriesQuery(undefined);
+    const { data: categories = [], isLoading, refetch } = useGetCategoriesQuery(undefined);
     const [addCategory, { isLoading: isAdding }] = useAddCategoryMutation();
     const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
     const [deleteCategory] = useDeleteCategoryMutation();
@@ -159,8 +165,26 @@ export default function CategoriesPage() {
             </div>
 
             <div className="border rounded-md bg-card">
-                <div className="p-4 border-b bg-muted/20">
+                <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
                     <h3 className="font-semibold">Category Structure</h3>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => refetch()}
+                                    disabled={isLoading}
+                                >
+                                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Refresh categories</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
                 {isLoading ? (
                     <div className="p-8 text-center text-muted-foreground">Loading categories...</div>

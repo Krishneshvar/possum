@@ -1,6 +1,6 @@
 import { Eye, Trash2, Package, Edit } from "lucide-react"
 import { Link } from "react-router-dom"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,15 @@ import { statusFilter, stockStatusFilter, categoryFilter } from "../data/product
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
 import { flattenCategories } from "@/utils/categories.utils"
 
-export default function ProductsTable() {
+export default function ProductsTable({
+  refreshTrigger,
+  onRefresh,
+  isRefreshing
+}: {
+  refreshTrigger?: number,
+  onRefresh?: () => void,
+  isRefreshing?: boolean
+}) {
   const dispatch = useDispatch()
   const { searchTerm, currentPage, itemsPerPage, filters } = useSelector((state: any) => state.products)
   const [sort, setSort] = useState({
@@ -40,6 +48,12 @@ export default function ProductsTable() {
   const products = data?.products || []
   const totalPages = data?.totalPages || 1;
   const isDataLoading = isLoading || isFetching
+
+  useEffect(() => {
+    if (refreshTrigger) {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
@@ -215,7 +229,8 @@ export default function ProductsTable() {
         isLoading={isDataLoading}
         // @ts-ignore
         error={error?.message}
-        onRetry={refetch}
+        onRefresh={onRefresh || refetch}
+        isRefreshing={isRefreshing || isFetching}
 
         searchTerm={searchTerm}
         onSearchChange={(value) => dispatch(setSearchTerm(value))}

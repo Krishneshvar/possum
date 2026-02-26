@@ -11,11 +11,13 @@ import ActionsDropdown from '@/components/common/ActionsDropdown';
 import DataTable from "@/components/common/DataTable";
 
 interface CategoriesTableViewProps {
-    categories: Category[];
-    onEdit: (category: Category) => void;
+  categories: Category[];
+  onEdit: (category: Category) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export default function CategoriesTableView({ categories, onEdit }: CategoriesTableViewProps) {
+export default function CategoriesTableView({ categories, onEdit, onRefresh, isRefreshing }: CategoriesTableViewProps) {
   const [deleteCategory] = useDeleteCategoryMutation();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
@@ -145,6 +147,8 @@ export default function CategoriesTableView({ categories, onEdit }: CategoriesTa
         columns={columns}
         emptyState={emptyState}
         renderActions={renderActions}
+        onRefresh={onRefresh}
+        isRefreshing={isRefreshing}
         // @ts-ignore
         avatarIcon={<Tag className="h-4 w-4 text-primary" />}
       />

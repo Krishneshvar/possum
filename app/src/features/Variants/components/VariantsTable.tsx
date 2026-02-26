@@ -1,12 +1,12 @@
 import { Eye, Edit, Package2 } from "lucide-react"
 import { Link } from "react-router-dom"
+import { useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGetVariantsQuery } from "@/services/variantsApi"
 import { setSearchTerm, setCurrentPage, setSorting, setFilter, clearAllFilters, VariantsState } from "../variantsSlice"
-import type { RootState } from "@/store/store"
 import ActionsDropdown from "@/components/common/ActionsDropdown"
 import { allColumns } from "./variantsTableContents"
 import DataTable from "@/components/common/DataTable"
@@ -14,7 +14,15 @@ import { statusFilter, stockStatusFilter, categoryFilter } from "../data/variant
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
 import { flattenCategories } from "@/utils/categories.utils"
 
-export default function VariantsTable() {
+export default function VariantsTable({
+    refreshTrigger,
+    onRefresh,
+    isRefreshing
+}: {
+    refreshTrigger?: number,
+    onRefresh?: () => void,
+    isRefreshing?: boolean
+}) {
     const dispatch = useDispatch()
     const { searchTerm, currentPage, itemsPerPage, sortBy, sortOrder, filters } = useSelector((state: any) => state.variants)
 
@@ -34,6 +42,12 @@ export default function VariantsTable() {
     const variants = data?.variants || []
     const totalPages = data?.totalPages || 1;
     const isDataLoading = isLoading || isFetching
+
+    useEffect(() => {
+        if (refreshTrigger) {
+            refetch();
+        }
+    }, [refreshTrigger, refetch]);
 
     const handlePageChange = (page: number) => {
         dispatch(setCurrentPage(page))
@@ -113,7 +127,8 @@ export default function VariantsTable() {
             columns={allColumns}
             isLoading={isDataLoading}
             error={error && 'message' in error ? (error as { message: string }).message : undefined}
-            onRetry={refetch}
+            onRefresh={onRefresh || refetch}
+            isRefreshing={isRefreshing || isFetching}
 
             searchTerm={searchTerm}
             onSearchChange={(value) => dispatch(setSearchTerm(value))}

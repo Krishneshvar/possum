@@ -39,9 +39,9 @@ export default function InventoryPage() {
   });
 
   // Fetch data
-  const { data: stats } = useGetInventoryStatsQuery(undefined);
-  const { data: expiring = [] } = useGetExpiringLotsQuery(30);
-  const { data: categories = [] } = useGetCategoriesQuery(undefined);
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useGetInventoryStatsQuery(undefined);
+  const { data: expiring = [], refetch: refetchExpiring } = useGetExpiringLotsQuery(30);
+  const { data: categories = [], refetch: refetchCategories } = useGetCategoriesQuery(undefined);
 
   const categoryId = activeFilters.category.length > 0 ? Number(activeFilters.category[0]) : undefined;
   const stockStatus = activeFilters.stockStatus.length > 0 ? activeFilters.stockStatus[0] : undefined;
@@ -55,6 +55,13 @@ export default function InventoryPage() {
     sortBy: sort.sortBy,
     sortOrder: sort.sortOrder
   });
+
+  const handleRefresh = () => {
+    refetchStats();
+    refetchExpiring();
+    refetchCategories();
+    refetch();
+  };
 
   const variants = variantsData?.variants || [];
   const totalPages = variantsData?.totalPages || 0;
@@ -287,7 +294,8 @@ export default function InventoryPage() {
         columns={columns}
         isLoading={variantsLoading}
         error={variantsError ? (variantsError as any).message || 'Error' : null}
-        onRetry={refetch}
+        onRefresh={handleRefresh}
+        isRefreshing={variantsLoading || statsLoading}
 
         searchTerm={searchTerm}
         onSearchChange={(value) => {

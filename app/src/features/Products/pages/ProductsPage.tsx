@@ -1,5 +1,5 @@
 import { Download, Package, Plus, Upload } from "lucide-react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGetProductStatsQuery } from "@/services/productsApi"
 import { useGetCategoriesQuery } from "@/services/categoriesApi"
@@ -37,8 +37,16 @@ const productActions = {
 
 export default function ProductsPage() {
   const navigate = useNavigate();
-  const { data: stats, isLoading: statsLoading, error: statsError } = useGetProductStatsQuery();
-  const { data: categories, error: categoriesError } = useGetCategoriesQuery(undefined);
+  const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useGetProductStatsQuery();
+  const { data: categories, error: categoriesError, refetch: refetchCategories } = useGetCategoriesQuery(undefined);
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleRefresh = () => {
+    refetchStats();
+    refetchCategories();
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   const statsData = useMemo(() => {
     if (statsLoading || !stats) {
@@ -95,7 +103,7 @@ export default function ProductsPage() {
 
       <StatCards cardData={statsData} />
 
-      <ProductsTable />
+      <ProductsTable refreshTrigger={refreshTrigger} onRefresh={handleRefresh} isRefreshing={statsLoading} />
     </div>
   )
 }

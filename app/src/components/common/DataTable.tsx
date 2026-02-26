@@ -4,6 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Search, Loader2, AlertCircle, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+    TooltipProvider
+} from "@/components/ui/tooltip";
 
 import GenericTableHeader from "@/components/common/GenericTableHeader";
 import GenericTableBody from "@/components/common/GenericTableBody";
@@ -46,6 +52,8 @@ interface DataTableProps {
     renderActions?: (item: any) => React.ReactNode;
     avatarIcon?: React.ReactNode;
     className?: string;
+    onRefresh?: () => void;
+    isRefreshing?: boolean;
 }
 
 export default function DataTable({
@@ -83,6 +91,8 @@ export default function DataTable({
     renderActions,
     avatarIcon,
     className,
+    onRefresh,
+    isRefreshing = false,
 }: DataTableProps) {
     const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
         columns.reduce((acc, col) => {
@@ -124,6 +134,27 @@ export default function DataTable({
                         )}
 
                         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                            {onRefresh && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-10 w-10 shrink-0"
+                                                onClick={onRefresh}
+                                                disabled={isRefreshing || isLoading}
+                                                aria-label="Refresh data"
+                                            >
+                                                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Refresh data</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
                             <ColumnVisibilityDropdown
                                 columns={columns}
                                 onChange={setVisibleColumns}

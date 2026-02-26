@@ -1,7 +1,6 @@
 import { Package, LayoutList, Network, Plus, Search, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,12 +18,12 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: categories = [], isLoading, error } = useGetCategoriesQuery();
+  const { data: categories = [], isLoading, error, refetch } = useGetCategoriesQuery();
 
   // Filter categories based on search
   const filteredCategories = useMemo(() => {
     if (!searchTerm.trim()) return categories;
-    
+
     const searchLower = searchTerm.toLowerCase();
     const flatList: FlattenedCategory[] = flattenCategories(categories);
     const matchedIds = new Set(
@@ -38,7 +37,7 @@ export default function CategoriesPage() {
       return cats.reduce((acc, cat) => {
         const hasMatch = matchedIds.has(cat.id);
         const filteredSubs = cat.subcategories ? filterWithParents(cat.subcategories) : [];
-        
+
         if (hasMatch || filteredSubs.length > 0) {
           acc.push({ ...cat, subcategories: filteredSubs });
         }
@@ -63,7 +62,7 @@ export default function CategoriesPage() {
     setIsModalOpen(false);
     setEditingCategory(null);
   };
-  
+
   const categoryActions = {
     primary: {
       label: "Add Category",
@@ -89,7 +88,7 @@ export default function CategoriesPage() {
         <CardContent className="p-4 sm:p-6 space-y-4">
           {/* View Controls & Search */}
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
-            <Tabs value={view} onValueChange={(v) => setView(v as 'tree' | 'table')} className="w-full sm:w-auto">
+            <Tabs value={view} onValueChange={(v: any) => setView(v as 'tree' | 'table')} className="w-full sm:w-auto">
               <TabsList className="grid w-full sm:w-auto grid-cols-2">
                 <TabsTrigger value="tree" className="gap-2">
                   <Network className="h-4 w-4" />
@@ -108,7 +107,7 @@ export default function CategoriesPage() {
                 placeholder="Search categories..."
                 className="pl-10 pr-10"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                 aria-label="Search categories"
               />
               {searchTerm && (
@@ -149,7 +148,12 @@ export default function CategoriesPage() {
           ) : view === 'tree' ? (
             <CategoriesTreeView categories={filteredCategories} onEdit={handleEdit} />
           ) : (
-            <CategoriesTableView categories={filteredCategories} onEdit={handleEdit} />
+            <CategoriesTableView
+              categories={filteredCategories}
+              onEdit={handleEdit}
+              onRefresh={refetch}
+              isRefreshing={isLoading}
+            />
           )}
         </CardContent>
       </Card>

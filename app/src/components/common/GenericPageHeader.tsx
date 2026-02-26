@@ -9,23 +9,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface Action {
-    label: string;
-    icon?: React.ElementType;
-    onClick?: () => void;
-    url?: string;
+  label: string;
+  icon?: React.ElementType;
+  onClick?: () => void;
+  url?: string;
 }
 
 interface GenericPageHeaderProps {
-    headerIcon?: React.ReactNode;
-    headerLabel: string;
-    actions?: {
-        primary?: Action;
-        secondary?: Action[];
-    };
-    showBackButton?: boolean;
+  headerIcon?: React.ReactNode;
+  headerLabel: string;
+  actions?: {
+    primary?: Action;
+    secondary?: Action[];
+  };
+  showBackButton?: boolean;
 }
 
-export default function GenericPageHeader({ headerIcon, headerLabel, actions = {}, showBackButton = false }: GenericPageHeaderProps) {
+export default function GenericPageHeader({
+  headerIcon,
+  headerLabel,
+  actions = {},
+  showBackButton = false
+}: GenericPageHeaderProps) {
   const primaryAction = actions?.primary;
   const secondaryActions = actions?.secondary || [];
   const navigate = useNavigate();

@@ -1,5 +1,5 @@
 import { Layers, Package, ClipboardList, AlertTriangle, XCircle, TrendingUp } from "lucide-react"
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import VariantsTable from "../components/VariantsTable"
 import GenericPageHeader from "@/components/common/GenericPageHeader"
@@ -24,7 +24,14 @@ const variantsActions = {
 
 export default function VariantsPage() {
   const navigate = useNavigate();
-  const { data: stats } = useGetVariantStatsQuery(undefined);
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useGetVariantStatsQuery(undefined);
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleRefresh = () => {
+    refetchStats();
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   const statsData = [
     {
@@ -82,7 +89,7 @@ export default function VariantsPage() {
 
       <StatCards cardData={statsData} />
 
-      <VariantsTable />
+      <VariantsTable refreshTrigger={refreshTrigger} onRefresh={handleRefresh} isRefreshing={statsLoading} />
     </div>
   );
 };
