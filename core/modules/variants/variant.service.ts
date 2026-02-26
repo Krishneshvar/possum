@@ -14,19 +14,19 @@ let buildImageUrl: any;
 let logger: any;
 
 export function initVariantService(
-  repo: IVariantRepository,
-  invRepo: any,
-  audit: any,
-  txFn: any,
-  imageUrlFn: any,
-  log: any
+    repo: IVariantRepository,
+    invRepo: any,
+    audit: any,
+    txFn: any,
+    imageUrlFn: any,
+    log: any
 ) {
-  variantRepository = repo;
-  inventoryRepository = invRepo;
-  auditService = audit;
-  transaction = txFn;
-  buildImageUrl = imageUrlFn;
-  logger = log;
+    variantRepository = repo;
+    inventoryRepository = invRepo;
+    auditService = audit;
+    transaction = txFn;
+    buildImageUrl = imageUrlFn;
+    logger = log;
 }
 
 interface AddVariantInput {
@@ -52,6 +52,7 @@ interface UpdateVariantInput {
     is_default?: boolean;
     status?: 'active' | 'inactive' | 'discontinued';
     stock?: number;
+    stock_adjustment_reason?: string;
     userId: number;
 }
 
@@ -154,13 +155,14 @@ export function updateVariant(input: UpdateVariantInput) {
                 const diff = targetStock - currentStock;
 
                 if (diff !== 0) {
+                    const reason = input.stock_adjustment_reason ?? INVENTORY_REASONS.CORRECTION;
                     inventoryRepository.insertInventoryAdjustment({
                         variant_id: input.id,
                         quantity_change: diff,
-                        reason: INVENTORY_REASONS.CORRECTION,
+                        reason,
                         adjusted_by: input.userId
                     });
-                    logger.info(`Stock adjusted for variant ${input.id}: ${diff > 0 ? '+' : ''}${diff}`);
+                    logger.info(`Stock adjusted for variant ${input.id}: ${diff > 0 ? '+' : ''}${diff} (reason: ${reason})`);
                 }
             }
         }
@@ -183,10 +185,10 @@ export function deleteVariant(id: number, userId: number) {
     }
 
     const result = variantRepository.softDeleteVariant(id);
-    
+
     auditService.logDelete(userId, 'variants', id, existing);
     logger.info(`Variant ${id} soft deleted by user ${userId}`);
-    
+
     return result;
 }
 

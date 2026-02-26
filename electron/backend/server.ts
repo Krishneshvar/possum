@@ -71,7 +71,7 @@ export const __dirname = path.dirname(__filename);
 
 // Listen for unhandled rejections and exceptions
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-  logger.error('Unhandled Rejection at Promise', { 
+  logger.error('Unhandled Rejection at Promise', {
     reason: reason?.stack || reason,
     message: reason?.message,
     promise: promise
@@ -87,58 +87,58 @@ process.on('uncaughtException', (error: Error) => {
 
 export function startServer(): void {
   initDB();
-  
+
   // Initialize Audit Service
   const auditRepository = new AuditRepository();
   initAuditService(auditRepository);
-  
+
   const auditService = { logCreate, logUpdate, logDelete };
-  
+
   // Initialize Customer Service
   const customerRepository = new CustomerRepository();
   initCustomerService(customerRepository, auditService, getDB);
-  
+
   // Initialize Supplier Service
   const supplierRepository = new SupplierRepository();
   initSupplierService(supplierRepository, auditService, getDB);
-  
+
   // Initialize Transaction Service
   const transactionRepository = new TransactionRepository();
   initTransactionService(transactionRepository);
-  
+
   // Initialize Reports Service
   const reportsRepository = new ReportsRepository();
   initReportsService(reportsRepository);
-  
+
   // Initialize ProductFlow Service
   const productFlowRepository = new ProductFlowRepository();
   initProductFlowService(productFlowRepository, buildImageUrl);
-  
+
   // Initialize Inventory Service
   const inventoryRepository = new InventoryRepository();
   const productFlowService = { logProductFlow: (data: any) => productFlowRepository.insertProductFlow(data) };
   initInventoryService(inventoryRepository, productFlowService, auditService, transaction);
-  
+
   // Initialize Variant Service
   const variantRepository = new VariantRepository();
   initVariantService(variantRepository, inventoryRepository, auditService, transaction, buildImageUrl, appLogger);
-  
+
   // Initialize Category Service
   const categoryRepository = new CategoryRepository();
   initCategoryService(categoryRepository);
-  
+
   // Initialize User Service
   const userRepository = new UserRepository();
   initUserService(userRepository, { getSession }, auditService, hashPassword);
-  
+
   // Initialize Purchase Service
   const purchaseRepository = new PurchaseRepository();
   initPurchaseService(purchaseRepository, auditService);
-  
+
   // Initialize Tax Engine
   const taxRepository = new TaxRepository();
   initTaxEngine(taxRepository);
-  
+
   // Initialize Sale Service
   const saleRepository = new SaleRepository();
   const saleDependencies = {
@@ -155,19 +155,19 @@ export function startServer(): void {
     INVENTORY_REASONS
   };
   initSaleService(saleRepository, { adjustStock: adjustInventory, getStockByVariantId: getVariantStock }, auditService, taxEngine, transaction, saleDependencies);
-  
+
   // Initialize Return Service
   const returnRepository = new ReturnRepository();
   initReturnService(returnRepository, saleRepository, { getSaleById: saleRepository.findSaleById.bind(saleRepository) }, { adjustStock: adjustInventory }, auditService, transaction);
-  
+
   // Initialize Product Service
   const productRepository = new ProductRepository();
   initProductService(productRepository, variantRepository, { addVariant, updateVariant }, { receiveInventory }, auditService, transaction, buildImageUrl);
-  
+
   // Initialize Auth Service
   const sessionRepository = new SessionRepository();
   initAuthService(userRepository, sessionRepository, hashPassword, verifyPassword);
-  
+
   const expressApp = express();
 
   // Security Middleware

@@ -53,7 +53,7 @@ export async function addVariantController(req: Request, res: Response) {
  */
 export async function updateVariantController(req: Request, res: Response) {
     const { id } = req.params;
-    const { name, sku, price, cost_price, stock_alert_cap, is_default, status, stock } = req.body;
+    const { name, sku, price, cost_price, stock_alert_cap, is_default, status, stock, stock_adjustment_reason } = req.body;
 
     if (!name || price == null || cost_price == null) {
         return res.status(400).json({ error: 'Name, price, and cost_price are required.' });
@@ -74,6 +74,7 @@ export async function updateVariantController(req: Request, res: Response) {
             is_default,
             status,
             stock: stock !== undefined ? parseInt(String(stock), 10) : undefined,
+            stock_adjustment_reason,
             userId: req.user.id
         });
 

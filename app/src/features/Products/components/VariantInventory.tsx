@@ -3,14 +3,35 @@ import { BarChart3, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const ADJUSTMENT_REASONS = [
+  { value: 'correction', label: 'Correction' },
+  { value: 'damage', label: 'Damage' },
+  { value: 'theft', label: 'Theft' },
+  { value: 'spoilage', label: 'Spoilage' },
+  { value: 'return', label: 'Return' },
+  { value: 'confirm_receive', label: 'Purchase / Receive' },
+];
 
 interface VariantInventoryProps {
-    variant: any;
-    onVariantChange: (id: number, field: string, value: string) => void;
-    isEditing?: boolean;
+  variant: any;
+  onVariantChange: (id: number, field: string, value: string) => void;
+  isEditing?: boolean;
 }
 
 export default function VariantInventory({ variant, onVariantChange, isEditing = false }: VariantInventoryProps) {
+  // Determine if the user has changed the stock from the initial value
+  const originalStock = variant._originalStock;
+  const currentStock = variant.stock;
+  const stockHasChanged = isEditing && originalStock !== undefined && String(currentStock) !== String(originalStock);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -69,6 +90,42 @@ export default function VariantInventory({ variant, onVariantChange, isEditing =
           </p>
         </div>
       </div>
+
+      {/* Adjustment reason — only show in edit mode and only when stock differs */}
+      {isEditing && stockHasChanged && (
+        <div className="space-y-3">
+          <Label
+            htmlFor={`stock_adjustment_reason-${variant._tempId}`}
+            className="text-sm font-medium"
+          >
+            Adjustment Reason <span className="text-destructive">*</span>
+          </Label>
+          <Select
+            value={variant.stock_adjustment_reason ?? 'correction'}
+            onValueChange={(value) =>
+              onVariantChange(variant._tempId, 'stock_adjustment_reason', value)
+            }
+          >
+            <SelectTrigger
+              id={`stock_adjustment_reason-${variant._tempId}`}
+              className="h-11 w-full"
+              aria-label="Reason for stock adjustment"
+            >
+              <SelectValue placeholder="Select a reason…" />
+            </SelectTrigger>
+            <SelectContent>
+              {ADJUSTMENT_REASONS.map((r) => (
+                <SelectItem key={r.value} value={r.value}>
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            This reason will be recorded in the inventory adjustment log.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

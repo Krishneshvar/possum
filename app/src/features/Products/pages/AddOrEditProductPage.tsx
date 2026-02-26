@@ -59,6 +59,7 @@ export default function AddOrEditProductPage() {
         stock_alert_cap: v.stock_alert_cap,
         is_default: Boolean(v.is_default),
         status: v.status,
+        stock_adjustment_reason: v.stock_adjustment_reason ?? 'correction',
         ...(v.id && { id: v.id })
       }));
 
@@ -85,12 +86,12 @@ export default function AddOrEditProductPage() {
   };
 
   const deleteVariantFromApi = async (variantId: number, productId: number) => {
-      try {
-          await deleteVariant({ productId, variantId }).unwrap();
-      } catch (error) {
-          console.error("Failed to delete variant", error);
-          toast.error("Failed to delete variant");
-      }
+    try {
+      await deleteVariant({ productId, variantId }).unwrap();
+    } catch (error) {
+      console.error("Failed to delete variant", error);
+      toast.error("Failed to delete variant");
+    }
   };
 
   if (hasError) {

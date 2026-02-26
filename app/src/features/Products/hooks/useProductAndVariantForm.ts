@@ -57,12 +57,16 @@ export function useProductAndVariantForm(initialData?: any) {
                 variants: initialData.variants?.map((v: any) => ({
                     ...v,
                     _tempId: v.id || Date.now() + Math.random(),
-                    status: (v.status || 'active').toLowerCase(),
+                    _originalStock: v.stock ?? 0,
+                    status: (initialData.status === 'inactive' || initialData.status === 'discontinued')
+                        ? initialData.status
+                        : (v.status || 'active').toLowerCase(),
                     mrp: v.price ?? v.mrp ?? '',
                     cost_price: v.cost_price ?? '',
                     profit_margin: ((v.price ?? v.mrp) && v.cost_price && (v.price ?? v.mrp) > 0) ? (((((v.price ?? v.mrp) - v.cost_price) / (v.price ?? v.mrp)) * 100).toFixed(2)) : '',
                     stock: v.stock ?? '',
-                    stock_alert_cap: v.stock_alert_cap ?? 10
+                    stock_alert_cap: v.stock_alert_cap ?? 10,
+                    stock_adjustment_reason: 'correction',
                 })) || [defaultVariant]
             });
         }
@@ -83,7 +87,20 @@ export function useProductAndVariantForm(initialData?: any) {
     };
 
     const handleProductChange = (field: string, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => {
+            const newForm = { ...prev, [field]: value };
+
+            // Cascade status change to all variants if product is made inactive or discontinued
+            if (field === 'status' && (value === 'inactive' || value === 'discontinued')) {
+                newForm.variants = newForm.variants.map(v => ({
+                    ...v,
+                    status: value
+                }));
+            }
+
+            return newForm;
+        });
+
         if (touched[field]) {
             const error = validateField(field, value);
             setErrors(prev => ({ ...prev, [field]: error }));
@@ -199,7 +216,7 @@ export function useProductAndVariantForm(initialData?: any) {
                 stock: '',
                 stock_alert_cap: 10,
                 is_default: false,
-                status: 'active'
+                status: (prev.status === 'inactive' || prev.status === 'discontinued') ? prev.status : 'active'
             }]
         }));
     };

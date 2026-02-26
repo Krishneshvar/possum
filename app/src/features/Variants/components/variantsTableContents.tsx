@@ -76,11 +76,21 @@ export const allColumns = [
     {
         key: "status",
         label: "Status",
-        renderCell: (row: any) => (
-            // @ts-ignore
-            <Badge variant={row.status === 'active' ? 'success' : 'secondary'}>
-                {row.status}
-            </Badge>
-        ),
+        renderCell: (row: any) => {
+            const status = (row.status || 'inactive').toLowerCase();
+            const styles: Record<string, string> = {
+                active: "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
+                inactive: "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200",
+                discontinued: "bg-red-100 text-red-700 hover:bg-red-200 border-red-200",
+            };
+
+            const className = styles[status] || "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
+
+            return (
+                <Badge variant="outline" className={`${className} capitalize font-medium border px-2 py-0.5 shadow-sm`}>
+                    {status}
+                </Badge>
+            );
+        },
     }
 ];

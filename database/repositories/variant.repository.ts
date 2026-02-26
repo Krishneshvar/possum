@@ -20,40 +20,40 @@ interface VariantInput {
 }
 
 export class VariantRepository implements IVariantRepository {
-/**
- * Insert a new variant (without stock - stock comes from inventory operations)
- */
-insertVariant(productId: number, variant: VariantInput) {
-  if (!productId || !variant.name || variant.price == null || variant.cost_price == null) {
-    throw new ValidationError('Product ID, name, price, and cost_price are required');
-  }
+  /**
+   * Insert a new variant (without stock - stock comes from inventory operations)
+   */
+  insertVariant(productId: number, variant: VariantInput) {
+    if (!productId || !variant.name || variant.price == null || variant.cost_price == null) {
+      throw new ValidationError('Product ID, name, price, and cost_price are required');
+    }
 
-  const db = getDB();
-  const stmt = db.prepare(`
+    const db = getDB();
+    const stmt = db.prepare(`
     INSERT INTO variants (
       product_id, name, sku, mrp, cost_price, stock_alert_cap, is_default, status
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  return stmt.run(
-    productId,
-    variant.name,
-    variant.sku || null,
-    variant.price,
-    variant.cost_price,
-    variant.stock_alert_cap ?? 10,
-    Number(variant.is_default ?? 0),
-    variant.status ?? 'active'
-  );
-}
+    return stmt.run(
+      productId,
+      variant.name,
+      variant.sku || null,
+      variant.price,
+      variant.cost_price,
+      variant.stock_alert_cap ?? 10,
+      Number(variant.is_default ?? 0),
+      variant.status ?? 'active'
+    );
+  }
 
-/**
- * Find all variants for a product with computed stock
- */
-async findVariantsByProductId(productId: number): Promise<Variant[]> {
-  const db = getDB();
-  const variants = db.prepare(`
+  /**
+   * Find all variants for a product with computed stock
+   */
+  async findVariantsByProductId(productId: number): Promise<Variant[]> {
+    const db = getDB();
+    const variants = db.prepare(`
       SELECT
         id, product_id, name, sku, mrp as price, cost_price,
         stock_alert_cap, is_default, status, created_at, updated_at, deleted_at
@@ -61,29 +61,29 @@ async findVariantsByProductId(productId: number): Promise<Variant[]> {
       WHERE product_id = ? AND deleted_at IS NULL
   `).all(productId) as Variant[];
 
-  if (variants.length === 0) {
-    return [];
+    if (variants.length === 0) {
+      return [];
+    }
+
+    const variantIds = variants.map(v => v.id!);
+    const inventoryRepo = new InventoryRepository();
+    const stockMap: Record<number, number> = {};
+    variantIds.forEach(id => {
+      stockMap[id] = inventoryRepo.getStockByVariantId(id);
+    });
+
+    return variants.map(variant => ({
+      ...variant,
+      stock: stockMap[variant.id!] ?? 0
+    }));
   }
 
-  const variantIds = variants.map(v => v.id!);
-  const inventoryRepo = new InventoryRepository();
-  const stockMap: Record<number, number> = {};
-  variantIds.forEach(id => {
-    stockMap[id] = inventoryRepo.getStockByVariantId(id);
-  });
-
-  return variants.map(variant => ({
-    ...variant,
-    stock: stockMap[variant.id!] ?? 0
-  }));
-}
-
-/**
- * Find a single variant by ID with computed stock
- */
-async findVariantById(id: number): Promise<Variant | null> {
-  const db = getDB();
-  const variant = db.prepare(`
+  /**
+   * Find a single variant by ID with computed stock
+   */
+  async findVariantById(id: number): Promise<Variant | null> {
+    const db = getDB();
+    const variant = db.prepare(`
       SELECT
         id, product_id, name, sku, mrp as price, cost_price,
         stock_alert_cap, is_default, status, created_at, updated_at, deleted_at
@@ -91,25 +91,25 @@ async findVariantById(id: number): Promise<Variant | null> {
       WHERE id = ? AND deleted_at IS NULL
   `).get(id) as Variant | undefined;
 
-  if (!variant) {
-    return null;
+    if (!variant) {
+      return null;
+    }
+
+    const inventoryRepo = new InventoryRepository();
+    const stock = inventoryRepo.getStockByVariantId(id);
+
+    return {
+      ...variant,
+      stock
+    };
   }
 
-  const inventoryRepo = new InventoryRepository();
-  const stock = inventoryRepo.getStockByVariantId(id);
-
-  return {
-    ...variant,
-    stock
-  };
-}
-
-/**
- * Find a single variant by ID synchronously (for validation)
- */
-findVariantByIdSync(id: number): Omit<Variant, 'stock'> | null {
-  const db = getDB();
-  const variant = db.prepare(`
+  /**
+   * Find a single variant by ID synchronously (for validation)
+   */
+  findVariantByIdSync(id: number): Omit<Variant, 'stock'> | null {
+    const db = getDB();
+    const variant = db.prepare(`
       SELECT
         id, product_id, name, sku, mrp as price, cost_price,
         stock_alert_cap, is_default, status, created_at, updated_at, deleted_at
@@ -117,131 +117,131 @@ findVariantByIdSync(id: number): Omit<Variant, 'stock'> | null {
       WHERE id = ? AND deleted_at IS NULL
   `).get(id) as Variant | undefined;
 
-  return variant || null;
-}
-
-/**
- * Update a variant (without stock - stock is derived)
- */
-updateVariantById(variant: VariantInput & { id: number }) {
-  if (!variant.id || !variant.name || variant.price == null || variant.cost_price == null) {
-    throw new ValidationError('ID, name, price, and cost_price are required');
+    return variant || null;
   }
 
-  const db = getDB();
-  const stmt = db.prepare(`
+  /**
+   * Update a variant (without stock - stock is derived)
+   */
+  updateVariantById(variant: VariantInput & { id: number }) {
+    if (!variant.id || !variant.name || variant.price == null || variant.cost_price == null) {
+      throw new ValidationError('ID, name, price, and cost_price are required');
+    }
+
+    const db = getDB();
+    const stmt = db.prepare(`
     UPDATE variants
     SET name = ?, sku = ?, mrp = ?, cost_price = ?, stock_alert_cap = ?, status = ?, is_default = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND deleted_at IS NULL
   `);
 
-  return stmt.run(
-    variant.name,
-    variant.sku || null,
-    variant.price,
-    variant.cost_price,
-    variant.stock_alert_cap ?? 10,
-    variant.status ?? 'active',
-    Number(variant.is_default ?? 0),
-    variant.id
-  );
-}
-
-/**
- * Soft delete a variant
- */
-softDeleteVariant(id: number) {
-  const db = getDB();
-  const stmt = db.prepare('UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL');
-  return stmt.run(id);
-}
-
-/**
- * Find variants with filtering, pagination, and sorting
- */
-async findVariants({ searchTerm, categoryId, categories, stockStatus, status, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
-  const db = getDB();
-  const filterClauses: string[] = [];
-  const filterParams: any[] = [];
-
-  filterClauses.push(`v.deleted_at IS NULL`);
-  filterClauses.push(`p.deleted_at IS NULL`);
-
-  if (searchTerm) {
-    filterClauses.push(`(p.name LIKE ? OR v.name LIKE ? OR v.sku LIKE ?)`);
-    filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
+    return stmt.run(
+      variant.name,
+      variant.sku || null,
+      variant.price,
+      variant.cost_price,
+      variant.stock_alert_cap ?? 10,
+      variant.status ?? 'active',
+      Number(variant.is_default ?? 0),
+      variant.id
+    );
   }
 
-  if (categories && categories.length > 0) {
-    const placeholders = categories.map(() => '?').join(',');
-    filterClauses.push(`p.category_id IN (${placeholders})`);
-    filterParams.push(...categories);
-  } else if (categoryId) {
-    filterClauses.push(`p.category_id = ?`);
-    filterParams.push(categoryId);
+  /**
+   * Soft delete a variant
+   */
+  softDeleteVariant(id: number) {
+    const db = getDB();
+    const stmt = db.prepare('UPDATE variants SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL');
+    return stmt.run(id);
   }
 
-  if (status) {
-    const statusArray = Array.isArray(status) ? status : [status];
-    if (statusArray.length > 0) {
-      const placeholders = statusArray.map(() => '?').join(',');
-      filterClauses.push(`v.status IN (${placeholders})`);
-      filterParams.push(...statusArray);
+  /**
+   * Find variants with filtering, pagination, and sorting
+   */
+  async findVariants({ searchTerm, categoryId, categories, stockStatus, status, sortBy = 'p.name', sortOrder = 'ASC', currentPage = 1, itemsPerPage = 10 }: VariantQueryOptions) {
+    const db = getDB();
+    const filterClauses: string[] = [];
+    const filterParams: any[] = [];
+
+    filterClauses.push(`v.deleted_at IS NULL`);
+    filterClauses.push(`p.deleted_at IS NULL`);
+
+    if (searchTerm) {
+      filterClauses.push(`(p.name LIKE ? OR v.name LIKE ? OR v.sku LIKE ?)`);
+      filterParams.push(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`);
     }
-  }
 
-  const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
+    if (categories && categories.length > 0) {
+      const placeholders = categories.map(() => '?').join(',');
+      filterClauses.push(`p.category_id IN (${placeholders})`);
+      filterParams.push(...categories);
+    } else if (categoryId) {
+      filterClauses.push(`p.category_id = ?`);
+      filterParams.push(categoryId);
+    }
 
-  let stockFilterClause = '';
-  if (stockStatus) {
-    const statusArray = Array.isArray(stockStatus) ? stockStatus : [stockStatus];
-    const conditions: string[] = [];
-
-    statusArray.forEach(s => {
-      if (s === 'low') {
-        conditions.push('current_stock <= stock_alert_cap AND current_stock > 0');
-      } else if (s === 'out') {
-        conditions.push('current_stock = 0');
-      } else if (s === 'ok') {
-        conditions.push('current_stock > stock_alert_cap');
+    if (status) {
+      const statusArray = Array.isArray(status) ? status : [status];
+      if (statusArray.length > 0) {
+        const placeholders = statusArray.map(() => '?').join(',');
+        filterClauses.push(`v.status IN (${placeholders})`);
+        filterParams.push(...statusArray);
       }
-    });
-
-    if (conditions.length > 0) {
-      stockFilterClause = `WHERE ${conditions.map(c => `(${c})`).join(' OR ')}`;
     }
-  }
 
-  const sortMap: Record<string, string> = {
-    'p.name': 'product_name',
-    'v.name': 'name',
-    'v.sku': 'sku',
-    'v.mrp': 'price',
-    'price': 'price',
-    'v.cost_price': 'cost_price',
-    'v.created_at': 'created_at',
-    'stock': 'stock',
-    'c.name': 'category_name',
-    'v.stock_alert_cap': 'stock_alert_cap'
-  };
+    const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
 
-  const safeSortBy = sortMap[sortBy] || 'product_name';
-  const safeSortOrder = (sortOrder || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+    let stockFilterClause = '';
+    if (stockStatus) {
+      const statusArray = Array.isArray(stockStatus) ? stockStatus : [stockStatus];
+      const conditions: string[] = [];
 
-  const isStockSort = safeSortBy === 'stock';
-  const hasStockFilter = Boolean(stockStatus);
+      statusArray.forEach(s => {
+        if (s === 'low') {
+          conditions.push('current_stock <= stock_alert_cap AND current_stock > 0');
+        } else if (s === 'out') {
+          conditions.push('current_stock = 0');
+        } else if (s === 'ok') {
+          conditions.push('current_stock > stock_alert_cap');
+        }
+      });
 
-  if (!isStockSort && !hasStockFilter) {
-    const countSql = `
+      if (conditions.length > 0) {
+        stockFilterClause = `WHERE ${conditions.map(c => `(${c})`).join(' OR ')}`;
+      }
+    }
+
+    const sortMap: Record<string, string> = {
+      'p.name': 'product_name',
+      'v.name': 'name',
+      'v.sku': 'sku',
+      'v.mrp': 'price',
+      'price': 'price',
+      'v.cost_price': 'cost_price',
+      'v.created_at': 'created_at',
+      'stock': 'stock',
+      'c.name': 'category_name',
+      'v.stock_alert_cap': 'stock_alert_cap'
+    };
+
+    const safeSortBy = sortMap[sortBy] || 'product_name';
+    const safeSortOrder = (sortOrder || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    const isStockSort = safeSortBy === 'stock';
+    const hasStockFilter = Boolean(stockStatus);
+
+    if (!isStockSort && !hasStockFilter) {
+      const countSql = `
       SELECT COUNT(*) as total
       FROM variants v
       JOIN products p ON v.product_id = p.id
       ${whereClause}
     `;
-    const totalCount = (db.prepare(countSql).get(...filterParams) as any).total;
+      const totalCount = (db.prepare(countSql).get(...filterParams) as any).total;
 
-    const startIndex = (currentPage! - 1) * itemsPerPage!;
-    const sql = `
+      const startIndex = (currentPage! - 1) * itemsPerPage!;
+      const sql = `
       SELECT
         v.id, v.product_id, v.name, v.sku, v.mrp as price, v.cost_price,
         v.stock_alert_cap, v.is_default, v.status, v.created_at,
@@ -256,36 +256,36 @@ async findVariants({ searchTerm, categoryId, categories, stockStatus, status, so
       LIMIT ? OFFSET ?
     `;
 
-    const variantsWithoutStock = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
+      const variantsWithoutStock = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
 
-    const variantIds = variantsWithoutStock.map((v: any) => v.id);
-    const inventoryRepo = new InventoryRepository();
-    const stockMap: Record<number, number> = {};
-    variantIds.forEach(id => {
-      stockMap[id] = inventoryRepo.getStockByVariantId(id);
-    });
+      const variantIds = variantsWithoutStock.map((v: any) => v.id);
+      const inventoryRepo = new InventoryRepository();
+      const stockMap: Record<number, number> = {};
+      variantIds.forEach(id => {
+        stockMap[id] = inventoryRepo.getStockByVariantId(id);
+      });
 
-    const variants = variantsWithoutStock.map((v: any) => ({
-      ...v,
-      stock: stockMap[v.id] ?? 0
-    })) as Variant[];
+      const variants = variantsWithoutStock.map((v: any) => ({
+        ...v,
+        stock: stockMap[v.id] ?? 0
+      })) as Variant[];
 
-    if (variants.length === 0) {
+      if (variants.length === 0) {
+        return {
+          variants: [],
+          totalCount: 0,
+          totalPages: 0
+        };
+      }
+
       return {
-        variants: [],
-        totalCount: 0,
-        totalPages: 0
+        variants,
+        totalCount,
+        totalPages: Math.ceil(totalCount / itemsPerPage!)
       };
     }
 
-    return {
-      variants,
-      totalCount,
-      totalPages: Math.ceil(totalCount / itemsPerPage!)
-    };
-  }
-
-  const countSql = `
+    const countSql = `
     SELECT COUNT(*) as total FROM (
       SELECT
         v.id,
@@ -299,10 +299,10 @@ async findVariants({ searchTerm, categoryId, categories, stockStatus, status, so
       ${whereClause}
     ) ${stockFilterClause}
   `;
-  const totalCount = (db.prepare(countSql).get(...filterParams) as any).total;
+    const totalCount = (db.prepare(countSql).get(...filterParams) as any).total;
 
-  const startIndex = (currentPage! - 1) * itemsPerPage!;
-  const sql = `
+    const startIndex = (currentPage! - 1) * itemsPerPage!;
+    const sql = `
     SELECT * FROM (
       SELECT 
         v.id, v.product_id, v.name, v.sku, v.mrp as price, v.cost_price,
@@ -323,40 +323,40 @@ async findVariants({ searchTerm, categoryId, categories, stockStatus, status, so
     LIMIT ? OFFSET ?
   `;
 
-  const rows = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
+    const rows = db.prepare(sql).all(...filterParams, itemsPerPage, startIndex);
 
-  const variants = rows.map((v: any) => ({
-    ...v,
-    stock: v.stock
-  })) as Variant[];
+    const variants = rows.map((v: any) => ({
+      ...v,
+      stock: v.stock
+    })) as Variant[];
 
-  if (variants.length === 0) {
+    if (variants.length === 0) {
+      return {
+        variants: [],
+        totalCount: 0,
+        totalPages: 0
+      };
+    }
+
     return {
-      variants: [],
-      totalCount: 0,
-      totalPages: 0
+      variants,
+      totalCount,
+      totalPages: Math.ceil(totalCount / itemsPerPage!)
     };
   }
 
-  return {
-    variants,
-    totalCount,
-    totalPages: Math.ceil(totalCount / itemsPerPage!)
-  };
-}
+  /**
+   * Get variant statistics
+   */
+  async getVariantStats(): Promise<{
+    totalVariants: number;
+    lowStockVariants: number;
+    inactiveVariants: number;
+    avgStockLevel: number;
+  }> {
+    const db = getDB();
 
-/**
- * Get variant statistics
- */
-async getVariantStats(): Promise<{
-  totalVariants: number;
-  lowStockVariants: number;
-  inactiveVariants: number;
-  avgStockLevel: number;
-}> {
-  const db = getDB();
-
-  const sql = `
+    const sql = `
     SELECT 
       v.id,
       v.stock_alert_cap,
@@ -370,20 +370,20 @@ async getVariantStats(): Promise<{
     WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL
   `;
 
-  const variants = db.prepare(sql).all() as Array<{ id: number; stock: number; stock_alert_cap: number; status: string }>;
+    const variants = db.prepare(sql).all() as Array<{ id: number; stock: number; stock_alert_cap: number; status: string }>;
 
-  const totalVariants = variants.length;
-  const lowStockVariants = variants.filter(v => v.stock <= v.stock_alert_cap && v.stock > 0).length;
-  const inactiveVariants = variants.filter(v => v.status !== 'active').length;
-  const avgStockLevel = totalVariants > 0
-    ? Math.round(variants.reduce((sum, v) => sum + v.stock, 0) / totalVariants)
-    : 0;
+    const totalVariants = variants.length;
+    const lowStockVariants = variants.filter(v => v.stock <= v.stock_alert_cap && v.stock > 0).length;
+    const inactiveVariants = variants.filter(v => v.status !== 'active').length;
+    const avgStockLevel = totalVariants > 0
+      ? Math.round(variants.reduce((sum, v) => sum + v.stock, 0) / totalVariants)
+      : 0;
 
-  return {
-    totalVariants,
-    lowStockVariants,
-    inactiveVariants,
-    avgStockLevel
-  };
-}
+    return {
+      totalVariants,
+      lowStockVariants,
+      inactiveVariants,
+      avgStockLevel
+    };
+  }
 }
