@@ -91,6 +91,20 @@ process.on('uncaughtException', (error: Error) => {
 export function startServer(): void {
   initDB();
 
+  // One-time backfill: paid sales should always be fulfilled.
+  // Fixes existing records created by the old bug where fulfillment_status was always 'pending'.
+  try {
+    const db = getDB();
+    const result = db.prepare(
+      `UPDATE sales SET fulfillment_status = 'fulfilled' WHERE status = 'paid' AND fulfillment_status = 'pending'`
+    ).run();
+    if (result.changes > 0) {
+      appLogger.info(`Backfill: corrected fulfillment_status for ${result.changes} paid sale(s).`);
+    }
+  } catch (err: any) {
+    appLogger.warn('Backfill failed (non-fatal):', err.message);
+  }
+
   // Initialize Audit Service
   const auditRepository = new AuditRepository();
   initAuditService(auditRepository);

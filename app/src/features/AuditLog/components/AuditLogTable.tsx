@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { ClipboardCheck, Eye } from 'lucide-react';
 import { useGetAuditLogsQuery } from '@/services/auditLogApi';
 import { setSearchTerm, setCurrentPage, setSort, setFilter, clearAllFilters, setDateRange } from '../auditLogSlice';
-import { RootState } from '@/store/store';
+import type { RootState } from '@/store/store';
 import type { AuditLog } from '@shared/index';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { allColumns } from './auditLogTableContents';
 import { actionFilter, resourceFilter } from '../data/auditLogFiltersConfig';
 import AuditLogDetailsDialog from './AuditLogDetailsDialog';
-import DateRangeFilter from './DateRangeFilter';
+import DateRangeFilter from '@/components/common/DateRangeFilter';
 
 export default function AuditLogTable() {
     const dispatch = useDispatch();
@@ -96,6 +96,11 @@ export default function AuditLogTable() {
         resourceFilter,
     ];
 
+    const isAnyFilterActive = filters.action?.length > 0 ||
+        filters.resource?.length > 0 ||
+        !!filters.startDate ||
+        !!filters.endDate;
+
     return (
         <>
             <DataTable
@@ -122,6 +127,7 @@ export default function AuditLogTable() {
                 activeFilters={filters}
                 onFilterChange={handleFilterChange}
                 onClearAllFilters={handleClearAllFilters}
+                isAnyFilterActive={isAnyFilterActive}
 
                 emptyState={emptyState}
                 renderActions={renderLogActions}

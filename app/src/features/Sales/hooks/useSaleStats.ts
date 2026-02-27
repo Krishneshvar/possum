@@ -7,23 +7,31 @@ import { Sale } from '../../../../types/index.js';
 
 interface SaleStats {
     totalBills: number;
-    completed: number;
-    pending: number;
+    paid: number;
+    partialOrDraft: number;
     cancelledOrRefunded: number;
+    totalRevenue: number;
 }
 
 export function useSaleStats(sales: Sale[], totalRecords?: number): SaleStats {
     return useMemo(() => {
-        const completed = sales.filter(s => s.status === 'completed').length;
-        const pending = sales.filter(s => s.status === 'pending').length;
+        const paid = sales.filter(s => s.status === 'paid').length;
+        const partialOrDraft = sales.filter(s => s.status === 'partially_paid' || s.status === 'draft').length;
         const cancelled = sales.filter(s => s.status === 'cancelled').length;
         const refunded = sales.filter(s => s.status === 'refunded').length;
+        const totalRevenue = sales.reduce((sum, s) => {
+            if (s.status !== 'cancelled') {
+                return sum + (s.paid_amount || 0);
+            }
+            return sum;
+        }, 0);
 
         return {
             totalBills: totalRecords || sales.length,
-            completed,
-            pending,
+            paid,
+            partialOrDraft,
             cancelledOrRefunded: cancelled + refunded,
+            totalRevenue,
         };
     }, [sales, totalRecords]);
 }

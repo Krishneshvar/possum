@@ -72,17 +72,6 @@ export const allColumns = [
         },
     },
     {
-        key: "fulfillment_status",
-        label: "Fulfillment",
-        renderCell: (order: any) => (
-            <Badge variant={order.fulfillment_status === 'fulfilled' ? 'default' : 'secondary'}>
-                {order.fulfillment_status}
-            </Badge>
-        ),
-        sortable: true,
-        sortField: "fulfillment_status",
-    },
-    {
         key: "status",
         label: "Status",
         renderCell: (order: any) => getStatusBadge(order.status),

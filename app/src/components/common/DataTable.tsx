@@ -48,6 +48,7 @@ interface DataTableProps {
     activeFilters?: Record<string, any>;
     onFilterChange?: (payload: { key: string; value: string[] }) => void;
     onClearAllFilters?: () => void;
+    isAnyFilterActive?: boolean;
     emptyState?: React.ReactNode;
     renderActions?: (item: any) => React.ReactNode;
     avatarIcon?: React.ReactNode;
@@ -85,6 +86,7 @@ export default function DataTable({
     activeFilters,
     onFilterChange,
     onClearAllFilters,
+    isAnyFilterActive = false,
 
     // Content
     emptyState,
@@ -164,18 +166,29 @@ export default function DataTable({
                 </div>
 
                 {/* Filters - Below Search Bar */}
-                {(filtersConfig || customFilters) && activeFilters && onFilterChange && onClearAllFilters && (
+                {(filtersConfig || customFilters) && onFilterChange && onClearAllFilters && (
                     <div className="px-4 sm:px-6 pt-3">
-                        <div className="flex gap-2 items-center">
-                            {filtersConfig && (
+                        <div className="flex flex-wrap gap-2 items-center">
+                            {filtersConfig && activeFilters && (
                                 <GenericFilter
                                     filtersConfig={filtersConfig}
                                     activeFilters={activeFilters}
                                     onFilterChange={onFilterChange}
-                                    onClearAllFilters={onClearAllFilters}
                                 />
                             )}
                             {customFilters}
+
+                            {(isAnyFilterActive || (filtersConfig && activeFilters && filtersConfig.some(f => activeFilters[f.key]?.length > 0))) && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onClearAllFilters}
+                                    className="h-8 text-muted-foreground hover:text-destructive"
+                                >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Clear
+                                </Button>
+                            )}
                         </div>
                     </div>
                 )}

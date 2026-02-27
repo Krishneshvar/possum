@@ -8,7 +8,7 @@ import { useGetCustomersQuery } from "@/services/customersApi";
 import { useCalculateTaxMutation } from "@/services/taxesApi";
 import { toast } from "sonner";
 import { useMultiBillState, type SaleItem } from '../hooks/useMultiBillState';
-import { calculateItemDiscountAmount, calculateItemTotal, calculateCartSubtotal, calculateOverallDiscount } from '../utils/salesCalculations';
+import { calculateItemDiscountAmount, calculateCartSubtotal, calculateOverallDiscount } from '../utils/salesCalculations';
 
 function parseCustomerId(value: string): number | undefined {
     if (!value || value === 'walk-in') {
@@ -246,8 +246,7 @@ export default function SalesPage() {
                 }
             ],
             taxMode: 'exclusive', // Default
-            billTaxIds: [],
-            fulfillment_status: 'pending'
+            billTaxIds: []
         };
 
         try {

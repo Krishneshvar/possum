@@ -215,6 +215,11 @@ export async function createSale({
             status = 'partially_paid';
         }
 
+        // A fully paid sale is automatically fulfilled — no separate dispatch step needed.
+        // Partial/draft sales stay 'pending' until explicitly fulfilled.
+        const derivedFulfillmentStatus: 'pending' | 'fulfilled' =
+            status === 'paid' ? 'fulfilled' : 'pending';
+
         const invoiceNumber = generateInvoiceNumber();
 
         // Insert sale
@@ -225,7 +230,7 @@ export async function createSale({
             discount,
             total_tax: totalTax.toNumber(),
             status,
-            fulfillment_status,
+            fulfillment_status: derivedFulfillmentStatus,
             customer_id: customerId,
             user_id: userId
         });
@@ -284,14 +289,9 @@ export async function createSale({
 
 export function getSale(id: number, userId?: number): any {
     const sale = saleRepository.findSaleById(id);
-    
-    // Log sale view for audit trail
-    if (sale && userId) {
-        auditService.logAction(userId, 'VIEW', 'sales', id, { invoice_number: sale.invoice_number });
-    }
-    
     return sale;
 }
+
 
 export function getSales(params: SaleFilter): PaginatedSales {
     return saleRepository.findSales(params);
@@ -339,17 +339,18 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
 
         // Update paid amount
         const newPaidAmount = new Decimal(sale.paid_amount).add(amount);
-        
+
         if (newPaidAmount.gt(sale.total_amount)) {
             throw new Error(`Payment amount exceeds remaining balance. Remaining: ${new Decimal(sale.total_amount).sub(sale.paid_amount).toFixed(2)}`);
         }
-        
+
         saleRepository.updateSalePaidAmount(saleId, newPaidAmount.toNumber());
 
         // Update status if fully paid
         let newStatus: string = sale.status;
         if (newPaidAmount.gte(sale.total_amount)) {
             saleRepository.updateSaleStatus(saleId, 'paid');
+            saleRepository.updateFulfillmentStatus(saleId, 'fulfilled');
             newStatus = 'paid';
         }
 
@@ -362,11 +363,11 @@ export function addPayment({ saleId, amount, paymentMethodId, userId, token }: {
             userId,
             'transactions',
             0,
-            { 
-                sale_id: saleId, 
-                amount, 
+            {
+                sale_id: saleId,
+                amount,
                 payment_method: paymentMethod?.name || 'Unknown',
-                new_status: newStatus 
+                new_status: newStatus
             }
         );
 
@@ -409,6 +410,7 @@ export function cancelSale(saleId: number, userId: number, token?: string): { su
 
         // Update sale status
         saleRepository.updateSaleStatus(saleId, 'cancelled');
+        saleRepository.updateFulfillmentStatus(saleId, 'cancelled');
 
         // Log sale cancellation
         auditService.logUpdate(
@@ -504,7 +506,7 @@ export function processSaleRefund({
         const fallbackPaymentMethodId = activeMethods.length > 0 ? activeMethods[0].id : 1;
         const paymentMethodId =
             paymentTx?.payment_method_id &&
-            saleRepository.paymentMethodExists(paymentTx.payment_method_id)
+                saleRepository.paymentMethodExists(paymentTx.payment_method_id)
                 ? paymentTx.payment_method_id
                 : fallbackPaymentMethodId;
 

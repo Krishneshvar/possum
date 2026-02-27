@@ -9,11 +9,14 @@ import { DayPicker, getDefaultClassNames } from "react-day-picker";
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 
+
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  captionLayout = "label",
+  captionLayout = "dropdown",
+  fromYear = new Date().getFullYear() - 100,
+  toYear = new Date().getFullYear() + 20,
   buttonVariant = "ghost",
   formatters,
   components,
@@ -24,6 +27,8 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      startMonth={new Date(fromYear, 0)}
+      endMonth={new Date(toYear, 11)}
       className={cn(
         "bg-background group/calendar p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
@@ -66,10 +71,12 @@ function Calendar({
           "relative has-focus:border-ring border border-input shadow-xs has-focus:ring-ring/50 has-focus:ring-[3px] rounded-md",
           defaultClassNames.dropdown_root
         ),
-        dropdown: cn("absolute bg-popover inset-0 opacity-0", defaultClassNames.dropdown),
-        caption_label: cn("select-none font-medium", captionLayout === "label"
-          ? "text-sm"
-          : "rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5", defaultClassNames.caption_label),
+        dropdown: cn("relative inline-flex items-center mx-0.5", defaultClassNames.dropdown),
+        caption_label: cn(
+          "select-none font-medium h-8 flex items-center justify-center px-2",
+          captionLayout !== "label" && "hidden",
+          defaultClassNames.caption_label
+        ),
         table: "w-full border-collapse",
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
@@ -118,6 +125,25 @@ function Calendar({
           }
 
           return (<ChevronDownIcon className={cn("size-4", className)} {...props} />);
+        },
+        Dropdown: ({ value, onChange, options, ...props }) => {
+          return (
+            <div className="relative inline-flex items-center">
+              <select
+                value={value}
+                onChange={onChange}
+                aria-label={props["aria-label"]}
+                className="h-8 appearance-none cursor-pointer rounded-md border-none bg-transparent px-2 pr-6 text-sm font-medium text-foreground hover:bg-muted focus:outline-none transition-colors"
+              >
+                {options?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDownIcon className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
+            </div>
+          );
         },
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -20,20 +20,14 @@ interface GenericFilterProps {
     filtersConfig: FilterConfig[];
     activeFilters: Record<string, string | string[]>;
     onFilterChange: (payload: { key: string; value: string[] }) => void;
-    onClearAllFilters: () => void;
 }
 
 export default function GenericFilter({
     filtersConfig,
     activeFilters,
-    onFilterChange,
-    onClearAllFilters
+    onFilterChange
 }: GenericFilterProps) {
     if (!filtersConfig || filtersConfig.length === 0) return null;
-
-    const hasActiveFilters = filtersConfig.some(filter =>
-        activeFilters[filter.key] && activeFilters[filter.key].length > 0
-    );
 
     const toggleOption = (filterKey: string, optionValue: string) => {
         const current = (activeFilters[filterKey] as string[]) || [];
@@ -94,17 +88,6 @@ export default function GenericFilter({
                 );
             })}
 
-            {hasActiveFilters && (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onClearAllFilters}
-                    className="h-8 text-muted-foreground hover:text-destructive"
-                >
-                    <X className="h-4 w-4 mr-1" />
-                    Clear
-                </Button>
-            )}
         </div>
     );
 }
