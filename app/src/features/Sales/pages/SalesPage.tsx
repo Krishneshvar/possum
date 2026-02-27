@@ -46,28 +46,45 @@ export default function SalesPage() {
                 return;
             }
 
-            const invoice = {
-                items: currentBill.items.map(item => ({
+            let grossTotal = 0;
+            const tempItems = currentBill.items.map(item => {
+                const lineTotal = item.pricePerUnit * item.quantity;
+                const lineDiscount = calculateItemDiscountAmount(item);
+                const netLineTotal = Math.max(0, lineTotal - lineDiscount);
+                grossTotal += netLineTotal;
+                return { ...item, netLineTotal };
+            });
+
+            let distributedGlobalDiscount = 0;
+            const globalDiscountToDistribute = calculateOverallDiscount(grossTotal, currentBill.discountType, currentBill.overallDiscount);
+
+            const invoiceItems = tempItems.map((item, i) => {
+                let itemGlobalDiscount = 0;
+                if (grossTotal > 0 && globalDiscountToDistribute > 0) {
+                    if (i === tempItems.length - 1) {
+                        itemGlobalDiscount = globalDiscountToDistribute - distributedGlobalDiscount;
+                    } else {
+                        itemGlobalDiscount = (item.netLineTotal / grossTotal) * globalDiscountToDistribute;
+                        distributedGlobalDiscount += itemGlobalDiscount;
+                    }
+                }
+                const finalTaxableAmount = Math.max(0, item.netLineTotal - itemGlobalDiscount);
+                const effectiveUnitPrice = item.quantity > 0 ? finalTaxableAmount / item.quantity : 0;
+
+                return {
                     product_id: item.productId || item.id,
                     variant_id: item.variantId,
                     quantity: item.quantity,
-                    price: item.pricePerUnit,
+                    price: effectiveUnitPrice,
                     product_name: item.product_name || item.name,
                     variant_name: item.variant_name
-                })),
-                discount_total: currentBill.discountType === 'fixed'
-                    ? parseFloat(String(currentBill.overallDiscount || 0))
-                    : 0 // If percentage, backend logic handles it differently or we compute amount here?
+                };
+            });
+
+            const invoice = {
+                items: invoiceItems,
+                discount_total: 0
             };
-
-            const lineDiscountTotal = currentBill.items.reduce((sum, item) => sum + calculateItemDiscountAmount(item), 0);
-
-            // Include line-level discounts and optional overall discount in one total for tax engine.
-            invoice.discount_total += lineDiscountTotal;
-            if (currentBill.discountType === 'percentage') {
-                const subtotal = currentBill.items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
-                invoice.discount_total += (subtotal * (parseFloat(String(currentBill.overallDiscount || 0)) / 100));
-            }
 
             try {
                 const result = await calculateTax({
@@ -190,6 +207,24 @@ export default function SalesPage() {
         }
         if (!currentBill.paymentMethod) {
             toast.error('Please select a payment method');
+            return;
+        }
+
+        const tenderedAmt = parseFloat(currentBill.amountTendered || '0');
+        const grandTotalNum = parseFloat(grandTotal);
+
+        if (!currentBill.amountTendered || isNaN(tenderedAmt)) {
+            toast.error('Please enter the tendered amount');
+            return;
+        }
+
+        if (currentBill.paymentType === 'full' && tenderedAmt < grandTotalNum) {
+            toast.error(`Tendered amount must be at least ${currency}${grandTotal} for a full payment.`);
+            return;
+        }
+
+        if (currentBill.paymentType === 'partial' && tenderedAmt <= 0) {
+            toast.error('Please enter a valid amount for partial payment.');
             return;
         }
 

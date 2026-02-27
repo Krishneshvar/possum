@@ -281,7 +281,14 @@ export default function BillingSection({
                     <Button
                         onClick={onCompleteSale}
                         className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base shadow-lg shadow-primary/20"
-                        disabled={parseFloat(grandTotal) <= 0 || isProcessingSale}
+                        disabled={
+                            parseFloat(grandTotal) <= 0 ||
+                            isProcessingSale ||
+                            !currentBill.amountTendered ||
+                            isNaN(parseFloat(currentBill.amountTendered)) ||
+                            (currentBill.paymentType === 'full' && parseFloat(currentBill.amountTendered) < parseFloat(grandTotal)) ||
+                            (currentBill.paymentType === 'partial' && parseFloat(currentBill.amountTendered) <= 0)
+                        }
                         aria-label="Complete sale and process payment"
                     >
                         {isProcessingSale ? (

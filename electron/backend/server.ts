@@ -42,7 +42,9 @@ import {
   receiveInventory,
   addVariant,
   updateVariant,
-  logProductFlow
+  logProductFlow,
+  deductStock,
+  restoreStock
 } from '../../core/index.js';
 
 // Database repositories
@@ -154,11 +156,11 @@ export function startServer(): void {
     getVariantStock: (id: number) => inventoryRepository.getStockByVariantId(id),
     INVENTORY_REASONS
   };
-  initSaleService(saleRepository, { adjustStock: adjustInventory, getStockByVariantId: getVariantStock }, auditService, taxEngine, transaction, saleDependencies);
+  initSaleService(saleRepository, { adjustStock: adjustInventory, getStockByVariantId: getVariantStock, deductStock, restoreStock }, auditService, taxEngine, transaction, saleDependencies);
 
   // Initialize Return Service
   const returnRepository = new ReturnRepository();
-  initReturnService(returnRepository, saleRepository, { getSaleById: saleRepository.findSaleById.bind(saleRepository) }, { adjustStock: adjustInventory }, auditService, transaction);
+  initReturnService(returnRepository, saleRepository, { getSaleById: saleRepository.findSaleById.bind(saleRepository) }, { adjustStock: adjustInventory, restoreStock }, auditService, transaction);
 
   // Initialize Product Service
   const productRepository = new ProductRepository();
