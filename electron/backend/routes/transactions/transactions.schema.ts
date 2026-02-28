@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-const sortByValues = ['transaction_date', 'amount', 'status', 'customer_name', 'invoice_number'] as const;
+const sortByValues = ['transaction_date', 'amount', 'status', 'customer_name', 'invoice_number', 'supplier_name'] as const;
 const sortOrderValues = ['ASC', 'DESC'] as const;
-const transactionTypeValues = ['payment', 'refund'] as const;
+const transactionTypeValues = ['payment', 'refund', 'purchase', 'purchase_refund'] as const;
 const transactionStatusValues = ['completed', 'pending', 'cancelled'] as const;
 
 export const getTransactionsSchema = z.object({

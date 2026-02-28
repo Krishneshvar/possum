@@ -1,19 +1,21 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { TransactionsResponse, useGetTransactionsQuery } from "@/services/transactionsApi";
+import { useGetPaymentMethodsQuery } from "@/services/salesApi";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownLeft, DollarSign, Download, Printer, CheckCircle2, Clock } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, DollarSign, Download, Printer, CheckCircle2, Clock, ExternalLink, TrendingUp } from "lucide-react";
 import DataTable, { type Column } from "@/components/common/DataTable";
 import CurrencyText from "@/components/common/CurrencyText";
 import GenericPageHeader from "@/components/common/GenericPageHeader";
 import { StatCards } from "@/components/common/StatCards";
 import { KeyboardShortcut } from "@/components/common/KeyboardShortcut";
 
+import DateRangeFilter from "@/components/common/DateRangeFilter";
+
 type TransactionRow = TransactionsResponse['transactions'][number];
-type TransactionStatusFilter = 'completed' | 'pending' | 'cancelled';
-type TransactionTypeFilter = 'payment' | 'refund';
+type TransactionTypeFilter = 'payment' | 'refund' | 'purchase' | 'purchase_refund';
 
 type SortableField = "transaction_date" | "amount" | "status" | "customer_name" | "invoice_number";
 type SortOrder = "ASC" | "DESC";
@@ -22,9 +24,13 @@ export default function TransactionsPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [activeFilters, setActiveFilters] = useState<{ status: TransactionStatusFilter[], type: TransactionTypeFilter[] }>({
-    status: [],
+  const [activeFilters, setActiveFilters] = useState<{ paymentMethod: string[], type: TransactionTypeFilter[] }>({
+    paymentMethod: [],
     type: [],
+  });
+  const [dateRange, setDateRange] = useState<{ startDate: string | null; endDate: string | null }>({
+    startDate: null,
+    endDate: null,
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState({
@@ -32,11 +38,17 @@ export default function TransactionsPage() {
     sortOrder: "DESC" as SortOrder,
   });
 
+  const { data: paymentMethodsData } = useGetPaymentMethodsQuery(undefined);
+  const paymentMethods: any[] = paymentMethodsData || [];
+
   const { data, isLoading, isError, error, refetch } = useGetTransactionsQuery({
     page,
     limit,
-    status: activeFilters.status.length > 0 ? activeFilters.status[0] : undefined,
+    status: 'completed',
     type: activeFilters.type.length > 0 ? activeFilters.type[0] : undefined,
+    paymentMethodId: activeFilters.paymentMethod?.length > 0 ? Number(activeFilters.paymentMethod[0]) : undefined,
+    startDate: dateRange.startDate || undefined,
+    endDate: dateRange.endDate || undefined,
     searchTerm: searchTerm || undefined,
     sortBy: sort.sortBy,
     sortOrder: sort.sortOrder,
@@ -56,14 +68,10 @@ export default function TransactionsPage() {
 
   const filtersConfig = [
     {
-      key: "status",
-      label: "Status",
-      placeholder: "Filter by Status",
-      options: [
-        { label: "Completed", value: "completed" },
-        { label: "Pending", value: "pending" },
-        { label: "Cancelled", value: "cancelled" },
-      ],
+      key: "paymentMethod",
+      label: "Payment Method",
+      placeholder: "Filter by Method",
+      options: paymentMethods.map(pm => ({ label: pm.name, value: pm.id.toString() })),
     },
     {
       key: "type",
@@ -72,24 +80,37 @@ export default function TransactionsPage() {
       options: [
         { label: "Payment", value: "payment" },
         { label: "Refund", value: "refund" },
+        { label: "Purchase", value: "purchase" },
+        { label: "Purchase Refund", value: "purchase_refund" },
       ],
     },
   ];
 
   const handleFilterChange = ({ key, value }: { key: string, value: string[] }) => {
-    if (key === 'status') {
-      setActiveFilters((prev) => ({ ...prev, status: value as TransactionStatusFilter[] }));
+    if (key === 'paymentMethod') {
+      setActiveFilters((prev) => ({ ...prev, paymentMethod: value }));
     } else if (key === 'type') {
       setActiveFilters((prev) => ({ ...prev, type: value as TransactionTypeFilter[] }));
     }
     setPage(1);
   };
 
+  const handleDateRangeApply = (startDate: string, endDate: string) => {
+    setDateRange({ startDate, endDate });
+    setPage(1);
+  };
+
   const handleClearFilters = () => {
-    setActiveFilters({ status: [], type: [] });
+    setActiveFilters({ paymentMethod: [], type: [] });
+    setDateRange({ startDate: null, endDate: null });
     setSearchTerm("");
     setPage(1);
   };
+
+  const isAnyFilterActive = activeFilters.paymentMethod.length > 0 ||
+    activeFilters.type.length > 0 ||
+    dateRange.startDate !== null ||
+    dateRange.endDate !== null;
 
   const handleSort = (column: Column) => {
     if (!column.sortField) return;
@@ -104,14 +125,14 @@ export default function TransactionsPage() {
     if (Number.isNaN(date.getTime())) return '-';
     const today = new Date();
     const isToday = date.toDateString() === today.toDateString();
-    
+
     if (isToday) {
       return date.toLocaleString('en-IN', {
         hour: '2-digit',
         minute: '2-digit'
       });
     }
-    
+
     return date.toLocaleString('en-IN', {
       day: '2-digit',
       month: 'short',
@@ -119,26 +140,17 @@ export default function TransactionsPage() {
     });
   };
 
-  const getStatusVariant = (status: string): 'default' | 'outline' | 'destructive' | 'secondary' => {
-    switch (status) {
-      case 'completed': return 'default';
-      case 'pending': return 'outline';
-      case 'cancelled': return 'secondary';
-      default: return 'secondary';
-    }
-  };
-
   const getTypeIcon = (type: string) => {
-    if (type === 'payment') return (
+    if (type === 'payment' || type === 'purchase_refund') return (
       <>
         <ArrowDownLeft className="h-4 w-4 text-green-500 mr-1" aria-hidden="true" />
-        <span className="sr-only">Payment received</span>
+        <span className="sr-only">{type === 'payment' ? 'Payment received' : 'Purchase refund received'}</span>
       </>
     );
-    if (type === 'refund') return (
+    if (type === 'refund' || type === 'purchase') return (
       <>
         <ArrowUpRight className="h-4 w-4 text-red-500 mr-1" aria-hidden="true" />
-        <span className="sr-only">Refund issued</span>
+        <span className="sr-only">{type === 'refund' ? 'Refund issued' : 'Purchase made'}</span>
       </>
     );
     return null;
@@ -161,47 +173,57 @@ export default function TransactionsPage() {
       }
     },
     {
-      key: 'id',
-      label: 'ID',
-      renderCell: (t: TransactionRow) => <span className="font-mono text-xs">#{t.id}</span>
-    },
-    {
-      key: 'invoice_number',
-      label: 'Invoice',
+      key: 'actions',
+      label: 'Actions',
       sortable: false,
-      renderCell: (t: TransactionRow) => (
-        <Button
-          variant="link"
-          className="p-0 h-auto font-medium"
-          onClick={() => navigate(`/sales/history/${t.sale_id}`)}
-          aria-label={`View invoice ${t.invoice_number}`}
-        >
-          {t.invoice_number}
-        </Button>
-      )
+      renderCell: (t: TransactionRow) => {
+        if (t.purchase_order_id) {
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/purchase/orders/${t.purchase_order_id}`)}
+              title="View Purchase Order"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              PO-{t.purchase_order_id}
+            </Button>
+          )
+        }
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/sales/history/${t.sale_id}`)}
+            title="View Invoice"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            {t.invoice_number}
+          </Button>
+        )
+      }
     },
     {
       key: 'customer_name',
-      label: 'Customer',
+      label: 'Party',
       sortable: true,
       sortField: 'customer_name',
-      renderCell: (t: TransactionRow) => t.customer_name || '-'
+      renderCell: (t: TransactionRow) => t.customer_name || t.supplier_name || '-'
     },
     {
       key: 'type',
-      label: 'Type',
+      label: 'Type & Method',
       renderCell: (t: TransactionRow) => (
-        <div className="flex items-center capitalize">
-          {getTypeIcon(t.type)}
-          {t.type}
+        <div className="flex flex-col">
+          <div className="flex items-center capitalize text-sm">
+            {getTypeIcon(t.type)}
+            {t.type}
+          </div>
+          <span className="text-xs text-muted-foreground capitalize mt-0.5 ml-5">
+            {t.payment_method_name || 'N/A'}
+          </span>
         </div>
       )
-    },
-    {
-      key: 'payment_method_name',
-      label: 'Method',
-      sortable: false,
-      renderCell: (t: TransactionRow) => t.payment_method_name || '-'
     },
     {
       key: 'amount',
@@ -210,23 +232,11 @@ export default function TransactionsPage() {
       sortField: 'amount',
       className: 'text-right',
       renderCell: (t: TransactionRow) => (
-        <div className={`text-right font-semibold ${t.type === 'refund' ? 'text-red-600' : 'text-green-600'}`}>
+        <div className={`text-right font-semibold ${t.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
           <CurrencyText value={t.amount} />
         </div>
       )
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      className: 'text-center',
-      renderCell: (t: TransactionRow) => (
-        <div className="flex justify-center">
-          <Badge variant={getStatusVariant(t.status)} className="capitalize px-2.5 py-0.5 text-xs font-medium">
-            {t.status}
-          </Badge>
-        </div>
-      )
-    },
+    }
   ];
 
   const transactionsActions = {
@@ -246,22 +256,19 @@ export default function TransactionsPage() {
 
   const statsData = useMemo(() => {
     const totalPayments = transactions
-      .filter(t => t.type === 'payment' && t.status === 'completed')
+      .filter(t => (t.type === 'payment' || t.type === 'purchase_refund') && t.status === 'completed')
       .reduce((sum, t) => sum + Number(t.amount), 0);
-    
+
     const totalRefunds = transactions
-      .filter(t => t.type === 'refund' && t.status === 'completed')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    
-    const completed = transactions.filter(t => t.status === 'completed').length;
-    const pending = transactions.filter(t => t.status === 'pending').length;
-    const cancelled = transactions.filter(t => t.status === 'cancelled').length;
+      .filter(t => (t.type === 'refund' || t.type === 'purchase') && t.status === 'completed')
+      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+
+    const profit = totalPayments - totalRefunds;
 
     return [
-      { title: 'Total Payments', icon: ArrowDownLeft, color: 'text-green-500', todayValue: totalPayments, isCurrency: true },
-      { title: 'Total Refunds', icon: ArrowUpRight, color: 'text-red-500', todayValue: totalRefunds, isCurrency: true },
-      { title: 'Completed', icon: CheckCircle2, color: 'text-blue-500', todayValue: completed },
-      { title: 'Pending/Cancelled', icon: Clock, color: 'text-yellow-500', todayValue: pending + cancelled },
+      { title: 'Total In', icon: ArrowDownLeft, color: 'text-green-500', todayValue: totalPayments, isCurrency: true },
+      { title: 'Total Out', icon: ArrowUpRight, color: 'text-red-500', todayValue: totalRefunds, isCurrency: true },
+      { title: 'Net Profit', icon: TrendingUp, color: profit >= 0 ? 'text-blue-500' : 'text-red-500', todayValue: profit, isCurrency: true },
     ];
   }, [transactions]);
 
@@ -317,6 +324,14 @@ export default function TransactionsPage() {
         activeFilters={activeFilters}
         onFilterChange={handleFilterChange}
         onClearAllFilters={handleClearFilters}
+        isAnyFilterActive={isAnyFilterActive}
+        customFilters={
+          <DateRangeFilter
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            onApply={handleDateRangeApply}
+          />
+        }
 
         emptyState={emptyState}
         avatarIcon={<DollarSign className="h-4 w-4 text-primary" />}

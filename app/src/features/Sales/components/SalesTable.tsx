@@ -282,8 +282,8 @@ export default function SalesTable({
                     <TableHeader className="bg-muted sticky top-0 z-10">
                         <TableRow>
                             <TableHead className="relative border border-border font-semibold text-center">
-                                S. No
-                                <button type="button" className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-primary/30" onMouseDown={(e) => beginResize(e, 'sno')} aria-label="Resize S. No column" />
+                                #
+                                <button type="button" className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-primary/30" onMouseDown={(e) => beginResize(e, 'sno')} aria-label="Resize # column" />
                             </TableHead>
                             <TableHead className="relative border border-border font-semibold">
                                 Product

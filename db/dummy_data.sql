@@ -97,8 +97,7 @@ SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'stockm' AND r.name =
 
 INSERT INTO payment_methods (name) VALUES
 ('Cash'),
-('Credit Card'),
-('Debit Card'),
+('Card'),
 ('UPI'),
 ('Gift Card');
 
@@ -231,9 +230,9 @@ INSERT INTO transactions (sale_id, amount, type, payment_method_id, transaction_
 (1, 3150, 'payment', 1, '2025-08-12 10:00:00'),
 (2, 87000, 'payment', 2, '2025-08-12 11:30:00'),
 (3, 1000, 'payment', 1, '2025-08-12 12:45:00'),
-(4, 2000, 'payment', 3, '2025-08-12 14:00:00'),
+(4, 2000, 'payment', 2, '2025-08-12 14:00:00'),
 (5, 10800, 'payment', 1, '2025-08-12 15:15:00'),
-(7, 7850, 'payment', 4, '2025-08-12 17:45:00'),
+(7, 7850, 'payment', 3, '2025-08-12 17:45:00'),
 (8, 3000, 'payment', 2, '2025-08-12 18:00:00'),
 (8, -3000, 'refund', 2, '2025-08-12 18:05:00'),
 (9, 500, 'payment', 1, '2025-08-12 19:15:00'),
@@ -314,3 +313,11 @@ INSERT INTO transactions (sale_id, amount, type, payment_method_id, transaction_
 (14, 12000, 'payment', 2, '2025-08-13 11:00:00'),
 (15, 350, 'payment', 1, '2025-08-13 11:30:00'),
 (16, 4500, 'payment', 2, '2025-08-13 12:00:00');
+
+INSERT INTO transactions (purchase_order_id, amount, type, payment_method_id, transaction_date) VALUES
+(1, -23000, 'purchase', 1, '2025-08-05 10:00:00'),
+(3, -24000, 'purchase', 2, '2025-08-07 14:00:00'),
+(4, -6000, 'purchase', 1, '2025-08-06 11:00:00'),
+(7, -4500, 'purchase', 2, '2025-08-08 10:00:00'),
+(8, -3000, 'purchase', 1, '2025-08-09 12:00:00'),
+(9, -5000, 'purchase', 2, '2025-08-10 14:00:00');

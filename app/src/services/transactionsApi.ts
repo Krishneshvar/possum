@@ -6,17 +6,17 @@ export interface TransactionsQueryParams {
     page?: number;
     limit?: number;
     status?: 'completed' | 'pending' | 'cancelled';
-    type?: 'payment' | 'refund';
+    type?: 'payment' | 'refund' | 'purchase' | 'purchase_refund';
     paymentMethodId?: number;
     startDate?: string;
     endDate?: string;
     searchTerm?: string;
-    sortBy?: 'transaction_date' | 'amount' | 'status' | 'customer_name' | 'invoice_number';
+    sortBy?: 'transaction_date' | 'amount' | 'status' | 'customer_name' | 'invoice_number' | 'supplier_name';
     sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface TransactionsResponse {
-    transactions: Array<Transaction & { invoice_number: string | null; customer_name: string | null }>;
+    transactions: Array<Transaction & { invoice_number: string | null; customer_name: string | null; supplier_name: string | null }>;
     totalCount: number;
     totalPages: number;
     currentPage: number;

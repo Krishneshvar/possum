@@ -154,13 +154,14 @@ export interface SaleItem extends BaseEntity {
 }
 
 export interface Transaction extends BaseEntity {
-  sale_id: number;
+  sale_id?: number | null;
+  purchase_order_id?: number | null;
   amount: number;
-  type: 'payment' | 'refund';
+  type: 'payment' | 'refund' | 'purchase' | 'purchase_refund';
   payment_method_id: number;
   status: 'completed' | 'pending' | 'cancelled';
   transaction_date: string;
-  payment_method_name?: string;
+  payment_method_name?: string | null;
 }
 
 export interface TaxProfile extends BaseEntity {
@@ -357,13 +358,13 @@ export interface MonthlyReport {
   reportType: 'monthly';
   summary: SalesReportSummary;
   breakdown: Array<{
-      date: string;
-      name: string;
-      sales: number;
-      total_transactions: number;
-      total_sales: number;
-      total_tax: number;
-      total_discount: number;
+    date: string;
+    name: string;
+    sales: number;
+    total_transactions: number;
+    total_sales: number;
+    total_tax: number;
+    total_discount: number;
   }>;
 }
 
@@ -372,13 +373,13 @@ export interface YearlyReport {
   reportType: 'yearly';
   summary: SalesReportSummary;
   breakdown: Array<{
-      month: string;
-      name: string;
-      sales: number;
-      total_transactions: number;
-      total_sales: number;
-      total_tax: number;
-      total_discount: number;
+    month: string;
+    name: string;
+    sales: number;
+    total_transactions: number;
+    total_sales: number;
+    total_tax: number;
+    total_discount: number;
   }>;
 }
 
