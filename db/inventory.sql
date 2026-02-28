@@ -1,3 +1,17 @@
+CREATE TABLE IF NOT EXISTS payment_policies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  days_to_pay INTEGER NOT NULL DEFAULT 0,
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME
+);
+
+INSERT INTO payment_policies (id, name, days_to_pay, description) 
+VALUES (1, 'Pay when received', 0, 'Payment is due immediately upon receipt of goods') 
+ON CONFLICT(id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS suppliers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
@@ -6,6 +20,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
   email TEXT,
   address TEXT,
   gstin TEXT,
+  payment_policy_id INTEGER REFERENCES payment_policies(id) DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME

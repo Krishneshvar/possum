@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -18,9 +19,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Supplier, useGetSuppliersQuery, useDeleteSupplierMutation } from '@/services/suppliersApi';
+import { Supplier, useGetSuppliersQuery, useDeleteSupplierMutation, useGetPaymentPoliciesQuery } from '@/services/suppliersApi';
 import { SupplierForm } from '../components/SupplierForm';
-import { Plus, Trash2, Edit, Truck, PackageOpen } from 'lucide-react';
+import { Plus, Trash2, Edit, Truck, PackageOpen, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import DataTable from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
@@ -38,10 +40,15 @@ export default function SuppliersPage() {
   const [sortBy, setSortBy] = useState<SupplierSortField>('name');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
 
+  const [filterPolicyId, setFilterPolicyId] = useState<string | undefined>();
+
+  const { data: policies = [] } = useGetPaymentPoliciesQuery();
+
   const { data, isLoading, error, refetch, isFetching: isRefreshing } = useGetSuppliersQuery({
     page,
     limit,
     searchTerm,
+    paymentPolicyId: filterPolicyId ? Number(filterPolicyId) : undefined,
     sortBy,
     sortOrder
   });
@@ -114,6 +121,14 @@ export default function SuppliersPage() {
       label: 'Phone',
       sortable: false,
       renderCell: (supplier: Supplier) => <span className="text-sm">{supplier.phone || '-'}</span>
+    },
+    {
+      key: 'payment_policy',
+      label: 'Policy',
+      sortable: false,
+      renderCell: (supplier: Supplier & { payment_policy_name?: string }) => {
+        return <span className="text-sm">{supplier.payment_policy_name || 'Pay when received'}</span>
+      }
     },
     {
       key: 'address',
@@ -227,11 +242,11 @@ export default function SuppliersPage() {
                 <DialogTitle className="text-xl">
                   {editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}
                 </DialogTitle>
-                <p className="text-sm text-muted-foreground pt-1">
+                <DialogDescription className="text-sm text-muted-foreground pt-1">
                   {editingSupplier
                     ? 'Update supplier information and contact details'
                     : 'Enter supplier information to add them to your system'}
-                </p>
+                </DialogDescription>
               </DialogHeader>
               <SupplierForm
                 supplier={editingSupplier}
@@ -276,6 +291,35 @@ export default function SuppliersPage() {
         avatarIcon={<Truck className="h-4 w-4 text-primary" />}
         onRefresh={refetch}
         isRefreshing={isRefreshing}
+
+        customFilters={
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground mr-1" />
+            <Select
+              value={filterPolicyId || ""}
+              onValueChange={(val: string) => {
+                setFilterPolicyId(val || undefined);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-9 w-[180px] bg-background border-border/50">
+                <SelectValue placeholder="Filter by Policy" />
+              </SelectTrigger>
+              <SelectContent>
+                {policies.map(p => (
+                  <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        onFilterChange={() => { }}
+        onClearAllFilters={() => {
+          setFilterPolicyId(undefined);
+          setSearchTerm('');
+          setPage(1);
+        }}
+        isAnyFilterActive={!!filterPolicyId || !!searchTerm}
       />
 
       <AlertDialog open={!!supplierToDelete} onOpenChange={() => setSupplierToDelete(null)}>

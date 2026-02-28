@@ -25,11 +25,12 @@ function getQueryString(param: unknown): string | undefined {
 
 export function getSuppliers(req: Request, res: Response, next: NextFunction) {
     try {
-        const { page, limit, searchTerm, sortBy, sortOrder } = req.query;
+        const { page, limit, searchTerm, sortBy, sortOrder, paymentPolicyId } = req.query;
         const suppliers = supplierService.getAllSuppliers({
             page: getQueryNumber(page, 1) || 1,
             limit: getQueryNumber(limit, 10) || 10,
             searchTerm: getQueryString(searchTerm),
+            paymentPolicyId: paymentPolicyId ? getQueryNumber(paymentPolicyId, 0) : undefined,
             sortBy: getQueryString(sortBy) as 'name' | 'contact_person' | 'phone' | 'email' | 'created_at' | undefined,
             sortOrder: getQueryString(sortOrder) as 'ASC' | 'DESC' | undefined
         });
@@ -68,6 +69,26 @@ export function deleteSupplier(req: Request, res: Response, next: NextFunction) 
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
         supplierService.deleteSupplier(parseInt(id as string, 10), req.user.id);
         res.json({ message: 'Supplier archived successfully' });
+    } catch (error: any) {
+        next(error);
+    }
+}
+
+export function getPaymentPolicies(req: Request, res: Response, next: NextFunction) {
+    try {
+        const policies = supplierService.getPaymentPolicies();
+        res.json(policies);
+    } catch (error: any) {
+        next(error);
+    }
+}
+
+export function createPaymentPolicy(req: Request, res: Response, next: NextFunction) {
+    try {
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const { name, days_to_pay, description } = req.body;
+        const newPolicy = supplierService.createPaymentPolicy({ name, days_to_pay, description });
+        res.status(201).json(newPolicy);
     } catch (error: any) {
         next(error);
     }

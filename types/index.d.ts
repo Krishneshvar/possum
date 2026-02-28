@@ -233,6 +233,15 @@ export type InventoryReason = typeof INVENTORY_REASONS[keyof typeof INVENTORY_RE
 export declare const VALID_INVENTORY_REASONS: readonly ["sale", "return", "confirm_receive", "spoilage", "damage", "theft", "correction"];
 export declare const INVENTORY_REASON_LABELS: Record<InventoryReason, string>;
 export declare const MANUAL_INVENTORY_REASONS: ("return" | "confirm_receive" | "spoilage" | "damage" | "theft" | "correction")[];
+export interface PaymentPolicy {
+    id: number;
+    name: string;
+    days_to_pay: number;
+    description?: string | null;
+    created_at?: string;
+    updated_at?: string;
+    deleted_at?: string | null;
+}
 export interface Supplier {
     id: number;
     name: string;
@@ -241,6 +250,7 @@ export interface Supplier {
     email?: string | null;
     address?: string | null;
     gstin?: string | null;
+    payment_policy_id?: number;
     created_at?: string;
     updated_at?: string;
     deleted_at?: string | null;

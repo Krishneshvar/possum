@@ -1,13 +1,14 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
-import { type Supplier } from '@shared/index';
+import { type Supplier, type PaymentPolicy } from '@shared/index';
 
-export type { Supplier };
+export type { Supplier, PaymentPolicy };
 
 export interface GetSuppliersParams {
     page?: number;
     limit?: number;
     searchTerm?: string;
+    paymentPolicyId?: number;
     sortBy?: 'name' | 'contact_person' | 'phone' | 'email' | 'created_at';
     sortOrder?: 'ASC' | 'DESC';
 }
@@ -23,7 +24,7 @@ export interface GetSuppliersResponse {
 export const suppliersApi = createApi({
     reducerPath: 'suppliersApi',
     baseQuery,
-    tagTypes: ['Suppliers'],
+    tagTypes: ['Suppliers', 'PaymentPolicies'],
     endpoints: (builder) => ({
         getSuppliers: builder.query<GetSuppliersResponse, GetSuppliersParams>({
             query: (params) => ({
@@ -55,6 +56,18 @@ export const suppliersApi = createApi({
             }),
             invalidatesTags: ['Suppliers'],
         }),
+        getPaymentPolicies: builder.query<PaymentPolicy[], void>({
+            query: () => '/suppliers/payment-policies',
+            providesTags: ['PaymentPolicies'],
+        }),
+        createPaymentPolicy: builder.mutation<PaymentPolicy, { name: string, days_to_pay: number, description?: string }>({
+            query: (newPolicy) => ({
+                url: '/suppliers/payment-policies',
+                method: 'POST',
+                body: newPolicy,
+            }),
+            invalidatesTags: ['PaymentPolicies'],
+        }),
     }),
 });
 
@@ -63,4 +76,6 @@ export const {
     useCreateSupplierMutation,
     useUpdateSupplierMutation,
     useDeleteSupplierMutation,
+    useGetPaymentPoliciesQuery,
+    useCreatePaymentPolicyMutation,
 } = suppliersApi;

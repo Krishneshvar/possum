@@ -296,6 +296,16 @@ export const MANUAL_INVENTORY_REASONS = [
   INVENTORY_REASONS.CONFIRM_RECEIVE,
 ];
 
+export interface PaymentPolicy {
+  id: number;
+  name: string;
+  days_to_pay: number;
+  description?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+}
+
 // Supplier Types
 export interface Supplier {
   id: number;
@@ -305,6 +315,8 @@ export interface Supplier {
   email?: string | null;
   address?: string | null;
   gstin?: string | null;
+  payment_policy_id?: number;
+  payment_policy_name?: string;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;

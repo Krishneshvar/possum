@@ -20,6 +20,7 @@ export const createSupplierSchema = z.object({
         email: z.string().email('Invalid email format').optional().nullable(),
         address: optionalNullableString,
         gstin: optionalNullableString,
+        payment_policy_id: z.number().int().positive().optional(),
     })
 });
 
@@ -34,11 +35,20 @@ export const updateSupplierSchema = z.object({
         email: z.string().email().optional().nullable(),
         address: optionalNullableString,
         gstin: optionalNullableString,
+        payment_policy_id: z.number().int().positive().optional(),
     })
 });
 
 export const getSupplierSchema = z.object({
     params: z.object({
         id: z.string().regex(/^\d+$/).transform(Number)
+    })
+});
+
+export const createPaymentPolicySchema = z.object({
+    body: z.object({
+        name: z.string().trim().min(1, 'Payment policy name is required').max(100),
+        days_to_pay: z.number().int().min(0, 'Days to pay must be 0 or greater'),
+        description: optionalNullableString,
     })
 });

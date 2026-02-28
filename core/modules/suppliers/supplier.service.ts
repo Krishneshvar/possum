@@ -10,13 +10,13 @@ let auditService: any;
 let getDB: any;
 
 export function initSupplierService(
-  repo: ISupplierRepository,
-  audit: any,
-  db: any
+    repo: ISupplierRepository,
+    audit: any,
+    db: any
 ) {
-  supplierRepo = repo;
-  auditService = audit;
-  getDB = db;
+    supplierRepo = repo;
+    auditService = audit;
+    getDB = db;
 }
 
 export function getAllSuppliers(options: SupplierQueryOptions) {
@@ -36,14 +36,17 @@ function httpError(message: string, statusCode: number): Error & { statusCode: n
 }
 
 function normalizeSupplierInput(data: SupplierWriteInput): Partial<Supplier> {
-    return {
-        name: data.name?.trim(),
-        contact_person: data.contact_person?.trim() || null,
-        phone: data.phone?.trim() || null,
-        email: data.email?.trim() || null,
-        address: data.address?.trim() || null,
-        gstin: data.gstin?.trim() || null,
-    };
+    const normalized: Partial<Supplier> = {};
+
+    if (data.name !== undefined) normalized.name = data.name.trim();
+    if (data.contact_person !== undefined) normalized.contact_person = data.contact_person?.trim() || null;
+    if (data.phone !== undefined) normalized.phone = data.phone?.trim() || null;
+    if (data.email !== undefined) normalized.email = data.email?.trim() || null;
+    if (data.address !== undefined) normalized.address = data.address?.trim() || null;
+    if (data.gstin !== undefined) normalized.gstin = data.gstin?.trim() || null;
+    if (data.payment_policy_id !== undefined) normalized.payment_policy_id = data.payment_policy_id;
+
+    return normalized;
 }
 
 export function createSupplier(data: SupplierWriteInput) {
@@ -143,4 +146,30 @@ export function deleteSupplier(id: number, userId: number) {
     });
 
     return transaction();
+}
+
+export function getPaymentPolicies() {
+    return supplierRepo.getPaymentPolicies();
+}
+
+export function createPaymentPolicy(data: { name: string, days_to_pay: number, description?: string }) {
+    if (!data.name || data.days_to_pay === undefined) {
+        throw httpError('Payment policy name and days_to_pay are required', 400);
+    }
+
+    // Optional audit log for payment policies, or just simple creation
+    const db = getDB();
+    const transaction = db.transaction(() => {
+        const result = supplierRepo.createPaymentPolicy(data);
+        return { id: Number(result.lastInsertRowid), ...data };
+    });
+
+    try {
+        return transaction();
+    } catch (err: any) {
+        if (err.message && err.message.includes('UNIQUE constraint failed')) {
+            throw httpError('Payment policy with this name already exists', 409);
+        }
+        throw err;
+    }
 }
