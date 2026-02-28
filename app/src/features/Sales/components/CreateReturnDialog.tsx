@@ -210,7 +210,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                                         key={item.id}
                                         className={`border transition-colors cursor-pointer ${isSelected ? 'border-primary bg-primary/5' : 'border-border'
                                             }`}
-                                        onClick={(e: React.MouseEvent) => handleCheckboxChange(item.id, !isSelected, availableQty)}
+                                        onClick={() => handleCheckboxChange(item.id, !isSelected, availableQty)}
                                     >
                                         <CardContent className="">
                                             <div className="flex items-start gap-3">

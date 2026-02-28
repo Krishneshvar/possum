@@ -29,9 +29,7 @@ import { extractErrorMessage } from '@/utils/error.utils';
 
 type SupplierSortField = 'name' | 'contact_person' | 'phone' | 'email' | 'created_at';
 
-interface SupplierQueryError {
-  error?: string;
-}
+
 
 export default function SuppliersPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,7 +38,7 @@ export default function SuppliersPage() {
   const [sortBy, setSortBy] = useState<SupplierSortField>('name');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('ASC');
 
-  const { data, isLoading, error, refetch } = useGetSuppliersQuery({
+  const { data, isLoading, error, refetch, isFetching: isRefreshing } = useGetSuppliersQuery({
     page,
     limit,
     searchTerm,
@@ -114,8 +112,7 @@ export default function SuppliersPage() {
     {
       key: 'phone',
       label: 'Phone',
-      sortable: true,
-      sortField: 'phone',
+      sortable: false,
       renderCell: (supplier: Supplier) => <span className="text-sm">{supplier.phone || '-'}</span>
     },
     {
@@ -231,7 +228,7 @@ export default function SuppliersPage() {
                   {editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}
                 </DialogTitle>
                 <p className="text-sm text-muted-foreground pt-1">
-                  {editingSupplier 
+                  {editingSupplier
                     ? 'Update supplier information and contact details'
                     : 'Enter supplier information to add them to your system'}
                 </p>
@@ -277,6 +274,8 @@ export default function SuppliersPage() {
         emptyState={emptyState}
         renderActions={renderActions}
         avatarIcon={<Truck className="h-4 w-4 text-primary" />}
+        onRefresh={refetch}
+        isRefreshing={isRefreshing}
       />
 
       <AlertDialog open={!!supplierToDelete} onOpenChange={() => setSupplierToDelete(null)}>

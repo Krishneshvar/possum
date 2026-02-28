@@ -58,6 +58,14 @@ export const purchaseApi = createApi({
             }),
             invalidatesTags: ['PurchaseOrders'],
         }),
+        updatePurchaseOrder: builder.mutation<PurchaseOrder, { id: number; data: CreatePurchaseOrderPayload }>({
+            query: ({ id, data }) => ({
+                url: `/purchase/${id}`,
+                method: 'PUT',
+                body: data,
+            }),
+            invalidatesTags: (_result, _error, { id }) => [{ type: 'PurchaseOrders', id }, 'PurchaseOrders'],
+        }),
         receivePurchaseOrder: builder.mutation<PurchaseOrder, number>({
             query: (id) => ({
                 url: `/purchase/${id}/receive`,
@@ -79,6 +87,7 @@ export const {
     useGetPurchaseOrdersQuery,
     useGetPurchaseOrderByIdQuery,
     useCreatePurchaseOrderMutation,
+    useUpdatePurchaseOrderMutation,
     useReceivePurchaseOrderMutation,
     useCancelPurchaseOrderMutation,
 } = purchaseApi;

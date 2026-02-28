@@ -29,3 +29,13 @@ export const createPurchaseOrderSchema = z.object({
         items: z.array(purchaseOrderItemSchema).min(1),
     }),
 });
+
+export const updatePurchaseOrderSchema = z.object({
+    params: z.object({
+        id: z.string().regex(/^\d+$/).transform(Number),
+    }),
+    body: z.object({
+        supplier_id: z.number().int().positive(),
+        items: z.array(purchaseOrderItemSchema).min(1),
+    }),
+});

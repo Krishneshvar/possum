@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
 import path from 'path';
 import { startServer } from './backend/server.js';
 import { fileURLToPath } from 'url';
@@ -130,7 +130,6 @@ ipcMain.handle('get-general-settings', async (event: IpcMainInvokeEvent, token?:
 
 app.whenReady().then(() => {
   startServer();
-  Menu.setApplicationMenu(null);
   createWindow();
 
   app.on('activate', () => {

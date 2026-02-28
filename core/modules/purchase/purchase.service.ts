@@ -1,4 +1,4 @@
-import { IPurchaseRepository, CreatePOData, PurchaseOrderQueryOptions } from './purchase.repository.interface.js';
+import { IPurchaseRepository, CreatePOData, UpdatePOData, PurchaseOrderQueryOptions } from './purchase.repository.interface.js';
 
 let purchaseRepo: IPurchaseRepository;
 let auditService: any;
@@ -94,6 +94,43 @@ export function createPurchaseOrder(data: CreatePOData) {
         total_cost: data.items.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0),
     });
     return getPurchaseOrderById(poId);
+}
+
+export function updatePurchaseOrder(id: number, data: UpdatePOData) {
+    assertPositiveInteger(id, 'id');
+    assertPositiveInteger(data.supplier_id, 'supplier_id');
+    assertPositiveInteger(data.updated_by, 'updated_by');
+
+    const existingPo = getPurchaseOrderById(id);
+    if (existingPo.status !== 'pending') {
+        throw httpError('Only pending Purchase Orders can be updated', 409);
+    }
+
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+        throw httpError('Purchase Order must have at least one item', 400);
+    }
+
+    const duplicateCheck = new Set<number>();
+    data.items.forEach((item, index) => {
+        assertPositiveInteger(item.variant_id, `items[${index}].variant_id`);
+        assertPositiveInteger(item.quantity, `items[${index}].quantity`);
+        if (!Number.isFinite(item.unit_cost) || item.unit_cost < 0) {
+            throw httpError(`items[${index}].unit_cost must be a non-negative number`, 400);
+        }
+        if (duplicateCheck.has(item.variant_id)) {
+            throw httpError(`Duplicate variant_id ${item.variant_id} is not allowed in a purchase order`, 400);
+        }
+        duplicateCheck.add(item.variant_id);
+    });
+
+    purchaseRepo.updatePurchaseOrder(id, data);
+
+    auditService.logUpdate(data.updated_by, 'purchase_orders', id,
+        { supplier_id: existingPo.supplier_id, item_count: existingPo.items.length },
+        { supplier_id: data.supplier_id, item_count: data.items.length }
+    );
+
+    return getPurchaseOrderById(id);
 }
 
 export function receivePurchaseOrder(id: number, userId: number) {

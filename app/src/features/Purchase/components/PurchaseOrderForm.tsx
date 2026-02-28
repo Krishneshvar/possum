@@ -32,7 +32,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useGetSuppliersQuery } from '@/services/suppliersApi';
 import { useGetVariantsQuery } from '@/services/productsApi';
-import { useCreatePurchaseOrderMutation } from '@/services/purchaseApi';
+import { useCreatePurchaseOrderMutation, useUpdatePurchaseOrderMutation } from '@/services/purchaseApi';
+import type { PurchaseOrder } from '@shared/index';
 import { toast } from 'sonner';
 import { Trash2, Plus, Search, Package, Loader2 } from 'lucide-react';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -40,6 +41,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 interface PurchaseOrderFormProps {
     onSuccess: () => void;
     onFormChange?: () => void;
+    initialData?: PurchaseOrder | null;
 }
 
 interface OrderItem {
@@ -51,17 +53,33 @@ interface OrderItem {
     unitCost: number;
 }
 
-export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ onSuccess, onFormChange, initialData }: PurchaseOrderFormProps) {
     const currency = useCurrency();
     const { data: suppliersData } = useGetSuppliersQuery({ limit: 1000 });
     const suppliers = suppliersData?.suppliers || [];
     const { data: variantsData } = useGetVariantsQuery({ page: 1, limit: 1000 });
     const variants = variantsData?.variants || [];
 
-    const [createPurchaseOrder, { isLoading }] = useCreatePurchaseOrderMutation();
+    const [createPurchaseOrder, { isLoading: isCreating }] = useCreatePurchaseOrderMutation();
+    const [updatePurchaseOrder, { isLoading: isUpdating }] = useUpdatePurchaseOrderMutation();
+    const isLoading = isCreating || isUpdating;
 
-    const [supplierId, setSupplierId] = useState('');
-    const [items, setItems] = useState<OrderItem[]>([]);
+    const [supplierId, setSupplierId] = useState(() => initialData?.supplier_id ? String(initialData.supplier_id) : '');
+
+    const [items, setItems] = useState<OrderItem[]>(() => {
+        if (initialData?.items) {
+            return initialData.items.map(item => ({
+                variantId: item.variant_id,
+                productName: item.product_name || '',
+                variantSku: item.sku || '',
+                variantName: item.variant_name || '',
+                quantity: item.quantity,
+                unitCost: item.unit_cost
+            }));
+        }
+        return [];
+    });
+
     const [variantSearchOpen, setVariantSearchOpen] = useState(false);
 
     // Item entry state
@@ -126,20 +144,26 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
         }
 
         try {
-            await createPurchaseOrder({
+            const payload = {
                 supplier_id: Number(supplierId),
                 items: items.map(i => ({
                     variant_id: i.variantId,
                     quantity: i.quantity,
                     unit_cost: i.unitCost
                 })),
-            }).unwrap();
+            };
 
-            toast.success('Purchase Order created successfully');
+            if (initialData) {
+                await updatePurchaseOrder({ id: initialData.id, data: payload }).unwrap();
+                toast.success('Purchase Order updated successfully');
+            } else {
+                await createPurchaseOrder(payload).unwrap();
+                toast.success('Purchase Order created successfully');
+            }
             onSuccess();
         } catch (error) {
-            console.error('Failed to create PO:', error);
-            toast.error('Failed to create Purchase Order');
+            console.error('Failed to save PO:', error);
+            toast.error(initialData ? 'Failed to update Purchase Order' : 'Failed to create Purchase Order');
         }
     };
 
@@ -267,9 +291,9 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
                             />
                         </div>
                         <div className="flex items-end">
-                            <Button 
-                                type="button" 
-                                onClick={addItem} 
+                            <Button
+                                type="button"
+                                onClick={addItem}
                                 disabled={!selectedVariant || !Number.isInteger(quantity) || quantity <= 0 || !Number.isFinite(unitCost) || unitCost < 0}
                                 className="w-full"
                                 aria-label="Add item to order"
@@ -322,10 +346,11 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
                                         <TableCell className="text-right">{currency}{item.unitCost.toFixed(2)}</TableCell>
                                         <TableCell className="text-right font-medium">{currency}{(item.quantity * item.unitCost).toFixed(2)}</TableCell>
                                         <TableCell>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="sm" 
-                                                onClick={() => removeItem(idx)} 
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removeItem(idx)}
                                                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                                 aria-label={`Remove ${item.productName} from order`}
                                             >
@@ -351,26 +376,26 @@ export function PurchaseOrderForm({ onSuccess, onFormChange }: PurchaseOrderForm
 
             {/* Submit Section */}
             <div className="flex justify-end gap-3 pt-2">
-                <Button 
-                    type="button" 
-                    variant="outline" 
+                <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => window.history.back()}
                     disabled={isLoading}
                 >
                     Cancel
                 </Button>
-                <Button 
-                    type="submit" 
+                <Button
+                    type="submit"
                     disabled={isLoading || items.length === 0 || !supplierId}
                     className="min-w-[180px]"
                 >
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating Order...
+                            {initialData ? 'Updating Order...' : 'Creating Order...'}
                         </>
                     ) : (
-                        'Create Purchase Order'
+                        initialData ? 'Update Purchase Order' : 'Create Purchase Order'
                     )}
                 </Button>
             </div>

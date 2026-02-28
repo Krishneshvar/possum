@@ -1,6 +1,6 @@
 import { getDB } from '../../electron/backend/shared/db/index.js';
 import { PurchaseOrder, PurchaseOrderItem } from '../../types/index.js';
-import type { IPurchaseRepository, PurchaseOrderQueryOptions, CreatePOItem, CreatePOData } from '../../core/index.js';
+import type { IPurchaseRepository, PurchaseOrderQueryOptions, CreatePOItem, CreatePOData, UpdatePOData } from '../../core/index.js';
 
 interface CountRow {
     count: number;
@@ -156,6 +156,62 @@ export class PurchaseRepository implements IPurchaseRepository {
         });
 
         return transaction({ supplier_id, created_by }, items);
+    }
+
+    updatePurchaseOrder(id: number, { supplier_id, updated_by, items }: UpdatePOData) {
+        const db = getDB();
+
+        const updatePo = db.prepare(`
+            UPDATE purchase_orders 
+            SET supplier_id = ?
+            WHERE id = ? AND status = 'pending'
+        `);
+
+        const deleteItems = db.prepare(`
+            DELETE FROM purchase_order_items
+            WHERE purchase_order_id = ?
+        `);
+
+        const insertItem = db.prepare(`
+            INSERT INTO purchase_order_items (purchase_order_id, variant_id, quantity, unit_cost)
+            VALUES (?, ?, ?, ?)
+        `);
+
+        const supplierExistsStmt = db.prepare(`
+            SELECT id FROM suppliers WHERE id = ? AND deleted_at IS NULL
+        `);
+        const variantExistsStmt = db.prepare(`
+            SELECT id FROM variants WHERE id = ?
+        `);
+        const pendingPurchaseOrderStmt = db.prepare(`
+            SELECT id FROM purchase_orders WHERE id = ? AND status = 'pending'
+        `);
+
+        const transaction = db.transaction((poId: number, reqSupplierId: number, itemList: CreatePOItem[]) => {
+            const pendingPo = pendingPurchaseOrderStmt.get(poId) as { id: number } | undefined;
+            if (!pendingPo) {
+                throw dbError(`Purchase Order ${poId} not found or not pending`, 404);
+            }
+
+            const supplier = supplierExistsStmt.get(reqSupplierId) as { id: number } | undefined;
+            if (!supplier) {
+                throw dbError(`Supplier ${reqSupplierId} not found`, 400);
+            }
+
+            updatePo.run(reqSupplierId, poId);
+            deleteItems.run(poId);
+
+            for (const item of itemList) {
+                const variant = variantExistsStmt.get(item.variant_id) as { id: number } | undefined;
+                if (!variant) {
+                    throw dbError(`Variant ${item.variant_id} not found`, 400);
+                }
+                insertItem.run(poId, item.variant_id, item.quantity, item.unit_cost);
+            }
+            return true;
+        });
+
+        return transaction(id, supplier_id, items);
     }
 
     receivePurchaseOrder(poId: number, userId: number = 1) {

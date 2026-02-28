@@ -30,7 +30,7 @@ export type { IProductRepository, ProductFilter } from './modules/products/produ
 
 // Purchase
 export * from './modules/purchase/purchase.service.js';
-export type { IPurchaseRepository, PurchaseOrderQueryOptions, CreatePOItem, CreatePOData } from './modules/purchase/purchase.repository.interface.js';
+export type { IPurchaseRepository, PurchaseOrderQueryOptions, CreatePOItem, CreatePOData, UpdatePOData } from './modules/purchase/purchase.repository.interface.js';
 
 // Reports
 export * from './modules/reports/reports.service.js';

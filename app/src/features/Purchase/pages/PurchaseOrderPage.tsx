@@ -23,7 +23,8 @@ import {
   useCancelPurchaseOrderMutation
 } from '@/services/purchaseApi';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, ShoppingCart, PackageCheck, PackageX, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Eye, ShoppingCart, PackageCheck, PackageX, Edit } from 'lucide-react';
+import DateRangeFilter from '@/components/common/DateRangeFilter';
 import { toast } from 'sonner';
 // @ts-ignore
 import CurrencyText from '@/components/common/CurrencyText';
@@ -32,7 +33,6 @@ import DataTable, { Column } from '@/components/common/DataTable';
 import ActionsDropdown from '@/components/common/ActionsDropdown';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import type { PurchaseOrder } from '@shared/index';
-import { Input } from '@/components/ui/input';
 
 type PurchaseSortField = 'id' | 'supplier_name' | 'order_date' | 'status' | 'item_count' | 'total_cost';
 type PurchaseStatusFilter = 'pending' | 'received' | 'cancelled';
@@ -43,20 +43,22 @@ export default function PurchaseOrdersPage() {
   const [activeFilters, setActiveFilters] = useState<{ status: PurchaseStatusFilter[] }>({
     status: [],
   });
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [dateRange, setDateRange] = useState<{ startDate: string | null; endDate: string | null }>({
+    startDate: null,
+    endDate: null,
+  });
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState<PurchaseSortField>('order_date');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
-  const { data, isLoading, refetch } = useGetPurchaseOrdersQuery({
+  const { data, isLoading, refetch, isFetching: isRefreshing } = useGetPurchaseOrdersQuery({
     page,
     limit,
     searchTerm,
     status: activeFilters.status.length > 0 ? activeFilters.status[0] : undefined,
-    fromDate: fromDate || undefined,
-    toDate: toDate || undefined,
+    fromDate: dateRange.startDate || undefined,
+    toDate: dateRange.endDate || undefined,
     sortBy,
     sortOrder
   });
@@ -126,8 +128,7 @@ export default function PurchaseOrdersPage() {
   const handleClearFilters = () => {
     setActiveFilters({ status: [] });
     setSearchTerm('');
-    setFromDate('');
-    setToDate('');
+    setDateRange({ startDate: null, endDate: null });
     setPage(1);
   };
 
@@ -235,6 +236,20 @@ export default function PurchaseOrdersPage() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => navigate(`/purchase/orders/${po.id}/edit`)}
+                  className="h-8 w-8 text-primary hover:text-primary/80 hover:bg-primary/10 hidden md:flex"
+                  aria-label={`Edit purchase order ${po.id}`}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => navigate(`/purchase/orders/${po.id}`)}
                   className="h-8 w-8 text-muted-foreground hover:text-primary hidden md:flex"
                   aria-label={`View details for purchase order ${po.id}`}
@@ -253,6 +268,10 @@ export default function PurchaseOrdersPage() {
                 <DropdownMenuItem onClick={() => handleReceive(po.id)} className="cursor-pointer text-green-600">
                   <PackageCheck className="mr-2 h-4 w-4" />
                   <span>Receive Order</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/purchase/orders/${po.id}/edit`)} className="cursor-pointer">
+                  <Edit className="mr-2 h-4 w-4" />
+                  <span>Edit Order</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -356,36 +375,18 @@ export default function PurchaseOrdersPage() {
         activeFilters={activeFilters}
         onFilterChange={handleFilterChange}
         onClearAllFilters={handleClearFilters}
+        isAnyFilterActive={activeFilters.status.length > 0 || dateRange.startDate !== null}
+        onRefresh={refetch}
+        isRefreshing={isRefreshing}
         customFilters={
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <Input
-                type="date"
-                value={fromDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setFromDate(e.target.value);
-                  setPage(1);
-                }}
-                className="h-8 w-[140px] pl-8 text-xs focus-visible:ring-1"
-                placeholder="From Date"
-              />
-            </div>
-            <span className="text-muted-foreground text-xs">to</span>
-            <div className="relative">
-              <CalendarIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <Input
-                type="date"
-                value={toDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setToDate(e.target.value);
-                  setPage(1);
-                }}
-                className="h-8 w-[140px] pl-8 text-xs focus-visible:ring-1"
-                placeholder="To Date"
-              />
-            </div>
-          </div>
+          <DateRangeFilter
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            onApply={(start, end) => {
+              setDateRange({ startDate: start, endDate: end });
+              setPage(1);
+            }}
+          />
         }
 
         emptyState={emptyState}

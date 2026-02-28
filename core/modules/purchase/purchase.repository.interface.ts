@@ -21,10 +21,17 @@ export interface CreatePOData {
     items: CreatePOItem[];
 }
 
+export interface UpdatePOData {
+    supplier_id: number;
+    updated_by: number;
+    items: CreatePOItem[];
+}
+
 export interface IPurchaseRepository {
     getAllPurchaseOrders(options: PurchaseOrderQueryOptions): any;
     getPurchaseOrderById(id: number): any;
     createPurchaseOrder(data: CreatePOData): number;
+    updatePurchaseOrder(id: number, data: UpdatePOData): any;
     receivePurchaseOrder(poId: number, userId: number): any;
     cancelPurchaseOrder(id: number): any;
 }

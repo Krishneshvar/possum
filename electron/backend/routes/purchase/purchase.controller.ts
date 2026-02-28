@@ -52,6 +52,20 @@ export function createPurchaseOrder(req: Request, res: Response, next: NextFunct
     }
 }
 
+export function updatePurchaseOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+        if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });
+        const poData = {
+            ...(req.body || {}),
+            updated_by: req.user.id
+        };
+        const updatedPo = purchaseService.updatePurchaseOrder(Number(req.params.id), poData);
+        res.json(updatedPo);
+    } catch (error: any) {
+        next(error);
+    }
+}
+
 export function receivePurchaseOrder(req: Request, res: Response, next: NextFunction) {
     try {
         if (!req.user?.id) return res.status(401).json({ error: 'Unauthorized: No user session' });

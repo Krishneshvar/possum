@@ -24,7 +24,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Calendar, User, Package, CheckCircle, XCircle, Printer, Truck, Receipt, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Package, CheckCircle, XCircle, Printer, Truck, Receipt, Loader2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
@@ -142,6 +142,18 @@ export default function PurchaseOrderDetailPage() {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/purchase/orders/${po.id}/edit`)}
+                                className="text-primary hover:text-primary/90"
+                                disabled={isCancelling || isReceiving}
+                                aria-label="Edit purchase order"
+                            >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Order
+                            </Button>
 
                             <Button
                                 size="sm"

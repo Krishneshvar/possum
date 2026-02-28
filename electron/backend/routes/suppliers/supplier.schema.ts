@@ -5,7 +5,7 @@ const optionalNullableString = z.string().trim().optional().nullable();
 export const getSuppliersSchema = z.object({
     query: z.object({
         page: z.coerce.number().int().min(1).optional(),
-        limit: z.coerce.number().int().min(1).max(100).optional(),
+        limit: z.coerce.number().int().min(1).max(1000).optional(),
         searchTerm: z.string().trim().max(200).optional(),
         sortBy: z.enum(['name', 'contact_person', 'phone', 'email', 'created_at']).optional(),
         sortOrder: z.enum(['ASC', 'DESC']).optional(),
