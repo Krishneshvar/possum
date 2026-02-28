@@ -47,6 +47,8 @@ interface SalesHistoryTableProps {
     onClearAllFilters?: () => void;
     isAnyFilterActive?: boolean;
     customFilters?: React.ReactNode;
+    onRefresh?: () => void;
+    isRefreshing?: boolean;
 }
 
 const filtersConfig = [
@@ -80,6 +82,8 @@ export default function SalesHistoryTable({
     onClearAllFilters,
     isAnyFilterActive,
     customFilters,
+    onRefresh,
+    isRefreshing = false,
 }: SalesHistoryTableProps) {
     const [cancelSale, { isLoading: isCancelling }] = useCancelSaleMutation();
 
@@ -305,6 +309,8 @@ export default function SalesHistoryTable({
             isAnyFilterActive={isAnyFilterActive}
             customFilters={customFilters}
             emptyState={emptyState}
+            onRefresh={onRefresh}
+            isRefreshing={isRefreshing}
         />
     );
 }

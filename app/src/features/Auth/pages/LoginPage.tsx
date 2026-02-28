@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLoginMutation } from '@/services/authApi';
@@ -6,7 +6,7 @@ import { setCredentials, selectIsAuthenticated } from '@/features/Auth/authSlice
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Lock, User, Loader2, ShoppingCart, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,10 +15,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const usernameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Small delay to ensure the browser has rendered and can accept focus
+    const timer = setTimeout(() => {
+      usernameRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -51,9 +60,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
         <div className="relative z-10 max-w-md space-y-6 text-center">
           <div className="flex justify-center mb-6">
-            <img 
-              src="/POSSUM Icon.png" 
-              alt="POSSUM Logo" 
+            <img
+              src="/POSSUM Icon.png"
+              alt="POSSUM Logo"
               className="h-24 w-24 object-contain"
             />
           </div>
@@ -81,9 +90,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
           {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center space-y-4 mb-8">
-            <img 
-              src="/POSSUM Icon.png" 
-              alt="POSSUM Logo" 
+            <img
+              src="/POSSUM Icon.png"
+              alt="POSSUM Logo"
               className="h-16 w-16 object-contain"
             />
             <h1 className="text-2xl font-bold text-foreground">POSSUM</h1>
@@ -109,10 +118,11 @@ export default function LoginPage() {
                     <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                     <Input
                       id="username"
+                      ref={usernameRef}
                       placeholder="Enter your username"
                       className="pl-9 h-10"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                       required
                       autoComplete="username"
                       autoFocus
@@ -134,7 +144,7 @@ export default function LoginPage() {
                       placeholder="Enter your password"
                       className="pl-9 pr-9 h-10"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                       required
                       autoComplete="current-password"
                       aria-label="Password"
@@ -152,9 +162,9 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button 
-                  className="w-full h-10 mt-6" 
-                  type="submit" 
+                <Button
+                  className="w-full h-10 mt-6"
+                  type="submit"
                   disabled={isLoading || !username || !password}
                   aria-label={isLoading ? 'Authenticating' : 'Sign in to your account'}
                 >

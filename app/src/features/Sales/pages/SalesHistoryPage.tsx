@@ -31,7 +31,7 @@ export default function SalesHistoryPage() {
         endDate: null,
     });
 
-    const { data, isLoading } = useGetSalesQuery({
+    const { data, isLoading, isFetching: isRefreshing, refetch } = useGetSalesQuery({
         page,
         limit,
         searchTerm: searchTerm || undefined,
@@ -41,6 +41,10 @@ export default function SalesHistoryPage() {
         startDate: dateRange.startDate || undefined,
         endDate: dateRange.endDate || undefined,
     });
+
+    const handleRefresh = useCallback(() => {
+        refetch();
+    }, [refetch]);
 
     const sales = data?.sales || [];
     const totalPages = data?.totalPages || 1;
@@ -109,6 +113,8 @@ export default function SalesHistoryPage() {
                 totalPages={totalPages}
                 onPageChange={setPage}
                 isLoading={isLoading}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
                 searchTerm={searchTerm}
                 onSearchChange={handleSearchChange}
                 sortBy={sort.sortBy}

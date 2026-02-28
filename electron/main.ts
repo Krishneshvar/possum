@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, Menu } from 'electron';
 import path from 'path';
 import { startServer } from './backend/server.js';
 import { fileURLToPath } from 'url';
@@ -35,22 +35,22 @@ function createWindow() {
 
 // Security Middleware Helpers
 function requireAuth(token: string) {
-    const session = getSession(token);
-    if (!session) {
-        throw new Error('Unauthorized: Invalid or expired session');
-    }
-    return session;
+  const session = getSession(token);
+  if (!session) {
+    throw new Error('Unauthorized: Invalid or expired session');
+  }
+  return session;
 }
 
 function requireAdmin(token: string) {
-    const session = requireAuth(token);
-    // Check if user has 'admin' role or 'settings.manage' permission (if we add it)
-    // Using simple role check for now based on seed data
-    const roles = session.roles || [];
-    if (!roles.includes('admin')) {
-        throw new Error('Forbidden: Admin access required');
-    }
-    return session;
+  const session = requireAuth(token);
+  // Check if user has 'admin' role or 'settings.manage' permission (if we add it)
+  // Using simple role check for now based on seed data
+  const roles = session.roles || [];
+  if (!roles.includes('admin')) {
+    throw new Error('Forbidden: Admin access required');
+  }
+  return session;
 }
 
 ipcMain.handle('ping', async () => {
@@ -59,25 +59,25 @@ ipcMain.handle('ping', async () => {
 
 // Print Bill (Raw HTML) - Requires Auth
 ipcMain.handle('print-bill', async (event: IpcMainInvokeEvent, { html, token }: { html: string; token: string }) => {
-    requireAuth(token);
-    // printerName handled by controller or settings?
-    // main.ts original had printBillHtml directly.
-    // We pass html.
-    return printBillHtml(event, { html });
+  requireAuth(token);
+  // printerName handled by controller or settings?
+  // main.ts original had printBillHtml directly.
+  // We pass html.
+  return printBillHtml(event, { html });
 });
 
 // Print Invoice - Requires Auth (Passed to Service)
 ipcMain.handle('print-invoice', async (event: IpcMainInvokeEvent, { invoiceId, token }: { invoiceId: number; token: string }) => {
-    // We pass token to service so it can check granular permissions
-    // Note: We need to update printService.ts signature
-    return printInvoice(invoiceId, token);
+  // We pass token to service so it can check granular permissions
+  // Note: We need to update printService.ts signature
+  return printInvoice(invoiceId, token);
 });
 
 ipcMain.handle('get-printers', async (event: IpcMainInvokeEvent, token?: string) => {
-    // Require at least being logged in to see printers?
-    // Allow without token for login screen? Probably not needed there.
-    if (token) requireAuth(token);
-    return getPrinters();
+  // Require at least being logged in to see printers?
+  // Allow without token for login screen? Probably not needed there.
+  if (token) requireAuth(token);
+  return getPrinters();
 });
 
 // Settings - Require Admin
@@ -130,6 +130,7 @@ ipcMain.handle('get-general-settings', async (event: IpcMainInvokeEvent, token?:
 
 app.whenReady().then(() => {
   startServer();
+  Menu.setApplicationMenu(null);
   createWindow();
 
   app.on('activate', () => {

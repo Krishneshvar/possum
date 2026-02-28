@@ -41,7 +41,7 @@ export default function TransactionsPage() {
   const { data: paymentMethodsData } = useGetPaymentMethodsQuery(undefined);
   const paymentMethods: any[] = paymentMethodsData || [];
 
-  const { data, isLoading, isError, error, refetch } = useGetTransactionsQuery({
+  const { data, isLoading, isError, error, refetch, isFetching: isRefreshing } = useGetTransactionsQuery({
     page,
     limit,
     status: 'completed',
@@ -335,6 +335,8 @@ export default function TransactionsPage() {
 
         emptyState={emptyState}
         avatarIcon={<DollarSign className="h-4 w-4 text-primary" />}
+        onRefresh={refetch}
+        isRefreshing={isRefreshing}
       />
     </div>
   );

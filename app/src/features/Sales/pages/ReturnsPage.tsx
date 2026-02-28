@@ -25,7 +25,7 @@ export default function ReturnsPage() {
         order: 'DESC'
     });
 
-    const { data, isLoading, isError, refetch } = useGetReturnsQuery({
+    const { data, isLoading, isError, refetch, isFetching: isRefreshing } = useGetReturnsQuery({
         page,
         limit,
         searchTerm,
@@ -326,6 +326,8 @@ export default function ReturnsPage() {
                     onFilterChange={() => { }}
                     onClearAllFilters={handleClearFilters}
                     isAnyFilterActive={isAnyFilterActive}
+                    onRefresh={refetch}
+                    isRefreshing={isRefreshing}
                 />
             </div>
         </div>
