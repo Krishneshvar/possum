@@ -7,6 +7,7 @@ import { RotateCcw, ChevronDown, ChevronRight, Package } from 'lucide-react';
 import DataTable from '@/components/common/DataTable';
 import CurrencyText from '@/components/common/CurrencyText';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import DateRangeFilter from '@/components/common/DateRangeFilter';
 
 export default function ReturnsPage() {
     const navigate = useNavigate();
@@ -15,10 +16,23 @@ export default function ReturnsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
+    const [dateRange, setDateRange] = useState<{ startDate: string | null; endDate: string | null }>({
+        startDate: null,
+        endDate: null,
+    });
+    const [sort, setSort] = useState<{ field: 'created_at' | 'total_refund'; order: 'ASC' | 'DESC' }>({
+        field: 'created_at',
+        order: 'DESC'
+    });
+
     const { data, isLoading, isError, refetch } = useGetReturnsQuery({
         page,
         limit,
         searchTerm,
+        sortBy: sort.field,
+        sortOrder: sort.order,
+        startDate: dateRange.startDate || undefined,
+        endDate: dateRange.endDate || undefined,
     });
 
     const returns = data?.returns ?? [];
@@ -70,15 +84,10 @@ export default function ReturnsPage() {
             )
         },
         {
-            key: 'id',
-            label: 'Return ID',
-            sortable: false,
-            renderCell: (ret: ReturnRecord) => <span className="font-mono text-xs font-medium">#{ret.id}</span>
-        },
-        {
             key: 'created_at',
             label: 'Date & Time',
-            sortable: false,
+            sortable: true,
+            sortField: 'created_at',
             renderCell: (ret: ReturnRecord) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{formatDate(ret.created_at).split(',')[0]}</span>
@@ -131,7 +140,7 @@ export default function ReturnsPage() {
             sortable: false,
             renderCell: (ret: ReturnRecord) => (
                 <div className="flex items-center gap-2">
-                    <div 
+                    <div
                         className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary"
                         aria-hidden="true"
                     >
@@ -144,7 +153,8 @@ export default function ReturnsPage() {
         {
             key: 'total_refund',
             label: 'Refund Amount',
-            sortable: false,
+            sortable: true,
+            sortField: 'total_refund',
             className: 'text-right',
             renderCell: (ret: ReturnRecord) => (
                 <div className="text-right">
@@ -201,7 +211,7 @@ export default function ReturnsPage() {
                         <Package className="h-4 w-4" />
                         Returned Items
                     </h4>
-                    <div className="space-y-2">
+                    <div className="">
                         {ret.items?.map((item: ReturnItem) => (
                             <div key={item.id} className="flex items-center justify-between bg-background rounded-md p-3 border border-border/50">
                                 <div className="flex-1">
@@ -247,6 +257,14 @@ export default function ReturnsPage() {
         </div>
     );
 
+    const handleClearFilters = () => {
+        setDateRange({ startDate: null, endDate: null });
+        setSearchTerm("");
+        setPage(1);
+    };
+
+    const isAnyFilterActive = dateRange.startDate !== null || dateRange.endDate !== null;
+
     return (
         <div className="h-[calc(100vh-7rem)] flex flex-col gap-4 p-4 overflow-hidden">
             <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -286,6 +304,28 @@ export default function ReturnsPage() {
                     emptyState={emptyState}
                     renderActions={renderActions}
                     avatarIcon={<RotateCcw className="h-4 w-4 text-primary" />}
+
+                    onSort={(column) => {
+                        const newOrder = sort.field === column.sortField && sort.order === 'ASC' ? 'DESC' : 'ASC';
+                        setSort({ field: column.sortField as 'created_at' | 'total_refund', order: newOrder });
+                        setPage(1);
+                    }}
+                    sortOrder={sort.order}
+                    sortBy={sort.field}
+
+                    customFilters={
+                        <DateRangeFilter
+                            startDate={dateRange.startDate}
+                            endDate={dateRange.endDate}
+                            onApply={(startDate, endDate) => {
+                                setDateRange({ startDate, endDate });
+                                setPage(1);
+                            }}
+                        />
+                    }
+                    onFilterChange={() => { }}
+                    onClearAllFilters={handleClearFilters}
+                    isAnyFilterActive={isAnyFilterActive}
                 />
             </div>
         </div>

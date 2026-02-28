@@ -35,6 +35,8 @@ export interface GetReturnsParams {
     startDate?: string;
     endDate?: string;
     searchTerm?: string;
+    sortBy?: 'created_at' | 'total_refund';
+    sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface GetReturnsResponse {

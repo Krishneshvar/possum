@@ -165,7 +165,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                 <div className="flex-1 overflow-y-auto space-y-4 py-2">
                     {/* Refund Summary Card */}
                     <Card className="border-primary/20 bg-primary/5">
-                        <CardContent className="pt-4">
+                        <CardContent>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <DollarSign className="h-5 w-5 text-primary" />
@@ -197,7 +197,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                             <Package className="h-4 w-4 text-muted-foreground" />
                             <Label className="text-sm font-semibold">Select Items to Return</Label>
                         </div>
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto">
                             {sale?.items?.map((item) => {
                                 const returnedQty = item.returned_quantity || 0;
                                 const availableQty = item.quantity - returnedQty;
@@ -206,10 +206,13 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                                 if (availableQty <= 0) return null;
 
                                 return (
-                                    <Card key={item.id} className={`border transition-colors ${
-                                        isSelected ? 'border-primary bg-primary/5' : 'border-border'
-                                    }`}>
-                                        <CardContent className="p-4">
+                                    <Card
+                                        key={item.id}
+                                        className={`border transition-colors cursor-pointer ${isSelected ? 'border-primary bg-primary/5' : 'border-border'
+                                            }`}
+                                        onClick={(e: React.MouseEvent) => handleCheckboxChange(item.id, !isSelected, availableQty)}
+                                    >
+                                        <CardContent className="">
                                             <div className="flex items-start gap-3">
                                                 <Checkbox
                                                     id={`item-${item.id}`}
@@ -217,10 +220,15 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                                                     onCheckedChange={(checked: boolean) => handleCheckboxChange(item.id, checked, availableQty)}
                                                     aria-label={`Select ${item.product_name} - ${item.variant_name}`}
                                                     className="mt-1"
+                                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                                 />
                                                 <div className="flex-1 space-y-2">
                                                     <div>
-                                                        <Label htmlFor={`item-${item.id}`} className="text-sm font-semibold cursor-pointer">
+                                                        <Label
+                                                            htmlFor={`item-${item.id}`}
+                                                            className="text-sm font-semibold cursor-pointer"
+                                                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                                        >
                                                             {item.product_name ?? 'Unknown product'}
                                                         </Label>
                                                         <p className="text-xs text-muted-foreground">{item.variant_name ?? 'Unknown variant'}</p>
@@ -237,7 +245,7 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                                                         )}
                                                     </div>
                                                     {isSelected && (
-                                                        <div className="flex items-center gap-2 pt-1">
+                                                        <div className="flex items-center gap-2 pt-1" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                                             <Label htmlFor={`qty-${item.id}`} className="text-xs font-medium">
                                                                 Quantity:
                                                             </Label>
@@ -310,15 +318,15 @@ export default function CreateReturnDialog({ open, onOpenChange, sale, onSuccess
                 </div>
 
                 <DialogFooter className="gap-2">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={isLoading}
                     >
                         Cancel
                     </Button>
-                    <Button 
-                        onClick={handleSubmit} 
+                    <Button
+                        onClick={handleSubmit}
                         disabled={isLoading || Object.keys(selectedItems).length === 0}
                         className="min-w-[140px]"
                     >

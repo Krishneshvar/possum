@@ -6,6 +6,8 @@ export interface ReturnFilters {
     searchTerm?: string;
     currentPage?: number;
     itemsPerPage?: number;
+    sortBy?: 'created_at' | 'total_refund';
+    sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface IReturnRepository {

@@ -32,6 +32,7 @@ import {
   initProductService,
   initSaleService,
   initAuthService,
+  processSaleRefund,
   getSession,
   taxEngine,
   logCreate,
@@ -174,7 +175,7 @@ export function startServer(): void {
 
   // Initialize Return Service
   const returnRepository = new ReturnRepository();
-  initReturnService(returnRepository, saleRepository, { getSaleById: saleRepository.findSaleById.bind(saleRepository) }, { adjustStock: adjustInventory, restoreStock }, auditService, transaction);
+  initReturnService(returnRepository, saleRepository, { processSaleRefund }, { adjustStock: adjustInventory, restoreStock }, auditService, transaction);
 
   // Initialize Product Service
   const productRepository = new ProductRepository();

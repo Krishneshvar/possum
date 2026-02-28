@@ -41,8 +41,8 @@ interface PaginatedReturns {
 export class ReturnRepository implements IReturnRepository {
 
     insertReturn({ sale_id, user_id, reason }: { sale_id: number; user_id: number; reason?: string }) {
-    const db = getDB();
-    const stmt = db.prepare(`
+        const db = getDB();
+        const stmt = db.prepare(`
         INSERT INTO returns (sale_id, user_id, reason)
         VALUES (?, ?, ?)
     `);
@@ -50,8 +50,8 @@ export class ReturnRepository implements IReturnRepository {
     }
 
     insertReturnItem({ return_id, sale_item_id, quantity, refund_amount }: { return_id: number; sale_item_id: number; quantity: number; refund_amount: number }) {
-    const db = getDB();
-    const stmt = db.prepare(`
+        const db = getDB();
+        const stmt = db.prepare(`
         INSERT INTO return_items (return_id, sale_item_id, quantity, refund_amount)
         VALUES (?, ?, ?, ?)
     `);
@@ -59,9 +59,9 @@ export class ReturnRepository implements IReturnRepository {
     }
 
     findReturnById(id: number): ReturnDetails | null {
-    const db = getDB();
+        const db = getDB();
 
-    const returnRecord = db.prepare(`
+        const returnRecord = db.prepare(`
         SELECT 
             r.*,
             s.invoice_number,
@@ -73,9 +73,9 @@ export class ReturnRepository implements IReturnRepository {
         WHERE r.id = ?
     `).get(id) as Omit<ReturnDetails, 'items'> | undefined;
 
-    if (!returnRecord) return null;
+        if (!returnRecord) return null;
 
-    const items = db.prepare(`
+        const items = db.prepare(`
         SELECT 
             ri.*,
             si.variant_id,
@@ -98,8 +98,8 @@ export class ReturnRepository implements IReturnRepository {
     }
 
     findReturnsBySaleId(saleId: number): ReturnListItem[] {
-    const db = getDB();
-    const returns = db.prepare(`
+        const db = getDB();
+        const returns = db.prepare(`
         SELECT 
             r.*,
             u.name as processed_by_name,
@@ -122,67 +122,78 @@ export class ReturnRepository implements IReturnRepository {
         endDate,
         searchTerm,
         currentPage = 1,
-        itemsPerPage = 20
+        itemsPerPage = 20,
+        sortBy = 'created_at',
+        sortOrder = 'DESC'
     }: ReturnFilters): PaginatedReturns {
-    const db = getDB();
-    const filterClauses: string[] = [];
-    const filterParams: Array<string | number> = [];
+        const db = getDB();
+        const filterClauses: string[] = [];
+        const filterParams: Array<string | number> = [];
 
-    if (typeof saleId === 'number') {
-        filterClauses.push('r.sale_id = ?');
-        filterParams.push(saleId);
-    }
+        if (typeof saleId === 'number') {
+            filterClauses.push('r.sale_id = ?');
+            filterParams.push(saleId);
+        }
 
-    if (typeof userId === 'number') {
-        filterClauses.push('r.user_id = ?');
-        filterParams.push(userId);
-    }
+        if (typeof userId === 'number') {
+            filterClauses.push('r.user_id = ?');
+            filterParams.push(userId);
+        }
 
-    if (startDate) {
-        filterClauses.push('r.created_at >= ?');
-        filterParams.push(startDate);
-    }
+        if (startDate) {
+            const dateOnly = startDate.substring(0, 10);
+            filterClauses.push('r.created_at >= ?');
+            filterParams.push(`${dateOnly} 00:00:00`);
+        }
 
-    if (endDate) {
-        filterClauses.push('r.created_at <= ?');
-        filterParams.push(endDate);
-    }
+        if (endDate) {
+            const dateOnly = endDate.substring(0, 10);
+            filterClauses.push('r.created_at <= ?');
+            filterParams.push(`${dateOnly} 23:59:59`);
+        }
 
-    if (searchTerm) {
-        filterClauses.push('(CAST(r.id AS TEXT) LIKE ? OR s.invoice_number LIKE ? OR COALESCE(r.reason, \'\') LIKE ?)');
-        const wildcard = `%${searchTerm}%`;
-        filterParams.push(wildcard, wildcard, wildcard);
-    }
+        if (searchTerm) {
+            filterClauses.push('(CAST(r.id AS TEXT) LIKE ? OR s.invoice_number LIKE ? OR COALESCE(r.reason, \'\') LIKE ?)');
+            const wildcard = `%${searchTerm}%`;
+            filterParams.push(wildcard, wildcard, wildcard);
+        }
 
-    const whereClause = filterClauses.length > 0
-        ? `WHERE ${filterClauses.join(' AND ')}`
-        : '';
+        const whereClause = filterClauses.length > 0
+            ? `WHERE ${filterClauses.join(' AND ')}`
+            : '';
 
-    const countResult = db.prepare(`
+        const countResult = db.prepare(`
         SELECT COUNT(*) as total_count
         FROM returns r
         JOIN sales s ON r.sale_id = s.id
         ${whereClause}
     `).get(...filterParams) as { total_count: number };
 
-    const totalCount = countResult?.total_count ?? 0;
+        const totalCount = countResult?.total_count ?? 0;
 
-    const offset = (currentPage - 1) * itemsPerPage;
-    const returns = db.prepare(`
-        SELECT 
-            r.*,
-            s.invoice_number,
-            u.name as processed_by_name,
-            COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) as total_refund
-        FROM returns r
-        JOIN sales s ON r.sale_id = s.id
-        JOIN users u ON r.user_id = u.id
-        ${whereClause}
-        ORDER BY r.created_at DESC
-        LIMIT ? OFFSET ?
-    `).all(...filterParams, itemsPerPage, offset) as Array<Omit<ReturnListItem, 'items'>>;
+        const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+        let orderByClause = `ORDER BY r.created_at ${validSortOrder}`;
 
-    const hydratedReturns = hydrateReturnItems(db, returns);
+        if (sortBy === 'total_refund') {
+            orderByClause = `ORDER BY total_refund ${validSortOrder}`;
+        }
+
+        const offset = (currentPage - 1) * itemsPerPage;
+        const returns = db.prepare(`
+            SELECT
+                r.*,
+                s.invoice_number,
+                u.name as processed_by_name,
+                COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) as total_refund
+            FROM returns r
+            JOIN sales s ON r.sale_id = s.id
+            JOIN users u ON r.user_id = u.id
+            ${whereClause}
+            ${orderByClause}
+            LIMIT ? OFFSET ?
+        `).all(...filterParams, itemsPerPage, offset) as Array<Omit<ReturnListItem, 'items'>>;
+
+        const hydratedReturns = hydrateReturnItems(db, returns);
 
         return {
             returns: hydratedReturns,
@@ -211,8 +222,8 @@ function hydrateReturnItems(db: ReturnType<typeof getDB>, returnRows: Array<Omit
     const ids = returnRows.map((ret) => ret.id);
     const placeholders = ids.map(() => '?').join(', ');
     const allItems = db.prepare(`
-        SELECT 
-            ri.*,
+        SELECT
+        ri.*,
             si.variant_id,
             si.price_per_unit,
             si.tax_rate,

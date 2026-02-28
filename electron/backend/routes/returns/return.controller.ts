@@ -105,7 +105,9 @@ export async function getReturnsController(req: Request, res: Response) {
             endDate,
             searchTerm,
             page,
-            limit
+            limit,
+            sortBy,
+            sortOrder
         } = req.query;
 
         const returns = returnService.getReturns({
@@ -115,7 +117,9 @@ export async function getReturnsController(req: Request, res: Response) {
             endDate: getQueryString(endDate),
             searchTerm: getQueryString(searchTerm),
             currentPage: getQueryNumber(page, 1) || 1,
-            itemsPerPage: getQueryNumber(limit, 20) || 20
+            itemsPerPage: getQueryNumber(limit, 20) || 20,
+            sortBy: sortBy === 'total_refund' ? 'total_refund' : 'created_at',
+            sortOrder: sortOrder === 'ASC' ? 'ASC' : 'DESC'
         });
 
         res.json(returns);
