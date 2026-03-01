@@ -1,4 +1,4 @@
-import { Variant } from '../../../types/index.js';
+import { Variant } from '../../../models/index.js';
 
 export interface VariantQueryOptions {
   searchTerm?: string;

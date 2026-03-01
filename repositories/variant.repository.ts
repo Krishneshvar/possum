@@ -3,10 +3,10 @@
  * Handles all database operations for variants
  * Note: Stock is NEVER stored directly - it is derived from inventory_lots + inventory_adjustments
  */
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { Variant } from '../../types/index.js';
-import { ValidationError } from '../../shared-types/index.js';
-import type { IVariantRepository, VariantQueryOptions } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { Variant } from '../models/index.js';
+import { ValidationError } from '../dtos/index.js';
+import type { IVariantRepository, VariantQueryOptions } from '../core/index.js';
 import { InventoryRepository } from './inventory.repository.js';
 
 interface VariantInput {

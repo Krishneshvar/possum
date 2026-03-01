@@ -2,8 +2,8 @@
  * Transaction Repository
  * Handles all database operations for transactions
  */
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import type { ITransactionRepository, TransactionRecord, TransactionQueryParams, PaginatedTransactions } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import type { ITransactionRepository, TransactionRecord, TransactionQueryParams, PaginatedTransactions } from '../core/index.js';
 
 export class TransactionRepository implements ITransactionRepository {
     /**

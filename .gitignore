@@ -1,13 +1,15 @@
 # Electron
-node_modules
 dist
 out
 .DS_Store
 .eslintcache
 *.log*
 
-# Frontend
-./app/node_modules
+# Node
+node_modules
+*/node_modules
+package-lock.json
+*/package-lock.json
 
 # Environment variables
 .env

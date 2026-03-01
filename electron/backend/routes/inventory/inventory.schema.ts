@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VALID_INVENTORY_REASONS } from '../../../../types/index.js';
+import { VALID_INVENTORY_REASONS } from '../../../../models/index.js';
 
 export const adjustInventorySchema = z.object({
     body: z.object({

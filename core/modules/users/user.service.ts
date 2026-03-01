@@ -2,7 +2,7 @@
  * User Service
  */
 import { IUserRepository, UserFilter, PaginatedUsers } from './user.repository.interface.js';
-import { User, Role, Permission } from '../../../types/index.js';
+import { User, Role, Permission } from '../../../models/index.js';
 
 let UserRepository: IUserRepository;
 let AuthService: any;
@@ -10,15 +10,15 @@ let auditService: any;
 let hashPassword: any;
 
 export function initUserService(
-  repo: IUserRepository,
-  authSvc: any,
-  audit: any,
-  hashPwd: any
+    repo: IUserRepository,
+    authSvc: any,
+    audit: any,
+    hashPwd: any
 ) {
-  UserRepository = repo;
-  AuthService = authSvc;
-  auditService = audit;
-  hashPassword = hashPwd;
+    UserRepository = repo;
+    AuthService = authSvc;
+    auditService = audit;
+    hashPassword = hashPwd;
 }
 
 interface CreateUserInput {
@@ -171,7 +171,7 @@ export async function getUserRoles(userId: number): Promise<Role[]> {
 
 export async function updateUserRoles(userId: number, roleIds: number[]): Promise<void> {
     const user = await getUserById(userId);
-    
+
     // Validate all role IDs exist
     const allRoles = UserRepository.getAllRoles();
     for (const roleId of roleIds) {
@@ -179,7 +179,7 @@ export async function updateUserRoles(userId: number, roleIds: number[]): Promis
             throw new Error(`Invalid role ID: ${roleId}`);
         }
     }
-    
+
     UserRepository.assignUserRoles(userId, roleIds);
     AuthService.revokeUserSessions(userId);
 }
@@ -191,7 +191,7 @@ export async function getUserPermissionOverrides(userId: number): Promise<Array<
 
 export async function updateUserPermissions(userId: number, permissions: Array<{ permissionId: number; granted: boolean }>): Promise<void> {
     const user = await getUserById(userId);
-    
+
     // Validate all permission IDs exist
     const allPermissions = UserRepository.getAllPermissions();
     for (const perm of permissions) {
@@ -199,11 +199,11 @@ export async function updateUserPermissions(userId: number, permissions: Array<{
             throw new Error(`Invalid permission ID: ${perm.permissionId}`);
         }
     }
-    
+
     // Apply each permission override
     for (const perm of permissions) {
         UserRepository.setUserPermission(userId, perm.permissionId, perm.granted);
     }
-    
+
     AuthService.revokeUserSessions(userId);
 }

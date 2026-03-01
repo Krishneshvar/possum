@@ -3,7 +3,7 @@
  * Business logic for suppliers
  */
 import { ISupplierRepository, SupplierQueryOptions } from './supplier.repository.interface.js';
-import { Supplier } from '../../../types/index.js';
+import { Supplier } from '../../../models/index.js';
 
 let supplierRepo: ISupplierRepository;
 let auditService: any;

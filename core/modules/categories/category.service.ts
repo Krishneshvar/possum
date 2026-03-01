@@ -1,10 +1,10 @@
-import type { Category } from '../../../types/index.js';
+import type { Category } from '../../../models/index.js';
 import type { ICategoryRepository } from './category.repository.interface.js';
 
 let categoryRepository: ICategoryRepository;
 
 export function initCategoryService(repo: ICategoryRepository) {
-  categoryRepository = repo;
+    categoryRepository = repo;
 }
 
 /**

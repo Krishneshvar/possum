@@ -3,7 +3,7 @@
  * Encapsulates business logic for calculating sale statistics
  */
 import { useMemo } from 'react';
-import { Sale } from '../../../../types/index.js';
+import { Sale } from '../../../../../models/index.js';
 
 interface SaleStats {
     totalBills: number;

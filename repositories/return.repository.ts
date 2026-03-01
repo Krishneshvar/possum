@@ -1,5 +1,5 @@
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import type { IReturnRepository, ReturnFilters } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import type { IReturnRepository, ReturnFilters } from '../core/index.js';
 
 export interface ReturnListItem {
     id: number;

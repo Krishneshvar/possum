@@ -1,4 +1,4 @@
-import { User, Role, Permission } from '../../../types/index.js';
+import { User, Role, Permission } from '../../../models/index.js';
 
 export interface UserFilter {
   searchTerm?: string;

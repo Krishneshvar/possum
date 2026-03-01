@@ -1,6 +1,6 @@
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { User, Role, Permission } from '../../types/index.js';
-import type { IUserRepository, UserFilter, PaginatedUsers } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { User, Role, Permission } from '../models/index.js';
+import type { IUserRepository, UserFilter, PaginatedUsers } from '../core/index.js';
 
 export class UserRepository implements IUserRepository {
   findUsers({ searchTerm, page, limit, currentPage, itemsPerPage }: UserFilter): PaginatedUsers {

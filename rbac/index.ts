@@ -1,2 +1,0 @@
-// RBAC logic
-export {};

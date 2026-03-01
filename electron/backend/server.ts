@@ -12,7 +12,7 @@ import { globalErrorHandler } from './shared/middleware/error.middleware.js';
 import { buildImageUrl } from './shared/utils/index.js';
 import { logger as appLogger } from './shared/utils/logger.js';
 import { hashPassword, verifyPassword } from './shared/utils/password.js';
-import { INVENTORY_REASONS } from '../../types/index.js';
+import { INVENTORY_REASONS } from '../../models/index.js';
 
 // Core services
 import {
@@ -67,7 +67,7 @@ import {
   ProductRepository,
   SaleRepository,
   SessionRepository
-} from '../../database/index.js';
+} from '../../repositories/index.js';
 
 dotenv.config();
 

@@ -3,7 +3,7 @@
  * Contains business logic for sales reporting
  */
 import { IReportsRepository } from './reports.repository.interface.js';
-import { DailyReport, MonthlyReport, YearlyReport, TopProduct, PaymentMethodStat } from '../../../types/index.js';
+import { DailyReport, MonthlyReport, YearlyReport, TopProduct, PaymentMethodStat } from '../../../models/index.js';
 
 let reportsRepository: IReportsRepository;
 

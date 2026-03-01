@@ -2,9 +2,9 @@
  * Customer Repository
  * Handles all database operations for customers
  */
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { Customer } from '../../types/index.js';
-import type { ICustomerRepository, CustomerWriteFields, CustomerFilter, PaginatedCustomers } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { Customer } from '../models/index.js';
+import type { ICustomerRepository, CustomerWriteFields, CustomerFilter, PaginatedCustomers } from '../core/index.js';
 
 interface CustomerRow {
   id: number;

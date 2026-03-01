@@ -1,6 +1,6 @@
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { PurchaseOrder, PurchaseOrderItem } from '../../types/index.js';
-import type { IPurchaseRepository, PurchaseOrderQueryOptions, CreatePOItem, CreatePOData, UpdatePOData } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { PurchaseOrder, PurchaseOrderItem } from '../models/index.js';
+import type { IPurchaseRepository, PurchaseOrderQueryOptions, CreatePOItem, CreatePOData, UpdatePOData } from '../core/index.js';
 
 interface CountRow {
     count: number;

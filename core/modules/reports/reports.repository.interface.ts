@@ -1,4 +1,4 @@
-import { SalesReportSummary, TopProduct, PaymentMethodStat } from '../../../types/index.js';
+import { SalesReportSummary, TopProduct, PaymentMethodStat } from '../../../models/index.js';
 
 export interface IReportsRepository {
     getSalesReportSummary(startDate: string, endDate: string, paymentMethodId?: number): SalesReportSummary;

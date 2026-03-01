@@ -1,4 +1,4 @@
-import { Customer } from '../../../types/index.js';
+import { Customer } from '../../../models/index.js';
 
 export interface CustomerWriteFields {
   name?: string;

@@ -1,10 +1,10 @@
-import { BaseEntity } from '../../types/index.js';
-import type { IInventoryRepository } from '../../core/index.js';
+import { BaseEntity } from '../models/index.js';
+import type { IInventoryRepository } from '../core/index.js';
 /**
  * Inventory Repository
  * Handles all database operations for inventory management
  */
-import { getDB } from '../../electron/backend/shared/db/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
 
 export interface InventoryLot extends BaseEntity {
     variant_id: number;

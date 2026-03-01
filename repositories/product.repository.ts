@@ -1,6 +1,6 @@
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { Product, Variant } from '../../types/index.js';
-import type { IProductRepository, ProductFilter } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { Product, Variant } from '../models/index.js';
+import type { IProductRepository, ProductFilter } from '../core/index.js';
 import { InventoryRepository } from './inventory.repository.js';
 
 interface PaginatedProducts {

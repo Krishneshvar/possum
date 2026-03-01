@@ -1,6 +1,6 @@
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { Sale, SaleItem, Transaction } from '../../types/index.js';
-import type { ISaleRepository, SaleFilter, PaginatedSales } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { Sale, SaleItem, Transaction } from '../models/index.js';
+import type { ISaleRepository, SaleFilter, PaginatedSales } from '../core/index.js';
 
 export class SaleRepository implements ISaleRepository {
 

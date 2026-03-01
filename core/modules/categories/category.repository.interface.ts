@@ -1,4 +1,4 @@
-import type { Category } from '../../../types/index.js';
+import type { Category } from '../../../models/index.js';
 
 export interface ICategoryRepository {
   findAllCategories(): Category[];

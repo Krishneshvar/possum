@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
-import { Sale } from '../../../types/index';
+import { Sale } from '../../../models/index';
 
 export const salesApi = createApi({
     reducerPath: 'salesApi',

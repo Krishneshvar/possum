@@ -3,20 +3,20 @@
  * Logic layer for customer operations
  */
 import { ICustomerRepository, CustomerWriteFields, CustomerFilter, PaginatedCustomers } from './customer.repository.interface.js';
-import { Customer } from '../../../types/index.js';
+import { Customer } from '../../../models/index.js';
 
 let customerRepository: ICustomerRepository;
 let auditService: any;
 let getDB: any;
 
 export function initCustomerService(
-  repo: ICustomerRepository,
-  audit: any,
-  db: any
+    repo: ICustomerRepository,
+    audit: any,
+    db: any
 ) {
-  customerRepository = repo;
-  auditService = audit;
-  getDB = db;
+    customerRepository = repo;
+    auditService = audit;
+    getDB = db;
 }
 
 type CustomerWriteInput = {

@@ -1,4 +1,4 @@
-import { Supplier, PaymentPolicy } from '../../../types/index.js';
+import { Supplier, PaymentPolicy } from '../../../models/index.js';
 
 export interface SupplierQueryOptions {
     page?: number;

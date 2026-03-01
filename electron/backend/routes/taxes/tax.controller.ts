@@ -1,6 +1,6 @@
-import { TaxRepository } from '../../../../database/index.js';
+import { TaxRepository } from '../../../../repositories/index.js';
 import { taxEngine } from '../../../../core/index.js';
-import { CustomerRepository } from '../../../../database/index.js';
+import { CustomerRepository } from '../../../../repositories/index.js';
 import { Request, Response } from 'express';
 import { getQueryNumber } from '../../shared/utils/index.js';
 
@@ -96,7 +96,7 @@ export async function getTaxRules(req: Request, res: Response) {
         if (!profileId) return res.status(400).json({ error: 'profileId is required' });
         const profileIdNum = getQueryNumber(profileId);
         if (profileIdNum === undefined) {
-             return res.status(400).json({ error: 'Invalid profileId' });
+            return res.status(400).json({ error: 'Invalid profileId' });
         }
         const rules = taxRepository.getTaxRulesByProfileId(profileIdNum);
         res.json(rules);

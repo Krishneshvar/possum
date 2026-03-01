@@ -3,12 +3,12 @@
  * Handles business logic for transactions
  */
 import { ITransactionRepository, PaginatedTransactions } from './transactions.repository.interface.js';
-import { GetTransactionsQuery } from '../../../shared-types/index.js';
+import { GetTransactionsQuery } from '../../../dtos/index.js';
 
 let transactionRepo: ITransactionRepository;
 
 export function initTransactionService(repo: ITransactionRepository) {
-  transactionRepo = repo;
+    transactionRepo = repo;
 }
 
 export type GetTransactionsParams = GetTransactionsQuery;

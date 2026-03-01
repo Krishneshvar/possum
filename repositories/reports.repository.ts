@@ -2,9 +2,9 @@
  * Reports Repository
  * Handles all database operations for sales reporting
  */
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { SalesReportSummary, TopProduct, PaymentMethodStat } from '../../types/index.js';
-import type { IReportsRepository } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { SalesReportSummary, TopProduct, PaymentMethodStat } from '../models/index.js';
+import type { IReportsRepository } from '../core/index.js';
 
 export class ReportsRepository implements IReportsRepository {
     /**

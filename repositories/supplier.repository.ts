@@ -2,9 +2,9 @@
  * Supplier Repository
  * Database operations for suppliers
  */
-import { getDB } from '../../electron/backend/shared/db/index.js';
-import { Supplier, PaymentPolicy } from '../../types/index.js';
-import type { ISupplierRepository, SupplierQueryOptions, SupplierQueryResult } from '../../core/index.js';
+import { getDB } from '../electron/backend/shared/db/index.js';
+import { Supplier, PaymentPolicy } from '../models/index.js';
+import type { ISupplierRepository, SupplierQueryOptions, SupplierQueryResult } from '../core/index.js';
 
 interface CountRow {
     count: number;

@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 import { printBillHtml } from '../../print/printController.js';
 import { renderBill, DEFAULT_BILL_SCHEMA, RenderData, BillSchema } from '../utils/billRenderer.js';
 import { getSale, getSession } from '../../../core/index.js';
-import { Sale, SaleItem } from '../../../types/index.js';
+import { Sale, SaleItem } from '../../../models/index.js';
 
 // Helper to get settings path
 const getUserDataPath = () => app.getPath('userData');
@@ -42,13 +42,13 @@ export async function printInvoice(invoiceId: number, token: string): Promise<{ 
         const permissions = session.permissions || [];
         // Allow if user can view sales or create sales
         if (!permissions.includes('sales.view') && !permissions.includes('sales.create')) {
-             // Admin role check is implicitly handled if admin has these permissions.
-             // If admin role has all permissions (as per seed), this check passes.
-             // If not, we might need role check.
-             // Assuming permissions are assigned correctly.
-             if (!session.roles?.includes('admin')) {
-                 throw new Error('Forbidden: Insufficient permissions to print invoice');
-             }
+            // Admin role check is implicitly handled if admin has these permissions.
+            // If admin role has all permissions (as per seed), this check passes.
+            // If not, we might need role check.
+            // Assuming permissions are assigned correctly.
+            if (!session.roles?.includes('admin')) {
+                throw new Error('Forbidden: Insufficient permissions to print invoice');
+            }
         }
 
         console.log(`[PrintService] Printing invoice ID: ${invoiceId}`);

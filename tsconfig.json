@@ -3,7 +3,9 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "node",
-    "lib": [ "ESNext" ],
+    "lib": [
+      "ESNext"
+    ],
     "outDir": "dist",
     "rootDir": ".",
     "strict": true,
@@ -18,11 +20,11 @@
   "include": [
     "core/**/*.ts",
     "database/**/*.ts",
-    "shared-types/**/*.ts",
+    "dtos/**/*.ts",
     "rbac/**/*.ts",
     "tax-engine/**/*.ts",
     "electron/**/*.ts",
-    "types/**/*.ts",
+    "models/**/*.ts",
     "electron/backend/shims.d.ts"
   ],
   "exclude": [
@@ -30,7 +32,6 @@
     "dist",
     "node_modules",
     "electron/dist",
-    "electron/preload.ts",
-    "electron/backend/modules_old"
+    "electron/preload.ts"
   ]
 }

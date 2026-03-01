@@ -28,7 +28,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { Sale } from '../../../../types/index.js';
+import { Sale } from '../../../../../models/index.js';
 
 interface SalesHistoryTableProps {
     sales: Sale[];

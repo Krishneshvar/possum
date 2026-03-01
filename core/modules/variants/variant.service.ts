@@ -3,8 +3,8 @@
  * Contains business logic for variant operations
  */
 import { IVariantRepository, VariantQueryOptions } from './variant.repository.interface.js';
-import { Variant, INVENTORY_REASONS } from '../../../types/index.js';
-import { ValidationError } from '../../../shared-types/index.js';
+import { Variant, INVENTORY_REASONS } from '../../../models/index.js';
+import { ValidationError } from '../../../dtos/index.js';
 
 let variantRepository: IVariantRepository;
 let inventoryRepository: any;

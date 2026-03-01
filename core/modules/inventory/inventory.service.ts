@@ -3,7 +3,7 @@
  * Contains business logic for inventory operations
  */
 import { IInventoryRepository } from './inventory.repository.interface.js';
-import { VALID_INVENTORY_REASONS, INVENTORY_REASONS } from '../../../types/index.js';
+import { VALID_INVENTORY_REASONS, INVENTORY_REASONS } from '../../../models/index.js';
 
 let inventoryRepository: IInventoryRepository;
 let productFlowService: any;

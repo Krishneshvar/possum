@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQuery } from '../lib/api-client';
-import { Transaction } from '../../../types/index';
+import { Transaction } from '../../../models/index';
 
 export interface TransactionsQueryParams {
     page?: number;
