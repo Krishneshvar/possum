@@ -118,6 +118,11 @@ export const sidebarData = {
           icon: BarChart,
         },
         {
+          title: "Sales Analytics",
+          url: "/reports/analytics",
+          icon: BarChart,
+        },
+        {
           title: "Audit Log",
           url: "/audit-log",
           icon: ClipboardCheck,

@@ -359,15 +359,10 @@ export interface SalesReportSummary {
   average_sale?: number;
 }
 
-export interface DailyReport extends SalesReportSummary {
-  date: string;
+export interface DailyReport {
+  startDate: string;
+  endDate: string;
   reportType: 'daily';
-}
-
-export interface MonthlyReport {
-  year: number;
-  month: number;
-  reportType: 'monthly';
   summary: SalesReportSummary;
   breakdown: Array<{
     date: string;
@@ -380,12 +375,29 @@ export interface MonthlyReport {
   }>;
 }
 
-export interface YearlyReport {
-  year: number;
-  reportType: 'yearly';
+export interface MonthlyReport {
+  startDate: string;
+  endDate: string;
+  reportType: 'monthly';
   summary: SalesReportSummary;
   breakdown: Array<{
     month: string;
+    name: string;
+    sales: number;
+    total_transactions: number;
+    total_sales: number;
+    total_tax: number;
+    total_discount: number;
+  }>;
+}
+
+export interface YearlyReport {
+  startDate: string;
+  endDate: string;
+  reportType: 'yearly';
+  summary: SalesReportSummary;
+  breakdown: Array<{
+    year: string;
     name: string;
     sales: number;
     total_transactions: number;

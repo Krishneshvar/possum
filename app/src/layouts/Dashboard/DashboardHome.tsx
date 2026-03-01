@@ -1,14 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  TrendingUp, 
+import {
+  TrendingUp,
   TrendingDown,
-  ShoppingCart, 
-  Package, 
+  ShoppingCart,
+  Package,
   AlertTriangle,
   ArrowRight,
   DollarSign,
-  Activity,
+  CreditCard,
   RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import { getTodayDate } from '@/utils/date.utils';
 export default function DashboardHome() {
   const currency = useCurrency();
   const today = getTodayDate();
-  
+
   const { data: dailyStats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useGetDailyStatsQuery(today);
   const { data: topProducts, isLoading: productsLoading, isError: productsError, refetch: refetchProducts } = useGetTopProductsQuery({
     startDate: today,
@@ -31,7 +31,7 @@ export default function DashboardHome() {
   });
   const { data: lowStockItems, isLoading: stockLoading, isError: stockError } = useGetLowStockItemsQuery();
 
-  const formatCurrency = (value: number) => 
+  const formatCurrency = (value: number) =>
     `${currency}${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const handleRefresh = () => {
@@ -73,34 +73,32 @@ export default function DashboardHome() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              title="Today's Sales"
-              value={formatCurrency(dailyStats?.totalSales || 0)}
+              title="Total Sales"
+              value={formatCurrency(dailyStats?.summary?.total_sales || 0)}
               icon={DollarSign}
               loading={statsLoading}
-              trend={dailyStats?.salesTrend}
-              description="Total revenue today"
+              description="Gross revenue including tax"
+            />
+            <StatCard
+              title="Net Sales"
+              value={formatCurrency(dailyStats?.summary?.net_sales || 0)}
+              icon={TrendingUp}
+              loading={statsLoading}
+              description="Revenue after tax deduction"
             />
             <StatCard
               title="Transactions"
-              value={dailyStats?.transactionCount || 0}
-              icon={Activity}
+              value={dailyStats?.summary?.total_transactions || 0}
+              icon={CreditCard}
               loading={statsLoading}
-              trend={dailyStats?.transactionTrend}
-              description="Completed sales"
+              description="Completed orders"
             />
             <StatCard
-              title="Items Sold"
-              value={dailyStats?.itemsSold || 0}
-              icon={Package}
+              title="Average Sale"
+              value={formatCurrency(dailyStats?.summary?.average_sale || 0)}
+              icon={DollarSign}
               loading={statsLoading}
-              description="Products moved today"
-            />
-            <StatCard
-              title="Avg. Transaction"
-              value={formatCurrency(dailyStats?.averageTransaction || 0)}
-              icon={TrendingUp}
-              loading={statsLoading}
-              description="Per sale average"
+              description="Per transaction average"
             />
           </div>
         )}
@@ -137,7 +135,7 @@ export default function DashboardHome() {
                       className="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
                     >
                       <div className="flex items-center gap-3">
-                        <div 
+                        <div
                           className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm"
                           aria-label={`Rank ${index + 1}`}
                         >
@@ -250,7 +248,7 @@ interface StatCardProps {
 }
 
 function StatCard({ title, value, icon: Icon, loading, trend, description }: StatCardProps) {
-  const trendLabel = trend !== undefined && trend !== 0 
+  const trendLabel = trend !== undefined && trend !== 0
     ? `${trend > 0 ? 'Up' : 'Down'} ${Math.abs(trend)}% from yesterday`
     : undefined;
 
@@ -269,7 +267,7 @@ function StatCard({ title, value, icon: Icon, loading, trend, description }: Sta
               {value}
             </CardTitle>
             {trend !== undefined && trend !== 0 && (
-              <span 
+              <span
                 className={`flex items-center text-xs font-medium ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}
                 aria-label={trendLabel}
               >

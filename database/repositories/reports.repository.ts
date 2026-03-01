@@ -7,14 +7,15 @@ import { SalesReportSummary, TopProduct, PaymentMethodStat } from '../../types/i
 import type { IReportsRepository } from '../../core/index.js';
 
 export class ReportsRepository implements IReportsRepository {
-/**
- * Get daily sales report
- * @param {string} date - Date in YYYY-MM-DD format
- * @returns {SalesReportSummary} Daily report
- */
-getDailySalesReport(date: string): SalesReportSummary {
-    const db = getDB();
-    return db.prepare(`
+    /**
+     * Get sales report summary for a date range
+     * @param {string} startDate - Start date
+     * @param {string} endDate - End date
+     * @returns {SalesReportSummary} Summary report
+     */
+    getSalesReportSummary(startDate: string, endDate: string): SalesReportSummary {
+        const db = getDB();
+        return db.prepare(`
         SELECT 
             COUNT(*) as total_transactions,
             COALESCE(SUM(total_amount), 0) as total_sales,
@@ -24,67 +25,20 @@ getDailySalesReport(date: string): SalesReportSummary {
             COALESCE(SUM(total_amount) - SUM(total_tax), 0) as net_sales,
             CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(total_amount), 0) / COUNT(*) ELSE 0 END as average_sale
         FROM sales
-        WHERE date(sale_date) = ?
+        WHERE date(sale_date) >= ? AND date(sale_date) <= ?
           AND status NOT IN ('cancelled', 'draft')
-    `).get(date) as SalesReportSummary;
-}
+    `).get(startDate, endDate) as SalesReportSummary;
+    }
 
-/**
- * Get monthly sales report
- * @param {number} year - Year
- * @param {number} month - Month (1-12)
- * @returns {SalesReportSummary} Monthly report
- */
-getMonthlySalesReport(year: number, month: number): SalesReportSummary {
-    const db = getDB();
-    const paddedMonth = String(month).padStart(2, '0');
-    return db.prepare(`
-        SELECT 
-            COUNT(*) as total_transactions,
-            COALESCE(SUM(total_amount), 0) as total_sales,
-            COALESCE(SUM(total_tax), 0) as total_tax,
-            COALESCE(SUM(discount), 0) as total_discount,
-            COALESCE(SUM(paid_amount), 0) as total_collected,
-            COALESCE(SUM(total_amount) - SUM(total_tax), 0) as net_sales,
-            CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(total_amount), 0) / COUNT(*) ELSE 0 END as average_sale
-        FROM sales
-        WHERE strftime('%Y-%m', sale_date) = ?
-          AND status NOT IN ('cancelled', 'draft')
-    `).get(`${year}-${paddedMonth}`) as SalesReportSummary;
-}
-
-/**
- * Get yearly sales report
- * @param {number} year - Year
- * @returns {SalesReportSummary} Yearly report
- */
-getYearlySalesReport(year: number): SalesReportSummary {
-    const db = getDB();
-    return db.prepare(`
-        SELECT 
-            COUNT(*) as total_transactions,
-            COALESCE(SUM(total_amount), 0) as total_sales,
-            COALESCE(SUM(total_tax), 0) as total_tax,
-            COALESCE(SUM(discount), 0) as total_discount,
-            COALESCE(SUM(paid_amount), 0) as total_collected,
-            COALESCE(SUM(total_amount) - SUM(total_tax), 0) as net_sales,
-            CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(total_amount), 0) / COUNT(*) ELSE 0 END as average_sale
-        FROM sales
-        WHERE strftime('%Y', sale_date) = ?
-          AND status NOT IN ('cancelled', 'draft')
-    `).get(String(year)) as SalesReportSummary;
-}
-
-/**
- * Get daily breakdown for a month
- * @param {number} year - Year
- * @param {number} month - Month (1-12)
- * @returns {Array} Daily breakdown
- */
-getDailyBreakdownForMonth(year: number, month: number): any[] {
-    const db = getDB();
-    const paddedMonth = String(month).padStart(2, '0');
-    return db.prepare(`
+    /**
+     * Get daily breakdown for a date range
+     * @param {string} startDate - Start date
+     * @param {string} endDate - End date
+     * @returns {Array} Daily breakdown
+     */
+    getDailyBreakdown(startDate: string, endDate: string): any[] {
+        const db = getDB();
+        return db.prepare(`
         SELECT 
             date(sale_date) as date,
             COUNT(*) as total_transactions,
@@ -92,45 +46,69 @@ getDailyBreakdownForMonth(year: number, month: number): any[] {
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount
         FROM sales
-        WHERE strftime('%Y-%m', sale_date) = ?
+        WHERE date(sale_date) >= ? AND date(sale_date) <= ?
           AND status NOT IN ('cancelled', 'draft')
         GROUP BY date(sale_date)
         ORDER BY date ASC
-    `).all(`${year}-${paddedMonth}`);
-}
+    `).all(startDate, endDate);
+    }
 
-/**
- * Get monthly breakdown for a year
- * @param {number} year - Year
- * @returns {Array} Monthly breakdown
- */
-getMonthlyBreakdownForYear(year: number): any[] {
-    const db = getDB();
-    return db.prepare(`
+    /**
+     * Get monthly breakdown for a date range
+     * @param {string} startDate - Start date
+     * @param {string} endDate - End date
+     * @returns {Array} Monthly breakdown
+     */
+    getMonthlyBreakdown(startDate: string, endDate: string): any[] {
+        const db = getDB();
+        return db.prepare(`
         SELECT 
-            strftime('%m', sale_date) as month,
+            strftime('%Y-%m', sale_date) as month,
             COUNT(*) as total_transactions,
             COALESCE(SUM(total_amount), 0) as total_sales,
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount
         FROM sales
-        WHERE strftime('%Y', sale_date) = ?
+        WHERE date(sale_date) >= ? AND date(sale_date) <= ?
           AND status NOT IN ('cancelled', 'draft')
-        GROUP BY strftime('%m', sale_date)
+        GROUP BY strftime('%Y-%m', sale_date)
         ORDER BY month ASC
-    `).all(String(year));
-}
+    `).all(startDate, endDate);
+    }
 
-/**
- * Get top selling products for a period
- * @param {string} startDate - Start date
- * @param {string} endDate - End date
- * @param {number} limit - Number of products
- * @returns {Array} Top products
- */
-getTopSellingProducts(startDate: string, endDate: string, limit: number = 10): TopProduct[] {
-    const db = getDB();
-    return db.prepare(`
+    /**
+     * Get yearly breakdown for a date range
+     * @param {string} startDate - Start date
+     * @param {string} endDate - End date
+     * @returns {Array} Yearly breakdown
+     */
+    getYearlyBreakdown(startDate: string, endDate: string): any[] {
+        const db = getDB();
+        return db.prepare(`
+        SELECT 
+            strftime('%Y', sale_date) as year,
+            COUNT(*) as total_transactions,
+            COALESCE(SUM(total_amount), 0) as total_sales,
+            COALESCE(SUM(total_tax), 0) as total_tax,
+            COALESCE(SUM(discount), 0) as total_discount
+        FROM sales
+        WHERE date(sale_date) >= ? AND date(sale_date) <= ?
+          AND status NOT IN ('cancelled', 'draft')
+        GROUP BY strftime('%Y', sale_date)
+        ORDER BY year ASC
+    `).all(startDate, endDate);
+    }
+
+    /**
+     * Get top selling products for a period
+     * @param {string} startDate - Start date
+     * @param {string} endDate - End date
+     * @param {number} limit - Number of products
+     * @returns {Array} Top products
+     */
+    getTopSellingProducts(startDate: string, endDate: string, limit: number = 10): TopProduct[] {
+        const db = getDB();
+        return db.prepare(`
         SELECT 
             p.id as product_id,
             p.name as product_name,
@@ -148,17 +126,17 @@ getTopSellingProducts(startDate: string, endDate: string, limit: number = 10): T
         ORDER BY total_quantity_sold DESC
         LIMIT ?
     `).all(startDate, endDate, limit) as TopProduct[];
-}
+    }
 
-/**
- * Get sales by payment method
- * @param {string} startDate - Start date
- * @param {string} endDate - End date
- * @returns {Array} Sales by payment method
- */
-getSalesByPaymentMethod(startDate: string, endDate: string): PaymentMethodStat[] {
-    const db = getDB();
-    return db.prepare(`
+    /**
+     * Get sales by payment method
+     * @param {string} startDate - Start date
+     * @param {string} endDate - End date
+     * @returns {Array} Sales by payment method
+     */
+    getSalesByPaymentMethod(startDate: string, endDate: string): PaymentMethodStat[] {
+        const db = getDB();
+        return db.prepare(`
         SELECT 
             pm.name as payment_method,
             COUNT(t.id) as total_transactions,
@@ -170,5 +148,5 @@ getSalesByPaymentMethod(startDate: string, endDate: string): PaymentMethodStat[]
           AND t.type = 'payment'
         GROUP BY pm.name
     `).all(startDate, endDate) as PaymentMethodStat[];
-}
+    }
 }

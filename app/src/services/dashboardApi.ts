@@ -8,11 +8,11 @@ export const dashboardApi = createApi({
     keepUnusedDataFor: 300,
     endpoints: (builder) => ({
         getDailyStats: builder.query({
-            query: (date: string) => `/reports/daily?date=${date}`,
+            query: (date: string) => `/reports/daily?startDate=${date}&endDate=${date}`,
             providesTags: ['DailyStats'],
         }),
         getTopProducts: builder.query({
-            query: ({ startDate, endDate, limit = 5 }: { startDate: string; endDate: string; limit?: number }) => 
+            query: ({ startDate, endDate, limit = 5 }: { startDate: string; endDate: string; limit?: number }) =>
                 `/reports/top-products?startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
             providesTags: ['TopProducts'],
         }),
@@ -23,8 +23,8 @@ export const dashboardApi = createApi({
     }),
 });
 
-export const { 
-    useGetDailyStatsQuery, 
+export const {
+    useGetDailyStatsQuery,
     useGetTopProductsQuery,
-    useGetLowStockItemsQuery 
+    useGetLowStockItemsQuery
 } = dashboardApi;

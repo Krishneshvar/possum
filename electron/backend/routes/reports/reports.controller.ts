@@ -11,12 +11,12 @@ import * as reportsService from '../../../../core/index.js';
  */
 export async function getDailyReportController(req: Request, res: Response) {
     try {
-        const { date } = req.query;
-        if (!date || typeof date !== 'string') {
-            return res.status(400).json({ error: 'date parameter is required (YYYY-MM-DD).' });
+        const { startDate, endDate } = req.query;
+        if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
+            return res.status(400).json({ error: 'startDate and endDate parameters are required (YYYY-MM-DD).' });
         }
 
-        const report = reportsService.getDailyReport(date);
+        const report = reportsService.getDailyReport(startDate, endDate);
         res.json(report);
     } catch (err) {
         console.error('Error fetching daily report:', err);
@@ -30,12 +30,12 @@ export async function getDailyReportController(req: Request, res: Response) {
  */
 export async function getMonthlyReportController(req: Request, res: Response) {
     try {
-        const { year, month } = req.query;
-        if (!year || !month) {
-            return res.status(400).json({ error: 'year and month parameters are required.' });
+        const { startDate, endDate } = req.query;
+        if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
+            return res.status(400).json({ error: 'startDate and endDate parameters are required (YYYY-MM-DD).' });
         }
 
-        const report = reportsService.getMonthlyReport(parseInt(year as string, 10), parseInt(month as string, 10));
+        const report = reportsService.getMonthlyReport(startDate, endDate);
         res.json(report);
     } catch (err) {
         console.error('Error fetching monthly report:', err);
@@ -49,12 +49,12 @@ export async function getMonthlyReportController(req: Request, res: Response) {
  */
 export async function getYearlyReportController(req: Request, res: Response) {
     try {
-        const { year } = req.query;
-        if (!year) {
-            return res.status(400).json({ error: 'year parameter is required.' });
+        const { startDate, endDate } = req.query;
+        if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
+            return res.status(400).json({ error: 'startDate and endDate parameters are required (YYYY-MM-DD).' });
         }
 
-        const report = reportsService.getYearlyReport(parseInt(year as string, 10));
+        const report = reportsService.getYearlyReport(startDate, endDate);
         res.json(report);
     } catch (err) {
         console.error('Error fetching yearly report:', err);

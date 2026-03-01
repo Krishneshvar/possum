@@ -8,40 +8,49 @@ import { DailyReport, MonthlyReport, YearlyReport, TopProduct, PaymentMethodStat
 let reportsRepository: IReportsRepository;
 
 export function initReportsService(repo: IReportsRepository) {
-  reportsRepository = repo;
+    reportsRepository = repo;
 }
 
 /**
- * Get daily sales report
- * @param {string} date - Date in YYYY-MM-DD format
+ * Get daily sales report breakdown over a date range
+ * @param {string} startDate - Start date
+ * @param {string} endDate - End date
  * @returns {DailyReport} Daily report
  */
-export function getDailyReport(date: string): DailyReport {
-    const report = reportsRepository.getDailySalesReport(date);
-    return {
-        date,
-        reportType: 'daily',
-        ...report
-    };
-}
-
-/**
- * Get monthly sales report
- * @param {number} year - Year
- * @param {number} month - Month (1-12)
- * @returns {MonthlyReport} Monthly report with daily breakdown
- */
-export function getMonthlyReport(year: number, month: number): MonthlyReport {
-    const summary = reportsRepository.getMonthlySalesReport(year, month);
-    const breakdown = reportsRepository.getDailyBreakdownForMonth(year, month).map(item => ({
+export function getDailyReport(startDate: string, endDate: string): DailyReport {
+    const summary = reportsRepository.getSalesReportSummary(startDate, endDate);
+    const breakdown = reportsRepository.getDailyBreakdown(startDate, endDate).map(item => ({
         ...item,
-        name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         sales: item.total_sales
     }));
 
     return {
-        year,
-        month,
+        startDate,
+        endDate,
+        reportType: 'daily',
+        summary,
+        breakdown
+    };
+}
+
+/**
+ * Get monthly sales report over a date range
+ * @param {string} startDate - Start date
+ * @param {string} endDate - End date
+ * @returns {MonthlyReport} Monthly report with monthly breakdown
+ */
+export function getMonthlyReport(startDate: string, endDate: string): MonthlyReport {
+    const summary = reportsRepository.getSalesReportSummary(startDate, endDate);
+    const breakdown = reportsRepository.getMonthlyBreakdown(startDate, endDate).map(item => ({
+        ...item,
+        name: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        sales: item.total_sales
+    }));
+
+    return {
+        startDate,
+        endDate,
         reportType: 'monthly',
         summary,
         breakdown
@@ -49,20 +58,22 @@ export function getMonthlyReport(year: number, month: number): MonthlyReport {
 }
 
 /**
- * Get yearly sales report
- * @param {number} year - Year
- * @returns {YearlyReport} Yearly report with monthly breakdown
+ * Get yearly sales report over a date range
+ * @param {string} startDate - Start date
+ * @param {string} endDate - End date
+ * @returns {YearlyReport} Yearly report with yearly breakdown
  */
-export function getYearlyReport(year: number): YearlyReport {
-    const summary = reportsRepository.getYearlySalesReport(year);
-    const breakdown = reportsRepository.getMonthlyBreakdownForYear(year).map(item => ({
+export function getYearlyReport(startDate: string, endDate: string): YearlyReport {
+    const summary = reportsRepository.getSalesReportSummary(startDate, endDate);
+    const breakdown = reportsRepository.getYearlyBreakdown(startDate, endDate).map(item => ({
         ...item,
-        name: new Date(2000, parseInt(item.month) - 1, 1).toLocaleDateString('en-US', { month: 'short' }),
+        name: item.year,
         sales: item.total_sales
     }));
 
     return {
-        year,
+        startDate,
+        endDate,
         reportType: 'yearly',
         summary,
         breakdown

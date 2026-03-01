@@ -44,6 +44,7 @@ import AuditLogPage from '@/features/AuditLog/pages/AuditLogPage';
 
 import ProductFlowPage from '@/features/Products/pages/ProductFlowPage';
 import SalesReportPage from '@/features/Reports/pages/SalesReportPage';
+import SalesAnalyticsPage from '@/features/Reports/pages/SalesAnalyticsPage';
 import ReportsPage from '@/features/Reports/pages/ReportsPage';
 
 
@@ -88,6 +89,7 @@ export default function AppRoutes() {
 
         <Route path="/reports" element={<ProtectedRoute requiredPermissions="reports.view"><ReportsPage /></ProtectedRoute>} />
         <Route path="/reports/sales" element={<ProtectedRoute requiredPermissions="reports.view"><SalesReportPage /></ProtectedRoute>} />
+        <Route path="/reports/analytics" element={<ProtectedRoute requiredPermissions="reports.view"><SalesAnalyticsPage /></ProtectedRoute>} />
 
         <Route path="/products" element={<ProtectedRoute requiredPermissions="products.view"><ProductsPage /></ProtectedRoute>} />
         <Route path="/products/add" element={<ProtectedRoute requiredPermissions="products.manage"><AddOrEditProductPage /></ProtectedRoute>} />

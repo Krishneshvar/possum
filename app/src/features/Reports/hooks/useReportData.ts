@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+
 import {
     useGetDailyReportQuery,
     useGetMonthlyReportQuery,
@@ -9,25 +9,24 @@ type ReportType = 'daily' | 'monthly' | 'yearly';
 
 interface UseReportDataParams {
     reportType: ReportType;
-    selectedDate?: Date;
-    selectedMonth: string;
-    selectedYear: string;
+    startDate: string;
+    endDate: string;
 }
 
-export function useReportData({ reportType, selectedDate, selectedMonth, selectedYear }: UseReportDataParams) {
+export function useReportData({ reportType, startDate, endDate }: UseReportDataParams) {
     const dailyQuery = useGetDailyReportQuery(
-        selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
-        { skip: reportType !== 'daily' || !selectedDate }
+        { startDate, endDate },
+        { skip: reportType !== 'daily' || !startDate || !endDate }
     );
-    
+
     const monthlyQuery = useGetMonthlyReportQuery(
-        { year: selectedYear, month: selectedMonth },
-        { skip: reportType !== 'monthly' }
+        { startDate, endDate },
+        { skip: reportType !== 'monthly' || !startDate || !endDate }
     );
-    
+
     const yearlyQuery = useGetYearlyReportQuery(
-        selectedYear,
-        { skip: reportType !== 'yearly' }
+        { startDate, endDate },
+        { skip: reportType !== 'yearly' || !startDate || !endDate }
     );
 
     const currentQuery = reportType === 'daily' ? dailyQuery :
