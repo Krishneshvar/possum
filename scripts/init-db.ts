@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const dbPath = path.join(__dirname, '../possum.db');
-const schemaDir = path.join(__dirname, '../db');
-const migrationDir = path.join(__dirname, '../db/migrations');
+const schemaDir = path.join(__dirname, '../database');
+const migrationDir = path.join(__dirname, '../database/migrations');
 
 // Base schema files
 const schemaFiles = [
@@ -61,19 +61,19 @@ try {
 
   // 2. Run Migrations (Simulating upgrade)
   if (fs.existsSync(migrationDir)) {
-      const migrations = fs.readdirSync(migrationDir).sort();
-      migrations.forEach(fileName => {
-          if (fileName.endsWith('.sql')) {
-              const filePath = path.join(migrationDir, fileName);
-              const migration = fs.readFileSync(filePath, 'utf8');
-              try {
-                  db.exec(migration);
-                  console.log(`Applied migration: ${fileName}`);
-              } catch (e: any) {
-                  console.warn(`Migration ${fileName} might have partially failed or already been applied: ${e.message}`);
-              }
-          }
-      });
+    const migrations = fs.readdirSync(migrationDir).sort();
+    migrations.forEach(fileName => {
+      if (fileName.endsWith('.sql')) {
+        const filePath = path.join(migrationDir, fileName);
+        const migration = fs.readFileSync(filePath, 'utf8');
+        try {
+          db.exec(migration);
+          console.log(`Applied migration: ${fileName}`);
+        } catch (e: any) {
+          console.warn(`Migration ${fileName} might have partially failed or already been applied: ${e.message}`);
+        }
+      }
+    });
   }
 
   // Create default admin user if not exists

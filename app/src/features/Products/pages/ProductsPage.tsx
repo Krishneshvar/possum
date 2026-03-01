@@ -18,11 +18,6 @@ const productActions = {
   },
   secondary: [
     {
-      label: "Categories",
-      url: "/products/categories",
-      icon: Package,
-    },
-    {
       label: "Export",
       url: "/products/export",
       icon: Download,

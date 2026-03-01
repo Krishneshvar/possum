@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { MANUAL_INVENTORY_REASONS, INVENTORY_REASON_LABELS, INVENTORY_REASONS } from '@shared/index';
+import { MANUAL_INVENTORY_REASONS, INVENTORY_REASON_LABELS, INVENTORY_REASONS } from '../../../../../models/index';
 
 import {
     Select,

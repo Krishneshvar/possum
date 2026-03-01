@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Package, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
-import { MANUAL_INVENTORY_REASONS, INVENTORY_REASON_LABELS, INVENTORY_REASONS } from '@shared/index';
+import { MANUAL_INVENTORY_REASONS, INVENTORY_REASON_LABELS, INVENTORY_REASONS } from '../../../../../models/index';
 
 import { useDispatch } from 'react-redux';
 import { productsApi } from '@/services/productsApi';
