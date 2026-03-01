@@ -13,8 +13,11 @@ export class ReportsRepository implements IReportsRepository {
      * @param {string} endDate - End date
      * @returns {SalesReportSummary} Summary report
      */
-    getSalesReportSummary(startDate: string, endDate: string): SalesReportSummary {
+    getSalesReportSummary(startDate: string, endDate: string, paymentMethodId?: number): SalesReportSummary {
         const db = getDB();
+        const paymentFilter = paymentMethodId ? `AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)` : '';
+        const params = paymentMethodId ? [startDate, endDate, paymentMethodId] : [startDate, endDate];
+
         return db.prepare(`
         SELECT 
             COUNT(*) as total_transactions,
@@ -24,10 +27,11 @@ export class ReportsRepository implements IReportsRepository {
             COALESCE(SUM(paid_amount), 0) as total_collected,
             COALESCE(SUM(total_amount) - SUM(total_tax), 0) as net_sales,
             CASE WHEN COUNT(*) > 0 THEN COALESCE(SUM(total_amount), 0) / COUNT(*) ELSE 0 END as average_sale
-        FROM sales
+        FROM sales s
         WHERE date(sale_date) >= ? AND date(sale_date) <= ?
           AND status NOT IN ('cancelled', 'draft')
-    `).get(startDate, endDate) as SalesReportSummary;
+          ${paymentFilter}
+    `).get(...params) as SalesReportSummary;
     }
 
     /**
@@ -36,8 +40,11 @@ export class ReportsRepository implements IReportsRepository {
      * @param {string} endDate - End date
      * @returns {Array} Daily breakdown
      */
-    getDailyBreakdown(startDate: string, endDate: string): any[] {
+    getDailyBreakdown(startDate: string, endDate: string, paymentMethodId?: number): any[] {
         const db = getDB();
+        const paymentFilter = paymentMethodId ? `AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)` : '';
+        const params = paymentMethodId ? [startDate, endDate, paymentMethodId] : [startDate, endDate];
+
         return db.prepare(`
         SELECT 
             date(sale_date) as date,
@@ -45,12 +52,13 @@ export class ReportsRepository implements IReportsRepository {
             COALESCE(SUM(total_amount), 0) as total_sales,
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount
-        FROM sales
+        FROM sales s
         WHERE date(sale_date) >= ? AND date(sale_date) <= ?
           AND status NOT IN ('cancelled', 'draft')
+          ${paymentFilter}
         GROUP BY date(sale_date)
         ORDER BY date ASC
-    `).all(startDate, endDate);
+    `).all(...params);
     }
 
     /**
@@ -59,8 +67,11 @@ export class ReportsRepository implements IReportsRepository {
      * @param {string} endDate - End date
      * @returns {Array} Monthly breakdown
      */
-    getMonthlyBreakdown(startDate: string, endDate: string): any[] {
+    getMonthlyBreakdown(startDate: string, endDate: string, paymentMethodId?: number): any[] {
         const db = getDB();
+        const paymentFilter = paymentMethodId ? `AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)` : '';
+        const params = paymentMethodId ? [startDate, endDate, paymentMethodId] : [startDate, endDate];
+
         return db.prepare(`
         SELECT 
             strftime('%Y-%m', sale_date) as month,
@@ -68,12 +79,13 @@ export class ReportsRepository implements IReportsRepository {
             COALESCE(SUM(total_amount), 0) as total_sales,
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount
-        FROM sales
+        FROM sales s
         WHERE date(sale_date) >= ? AND date(sale_date) <= ?
           AND status NOT IN ('cancelled', 'draft')
+          ${paymentFilter}
         GROUP BY strftime('%Y-%m', sale_date)
         ORDER BY month ASC
-    `).all(startDate, endDate);
+    `).all(...params);
     }
 
     /**
@@ -82,8 +94,11 @@ export class ReportsRepository implements IReportsRepository {
      * @param {string} endDate - End date
      * @returns {Array} Yearly breakdown
      */
-    getYearlyBreakdown(startDate: string, endDate: string): any[] {
+    getYearlyBreakdown(startDate: string, endDate: string, paymentMethodId?: number): any[] {
         const db = getDB();
+        const paymentFilter = paymentMethodId ? `AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)` : '';
+        const params = paymentMethodId ? [startDate, endDate, paymentMethodId] : [startDate, endDate];
+
         return db.prepare(`
         SELECT 
             strftime('%Y', sale_date) as year,
@@ -91,12 +106,13 @@ export class ReportsRepository implements IReportsRepository {
             COALESCE(SUM(total_amount), 0) as total_sales,
             COALESCE(SUM(total_tax), 0) as total_tax,
             COALESCE(SUM(discount), 0) as total_discount
-        FROM sales
+        FROM sales s
         WHERE date(sale_date) >= ? AND date(sale_date) <= ?
           AND status NOT IN ('cancelled', 'draft')
+          ${paymentFilter}
         GROUP BY strftime('%Y', sale_date)
         ORDER BY year ASC
-    `).all(startDate, endDate);
+    `).all(...params);
     }
 
     /**
@@ -106,8 +122,11 @@ export class ReportsRepository implements IReportsRepository {
      * @param {number} limit - Number of products
      * @returns {Array} Top products
      */
-    getTopSellingProducts(startDate: string, endDate: string, limit: number = 10): TopProduct[] {
+    getTopSellingProducts(startDate: string, endDate: string, limit: number = 10, paymentMethodId?: number): TopProduct[] {
         const db = getDB();
+        const paymentFilter = paymentMethodId ? `AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)` : '';
+        const params = paymentMethodId ? [startDate, endDate, paymentMethodId, limit] : [startDate, endDate, limit];
+
         return db.prepare(`
         SELECT 
             p.id as product_id,
@@ -120,12 +139,13 @@ export class ReportsRepository implements IReportsRepository {
         JOIN sales s ON si.sale_id = s.id
         JOIN variants v ON si.variant_id = v.id
         JOIN products p ON v.product_id = p.id
-        WHERE s.sale_date >= ? AND s.sale_date <= ?
+        WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ?
           AND s.status NOT IN ('cancelled', 'draft')
+          ${paymentFilter}
         GROUP BY v.id
         ORDER BY total_quantity_sold DESC
         LIMIT ?
-    `).all(startDate, endDate, limit) as TopProduct[];
+    `).all(...params) as TopProduct[];
     }
 
     /**

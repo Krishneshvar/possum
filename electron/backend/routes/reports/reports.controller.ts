@@ -11,12 +11,13 @@ import * as reportsService from '../../../../core/index.js';
  */
 export async function getDailyReportController(req: Request, res: Response) {
     try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, paymentMethod } = req.query;
         if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
             return res.status(400).json({ error: 'startDate and endDate parameters are required (YYYY-MM-DD).' });
         }
 
-        const report = reportsService.getDailyReport(startDate, endDate);
+        const paymentMethodId = paymentMethod ? parseInt(paymentMethod as string, 10) : undefined;
+        const report = reportsService.getDailyReport(startDate, endDate, paymentMethodId);
         res.json(report);
     } catch (err) {
         console.error('Error fetching daily report:', err);
@@ -30,12 +31,13 @@ export async function getDailyReportController(req: Request, res: Response) {
  */
 export async function getMonthlyReportController(req: Request, res: Response) {
     try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, paymentMethod } = req.query;
         if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
             return res.status(400).json({ error: 'startDate and endDate parameters are required (YYYY-MM-DD).' });
         }
 
-        const report = reportsService.getMonthlyReport(startDate, endDate);
+        const paymentMethodId = paymentMethod ? parseInt(paymentMethod as string, 10) : undefined;
+        const report = reportsService.getMonthlyReport(startDate, endDate, paymentMethodId);
         res.json(report);
     } catch (err) {
         console.error('Error fetching monthly report:', err);
@@ -49,12 +51,13 @@ export async function getMonthlyReportController(req: Request, res: Response) {
  */
 export async function getYearlyReportController(req: Request, res: Response) {
     try {
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, paymentMethod } = req.query;
         if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
             return res.status(400).json({ error: 'startDate and endDate parameters are required (YYYY-MM-DD).' });
         }
 
-        const report = reportsService.getYearlyReport(startDate, endDate);
+        const paymentMethodId = paymentMethod ? parseInt(paymentMethod as string, 10) : undefined;
+        const report = reportsService.getYearlyReport(startDate, endDate, paymentMethodId);
         res.json(report);
     } catch (err) {
         console.error('Error fetching yearly report:', err);
@@ -68,12 +71,13 @@ export async function getYearlyReportController(req: Request, res: Response) {
  */
 export async function getTopProductsController(req: Request, res: Response) {
     try {
-        const { startDate, endDate, limit = '10' } = req.query;
+        const { startDate, endDate, limit = '10', paymentMethod } = req.query;
         if (!startDate || !endDate || typeof startDate !== 'string' || typeof endDate !== 'string') {
             return res.status(400).json({ error: 'startDate and endDate parameters are required.' });
         }
 
-        const products = reportsService.getTopProducts(startDate, endDate, parseInt(limit as string, 10));
+        const paymentMethodId = paymentMethod ? parseInt(paymentMethod as string, 10) : undefined;
+        const products = reportsService.getTopProducts(startDate, endDate, parseInt(limit as string, 10), paymentMethodId);
         res.json(products);
     } catch (err) {
         console.error('Error fetching top products:', err);

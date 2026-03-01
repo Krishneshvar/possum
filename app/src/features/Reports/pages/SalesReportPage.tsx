@@ -9,6 +9,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { useReportData } from '../hooks/useReportData';
 import { cn } from "@/lib/utils";
+import { useGetPaymentMethodsQuery } from '@/services/salesApi';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export default function SalesReportPage() {
     const [reportType, setReportType] = useState('daily');
@@ -16,6 +24,9 @@ export default function SalesReportPage() {
         startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
         endDate: format(new Date(), 'yyyy-MM-dd'),
     });
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all');
+
+    const { data: paymentMethods } = useGetPaymentMethodsQuery({});
 
     const activeStartDate = dateRange.startDate || format(subDays(new Date(), 30), 'yyyy-MM-dd');
     const activeEndDate = dateRange.endDate || format(new Date(), 'yyyy-MM-dd');
@@ -23,7 +34,8 @@ export default function SalesReportPage() {
     const { isLoading, isError, refetch: refetchReport } = useReportData({
         reportType: reportType as 'daily' | 'monthly' | 'yearly',
         startDate: activeStartDate,
-        endDate: activeEndDate
+        endDate: activeEndDate,
+        paymentMethod: selectedPaymentMethod === 'all' ? undefined : selectedPaymentMethod
     });
 
     return (
@@ -45,12 +57,12 @@ export default function SalesReportPage() {
             </div>
 
             <Card>
-                <CardContent className="pt-6">
+                <CardContent>
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-4">
                             <Label className="text-sm font-medium whitespace-nowrap">Report Period</Label>
                             <Tabs value={reportType} onValueChange={setReportType} className="flex-1">
-                                <TabsList className="grid w-full max-w-md grid-cols-3">
+                                <TabsList className="grid max-w-md grid-cols-3">
                                     <TabsTrigger value="daily">Daily</TabsTrigger>
                                     <TabsTrigger value="monthly">Monthly</TabsTrigger>
                                     <TabsTrigger value="yearly">Yearly</TabsTrigger>
@@ -66,6 +78,23 @@ export default function SalesReportPage() {
                                     endDate={dateRange.endDate}
                                     onApply={(start, end) => setDateRange({ startDate: start, endDate: end })}
                                 />
+                            </div>
+
+                            <div className="w-full sm:w-[200px]">
+                                <Label className="text-sm mb-1.5 block">Payment Mode</Label>
+                                <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="All Payment Modes" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Payment Modes</SelectItem>
+                                        {paymentMethods?.map((method: any) => (
+                                            <SelectItem key={method.id} value={method.id.toString()}>
+                                                {method.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>

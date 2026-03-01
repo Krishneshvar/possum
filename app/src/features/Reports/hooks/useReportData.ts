@@ -11,21 +11,22 @@ interface UseReportDataParams {
     reportType: ReportType;
     startDate: string;
     endDate: string;
+    paymentMethod?: string;
 }
 
-export function useReportData({ reportType, startDate, endDate }: UseReportDataParams) {
+export function useReportData({ reportType, startDate, endDate, paymentMethod }: UseReportDataParams) {
     const dailyQuery = useGetDailyReportQuery(
-        { startDate, endDate },
+        { startDate, endDate, paymentMethod },
         { skip: reportType !== 'daily' || !startDate || !endDate }
     );
 
     const monthlyQuery = useGetMonthlyReportQuery(
-        { startDate, endDate },
+        { startDate, endDate, paymentMethod },
         { skip: reportType !== 'monthly' || !startDate || !endDate }
     );
 
     const yearlyQuery = useGetYearlyReportQuery(
-        { startDate, endDate },
+        { startDate, endDate, paymentMethod },
         { skip: reportType !== 'yearly' || !startDate || !endDate }
     );
 

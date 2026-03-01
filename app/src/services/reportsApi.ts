@@ -8,26 +8,47 @@ export const reportsApi = createApi({
     endpoints: (builder) => ({
         // Get daily report
         getDailyReport: builder.query({
-            query: ({ startDate, endDate }) => `/reports/daily?startDate=${startDate}&endDate=${endDate}`,
-            providesTags: (_result, _error, { startDate, endDate }) => [{ type: 'Report' as const, id: `daily-${startDate}-${endDate}` }],
+            query: ({ startDate, endDate, paymentMethod }) => {
+                let url = `/reports/daily?startDate=${startDate}&endDate=${endDate}`;
+                if (paymentMethod) url += `&paymentMethod=${paymentMethod}`;
+                return url;
+            },
+            providesTags: (_result, _error, { startDate, endDate, paymentMethod }) => [
+                { type: 'Report' as const, id: `daily-${startDate}-${endDate}-${paymentMethod || 'all'}` }
+            ],
         }),
 
         // Get monthly report
         getMonthlyReport: builder.query({
-            query: ({ startDate, endDate }) => `/reports/monthly?startDate=${startDate}&endDate=${endDate}`,
-            providesTags: (_result, _error, { startDate, endDate }) => [{ type: 'Report' as const, id: `monthly-${startDate}-${endDate}` }],
+            query: ({ startDate, endDate, paymentMethod }) => {
+                let url = `/reports/monthly?startDate=${startDate}&endDate=${endDate}`;
+                if (paymentMethod) url += `&paymentMethod=${paymentMethod}`;
+                return url;
+            },
+            providesTags: (_result, _error, { startDate, endDate, paymentMethod }) => [
+                { type: 'Report' as const, id: `monthly-${startDate}-${endDate}-${paymentMethod || 'all'}` }
+            ],
         }),
 
         // Get yearly report
         getYearlyReport: builder.query({
-            query: ({ startDate, endDate }) => `/reports/yearly?startDate=${startDate}&endDate=${endDate}`,
-            providesTags: (_result, _error, { startDate, endDate }) => [{ type: 'Report' as const, id: `yearly-${startDate}-${endDate}` }],
+            query: ({ startDate, endDate, paymentMethod }) => {
+                let url = `/reports/yearly?startDate=${startDate}&endDate=${endDate}`;
+                if (paymentMethod) url += `&paymentMethod=${paymentMethod}`;
+                return url;
+            },
+            providesTags: (_result, _error, { startDate, endDate, paymentMethod }) => [
+                { type: 'Report' as const, id: `yearly-${startDate}-${endDate}-${paymentMethod || 'all'}` }
+            ],
         }),
 
         // Get top products
         getTopProducts: builder.query({
-            query: ({ startDate, endDate, limit = 10 }) =>
-                `/reports/top-products?startDate=${startDate}&endDate=${endDate}&limit=${limit}`,
+            query: ({ startDate, endDate, limit = 10, paymentMethod }) => {
+                let url = `/reports/top-products?startDate=${startDate}&endDate=${endDate}&limit=${limit}`;
+                if (paymentMethod) url += `&paymentMethod=${paymentMethod}`;
+                return url;
+            },
             providesTags: ['Report'],
         }),
 

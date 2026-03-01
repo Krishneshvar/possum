@@ -17,9 +17,9 @@ export function initReportsService(repo: IReportsRepository) {
  * @param {string} endDate - End date
  * @returns {DailyReport} Daily report
  */
-export function getDailyReport(startDate: string, endDate: string): DailyReport {
-    const summary = reportsRepository.getSalesReportSummary(startDate, endDate);
-    const breakdown = reportsRepository.getDailyBreakdown(startDate, endDate).map(item => ({
+export function getDailyReport(startDate: string, endDate: string, paymentMethodId?: number): DailyReport {
+    const summary = reportsRepository.getSalesReportSummary(startDate, endDate, paymentMethodId);
+    const breakdown = reportsRepository.getDailyBreakdown(startDate, endDate, paymentMethodId).map(item => ({
         ...item,
         name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         sales: item.total_sales
@@ -40,9 +40,9 @@ export function getDailyReport(startDate: string, endDate: string): DailyReport 
  * @param {string} endDate - End date
  * @returns {MonthlyReport} Monthly report with monthly breakdown
  */
-export function getMonthlyReport(startDate: string, endDate: string): MonthlyReport {
-    const summary = reportsRepository.getSalesReportSummary(startDate, endDate);
-    const breakdown = reportsRepository.getMonthlyBreakdown(startDate, endDate).map(item => ({
+export function getMonthlyReport(startDate: string, endDate: string, paymentMethodId?: number): MonthlyReport {
+    const summary = reportsRepository.getSalesReportSummary(startDate, endDate, paymentMethodId);
+    const breakdown = reportsRepository.getMonthlyBreakdown(startDate, endDate, paymentMethodId).map(item => ({
         ...item,
         name: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         sales: item.total_sales
@@ -63,9 +63,9 @@ export function getMonthlyReport(startDate: string, endDate: string): MonthlyRep
  * @param {string} endDate - End date
  * @returns {YearlyReport} Yearly report with yearly breakdown
  */
-export function getYearlyReport(startDate: string, endDate: string): YearlyReport {
-    const summary = reportsRepository.getSalesReportSummary(startDate, endDate);
-    const breakdown = reportsRepository.getYearlyBreakdown(startDate, endDate).map(item => ({
+export function getYearlyReport(startDate: string, endDate: string, paymentMethodId?: number): YearlyReport {
+    const summary = reportsRepository.getSalesReportSummary(startDate, endDate, paymentMethodId);
+    const breakdown = reportsRepository.getYearlyBreakdown(startDate, endDate, paymentMethodId).map(item => ({
         ...item,
         name: item.year,
         sales: item.total_sales
@@ -87,8 +87,8 @@ export function getYearlyReport(startDate: string, endDate: string): YearlyRepor
  * @param {number} limit - Number of products
  * @returns {TopProduct[]} Top products
  */
-export function getTopProducts(startDate: string, endDate: string, limit: number = 10): TopProduct[] {
-    return reportsRepository.getTopSellingProducts(startDate, endDate, limit);
+export function getTopProducts(startDate: string, endDate: string, limit: number = 10, paymentMethodId?: number): TopProduct[] {
+    return reportsRepository.getTopSellingProducts(startDate, endDate, limit, paymentMethodId);
 }
 
 /**
