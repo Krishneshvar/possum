@@ -14,7 +14,9 @@ export class SupplierRepository implements ISupplierRepository {
     /**
      * Get all suppliers with pagination, search and sorting
      */
-    getAllSuppliers({ page = 1, limit = 10, searchTerm = '', paymentPolicyId, sortBy = 'name', sortOrder = 'ASC' }: SupplierQueryOptions = {}): SupplierQueryResult {
+    getAllSuppliers({ page: pageInput = 1, limit: limitInput = 10, searchTerm = '', paymentPolicyId, sortBy = 'name', sortOrder = 'ASC' }: SupplierQueryOptions = {}): SupplierQueryResult {
+        const page = Number(pageInput);
+        const limit = Number(limitInput);
         const db = getDB();
         const offset = (page - 1) * limit;
 

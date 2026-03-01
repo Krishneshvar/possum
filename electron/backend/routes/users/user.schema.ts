@@ -45,11 +45,19 @@ export const getUsersSchema = z.object({
         search: z.string().trim().optional(),
         page: z.coerce.number().int().min(1).optional(),
         limit: z.coerce.number().int().min(1).max(100).optional(),
-    }).transform((query) => ({
-        searchTerm: query.searchTerm ?? query.search,
-        currentPage: query.currentPage ?? query.page ?? 1,
-        itemsPerPage: query.itemsPerPage ?? query.limit ?? 10,
-        sortBy: query.sortBy ?? 'created_at',
-        sortOrder: query.sortOrder ?? 'DESC',
-    }))
+    }).transform((query) => {
+        const searchTerm = query.searchTerm ?? query.search;
+        const page = query.currentPage ?? query.page ?? 1;
+        const limit = query.itemsPerPage ?? query.limit ?? 10;
+
+        return {
+            searchTerm,
+            currentPage: page,
+            itemsPerPage: limit,
+            page,
+            limit,
+            sortBy: query.sortBy ?? 'created_at',
+            sortOrder: query.sortOrder ?? 'DESC',
+        };
+    })
 });

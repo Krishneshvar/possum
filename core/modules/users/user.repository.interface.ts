@@ -6,12 +6,16 @@ export interface UserFilter {
   isActive?: number;
   page?: number;
   limit?: number;
+  currentPage?: number;
+  itemsPerPage?: number;
 }
 
 export interface PaginatedUsers {
   users: User[];
   totalCount: number;
   totalPages: number;
+  page: number;
+  limit: number;
 }
 
 export interface IUserRepository {

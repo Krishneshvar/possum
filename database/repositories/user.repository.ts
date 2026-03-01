@@ -3,10 +3,12 @@ import { User, Role, Permission } from '../../types/index.js';
 import type { IUserRepository, UserFilter, PaginatedUsers } from '../../core/index.js';
 
 export class UserRepository implements IUserRepository {
-  findUsers({ searchTerm, page, limit }: UserFilter): PaginatedUsers {
+  findUsers({ searchTerm, page, limit, currentPage, itemsPerPage }: UserFilter): PaginatedUsers {
     const db = getDB();
-    const currentPage = page || 1;
-    const itemsPerPage = limit || 10;
+    const safePageInput = page ?? currentPage ?? 1;
+    const safeLimitInput = limit ?? itemsPerPage ?? 10;
+    const safePage = Math.max(1, Number.isFinite(Number(safePageInput)) ? Number(safePageInput) : 1);
+    const safeLimit = Math.max(1, Math.min(1000, Number.isFinite(Number(safeLimitInput)) ? Number(safeLimitInput) : 10));
     const filterClauses: string[] = ['deleted_at IS NULL'];
     const filterParams: any[] = [];
 
@@ -17,10 +19,10 @@ export class UserRepository implements IUserRepository {
 
     const whereClause = `WHERE ${filterClauses.join(' AND ')}`;
     const totalCount = (db.prepare(`SELECT COUNT(id) as total FROM users ${whereClause}`).get(...filterParams) as { total: number }).total;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const users = db.prepare(`SELECT id, name, username, is_active, created_at, updated_at FROM users ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...filterParams, itemsPerPage, startIndex) as User[];
+    const startIndex = (safePage - 1) * safeLimit;
+    const users = db.prepare(`SELECT id, name, username, is_active, created_at, updated_at FROM users ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...filterParams, safeLimit, startIndex) as User[];
 
-    return { users, totalCount, totalPages: Math.ceil(totalCount / itemsPerPage) };
+    return { users, totalCount, totalPages: Math.ceil(totalCount / safeLimit), page: safePage, limit: safeLimit };
   }
 
   findUserById(id: number): User | undefined {

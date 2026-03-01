@@ -18,12 +18,7 @@ function getStatusCode(error: unknown, fallback = 500): number {
 
 export async function getUsers(req: Request, res: Response) {
     try {
-        const { searchTerm, page, limit } = req.query;
-        const result = await UserService.getUsers({
-            searchTerm: searchTerm as string,
-            page: Number(page),
-            limit: Number(limit)
-        });
+        const result = await UserService.getUsers(req.query as UserService.UserFilter);
         res.json(result);
     } catch (error: any) {
         res.status(500).json({ error: error.message });

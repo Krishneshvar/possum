@@ -34,6 +34,7 @@ import {
   initAuthService,
   processSaleRefund,
   getSession,
+  revokeUserSessions,
   taxEngine,
   logCreate,
   logUpdate,
@@ -146,7 +147,7 @@ export function startServer(): void {
 
   // Initialize User Service
   const userRepository = new UserRepository();
-  initUserService(userRepository, { getSession }, auditService, hashPassword);
+  initUserService(userRepository, { getSession, revokeUserSessions }, auditService, hashPassword);
 
   // Initialize Purchase Service
   const purchaseRepository = new PurchaseRepository();
