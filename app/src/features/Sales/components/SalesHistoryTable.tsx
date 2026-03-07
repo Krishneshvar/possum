@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useSelector } from 'react-redux';
 import { format } from "date-fns";
 import CurrencyText from "@/components/common/CurrencyText";
 import { Link } from "react-router-dom";
@@ -86,6 +87,23 @@ export default function SalesHistoryTable({
     isRefreshing = false,
 }: SalesHistoryTableProps) {
     const [cancelSale, { isLoading: isCancelling }] = useCancelSaleMutation();
+    const token = useSelector((state: any) => state.auth?.token);
+
+    const handlePrint = async (saleId: number) => {
+        try {
+            // @ts-ignore
+            if (window.electronAPI && token) {
+                // @ts-ignore
+                await window.electronAPI.printInvoice(saleId, token);
+                toast.success('Print request sent');
+            } else {
+                toast.error('Printing is only available in the desktop app');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to print invoice');
+        }
+    };
 
     const handleCancel = async (saleId: number) => {
         try {
@@ -165,7 +183,6 @@ export default function SalesHistoryTable({
             align: "right" as const,
             renderCell: (order: Sale) => {
                 const isActive = order.status !== 'cancelled' && order.status !== 'refunded';
-                const canAddPayment = isActive && order.status !== 'paid';
                 const canCancel = isActive;
 
                 return (
@@ -221,6 +238,7 @@ export default function SalesHistoryTable({
                                     <Button
                                         variant="ghost"
                                         size="icon"
+                                        onClick={() => handlePrint(order.id)}
                                         className="h-8 w-8 text-muted-foreground hover:text-primary"
                                         aria-label="Print Invoice"
                                     >

@@ -58,12 +58,9 @@ ipcMain.handle('ping', async () => {
 });
 
 // Print Bill (Raw HTML) - Requires Auth
-ipcMain.handle('print-bill', async (event: IpcMainInvokeEvent, { html, token }: { html: string; token: string }) => {
+ipcMain.handle('print-bill', async (event: IpcMainInvokeEvent, { html, token, printerName, paperWidth }: { html: string; token: string; printerName?: string; paperWidth?: string }) => {
   requireAuth(token);
-  // printerName handled by controller or settings?
-  // main.ts original had printBillHtml directly.
-  // We pass html.
-  return printBillHtml(event, { html });
+  return printBillHtml(event, { html, printerName, paperWidth });
 });
 
 // Print Invoice - Requires Auth (Passed to Service)

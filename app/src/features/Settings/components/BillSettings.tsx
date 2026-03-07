@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,12 +17,13 @@ export default function BillSettings() {
     const [schema, setSchema] = useState<BillSchema>(DEFAULT_BILL_SCHEMA);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const token = useSelector((state: any) => state.auth?.token);
 
     useEffect(() => {
         async function loadSettings() {
             try {
                 if ((window as any).electronAPI) {
-                    const savedSchema = await (window as any).electronAPI.getBillSettings();
+                    const savedSchema = await (window as any).electronAPI.getBillSettings(token);
                     if (savedSchema) {
                         setSchema(savedSchema);
                     }
@@ -40,7 +42,10 @@ export default function BillSettings() {
         setSaving(true);
         try {
             if ((window as any).electronAPI) {
-                await (window as any).electronAPI.saveBillSettings(JSON.parse(JSON.stringify(schema)));
+                // Fetch the auth token natively or via a selector if available here. 
+                // However, considering Redux uses a standard approach let's use useSelector.
+                // Assuming token is globally accessible, otherwise let's fix the schema input below:
+                await (window as any).electronAPI.saveBillSettings(JSON.parse(JSON.stringify(schema)), token);
                 toast.success("Bill settings saved successfully");
             } else {
                 console.log("Saving schema:", schema);
@@ -168,7 +173,7 @@ export default function BillSettings() {
                                             <Input
                                                 id="currency"
                                                 value={schema.currency || '₹'}
-                                                onChange={(e) => setSchema({ ...schema, currency: e.target.value })}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSchema({ ...schema, currency: e.target.value })}
                                                 placeholder="e.g. ₹, $, €"
                                             />
                                         </div>

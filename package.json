@@ -11,7 +11,7 @@
     "dev:electron": "wait-on tcp:5173 && wait-on dist/electron/main.js && electron .",
     "build": "tsc && cd app && vite build && cd .. && npm run build:preload && electron-builder",
     "postinstall": "cd app && npm install && cd .. && npx electron-rebuild",
-    "init-db": "npm rebuild better-sqlite3 && ts-node --esm scripts/init-db.ts",
+    "init-db": "npm rebuild better-sqlite3 && node --loader ts-node/esm scripts/init-db.ts",
     "rbac:validate": "node --loader ts-node/esm scripts/rbac-cli.ts validate",
     "rbac:sync": "node --loader ts-node/esm scripts/rbac-cli.ts sync",
     "rbac:full": "node --loader ts-node/esm scripts/rbac-cli.ts full",

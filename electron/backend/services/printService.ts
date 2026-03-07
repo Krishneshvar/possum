@@ -130,8 +130,9 @@ export async function printInvoice(invoiceId: number, token: string): Promise<{ 
             printerName = generalSettings.defaultPrinter;
         }
 
-        // 6. Print
-        await printBillHtml(null, { html, printerName });
+        // 6. Print - pass paperWidth so thermal page size is set correctly
+        const paperWidth = billSettings.paperWidth || '80mm';
+        await printBillHtml(null, { html, printerName, paperWidth });
 
         return { success: true };
 

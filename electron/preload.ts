@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   ping: () => ipcRenderer.invoke('ping'),
-  printBill: (html: string, token: string) => ipcRenderer.invoke('print-bill', { html, token }),
+  printBill: (html: string, token: string, printerName?: string, paperWidth?: string) => ipcRenderer.invoke('print-bill', { html, token, printerName, paperWidth }),
   printInvoice: (invoiceId: number, token: string) => ipcRenderer.invoke('print-invoice', { invoiceId, token }),
   getPrinters: (token: string) => ipcRenderer.invoke('get-printers', token),
   saveBillSettings: (settings: any, token: string) => ipcRenderer.invoke('save-bill-settings', { settings, token }),

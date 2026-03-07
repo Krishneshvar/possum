@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { useGetSaleQuery, useCancelSaleMutation, useAddPaymentMutation, useGetPaymentMethodsQuery } from '@/services/salesApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +50,7 @@ export default function SaleDetailsPage() {
     const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState('');
     const [paymentMethodId, setPaymentMethodId] = useState('');
+    const token = useSelector((state: any) => state.auth?.token);
 
     const { data: sale, isLoading, error, refetch } = useGetSaleQuery(saleId, {
         skip: !saleId
@@ -92,6 +94,22 @@ export default function SaleDetailsPage() {
             refetch();
         } catch (err: any) {
             toast.error(err?.data?.error || 'Failed to record payment');
+        }
+    };
+
+    const handlePrint = async () => {
+        try {
+            // @ts-ignore
+            if (window.electronAPI && token) {
+                // @ts-ignore
+                await window.electronAPI.printInvoice(sale!.id, token);
+                toast.success('Print request sent');
+            } else {
+                toast.error('Printing is only available in the desktop app');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to print invoice');
         }
     };
 
@@ -213,7 +231,7 @@ export default function SaleDetailsPage() {
                             </AlertDialogContent>
                         </AlertDialog>
                     )}
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={handlePrint}>
                         <Printer className="mr-2 h-4 w-4" />
                         Print Invoice
                     </Button>

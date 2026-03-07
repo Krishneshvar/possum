@@ -7,9 +7,9 @@ export const fetchGeneralSettings = createAsyncThunk(
         const token = state.auth.token;
         if ((window as any).electronAPI) {
             const settings = await (window as any).electronAPI.getGeneralSettings(token);
-            return settings || { currency: '₹' };
+            return settings || { currency: '₹', defaultPrinter: '' };
         }
-        return { currency: '₹' };
+        return { currency: '₹', defaultPrinter: '' };
     }
 );
 
@@ -18,10 +18,16 @@ export const saveGeneralSettings = createAsyncThunk(
     async (settings: any, { getState }) => {
         const state: any = getState();
         const token = state.auth.token;
+        // Merge with existing state to avoid overwriting properties
+        const currentSettings = {
+            currency: state.settings.currency,
+            defaultPrinter: state.settings.defaultPrinter
+        };
+        const newSettings = { ...currentSettings, ...settings };
         if ((window as any).electronAPI) {
-            await (window as any).electronAPI.saveGeneralSettings(settings, token);
+            await (window as any).electronAPI.saveGeneralSettings(newSettings, token);
         }
-        return settings;
+        return newSettings;
     }
 );
 
@@ -29,6 +35,7 @@ const settingsSlice = createSlice({
     name: 'settings',
     initialState: {
         currency: '₹',
+        defaultPrinter: '',
         status: 'idle',
         error: null as string | null,
     },
@@ -36,6 +43,9 @@ const settingsSlice = createSlice({
         setCurrency: (state, action) => {
             state.currency = action.payload;
         },
+        setDefaultPrinter: (state, action) => {
+            state.defaultPrinter = action.payload;
+        }
     },
     extraReducers: (builder) => {
         builder
@@ -45,6 +55,7 @@ const settingsSlice = createSlice({
             .addCase(fetchGeneralSettings.fulfilled, (state, action) => {
                 state.status = 'succeeded';
                 state.currency = action.payload.currency || '₹';
+                state.defaultPrinter = action.payload.defaultPrinter || '';
             })
             .addCase(fetchGeneralSettings.rejected, (state, action) => {
                 state.status = 'failed';
@@ -52,9 +63,10 @@ const settingsSlice = createSlice({
             })
             .addCase(saveGeneralSettings.fulfilled, (state, action) => {
                 state.currency = action.payload.currency;
+                state.defaultPrinter = action.payload.defaultPrinter;
             });
     },
 });
 
-export const { setCurrency } = settingsSlice.actions;
+export const { setCurrency, setDefaultPrinter } = settingsSlice.actions;
 export default settingsSlice.reducer;
