@@ -3,7 +3,6 @@ package com.possum.application.sales;
 import com.possum.application.inventory.InventoryService;
 import com.possum.application.sales.dto.*;
 import com.possum.domain.enums.InventoryReason;
-import com.possum.domain.enums.SaleStatus;
 import com.possum.domain.exceptions.InsufficientStockException;
 import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.exceptions.ValidationException;

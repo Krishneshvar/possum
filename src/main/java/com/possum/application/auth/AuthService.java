@@ -1,7 +1,6 @@
 package com.possum.application.auth;
 
 import com.possum.domain.exceptions.AuthenticationException;
-import com.possum.domain.exceptions.DomainException;
 import com.possum.domain.model.SessionRecord;
 import com.possum.domain.model.User;
 import com.possum.infrastructure.security.PasswordHasher;

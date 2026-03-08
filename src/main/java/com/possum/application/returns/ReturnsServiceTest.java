@@ -1,7 +1,6 @@
 package com.possum.application.returns;
 
 import com.possum.application.returns.dto.CreateReturnItemRequest;
-import com.possum.application.returns.dto.CreateReturnRequest;
 import com.possum.application.returns.dto.RefundCalculation;
 import com.possum.domain.model.SaleItem;
 

@@ -13,7 +13,6 @@ import com.possum.persistence.repositories.interfaces.VariantRepository;
 import com.possum.shared.dto.PagedResult;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -248,7 +247,3 @@ public class VariantService {
             Integer itemsPerPage
     ) {}
 }
-
-
-
-

@@ -7,7 +7,6 @@ import com.possum.persistence.repositories.interfaces.ProductFlowRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 
 public final class SqliteProductFlowRepository extends BaseSqliteRepository implements ProductFlowRepository {
 
