@@ -16,7 +16,7 @@ import com.possum.application.sales.dto.CreateSaleItemRequest;
 import com.possum.application.sales.dto.CreateSaleRequest;
 import com.possum.application.sales.dto.PaymentRequest;
 import com.possum.application.sales.dto.SaleResponse;
-import com.possum.application.application.transactions.TransactionService;
+import com.possum.application.transactions.TransactionService;
 import com.possum.domain.enums.ProductStatus;
 import com.possum.domain.enums.PurchaseStatus;
 import com.possum.domain.enums.SaleStatus;
