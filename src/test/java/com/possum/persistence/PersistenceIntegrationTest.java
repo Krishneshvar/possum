@@ -66,7 +66,7 @@ class PersistenceIntegrationTest {
             databaseManager.close();
         }
         if (appPaths != null) {
-            deleteDirectory(appPaths.getAppRootDir());
+            deleteDirectory(appPaths.getAppRoot());
         }
     }
 
