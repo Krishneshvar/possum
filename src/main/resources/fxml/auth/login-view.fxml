@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.auth.LoginController"
+      alignment="CENTER"
+      spacing="20"
+      prefWidth="400"
+      prefHeight="500">
+    
+    <padding>
+        <Insets top="40" right="40" bottom="40" left="40"/>
+    </padding>
+    
+    <Label text="POSSUM Login" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    
+    <VBox spacing="10">
+        <Label text="Username:"/>
+        <TextField fx:id="usernameField" promptText="Enter username"/>
+        
+        <Label text="Password:"/>
+        <PasswordField fx:id="passwordField" promptText="Enter password"/>
+        
+        <Label fx:id="errorLabel" textFill="red" wrapText="true" visible="false" managed="false"/>
+        
+        <Button fx:id="loginButton" text="Login" maxWidth="Infinity" onAction="#handleLogin"/>
+    </VBox>
+    
+</VBox>

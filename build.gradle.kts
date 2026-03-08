@@ -1,0 +1,88 @@
+plugins {
+    java
+    application
+    id("org.openjfx.javafxplugin") version "0.0.13"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
+
+group = "com.possum"
+version = "1.0.0"
+
+repositories {
+    mavenCentral()
+}
+
+val junitVersion = "5.12.1"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
+application {
+    mainClass.set("com.possum.AppLauncher")
+}
+
+javafx {
+    version = "21.0.6"
+    modules = listOf("javafx.controls", "javafx.fxml", "javafx.web")
+}
+
+dependencies {
+    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
+    implementation("org.flywaydb:flyway-core:10.20.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    implementation("ch.qos.logback:logback-classic:1.5.16")
+    implementation("org.mindrot:jbcrypt:0.4")
+    testImplementation(platform("org.junit:junit-bom:${junitVersion}"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
+tasks.shadowJar {
+    archiveBaseName.set("possum")
+    archiveClassifier.set("all")
+    manifest {
+        attributes("Main-Class" to "com.possum.AppLauncher")
+    }
+    mergeServiceFiles()
+}
+
+tasks.register<Exec>("createInstaller") {
+    dependsOn("shadowJar")
+    
+    doFirst {
+        val installerDir = file("build/installer")
+        if (installerDir.exists()) {
+            installerDir.deleteRecursively()
+        }
+        installerDir.mkdirs()
+    }
+    
+    commandLine(
+        "jpackage",
+        "--type", "app-image",
+        "--input", "build/libs",
+        "--main-jar", "possum-all.jar",
+        "--main-class", "com.possum.AppLauncher",
+        "--name", "POSSUM",
+        "--vendor", "POSSUM",
+        "--app-version", "1.0",
+        "--description", "Point Of Sale Solution for Unified Management",
+        "--dest", "build/installer",
+        "--java-options", "-Xms128m",
+        "--java-options", "-Xmx512m",
+        "--java-options", "-XX:+UseZGC",
+        "--java-options", "-XX:+ZGenerational",
+        "--icon", "src/main/resources/icons/icon.ico"
+    )
+}

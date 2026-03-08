@@ -1,0 +1,58 @@
+package com.possum.ui.navigation;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class RouteRegistry {
+
+    private final Map<String, RouteDefinition> routes = new HashMap<>();
+
+    public RouteRegistry() {
+        registerAllRoutes();
+    }
+
+    private void registerAllRoutes() {
+        // Dashboard
+        register("dashboard", "/fxml/dashboard/dashboard-view.fxml");
+
+        // Products & Inventory
+        register("products", "/fxml/products/products-view.fxml", "products.view");
+        register("inventory", "/fxml/inventory/inventory-view.fxml", "inventory.view");
+
+        // Sales & Commercial
+        register("sales", "/fxml/sales/pos-view.fxml", "sales.create");
+        register("transactions", "/fxml/transactions/transactions-view.fxml", "transactions.view");
+        register("returns", "/fxml/returns/returns-view.fxml", "returns.view");
+
+        // Purchase
+        register("purchase", "/fxml/purchase/purchase-view.fxml", "purchase.view");
+
+        // Reports
+        register("reports-sales", "/fxml/reports/reports-view.fxml", "reports.view");
+        register("audit-log", "/fxml/audit/audit-view.fxml", "audit.view");
+
+        // System
+        register("settings", "/fxml/settings/settings-view.fxml", "settings.view");
+    }
+
+    private void register(String routeId, String fxmlPath) {
+        routes.put(routeId, new RouteDefinition(routeId, fxmlPath));
+    }
+
+    private void register(String routeId, String fxmlPath, String... permissions) {
+        routes.put(routeId, new RouteDefinition(routeId, fxmlPath, List.of(permissions)));
+    }
+
+    public RouteDefinition getRoute(String routeId) {
+        return routes.get(routeId);
+    }
+
+    public Map<String, RouteDefinition> getAllRoutes() {
+        return new HashMap<>(routes);
+    }
+
+    public boolean hasRoute(String routeId) {
+        return routes.containsKey(routeId);
+    }
+}

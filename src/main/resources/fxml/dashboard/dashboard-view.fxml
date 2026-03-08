@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.dashboard.DashboardController"
+      spacing="20"
+      alignment="TOP_LEFT">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Dashboard" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    
+    <GridPane hgap="15" vgap="15">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="33"/>
+            <ColumnConstraints percentWidth="33"/>
+            <ColumnConstraints percentWidth="33"/>
+        </columnConstraints>
+        
+        <VBox GridPane.columnIndex="0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8;">
+            <Label text="Daily Sales" style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+            <Label fx:id="dailySalesLabel" text="$0.00" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 10 0 0 0;"/>
+        </VBox>
+        
+        <VBox GridPane.columnIndex="1" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8;">
+            <Label text="Transactions" style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+            <Label fx:id="transactionsLabel" text="0" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 10 0 0 0;"/>
+        </VBox>
+        
+        <VBox GridPane.columnIndex="2" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8;">
+            <Label text="Low Stock Alerts" style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+            <Label fx:id="lowStockLabel" text="0" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 10 0 0 0;"/>
+        </VBox>
+    </GridPane>
+    
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <VBox spacing="10" HBox.hgrow="ALWAYS">
+            <Label text="Top Selling Products" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            <TableView fx:id="topProductsTable" VBox.vgrow="ALWAYS"/>
+        </VBox>
+        
+        <VBox spacing="10" HBox.hgrow="ALWAYS">
+            <Label text="Low Stock Items" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+            <TableView fx:id="lowStockTable" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </HBox>
+
+</VBox>

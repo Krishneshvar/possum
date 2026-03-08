@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.possum.ui.sales.PosController">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <top>
+        <Label text="Point of Sale" style="-fx-font-size: 24px; -fx-font-weight: bold;" BorderPane.alignment="CENTER_LEFT">
+            <BorderPane.margin>
+                <Insets bottom="20"/>
+            </BorderPane.margin>
+        </Label>
+    </top>
+
+    <center>
+        <HBox spacing="20">
+            <VBox spacing="15" HBox.hgrow="ALWAYS">
+                <TextField fx:id="searchField" promptText="Search products by name or SKU..." onAction="#handleSearch"/>
+                
+                <ListView fx:id="productList" VBox.vgrow="ALWAYS"/>
+            </VBox>
+            
+            <VBox spacing="15" prefWidth="400" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8;">
+                <Label text="Cart" style="-fx-font-size: 16px; -fx-font-weight: 600;"/>
+                
+                <ListView fx:id="cartList" VBox.vgrow="ALWAYS"/>
+                
+                <Separator/>
+                
+                <HBox spacing="10">
+                    <Label text="Discount:"/>
+                    <TextField fx:id="discountField" promptText="0.00" prefWidth="100"/>
+                    <Button text="Apply" onAction="#handleApplyDiscount"/>
+                </HBox>
+                
+                <VBox spacing="5">
+                    <HBox>
+                        <Label text="Subtotal:"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="subtotalLabel" text="$0.00"/>
+                    </HBox>
+                    <HBox>
+                        <Label text="Tax:"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="taxLabel" text="$0.00"/>
+                    </HBox>
+                    <HBox>
+                        <Label text="Total:" style="-fx-font-size: 18px; -fx-font-weight: 600;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="totalLabel" text="$0.00" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                    </HBox>
+                </VBox>
+                
+                <Separator/>
+                
+                <Label text="Payment" style="-fx-font-weight: 600;"/>
+                <ComboBox fx:id="paymentMethodCombo" promptText="Select payment method" maxWidth="Infinity"/>
+                
+                <Button fx:id="completeButton" text="Complete Sale" maxWidth="Infinity" onAction="#handleCompleteSale" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 15 20; -fx-background-radius: 6; -fx-font-size: 16px;"/>
+                <Button text="Clear Cart" maxWidth="Infinity" onAction="#handleClearCart"/>
+            </VBox>
+        </HBox>
+    </center>
+
+</BorderPane>

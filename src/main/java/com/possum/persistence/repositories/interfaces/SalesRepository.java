@@ -1,0 +1,42 @@
+package com.possum.persistence.repositories.interfaces;
+
+import com.possum.domain.model.PaymentMethod;
+import com.possum.domain.model.Sale;
+import com.possum.domain.model.SaleItem;
+import com.possum.domain.model.Transaction;
+import com.possum.shared.dto.PagedResult;
+import com.possum.shared.dto.SaleFilter;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+public interface SalesRepository {
+    long insertSale(Sale sale);
+
+    long insertSaleItem(SaleItem item);
+
+    Optional<Sale> findSaleById(long id);
+
+    List<SaleItem> findSaleItems(long saleId);
+
+    List<Transaction> findTransactionsBySaleId(long saleId);
+
+    PagedResult<Sale> findSales(SaleFilter filter);
+
+    int updateSaleStatus(long id, String status);
+
+    int updateFulfillmentStatus(long id, String status);
+
+    int updateSalePaidAmount(long id, BigDecimal paidAmount);
+
+    long insertTransaction(Transaction transaction);
+
+    Optional<String> getLastSaleInvoiceNumber();
+
+    List<PaymentMethod> findPaymentMethods();
+
+    boolean paymentMethodExists(long id);
+
+    boolean saleExists(long id);
+}

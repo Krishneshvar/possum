@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import com.possum.ui.common.controls.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.audit.AuditController"
+      spacing="20"
+      alignment="TOP_LEFT">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Audit Log" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    
+    <FilterBar fx:id="filterBar"/>
+    
+    <DataTableView fx:id="auditTable" VBox.vgrow="ALWAYS"/>
+    
+    <PaginationBar fx:id="paginationBar"/>
+
+</VBox>

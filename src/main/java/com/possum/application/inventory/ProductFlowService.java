@@ -1,0 +1,45 @@
+package com.possum.application.inventory;
+
+import com.possum.domain.enums.FlowEventType;
+import com.possum.domain.model.ProductFlow;
+import com.possum.persistence.repositories.interfaces.ProductFlowRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+public class ProductFlowService {
+    private final ProductFlowRepository productFlowRepository;
+
+    public ProductFlowService(ProductFlowRepository productFlowRepository) {
+        this.productFlowRepository = productFlowRepository;
+    }
+
+    public List<ProductFlow> getVariantTimeline(long variantId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods) {
+        return productFlowRepository.findFlowByVariantId(variantId, limit, offset, startDate, endDate, paymentMethods);
+    }
+
+    public Map<String, Object> getVariantFlowSummary(long variantId) {
+        return productFlowRepository.getFlowSummary(variantId);
+    }
+
+    public List<ProductFlow> getFlowByReference(String referenceType, long referenceId) {
+        return productFlowRepository.findFlowByReference(referenceType, referenceId);
+    }
+
+    public void logProductFlow(long variantId, FlowEventType eventType, int quantity, String referenceType, Long referenceId) {
+        ProductFlow flow = new ProductFlow(
+                null,
+                variantId,
+                eventType.getValue(),
+                quantity,
+                referenceType,
+                referenceId,
+                null,
+                null,
+                null,
+                LocalDateTime.now()
+        );
+        productFlowRepository.insertProductFlow(flow);
+    }
+}

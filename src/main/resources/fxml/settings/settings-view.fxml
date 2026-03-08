@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.settings.SettingsController"
+      spacing="20"
+      alignment="TOP_LEFT">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Settings" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    
+    <TabPane VBox.vgrow="ALWAYS">
+        <Tab text="General" closable="false">
+            <VBox spacing="15" style="-fx-padding: 20;">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Store Name:" prefWidth="150"/>
+                    <TextField fx:id="storeNameField" prefWidth="300"/>
+                </HBox>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Currency:" prefWidth="150"/>
+                    <ComboBox fx:id="currencyCombo" prefWidth="300"/>
+                </HBox>
+                <Button text="Save General Settings" onAction="#handleSaveGeneral" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20;"/>
+            </VBox>
+        </Tab>
+        
+        <Tab text="Bill" closable="false">
+            <VBox spacing="15" style="-fx-padding: 20;">
+                <CheckBox fx:id="showLogoCheck" text="Show Logo on Receipt"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Paper Width (mm):" prefWidth="150"/>
+                    <TextField fx:id="paperWidthField" prefWidth="100"/>
+                </HBox>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Footer Note:" prefWidth="150"/>
+                    <TextArea fx:id="footerNoteArea" prefWidth="300" prefRowCount="3"/>
+                </HBox>
+                <Button text="Save Bill Settings" onAction="#handleSaveBill" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20;"/>
+            </VBox>
+        </Tab>
+        
+        <Tab text="Printer" closable="false">
+            <VBox spacing="15" style="-fx-padding: 20;">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Default Printer:" prefWidth="150"/>
+                    <ComboBox fx:id="printerCombo" prefWidth="300"/>
+                </HBox>
+                <Button text="Test Print" onAction="#handleTestPrint"/>
+                <Button text="Refresh Printers" onAction="#handleRefreshPrinters"/>
+            </VBox>
+        </Tab>
+        
+        <Tab text="Tax" closable="false">
+            <VBox spacing="15" style="-fx-padding: 20;">
+                <Label text="Tax Profiles" style="-fx-font-weight: bold;"/>
+                <ListView fx:id="taxProfilesList" prefHeight="200"/>
+                <HBox spacing="10">
+                    <Button text="Add Profile" onAction="#handleAddTaxProfile"/>
+                    <Button text="Edit Profile" onAction="#handleEditTaxProfile"/>
+                    <Button text="Delete Profile" onAction="#handleDeleteTaxProfile"/>
+                </HBox>
+            </VBox>
+        </Tab>
+    </TabPane>
+
+</VBox>

@@ -1,0 +1,168 @@
+package com.possum.application.reports;
+
+import com.possum.application.reports.dto.*;
+import com.possum.domain.model.ProductFlow;
+import com.possum.persistence.repositories.interfaces.ProductFlowRepository;
+import com.possum.persistence.repositories.interfaces.ReportsRepository;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+
+public final class ReportsService {
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMM yyyy");
+
+    private final ReportsRepository reportsRepository;
+    private final ProductFlowRepository productFlowRepository;
+
+    public ReportsService(ReportsRepository reportsRepository, ProductFlowRepository productFlowRepository) {
+        this.reportsRepository = reportsRepository;
+        this.productFlowRepository = productFlowRepository;
+    }
+
+    public SalesReportSummary getSalesSummary(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
+        Map<String, Object> data = reportsRepository.getSalesReportSummary(
+                startDate.toString(),
+                endDate.toString(),
+                paymentMethodId
+        );
+        return mapToSummary(data);
+    }
+
+    public DailyReport getSalesAnalytics(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
+        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodId);
+        List<Map<String, Object>> rawBreakdown = reportsRepository.getDailyBreakdown(
+                startDate.toString(),
+                endDate.toString(),
+                paymentMethodId
+        );
+        List<BreakdownItem> breakdown = rawBreakdown.stream()
+                .map(item -> mapToBreakdownItem(item, "date", this::formatDate))
+                .toList();
+        return new DailyReport(startDate, endDate, "daily", summary, breakdown);
+    }
+
+    public MonthlyReport getMonthlyReport(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
+        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodId);
+        List<Map<String, Object>> rawBreakdown = reportsRepository.getMonthlyBreakdown(
+                startDate.toString(),
+                endDate.toString(),
+                paymentMethodId
+        );
+        List<BreakdownItem> breakdown = rawBreakdown.stream()
+                .map(item -> mapToBreakdownItem(item, "month", this::formatMonth))
+                .toList();
+        return new MonthlyReport(startDate, endDate, "monthly", summary, breakdown);
+    }
+
+    public YearlyReport getYearlyReport(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
+        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodId);
+        List<Map<String, Object>> rawBreakdown = reportsRepository.getYearlyBreakdown(
+                startDate.toString(),
+                endDate.toString(),
+                paymentMethodId
+        );
+        List<BreakdownItem> breakdown = rawBreakdown.stream()
+                .map(item -> mapToBreakdownItem(item, "year", period -> period))
+                .toList();
+        return new YearlyReport(startDate, endDate, "yearly", summary, breakdown);
+    }
+
+    public List<TopProduct> getTopProducts(LocalDate startDate, LocalDate endDate, int limit, Long paymentMethodId) {
+        List<Map<String, Object>> rawProducts = reportsRepository.getTopSellingProducts(
+                startDate.toString(),
+                endDate.toString(),
+                limit,
+                paymentMethodId
+        );
+        return rawProducts.stream()
+                .map(this::mapToTopProduct)
+                .toList();
+    }
+
+    public List<PaymentMethodStat> getSalesByPaymentMethod(LocalDate startDate, LocalDate endDate) {
+        List<Map<String, Object>> rawStats = reportsRepository.getSalesByPaymentMethod(
+                startDate.toString(),
+                endDate.toString()
+        );
+        return rawStats.stream()
+                .map(this::mapToPaymentMethodStat)
+                .toList();
+    }
+
+    public ProductFlowReport getProductFlowReport(long variantId, int limit, int offset, 
+                                                   String startDate, String endDate, 
+                                                   List<String> paymentMethods) {
+        Map<String, Object> summary = productFlowRepository.getFlowSummary(variantId);
+        List<ProductFlow> flows = productFlowRepository.findFlowByVariantId(
+                variantId, limit, offset, startDate, endDate, paymentMethods
+        );
+        return new ProductFlowReport(variantId, summary, flows);
+    }
+
+    public List<ProductFlow> getInventoryMovement(long variantId, String startDate, String endDate) {
+        return productFlowRepository.findFlowByVariantId(variantId, 1000, 0, startDate, endDate, null);
+    }
+
+    private SalesReportSummary mapToSummary(Map<String, Object> data) {
+        int totalTransactions = (int) data.getOrDefault("total_transactions", 0);
+        BigDecimal totalSales = (BigDecimal) data.getOrDefault("total_sales", BigDecimal.ZERO);
+        BigDecimal totalTax = (BigDecimal) data.getOrDefault("total_tax", BigDecimal.ZERO);
+        BigDecimal totalDiscount = (BigDecimal) data.getOrDefault("total_discount", BigDecimal.ZERO);
+        BigDecimal totalCollected = (BigDecimal) data.getOrDefault("total_collected", BigDecimal.ZERO);
+        BigDecimal netSales = (BigDecimal) data.getOrDefault("net_sales", BigDecimal.ZERO);
+        BigDecimal averageSale = (BigDecimal) data.getOrDefault("average_sale", BigDecimal.ZERO);
+        return new SalesReportSummary(
+                totalTransactions,
+                totalSales,
+                totalTax,
+                totalDiscount,
+                totalCollected,
+                netSales,
+                averageSale
+        );
+    }
+
+    private BreakdownItem mapToBreakdownItem(Map<String, Object> item, String periodKey, 
+                                             java.util.function.Function<String, String> formatter) {
+        String period = (String) item.get(periodKey);
+        String name = formatter.apply(period);
+        int totalTransactions = (int) item.getOrDefault("total_transactions", 0);
+        BigDecimal totalSales = (BigDecimal) item.getOrDefault("total_sales", BigDecimal.ZERO);
+        BigDecimal totalTax = (BigDecimal) item.getOrDefault("total_tax", BigDecimal.ZERO);
+        BigDecimal totalDiscount = (BigDecimal) item.getOrDefault("total_discount", BigDecimal.ZERO);
+        return new BreakdownItem(period, name, totalTransactions, totalSales, totalSales, totalTax, totalDiscount);
+    }
+
+    private TopProduct mapToTopProduct(Map<String, Object> item) {
+        return new TopProduct(
+                ((Number) item.get("product_id")).longValue(),
+                (String) item.get("product_name"),
+                (String) item.get("variant_name"),
+                (String) item.get("sku"),
+                (int) item.get("total_quantity_sold"),
+                (BigDecimal) item.get("total_revenue")
+        );
+    }
+
+    private PaymentMethodStat mapToPaymentMethodStat(Map<String, Object> item) {
+        return new PaymentMethodStat(
+                (String) item.get("payment_method"),
+                (int) item.get("total_transactions"),
+                (BigDecimal) item.get("total_amount")
+        );
+    }
+
+    private String formatDate(String dateStr) {
+        LocalDate date = LocalDate.parse(dateStr);
+        return date.format(DATE_FORMATTER);
+    }
+
+    private String formatMonth(String monthStr) {
+        LocalDate date = LocalDate.parse(monthStr + "-01");
+        return date.format(MONTH_FORMATTER);
+    }
+}
