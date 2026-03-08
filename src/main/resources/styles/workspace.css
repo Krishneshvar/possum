@@ -1,0 +1,76 @@
+.workspace-desktop {
+    -fx-background-color: #f1f5f9;
+}
+
+.internal-window {
+    -fx-background-color: white;
+    -fx-border-color: #cbd5e1;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 2);
+}
+
+.window-title-bar {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 12;
+}
+
+.window-title-bar.active {
+    -fx-background-color: #3b82f6;
+}
+
+.window-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1e293b;
+}
+
+.window-title-bar.active .window-title {
+    -fx-text-fill: white;
+}
+
+.window-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748b;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 8;
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+}
+
+.window-btn:hover {
+    -fx-background-color: #e2e8f0;
+}
+
+.window-title-bar.active .window-btn {
+    -fx-text-fill: white;
+}
+
+.window-title-bar.active .window-btn:hover {
+    -fx-background-color: rgba(255,255,255,0.2);
+}
+
+.window-btn-close {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748b;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 8;
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+}
+
+.window-btn-close:hover {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+}
+
+.window-title-bar.active .window-btn-close {
+    -fx-text-fill: white;
+}
+
+.window-content {
+    -fx-background-color: white;
+}

@@ -8,7 +8,7 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.possum.ui.AppShellController"
-            stylesheets="@../styles/app-shell.css"
+            stylesheets="@../styles/app-shell.css,@../styles/workspace.css"
             styleClass="app-shell">
 
     <!-- Top: Navbar -->
@@ -47,11 +47,7 @@
 
     <!-- Center: Dynamic Content Container -->
     <center>
-        <StackPane fx:id="contentArea" styleClass="content-area">
-            <padding>
-                <Insets top="20" right="20" bottom="20" left="20"/>
-            </padding>
-        </StackPane>
+        <StackPane fx:id="contentArea" styleClass="content-area"/>
     </center>
 
 </BorderPane>

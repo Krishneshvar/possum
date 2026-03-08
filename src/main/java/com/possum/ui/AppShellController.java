@@ -2,6 +2,8 @@ package com.possum.ui;
 
 import com.possum.ui.navigation.NavigationManager;
 import com.possum.ui.navigation.RouteGuard;
+import com.possum.ui.workspace.WorkspaceDesktop;
+import com.possum.ui.workspace.WorkspaceManager;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -18,6 +20,7 @@ public class AppShellController {
     @FXML private ImageView brandIcon;
 
     private NavigationManager navigationManager;
+    private WorkspaceManager workspaceManager;
     private Button activeNavButton = null;
     private boolean isDarkTheme = false;
     private String currentUserName = "Admin User";
@@ -26,14 +29,17 @@ public class AppShellController {
     public void initialize() {
         TestAuthSetup.setupMockAdminUser();
         
+        WorkspaceDesktop desktop = new WorkspaceDesktop();
+        workspaceManager = new WorkspaceManager(desktop);
+        contentArea.getChildren().add(desktop);
+        desktop.prefWidthProperty().bind(contentArea.widthProperty());
+        desktop.prefHeightProperty().bind(contentArea.heightProperty());
+        
         RouteGuard routeGuard = new RouteGuard(new com.possum.application.auth.AuthorizationService());
         navigationManager = new NavigationManager(contentArea, routeGuard);
         buildNavigation();
         buildUserMenu();
         loadBrandIcon();
-        
-        navigationManager.addNavigationListener(this::onNavigationChanged);
-        navigationManager.navigateTo("dashboard");
         
         initializeUserAvatar();
     }
@@ -78,32 +84,28 @@ public class AppShellController {
     }
 
     private void buildNavigation() {
-        createNavButton("🏠 Dashboard", "dashboard");
+        createNavButton("🏠 Dashboard", "Dashboard", "/fxml/dashboard/dashboard-view.fxml");
         createNavMenu("📦 Inventory", new String[][]{
-            {"Products", "products"},
-            {"Stock", "inventory"}
+            {"Products", "/fxml/products/products-view.fxml"},
+            {"Stock", "/fxml/inventory/inventory-view.fxml"}
         });
         createNavMenu("🛒 Sales", new String[][]{
-            {"Point of Sale", "sales"},
-            {"Transactions", "transactions"},
-            {"Returns", "returns"}
+            {"Point of Sale", "/fxml/sales/pos-view.fxml"},
+            {"Transactions", "/fxml/transactions/transactions-view.fxml"},
+            {"Returns", "/fxml/returns/returns-view.fxml"}
         });
-        createNavButton("📋 Purchase", "purchase");
+        createNavButton("📋 Purchase", "Purchase Orders", "/fxml/purchase/purchase-view.fxml");
         createNavMenu("📊 Insights", new String[][]{
-            {"Reports", "reports-sales"},
-            {"Audit Log", "audit-log"}
+            {"Reports", "/fxml/reports/reports-view.fxml"},
+            {"Audit Log", "/fxml/audit/audit-view.fxml"}
         });
-        createNavButton("⚙ Settings", "settings");
+        createNavButton("⚙ Settings", "Settings", "/fxml/settings/settings-view.fxml");
     }
 
-    private void createNavButton(String label, String routeId) {
+    private void createNavButton(String label, String title, String fxmlPath) {
         Button btn = new Button(label);
         btn.getStyleClass().add("nav-menu-btn");
-        btn.setUserData(routeId);
-        btn.setOnAction(e -> {
-            navigationManager.navigateTo(routeId);
-            setActiveNavButton(btn);
-        });
+        btn.setOnAction(e -> workspaceManager.openOrFocusWindow(title, fxmlPath));
         navItems.getChildren().add(btn);
     }
 
@@ -113,33 +115,14 @@ public class AppShellController {
         
         for (String[] item : items) {
             MenuItem menuItem = new MenuItem(item[0]);
-            menuItem.setOnAction(e -> navigationManager.navigateTo(item[1]));
+            menuItem.setOnAction(e -> workspaceManager.openOrFocusWindow(item[0], item[1]));
             menuBtn.getItems().add(menuItem);
         }
         
         navItems.getChildren().add(menuBtn);
     }
 
-    private void setActiveNavButton(Button button) {
-        if (activeNavButton != null) {
-            activeNavButton.getStyleClass().remove("active");
-        }
-        button.getStyleClass().add("active");
-        activeNavButton = button;
-    }
 
-    private void onNavigationChanged(String routeId) {
-        highlightActiveRoute(routeId);
-    }
-
-    private void highlightActiveRoute(String routeId) {
-        for (var node : navItems.getChildren()) {
-            if (node instanceof Button button && routeId.equals(button.getUserData())) {
-                setActiveNavButton(button);
-                return;
-            }
-        }
-    }
 
     public void loadContent(Node content) {
         contentArea.getChildren().clear();
