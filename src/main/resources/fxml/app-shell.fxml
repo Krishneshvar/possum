@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -10,60 +11,37 @@
             stylesheets="@../styles/app-shell.css"
             styleClass="app-shell">
 
-    <!-- Left: Sidebar Navigation -->
-    <left>
-        <VBox fx:id="sidebar" styleClass="sidebar" prefWidth="250" minWidth="250" maxWidth="250">
-            <!-- Sidebar Header -->
-            <HBox styleClass="sidebar-header" alignment="CENTER_LEFT" spacing="10">
-                <padding>
-                    <Insets top="15" right="15" bottom="15" left="15"/>
-                </padding>
-                <Label text="POSSUM" styleClass="app-title"/>
-            </HBox>
-
-            <Separator/>
-
-            <!-- Main Navigation -->
-            <ScrollPane fx:id="navScrollPane" styleClass="nav-scroll" fitToWidth="true" VBox.vgrow="ALWAYS">
-                <VBox fx:id="navMain" styleClass="nav-main" spacing="2">
-                    <padding>
-                        <Insets top="10" right="5" bottom="10" left="5"/>
-                    </padding>
-                </VBox>
-            </ScrollPane>
-
-            <Separator/>
-
-            <!-- Secondary Navigation -->
-            <VBox fx:id="navSecondary" styleClass="nav-secondary" spacing="2">
-                <padding>
-                    <Insets top="10" right="5" bottom="10" left="5"/>
-                </padding>
-            </VBox>
-
-            <Separator/>
-
-            <!-- User Section -->
-            <HBox fx:id="navUser" styleClass="nav-user" alignment="CENTER_LEFT" spacing="10">
-                <padding>
-                    <Insets top="15" right="15" bottom="15" left="15"/>
-                </padding>
-                <Label fx:id="userNameLabel" text="Admin User" styleClass="user-name"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Button fx:id="logoutButton" text="Logout" styleClass="logout-btn" onAction="#handleLogout"/>
-            </HBox>
-        </VBox>
-    </left>
-
-    <!-- Top: Header Bar -->
+    <!-- Top: Navbar -->
     <top>
-        <HBox fx:id="header" styleClass="header" alignment="CENTER_LEFT" spacing="15">
-            <padding>
-                <Insets top="15" right="20" bottom="15" left="20"/>
-            </padding>
-            <Label fx:id="pageTitleLabel" text="Dashboard" styleClass="page-title"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button fx:id="themeToggleButton" text="🌙" styleClass="icon-btn" onAction="#handleThemeToggle"/>
+        <HBox fx:id="navbar" styleClass="navbar" alignment="CENTER_LEFT" spacing="0">
+            
+            <!-- Brand -->
+            <HBox styleClass="navbar-brand" alignment="CENTER_LEFT" spacing="10">
+                <padding>
+                    <Insets top="8" right="16" bottom="8" left="16"/>
+                </padding>
+                <ImageView fx:id="brandIcon" fitWidth="24" fitHeight="24" preserveRatio="true"/>
+                <Label text="POSSUM" styleClass="brand-title"/>
+            </HBox>
+            
+            <!-- Nav Items -->
+            <HBox fx:id="navItems" styleClass="nav-items" spacing="0" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                <padding>
+                    <Insets top="0" right="8" bottom="0" left="8"/>
+                </padding>
+            </HBox>
+            
+            <!-- User Section -->
+            <HBox styleClass="navbar-user" alignment="CENTER">
+                <padding>
+                    <Insets top="8" right="16" bottom="8" left="16"/>
+                </padding>
+                <MenuButton fx:id="userMenuButton" styleClass="user-menu-btn">
+                    <graphic>
+                        <Label fx:id="userAvatar" text="A" styleClass="user-avatar"/>
+                    </graphic>
+                </MenuButton>
+            </HBox>
         </HBox>
     </top>
 

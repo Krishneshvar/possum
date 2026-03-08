@@ -3,124 +3,121 @@ package com.possum.ui;
 import com.possum.ui.navigation.NavigationManager;
 import com.possum.ui.navigation.RouteGuard;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class AppShellController {
 
-    @FXML private VBox sidebar;
-    @FXML private VBox navMain;
-    @FXML private VBox navSecondary;
-    @FXML private HBox navUser;
-    @FXML private HBox header;
+    @FXML private HBox navbar;
+    @FXML private HBox navItems;
     @FXML private StackPane contentArea;
-    @FXML private Label pageTitleLabel;
-    @FXML private Label userNameLabel;
-    @FXML private Button logoutButton;
-    @FXML private Button themeToggleButton;
+    @FXML private Label userAvatar;
+    @FXML private MenuButton userMenuButton;
+    @FXML private ImageView brandIcon;
 
     private NavigationManager navigationManager;
-    private final Map<String, VBox> expandableGroups = new HashMap<>();
     private Button activeNavButton = null;
+    private boolean isDarkTheme = false;
+    private String currentUserName = "Admin User";
 
     @FXML
     public void initialize() {
-        // Setup mock admin user for testing
         TestAuthSetup.setupMockAdminUser();
         
         RouteGuard routeGuard = new RouteGuard(new com.possum.application.auth.AuthorizationService());
         navigationManager = new NavigationManager(contentArea, routeGuard);
         buildNavigation();
+        buildUserMenu();
+        loadBrandIcon();
         
-        // Add listener to update page title and active nav on route change
         navigationManager.addNavigationListener(this::onNavigationChanged);
-        
         navigationManager.navigateTo("dashboard");
+        
+        initializeUserAvatar();
+    }
+    
+    private void loadBrandIcon() {
+        try {
+            String iconPath = getClass().getResource("/icons/icon.png").toExternalForm();
+            brandIcon.setImage(new javafx.scene.image.Image(iconPath));
+        } catch (Exception e) {
+            System.err.println("Failed to load brand icon: " + e.getMessage());
+        }
+    }
+    
+    private void buildUserMenu() {
+        Label nameLabel = new Label(currentUserName);
+        nameLabel.setStyle("-fx-font-weight: 600; -fx-font-size: 14px; -fx-padding: 8 12;");
+        
+        Label roleLabel = new Label("Administrator");
+        roleLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 0 12 8 12;");
+        
+        CustomMenuItem headerItem = new CustomMenuItem(new VBox(nameLabel, roleLabel));
+        headerItem.setHideOnClick(false);
+        
+        SeparatorMenuItem sep1 = new SeparatorMenuItem();
+        
+        MenuItem themeItem = new MenuItem("🌓 Toggle Theme");
+        themeItem.setOnAction(e -> handleThemeToggle());
+        
+        SeparatorMenuItem sep2 = new SeparatorMenuItem();
+        
+        MenuItem logoutItem = new MenuItem("Logout");
+        logoutItem.setStyle("-fx-text-fill: #dc2626;");
+        logoutItem.setOnAction(e -> handleLogout());
+        
+        userMenuButton.getItems().addAll(headerItem, sep1, themeItem, sep2, logoutItem);
+    }
+    
+    private void initializeUserAvatar() {
+        if (currentUserName != null && !currentUserName.isEmpty()) {
+            userAvatar.setText(String.valueOf(currentUserName.charAt(0)).toUpperCase());
+        }
     }
 
     private void buildNavigation() {
-        // Main Navigation
-        createNavItem(navMain, "Dashboard", "dashboard", false);
-        createExpandableNavGroup(navMain, "Inventory", new String[][]{
+        createNavButton("🏠 Dashboard", "dashboard");
+        createNavMenu("📦 Inventory", new String[][]{
             {"Products", "products"},
             {"Stock", "inventory"}
         });
-        createExpandableNavGroup(navMain, "Commercial", new String[][]{
+        createNavMenu("🛒 Sales", new String[][]{
             {"Point of Sale", "sales"},
             {"Transactions", "transactions"},
             {"Returns", "returns"}
         });
-        createExpandableNavGroup(navMain, "Purchase", new String[][]{
-            {"Purchase Orders", "purchase"}
-        });
-        createExpandableNavGroup(navMain, "Reports & Logs", new String[][]{
+        createNavButton("📋 Purchase", "purchase");
+        createNavMenu("📊 Insights", new String[][]{
             {"Reports", "reports-sales"},
             {"Audit Log", "audit-log"}
         });
-
-        // Secondary Navigation
-        createNavItem(navSecondary, "Settings", "settings", false);
+        createNavButton("⚙ Settings", "settings");
     }
 
-    private void createNavItem(VBox container, String label, String routeId, boolean isSubItem) {
-        Button navButton = new Button(label);
-        navButton.setMaxWidth(Double.MAX_VALUE);
-        navButton.getStyleClass().add(isSubItem ? "nav-sub-item" : "nav-item");
-        navButton.setAlignment(Pos.CENTER_LEFT);
-        navButton.setUserData(routeId);
-        
-        navButton.setOnAction(e -> {
-            if (navigationManager != null) {
-                navigationManager.navigateTo(routeId);
-                setActiveNavButton(navButton);
-            }
-        });
-        
-        container.getChildren().add(navButton);
-    }
-
-    private void createExpandableNavGroup(VBox container, String groupLabel, String[][] items) {
-        VBox groupContainer = new VBox(2);
-        groupContainer.getStyleClass().add("nav-group");
-
-        Button groupButton = new Button(groupLabel + " ▼");
-        groupButton.setMaxWidth(Double.MAX_VALUE);
-        groupButton.getStyleClass().add("nav-group-header");
-        groupButton.setAlignment(Pos.CENTER_LEFT);
-
-        VBox subItemsContainer = new VBox(2);
-        subItemsContainer.getStyleClass().add("nav-sub-items");
-        subItemsContainer.setManaged(false);
-        subItemsContainer.setVisible(false);
-        VBox.setMargin(subItemsContainer, new Insets(0, 0, 0, 15));
-
-        for (String[] item : items) {
-            createNavItem(subItemsContainer, item[0], item[1], true);
-        }
-
-        groupButton.setOnAction(e -> {
-            boolean isExpanded = subItemsContainer.isVisible();
-            subItemsContainer.setVisible(!isExpanded);
-            subItemsContainer.setManaged(!isExpanded);
-            groupButton.setText(groupLabel + (isExpanded ? " ▼" : " ▲"));
-        });
-
-        groupContainer.getChildren().addAll(groupButton, subItemsContainer);
-        container.getChildren().add(groupContainer);
-        expandableGroups.put(groupLabel, subItemsContainer);
-    }
-
-    private void handleNavigation(String routeId) {
-        if (navigationManager != null) {
+    private void createNavButton(String label, String routeId) {
+        Button btn = new Button(label);
+        btn.getStyleClass().add("nav-menu-btn");
+        btn.setUserData(routeId);
+        btn.setOnAction(e -> {
             navigationManager.navigateTo(routeId);
-            updatePageTitle(routeId);
+            setActiveNavButton(btn);
+        });
+        navItems.getChildren().add(btn);
+    }
+
+    private void createNavMenu(String label, String[][] items) {
+        MenuButton menuBtn = new MenuButton(label);
+        menuBtn.getStyleClass().add("nav-menu-btn");
+        
+        for (String[] item : items) {
+            MenuItem menuItem = new MenuItem(item[0]);
+            menuItem.setOnAction(e -> navigationManager.navigateTo(item[1]));
+            menuBtn.getItems().add(menuItem);
         }
+        
+        navItems.getChildren().add(menuBtn);
     }
 
     private void setActiveNavButton(Button button) {
@@ -132,57 +129,16 @@ public class AppShellController {
     }
 
     private void onNavigationChanged(String routeId) {
-        updatePageTitle(routeId);
         highlightActiveRoute(routeId);
     }
 
     private void highlightActiveRoute(String routeId) {
-        // Find and highlight the button with matching routeId
-        highlightButtonInContainer(navMain, routeId);
-        highlightButtonInContainer(navSecondary, routeId);
-    }
-
-    private void highlightButtonInContainer(VBox container, String routeId) {
-        for (var node : container.getChildren()) {
-            if (node instanceof Button button) {
-                if (routeId.equals(button.getUserData())) {
-                    setActiveNavButton(button);
-                    return;
-                }
-            } else if (node instanceof VBox groupContainer) {
-                // Check nested items in expandable groups
-                for (var child : groupContainer.getChildren()) {
-                    if (child instanceof VBox subItems) {
-                        for (var subNode : subItems.getChildren()) {
-                            if (subNode instanceof Button subButton && routeId.equals(subButton.getUserData())) {
-                                setActiveNavButton(subButton);
-                                // Expand parent group
-                                subItems.setVisible(true);
-                                subItems.setManaged(true);
-                                return;
-                            }
-                        }
-                    }
-                }
+        for (var node : navItems.getChildren()) {
+            if (node instanceof Button button && routeId.equals(button.getUserData())) {
+                setActiveNavButton(button);
+                return;
             }
         }
-    }
-
-    private void updatePageTitle(String routeId) {
-        String title = switch (routeId) {
-            case "dashboard" -> "Dashboard";
-            case "products" -> "Products";
-            case "inventory" -> "Inventory";
-            case "sales" -> "Point of Sale";
-            case "transactions" -> "Transactions";
-            case "returns" -> "Returns";
-            case "purchase" -> "Purchase Orders";
-            case "reports-sales" -> "Reports";
-            case "audit-log" -> "Audit Log";
-            case "settings" -> "Settings";
-            default -> "POSSUM";
-        };
-        pageTitleLabel.setText(title);
     }
 
     public void loadContent(Node content) {
@@ -191,25 +147,21 @@ public class AppShellController {
     }
 
     public void setPageTitle(String title) {
-        pageTitleLabel.setText(title);
+        // Not needed with navbar
     }
 
     public void setUserName(String userName) {
-        userNameLabel.setText(userName);
+        currentUserName = userName;
+        initializeUserAvatar();
     }
 
-    @FXML
     private void handleLogout() {
         System.out.println("Logout clicked");
-        // AuthService logout will be integrated here
     }
 
-    @FXML
     private void handleThemeToggle() {
-        boolean isDark = themeToggleButton.getText().equals("🌙");
-        themeToggleButton.setText(isDark ? "☀️" : "🌙");
-        System.out.println("Theme toggled: " + (isDark ? "Light" : "Dark"));
-        // Theme switching logic will be integrated here
+        isDarkTheme = !isDarkTheme;
+        System.out.println("Theme toggled: " + (isDarkTheme ? "Dark" : "Light"));
     }
 
     public StackPane getContentArea() {
