@@ -1,5 +1,21 @@
 package com.possum;
 
+import com.possum.application.ApplicationModule;
+import com.possum.application.audit.AuditService;
+import com.possum.application.categories.CategoryService;
+import com.possum.application.inventory.InventoryService;
+import com.possum.application.inventory.ProductFlowService;
+import com.possum.application.products.ProductModule;
+import com.possum.application.products.ProductService;
+import com.possum.application.variants.VariantService;
+import com.possum.application.sales.SalesService;
+import com.possum.ui.sales.ProductSearchIndex;
+import com.possum.application.transactions.TransactionService;
+import com.possum.application.returns.ReturnsService;
+import com.possum.application.reports.ReportsService;
+import com.possum.application.purchase.PurchaseService;
+import com.possum.persistence.repositories.sqlite.*;
+import com.possum.ui.DependencyInjector;
 import com.possum.application.auth.AuthModule;
 import com.possum.infrastructure.filesystem.AppPaths;
 import com.possum.infrastructure.lazy.ServiceLocator;
@@ -29,6 +45,19 @@ public final class AppBootstrap {
     private TransactionManager transactionManager;
     private AuthModule authModule;
     private ServiceLocator serviceLocator;
+    private ApplicationModule applicationModule;
+    private DependencyInjector dependencyInjector;
+    private SalesService salesService;
+    private ProductSearchIndex productSearchIndex;
+    private TransactionService transactionService;
+    private ReturnsService returnsService;
+    private ReportsService reportsService;
+    private PurchaseService purchaseService;
+    private SqliteVariantRepository variantRepository;
+    private SqliteSalesRepository salesRepository;
+    private SqliteSupplierRepository supplierRepository;
+    private SqliteTaxRepository taxRepository;
+
 
     public void start(Stage stage) {
         try {
@@ -72,6 +101,43 @@ public final class AppBootstrap {
         authModule = new AuthModule(userRepository, sessionRepository, transactionManager, passwordHasher);
         serviceLocator = new ServiceLocator(databaseManager, transactionManager, appPaths);
         
+
+        SqliteProductRepository productRepository = new SqliteProductRepository(databaseManager);
+        variantRepository = new SqliteVariantRepository(databaseManager);
+        SqliteCategoryRepository categoryRepository = new SqliteCategoryRepository(databaseManager);
+        SqliteInventoryRepository inventoryRepository = new SqliteInventoryRepository(databaseManager);
+        SqliteProductFlowRepository productFlowRepository = new SqliteProductFlowRepository(databaseManager);
+        SqliteAuditRepository auditRepository = new SqliteAuditRepository(databaseManager);
+
+        applicationModule = new ApplicationModule(
+            userRepository, sessionRepository, productRepository, variantRepository,
+            categoryRepository, inventoryRepository, productFlowRepository, auditRepository,
+            transactionManager, passwordHasher, jsonService, appPaths
+        );
+
+        // Other repositories required
+        salesRepository = new SqliteSalesRepository(databaseManager);
+        com.possum.persistence.repositories.sqlite.SqliteCustomerRepository customerRepository = new com.possum.persistence.repositories.sqlite.SqliteCustomerRepository(databaseManager);
+        com.possum.persistence.repositories.sqlite.SqliteTransactionRepository transactionRepo = new com.possum.persistence.repositories.sqlite.SqliteTransactionRepository(databaseManager);
+        com.possum.persistence.repositories.sqlite.SqliteReturnsRepository returnRepository = new com.possum.persistence.repositories.sqlite.SqliteReturnsRepository(databaseManager);
+
+        supplierRepository = new SqliteSupplierRepository(databaseManager);
+        com.possum.persistence.repositories.sqlite.SqlitePurchaseRepository purchaseOrderRepository = new com.possum.persistence.repositories.sqlite.SqlitePurchaseRepository(databaseManager);
+        taxRepository = new SqliteTaxRepository(databaseManager);
+
+                com.possum.persistence.repositories.sqlite.SqliteTaxRepository taxRepository1 = new com.possum.persistence.repositories.sqlite.SqliteTaxRepository(databaseManager);
+        com.possum.application.sales.TaxEngine taxEngine = new com.possum.application.sales.TaxEngine(taxRepository1, jsonService);
+        com.possum.application.sales.PaymentService paymentService = new com.possum.application.sales.PaymentService(salesRepository);
+        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository, auditRepository, applicationModule.getInventoryService(), taxEngine, paymentService, transactionManager, jsonService);
+        productSearchIndex = new ProductSearchIndex(variantRepository);
+        transactionService = null; // abstract, handled elsewhere or PaymentService
+        returnsService = new ReturnsService(returnRepository, salesRepository, applicationModule.getInventoryService(), auditRepository, transactionManager, jsonService);
+                com.possum.persistence.repositories.sqlite.SqliteReportsRepository reportsRepository = new com.possum.persistence.repositories.sqlite.SqliteReportsRepository(databaseManager);
+        reportsService = new ReportsService(reportsRepository, productFlowRepository);
+        purchaseService = new PurchaseService(purchaseOrderRepository, supplierRepository, variantRepository, inventoryRepository, productFlowRepository, auditRepository, transactionManager, databaseManager, jsonService);
+
+        dependencyInjector = new DependencyInjector(applicationModule, serviceLocator, salesService, productSearchIndex, transactionService, returnsService, reportsService, purchaseService, variantRepository, salesRepository, supplierRepository, taxRepository, appPaths);
+
         LOGGER.info("Core services initialized");
     }
 
@@ -80,7 +146,8 @@ public final class AppBootstrap {
             FXMLLoader loader = new FXMLLoader(AppBootstrap.class.getResource("/fxml/app-shell.fxml"));
             Parent root = loader.load();
 
-            AppShellController shellController = loader.getController();
+                        AppShellController shellController = loader.getController();
+            shellController.setDependencyInjector(dependencyInjector);
 
             Scene scene = new Scene(root, 1280, 800);
             stage.setTitle("POSSUM - Point of Sale System");
