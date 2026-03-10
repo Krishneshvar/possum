@@ -12,6 +12,18 @@ import javafx.scene.layout.*;
 
 public class AppShellController {
 
+    private DependencyInjector dependencyInjector;
+
+    public void setDependencyInjector(DependencyInjector dependencyInjector) {
+        this.dependencyInjector = dependencyInjector;
+        if (workspaceManager != null) {
+            workspaceManager.setDependencyInjector(dependencyInjector);
+        }
+        if (navigationManager != null) {
+            navigationManager.setDependencyInjector(dependencyInjector);
+        }
+    }
+
     @FXML private HBox navbar;
     @FXML private HBox navItems;
     @FXML private StackPane contentArea;
@@ -30,7 +42,7 @@ public class AppShellController {
         TestAuthSetup.setupMockAdminUser();
         
         WorkspaceDesktop desktop = new WorkspaceDesktop();
-        workspaceManager = new WorkspaceManager(desktop);
+        workspaceManager = new WorkspaceManager(desktop, dependencyInjector);
         contentArea.getChildren().add(desktop);
         desktop.prefWidthProperty().bind(contentArea.widthProperty());
         desktop.prefHeightProperty().bind(contentArea.heightProperty());

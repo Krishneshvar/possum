@@ -25,6 +25,11 @@ public class NavigationManager {
     private final RouteGuard routeGuard;
     private final List<Consumer<String>> navigationListeners = new ArrayList<>();
     private String currentRoute;
+    private com.possum.ui.DependencyInjector dependencyInjector;
+
+    public void setDependencyInjector(com.possum.ui.DependencyInjector dependencyInjector) {
+        this.dependencyInjector = dependencyInjector;
+    }
 
     public NavigationManager(StackPane contentContainer, RouteGuard routeGuard) {
         this.contentContainer = contentContainer;
@@ -76,6 +81,9 @@ public class NavigationManager {
 
         LOGGER.debug("Loading view for: {}", routeId);
         FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+        if (dependencyInjector != null) {
+            loader.setControllerFactory(dependencyInjector.getControllerFactory());
+        }
         Node view = loader.load();
         
         Object controller = loader.getController();

@@ -7,8 +7,10 @@ public class WorkspaceManager {
     
     private final WorkspaceDesktop desktop;
     private int windowCounter = 0;
+    private com.possum.ui.DependencyInjector dependencyInjector;
     
-    public WorkspaceManager(WorkspaceDesktop desktop) {
+    public WorkspaceManager(WorkspaceDesktop desktop, com.possum.ui.DependencyInjector dependencyInjector) {
+        this.dependencyInjector = dependencyInjector;
         this.desktop = desktop;
     }
 
@@ -32,7 +34,12 @@ public class WorkspaceManager {
         try {
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            if (dependencyInjector != null) {
+                loader.setControllerFactory(dependencyInjector.getControllerFactory());
+            }
             Node content = loader.load();
+
+
 
             InternalWindow window = new InternalWindow(title);
             window.setContent(content);
@@ -53,6 +60,10 @@ public class WorkspaceManager {
         }
     }
     
+    public void setDependencyInjector(com.possum.ui.DependencyInjector dependencyInjector) {
+        this.dependencyInjector = dependencyInjector;
+    }
+
     public WorkspaceDesktop getDesktop() {
         return desktop;
     }
