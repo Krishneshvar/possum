@@ -45,17 +45,17 @@
                     <HBox>
                         <Label text="Subtotal:"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="subtotalLabel" text="$0.00"/>
+                        <Label fx:id="subtotalLabel" text="\$0.00"/>
                     </HBox>
                     <HBox>
                         <Label text="Tax:"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="taxLabel" text="$0.00"/>
+                        <Label fx:id="taxLabel" text="\$0.00"/>
                     </HBox>
                     <HBox>
                         <Label text="Total:" style="-fx-font-size: 18px; -fx-font-weight: 600;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="totalLabel" text="$0.00" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                        <Label fx:id="totalLabel" text="\$0.00" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
                     </HBox>
                 </VBox>
                 

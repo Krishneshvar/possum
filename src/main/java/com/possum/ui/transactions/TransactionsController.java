@@ -16,6 +16,8 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -52,10 +54,10 @@ this.transactionService = transactionService;
 
     private void setupTable() {
         TableColumn<Transaction, String> typeCol = new TableColumn<>("Type");
-        typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+        typeCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().type()));
         
         TableColumn<Transaction, BigDecimal> amountCol = new TableColumn<>("Amount");
-        amountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
+        amountCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().amount()));
         amountCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
@@ -70,13 +72,13 @@ this.transactionService = transactionService;
         });
         
         TableColumn<Transaction, String> paymentCol = new TableColumn<>("Payment Method");
-        paymentCol.setCellValueFactory(new PropertyValueFactory<>("paymentMethodName"));
+        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentMethodName()));
         
         TableColumn<Transaction, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
         
         TableColumn<Transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("transactionDate"));
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().transactionDate()));
         
         TableColumn<Transaction, String> refCol = new TableColumn<>("Reference");
         refCol.setCellFactory(col -> new TableCell<>() {

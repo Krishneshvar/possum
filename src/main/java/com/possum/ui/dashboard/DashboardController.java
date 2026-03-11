@@ -11,6 +11,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -45,16 +47,16 @@ this.reportsService = reportsService;
 
     private void setupTopProductsTable() {
         TableColumn<TopProduct, String> nameCol = new TableColumn<>("Product");
-        nameCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
+        nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
         
         TableColumn<TopProduct, String> variantCol = new TableColumn<>("Variant");
-        variantCol.setCellValueFactory(new PropertyValueFactory<>("variantName"));
+        variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().variantName()));
         
         TableColumn<TopProduct, Integer> qtyCol = new TableColumn<>("Qty Sold");
-        qtyCol.setCellValueFactory(new PropertyValueFactory<>("totalQuantitySold"));
+        qtyCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalQuantitySold()));
         
         TableColumn<TopProduct, BigDecimal> revenueCol = new TableColumn<>("Revenue");
-        revenueCol.setCellValueFactory(new PropertyValueFactory<>("totalRevenue"));
+        revenueCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalRevenue()));
         revenueCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
@@ -68,19 +70,19 @@ this.reportsService = reportsService;
 
     private void setupLowStockTable() {
         TableColumn<Variant, String> nameCol = new TableColumn<>("Product");
-        nameCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
+        nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
         
         TableColumn<Variant, String> variantCol = new TableColumn<>("Variant");
-        variantCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
         
         TableColumn<Variant, String> skuCol = new TableColumn<>("SKU");
-        skuCol.setCellValueFactory(new PropertyValueFactory<>("sku"));
+        skuCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().sku()));
         
         TableColumn<Variant, Integer> stockCol = new TableColumn<>("Stock");
-        stockCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
         
         TableColumn<Variant, Integer> alertCol = new TableColumn<>("Alert Level");
-        alertCol.setCellValueFactory(new PropertyValueFactory<>("stockAlertCap"));
+        alertCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stockAlertCap()));
         
         lowStockTable.getColumns().addAll(nameCol, variantCol, skuCol, stockCol, alertCol);
     }

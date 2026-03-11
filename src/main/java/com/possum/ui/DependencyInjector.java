@@ -20,6 +20,7 @@ public class DependencyInjector {
     private final ServiceLocator serviceLocator;
 
     private final SalesService salesService;
+    private final com.possum.application.sales.TaxEngine taxEngine;
     private final ProductSearchIndex productSearchIndex;
     private final TransactionService transactionService;
     private final ReturnsService returnsService;
@@ -35,7 +36,7 @@ public class DependencyInjector {
     private NavigationManager navigationManager;
 
     public DependencyInjector(ApplicationModule applicationModule, ServiceLocator serviceLocator,
-                              SalesService salesService, ProductSearchIndex productSearchIndex,
+                              SalesService salesService, com.possum.application.sales.TaxEngine taxEngine, ProductSearchIndex productSearchIndex,
                               TransactionService transactionService, ReturnsService returnsService,
                               ReportsService reportsService, PurchaseService purchaseService,
                               VariantRepository variantRepository, SalesRepository salesRepository,
@@ -43,6 +44,7 @@ public class DependencyInjector {
         this.applicationModule = applicationModule;
         this.serviceLocator = serviceLocator;
         this.salesService = salesService;
+        this.taxEngine = taxEngine;
         this.productSearchIndex = productSearchIndex;
         this.transactionService = transactionService;
         this.returnsService = returnsService;
@@ -103,6 +105,8 @@ public class DependencyInjector {
             return new com.possum.application.auth.AuthorizationService();
         } else if (type.equals(com.possum.application.sales.SalesService.class)) {
             return salesService;
+        } else if (type.equals(com.possum.application.sales.TaxEngine.class)) {
+            return taxEngine;
         } else if (type.equals(com.possum.ui.sales.ProductSearchIndex.class)) {
             return productSearchIndex;
         } else if (type.equals(com.possum.application.transactions.TransactionService.class)) {
