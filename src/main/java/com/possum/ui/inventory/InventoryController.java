@@ -32,9 +32,13 @@ public class InventoryController {
     private String currentSearch = "";
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public void initialize(InventoryService inventoryService, VariantRepository variantRepository) {
-        this.inventoryService = inventoryService;
+    public InventoryController(InventoryService inventoryService, VariantRepository variantRepository) {
+this.inventoryService = inventoryService;
         this.variantRepository = variantRepository;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupTable();
         setupFilters();

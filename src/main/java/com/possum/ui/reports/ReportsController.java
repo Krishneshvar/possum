@@ -41,9 +41,13 @@ public class ReportsController {
     private LocalDate endDate;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public void initialize(ReportsService reportsService, InventoryService inventoryService) {
-        this.reportsService = reportsService;
+    public ReportsController(ReportsService reportsService, InventoryService inventoryService) {
+this.reportsService = reportsService;
         this.inventoryService = inventoryService;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupDateRanges();
         setupInventoryTable();

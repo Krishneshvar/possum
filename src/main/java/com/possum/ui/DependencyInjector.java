@@ -59,9 +59,19 @@ public class DependencyInjector {
     public javafx.util.Callback<Class<?>, Object> getControllerFactory() {
         return type -> {
             try {
-                Object instance = type.getDeclaredConstructor().newInstance();
-                injectDependencies(instance);
-                return instance;
+                java.lang.reflect.Constructor<?>[] constructors = type.getConstructors();
+                if (constructors.length > 0) {
+                    java.lang.reflect.Constructor<?> constructor = constructors[0];
+                    if (constructor.getParameterCount() > 0) {
+                        Object[] args = new Object[constructor.getParameterCount()];
+                        Parameter[] parameters = constructor.getParameters();
+                        for (int i = 0; i < parameters.length; i++) {
+                            args[i] = resolveDependency(parameters[i].getType());
+                        }
+                        return constructor.newInstance(args);
+                    }
+                }
+                return type.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -74,28 +84,7 @@ public class DependencyInjector {
     }
 
     public void injectDependencies(Object controller) {
-        if (controller == null) return;
-
-        try {
-            Method[] methods = controller.getClass().getMethods();
-            for (Method method : methods) {
-                if (method.getName().equals("initialize") && method.getParameterCount() > 0) {
-                    Object[] args = new Object[method.getParameterCount()];
-                    Parameter[] parameters = method.getParameters();
-
-                    for (int i = 0; i < parameters.length; i++) {
-                        Class<?> type = parameters[i].getType();
-                        args[i] = resolveDependency(type);
-                    }
-
-                    method.invoke(controller, args);
-                    return;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Failed to inject dependencies for controller: " + controller.getClass().getName());
-        }
+        // Obsolete, left empty for compatibility if called explicitly elsewhere
     }
 
     private Object resolveDependency(Class<?> type) {

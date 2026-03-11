@@ -30,8 +30,12 @@ public class AuditController {
     private String startDate = null;
     private String endDate = null;
 
-    public void initialize(AuditService auditService) {
-        this.auditService = auditService;
+    public AuditController(AuditService auditService) {
+this.auditService = auditService;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupTable();
         setupFilters();

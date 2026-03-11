@@ -29,10 +29,14 @@ public class SettingsController {
     private TaxRepository taxRepository;
     private String selectedPrinter;
 
-    public void initialize(SettingsStore settingsStore, PrinterService printerService, TaxRepository taxRepository) {
-        this.settingsStore = settingsStore;
+    public SettingsController(SettingsStore settingsStore, PrinterService printerService, TaxRepository taxRepository) {
+this.settingsStore = settingsStore;
         this.printerService = printerService;
         this.taxRepository = taxRepository;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupCurrencies();
         loadGeneralSettings();

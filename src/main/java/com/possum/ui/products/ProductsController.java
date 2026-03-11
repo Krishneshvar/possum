@@ -31,8 +31,12 @@ public class ProductsController {
     private ProductService productService;
     private String currentSearch = "";
 
-    public void initialize(ProductService productService) {
-        this.productService = productService;
+    public ProductsController(ProductService productService) {
+this.productService = productService;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupTable();
         setupFilters();
