@@ -1,8 +1,8 @@
 plugins {
     java
     application
-    id("org.openjfx.javafxplugin") version "0.0.13"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("org.openjfx.javafxplugin") version "0.1.0"
+    id("com.gradleup.shadow") version "9.3.2"
 }
 
 group = "com.possum"
@@ -16,12 +16,16 @@ val junitVersion = "5.12.1"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+}
+
+tasks.withType<JavaExec> {
+    jvmArgs("--enable-native-access=ALL-UNNAMED", "--enable-native-access=javafx.graphics")
 }
 
 application {
