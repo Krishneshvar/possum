@@ -22,6 +22,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -56,13 +58,13 @@ this.returnsService = returnsService;
 
     private void setupTable() {
         TableColumn<Return, String> invoiceCol = new TableColumn<>("Invoice");
-        invoiceCol.setCellValueFactory(new PropertyValueFactory<>("invoiceNumber"));
+        invoiceCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
         
         TableColumn<Return, LocalDateTime> dateCol = new TableColumn<>("Date");
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
         
         TableColumn<Return, BigDecimal> refundCol = new TableColumn<>("Refund");
-        refundCol.setCellValueFactory(new PropertyValueFactory<>("totalRefund"));
+        refundCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalRefund()));
         refundCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
@@ -72,7 +74,7 @@ this.returnsService = returnsService;
         });
         
         TableColumn<Return, String> reasonCol = new TableColumn<>("Reason");
-        reasonCol.setCellValueFactory(new PropertyValueFactory<>("reason"));
+        reasonCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().reason()));
         
         returnsTable.getTableView().getColumns().addAll(invoiceCol, dateCol, refundCol, reasonCol);
         

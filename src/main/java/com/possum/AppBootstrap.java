@@ -136,7 +136,7 @@ public final class AppBootstrap {
         reportsService = new ReportsService(reportsRepository, productFlowRepository);
         purchaseService = new PurchaseService(purchaseOrderRepository, supplierRepository, variantRepository, inventoryRepository, productFlowRepository, auditRepository, transactionManager, databaseManager, jsonService);
 
-        dependencyInjector = new DependencyInjector(applicationModule, serviceLocator, salesService, productSearchIndex, transactionService, returnsService, reportsService, purchaseService, variantRepository, salesRepository, supplierRepository, taxRepository, appPaths);
+        dependencyInjector = new DependencyInjector(applicationModule, serviceLocator, salesService, taxEngine, productSearchIndex, transactionService, returnsService, reportsService, purchaseService, variantRepository, salesRepository, supplierRepository, taxRepository, appPaths);
 
         LOGGER.info("Core services initialized");
     }

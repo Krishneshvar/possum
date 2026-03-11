@@ -25,7 +25,7 @@
         
         <VBox GridPane.columnIndex="0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8;">
             <Label text="Daily Sales" style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
-            <Label fx:id="dailySalesLabel" text="$0.00" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 10 0 0 0;"/>
+            <Label fx:id="dailySalesLabel" text="\$0.00" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 10 0 0 0;"/>
         </VBox>
         
         <VBox GridPane.columnIndex="1" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8;">

@@ -11,6 +11,8 @@ import com.possum.ui.common.controls.PaginationBar;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -44,19 +46,19 @@ this.auditService = auditService;
 
     private void setupTable() {
         TableColumn<AuditLog, String> userCol = new TableColumn<>("User");
-        userCol.setCellValueFactory(new PropertyValueFactory<>("userName"));
+        userCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().userName()));
         
         TableColumn<AuditLog, String> actionCol = new TableColumn<>("Action");
-        actionCol.setCellValueFactory(new PropertyValueFactory<>("action"));
+        actionCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().action()));
         
         TableColumn<AuditLog, String> tableCol = new TableColumn<>("Table");
-        tableCol.setCellValueFactory(new PropertyValueFactory<>("tableName"));
+        tableCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().tableName()));
         
         TableColumn<AuditLog, Long> rowCol = new TableColumn<>("Row ID");
-        rowCol.setCellValueFactory(new PropertyValueFactory<>("rowId"));
+        rowCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().rowId()));
         
         TableColumn<AuditLog, LocalDateTime> dateCol = new TableColumn<>("Date");
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
         
         auditTable.getTableView().getColumns().addAll(userCol, actionCol, tableCol, rowCol, dateCol);
         

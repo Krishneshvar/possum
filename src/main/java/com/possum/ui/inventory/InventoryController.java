@@ -16,6 +16,8 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -47,22 +49,22 @@ this.inventoryService = inventoryService;
 
     private void setupTable() {
         TableColumn<Variant, String> productCol = new TableColumn<>("Product");
-        productCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
+        productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
         
         TableColumn<Variant, String> variantCol = new TableColumn<>("Variant");
-        variantCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
         
         TableColumn<Variant, String> skuCol = new TableColumn<>("SKU");
-        skuCol.setCellValueFactory(new PropertyValueFactory<>("sku"));
+        skuCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().sku()));
         
         TableColumn<Variant, Integer> stockCol = new TableColumn<>("Stock");
-        stockCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
         
         TableColumn<Variant, Integer> alertCol = new TableColumn<>("Alert Level");
-        alertCol.setCellValueFactory(new PropertyValueFactory<>("stockAlertCap"));
+        alertCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stockAlertCap()));
         
         TableColumn<Variant, BigDecimal> priceCol = new TableColumn<>("Price");
-        priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
+        priceCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
         priceCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {

@@ -14,6 +14,9 @@ import com.possum.ui.common.controls.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -54,16 +57,16 @@ this.purchaseService = purchaseService;
 
     private void setupTable() {
         TableColumn<PurchaseOrder, String> supplierCol = new TableColumn<>("Supplier");
-        supplierCol.setCellValueFactory(new PropertyValueFactory<>("supplierName"));
+        supplierCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().supplierName()));
         
         TableColumn<PurchaseOrder, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
         
         TableColumn<PurchaseOrder, LocalDateTime> dateCol = new TableColumn<>("Order Date");
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("orderDate"));
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().orderDate()));
         
         TableColumn<PurchaseOrder, Integer> itemsCol = new TableColumn<>("Items");
-        itemsCol.setCellValueFactory(new PropertyValueFactory<>("itemCount"));
+        itemsCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().itemCount()));
         
         purchaseTable.getTableView().getColumns().addAll(supplierCol, statusCol, dateCol, itemsCol);
         

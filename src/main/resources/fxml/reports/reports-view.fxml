@@ -36,7 +36,7 @@
                     </columnConstraints>
                     <VBox GridPane.columnIndex="0">
                         <Label text="Total Sales" style="-fx-text-fill: #666;"/>
-                        <Label fx:id="totalSalesLabel" text="$0.00" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                        <Label fx:id="totalSalesLabel" text="\$0.00" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
                     </VBox>
                     <VBox GridPane.columnIndex="1">
                         <Label text="Transactions" style="-fx-text-fill: #666;"/>
@@ -44,11 +44,11 @@
                     </VBox>
                     <VBox GridPane.columnIndex="2">
                         <Label text="Average Sale" style="-fx-text-fill: #666;"/>
-                        <Label fx:id="avgSaleLabel" text="$0.00" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                        <Label fx:id="avgSaleLabel" text="\$0.00" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
                     </VBox>
                     <VBox GridPane.columnIndex="3">
                         <Label text="Total Tax" style="-fx-text-fill: #666;"/>
-                        <Label fx:id="totalTaxLabel" text="$0.00" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                        <Label fx:id="totalTaxLabel" text="\$0.00" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
                     </VBox>
                 </GridPane>
             </VBox>
