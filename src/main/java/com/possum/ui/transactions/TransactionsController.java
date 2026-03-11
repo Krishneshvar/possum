@@ -38,8 +38,12 @@ public class TransactionsController {
     private String endDate = null;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public void initialize(TransactionService transactionService) {
-        this.transactionService = transactionService;
+    public TransactionsController(TransactionService transactionService) {
+this.transactionService = transactionService;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupTable();
         setupFilters();

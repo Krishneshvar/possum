@@ -30,9 +30,13 @@ public class DashboardController {
     private InventoryService inventoryService;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public void initialize(ReportsService reportsService, InventoryService inventoryService) {
-        this.reportsService = reportsService;
+    public DashboardController(ReportsService reportsService, InventoryService inventoryService) {
+this.reportsService = reportsService;
         this.inventoryService = inventoryService;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupTopProductsTable();
         setupLowStockTable();

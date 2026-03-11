@@ -40,10 +40,14 @@ public class ReturnsController {
     private String currentSearch = "";
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public void initialize(ReturnsService returnsService, SalesService salesService, SalesRepository salesRepository) {
-        this.returnsService = returnsService;
+    public ReturnsController(ReturnsService returnsService, SalesService salesService, SalesRepository salesRepository) {
+this.returnsService = returnsService;
         this.salesService = salesService;
         this.salesRepository = salesRepository;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupTable();
         setupFilters();

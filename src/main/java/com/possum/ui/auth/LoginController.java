@@ -21,10 +21,14 @@ public class LoginController {
     private NavigationManager navigationManager;
     private SessionStore sessionStore;
 
-    public void initialize(AuthService authService, NavigationManager navigationManager, SessionStore sessionStore) {
-        this.authService = authService;
+    public LoginController(AuthService authService, NavigationManager navigationManager, SessionStore sessionStore) {
+this.authService = authService;
         this.navigationManager = navigationManager;
         this.sessionStore = sessionStore;
+    }
+
+    @FXML
+    public void initialize() {
         
         passwordField.setOnAction(e -> handleLogin());
     }

@@ -37,11 +37,15 @@ public class PurchaseController {
     private String currentSearch = "";
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public void initialize(PurchaseService purchaseService, SupplierRepository supplierRepository, 
+    public PurchaseController(PurchaseService purchaseService, SupplierRepository supplierRepository,
                           VariantRepository variantRepository) {
-        this.purchaseService = purchaseService;
+this.purchaseService = purchaseService;
         this.supplierRepository = supplierRepository;
         this.variantRepository = variantRepository;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupTable();
         setupFilters();

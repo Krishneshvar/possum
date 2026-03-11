@@ -39,12 +39,16 @@ public class PosController {
     private BigDecimal discount = BigDecimal.ZERO;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public void initialize(SalesService salesService, ProductSearchIndex searchIndex, 
+    public PosController(SalesService salesService, ProductSearchIndex searchIndex,
                           TaxEngine taxEngine, PrinterService printerService) {
-        this.salesService = salesService;
+this.salesService = salesService;
         this.searchIndex = searchIndex;
         this.taxEngine = taxEngine;
         this.printerService = printerService;
+    }
+
+    @FXML
+    public void initialize() {
         
         setupProductList();
         setupCartList();
