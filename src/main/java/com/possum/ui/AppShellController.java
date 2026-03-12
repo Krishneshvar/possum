@@ -106,7 +106,10 @@ public class AppShellController {
             {"Transactions", "/fxml/transactions/transactions-view.fxml"},
             {"Returns", "/fxml/returns/returns-view.fxml"}
         });
-        createNavButton("📋 Purchase", "Purchase Orders", "/fxml/purchase/purchase-view.fxml");
+        createNavMenu("📋 Purchase", new String[][]{
+            {"Suppliers", "/fxml/purchase/suppliers-view.fxml"},
+            {"Purchase Orders", "/fxml/purchase/purchase-view.fxml"}
+        });
         createNavMenu("📊 Insights", new String[][]{
             {"Reports", "/fxml/reports/reports-view.fxml"},
             {"Audit Log", "/fxml/audit/audit-view.fxml"}
