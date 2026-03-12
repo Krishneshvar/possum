@@ -139,6 +139,13 @@ public class DependencyInjector {
             return serviceLocator.getPrinterService();
         } else if (type.equals(com.possum.ui.navigation.NavigationManager.class)) {
             return navigationManager;
+        } else if (type.equals(com.possum.ui.products.ProductFormController.class)) {
+            return new com.possum.ui.products.ProductFormController(
+                applicationModule.getProductService(),
+                applicationModule.getCategoryService(),
+                taxRepository,
+                navigationManager
+            );
         } else if (type.equals(com.possum.ui.auth.SessionStore.class)) {
             return new com.possum.ui.auth.SessionStore(appPaths, serviceLocator.getJsonService()); // Or instantiate properly
         }

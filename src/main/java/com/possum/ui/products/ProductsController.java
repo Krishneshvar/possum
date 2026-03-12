@@ -7,21 +7,18 @@ import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ProductFilter;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
-import com.possum.ui.common.controls.FormDialog;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.PaginationBar;
+import com.possum.ui.navigation.NavigationManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
-import java.math.BigDecimal;
-import java.util.List;
 import java.util.Map;
 
 public class ProductsController {
@@ -30,16 +27,17 @@ public class ProductsController {
     @FXML private DataTableView<Product> productsTable;
     @FXML private PaginationBar paginationBar;
     
-    private ProductService productService;
+    private final ProductService productService;
+    private final NavigationManager navigationManager;
     private String currentSearch = "";
 
-    public ProductsController(ProductService productService) {
-this.productService = productService;
+    public ProductsController(ProductService productService, NavigationManager navigationManager) {
+        this.productService = productService;
+        this.navigationManager = navigationManager;
     }
 
     @FXML
     public void initialize() {
-        
         setupTable();
         setupFilters();
         loadProducts();
@@ -102,46 +100,7 @@ this.productService = productService;
 
     @FXML
     private void handleAdd() {
-        FormDialog.show("Add Product", dialog -> {
-            dialog.addTextField("name", "Name", "");
-            dialog.addTextArea("description", "Description", "");
-            dialog.addTextField("sku", "SKU", "");
-            dialog.addTextField("price", "Price", "0.00");
-            dialog.addTextField("costPrice", "Cost Price", "0.00");
-            dialog.addTextField("stockAlert", "Stock Alert", "10");
-        }, values -> {
-            try {
-                long userId = AuthContext.getCurrentUser().id();
-                
-                ProductService.VariantCommand variant = new ProductService.VariantCommand(
-                    null,
-                    "Default",
-                    (String) values.get("sku"),
-                    new BigDecimal((String) values.get("price")),
-                    new BigDecimal((String) values.get("costPrice")),
-                    Integer.parseInt((String) values.get("stockAlert")),
-                    true,
-                    "active"
-                );
-                
-                ProductService.CreateProductCommand cmd = new ProductService.CreateProductCommand(
-                    (String) values.get("name"),
-                    (String) values.get("description"),
-                    null,
-                    "active",
-                    null,
-                    List.of(variant),
-                    null,
-                    userId
-                );
-                
-                productService.createProductWithVariants(cmd);
-                NotificationService.success("Product created successfully");
-                loadProducts();
-            } catch (Exception e) {
-                NotificationService.error("Failed to create product: " + e.getMessage());
-            }
-        });
+        navigationManager.navigateTo("product-form");
     }
 
     private void showActions(Product product) {
@@ -150,45 +109,14 @@ this.productService = productService;
         alert.setHeaderText(product.name());
         alert.setContentText("Choose action:");
         
-        ButtonType editBtn = new ButtonType("Edit");
         ButtonType deleteBtn = new ButtonType("Delete");
         ButtonType cancelBtn = ButtonType.CANCEL;
         
-        alert.getButtonTypes().setAll(editBtn, deleteBtn, cancelBtn);
+        alert.getButtonTypes().setAll(deleteBtn, cancelBtn);
         
         alert.showAndWait().ifPresent(type -> {
-            if (type == editBtn) {
-                handleEdit(product);
-            } else if (type == deleteBtn) {
+            if (type == deleteBtn) {
                 handleDelete(product);
-            }
-        });
-    }
-
-    private void handleEdit(Product product) {
-        FormDialog.show("Edit Product", dialog -> {
-            dialog.addTextField("name", "Name", product.name());
-            dialog.addTextArea("description", "Description", product.description());
-        }, values -> {
-            try {
-                long userId = AuthContext.getCurrentUser().id();
-                
-                ProductService.UpdateProductCommand cmd = new ProductService.UpdateProductCommand(
-                    (String) values.get("name"),
-                    (String) values.get("description"),
-                    product.categoryId(),
-                    product.status(),
-                    null,
-                    null,
-                    null,
-                    userId
-                );
-                
-                productService.updateProduct(product.id(), cmd);
-                NotificationService.success("Product updated successfully");
-                loadProducts();
-            } catch (Exception e) {
-                NotificationService.error("Failed to update product: " + e.getMessage());
             }
         });
     }
