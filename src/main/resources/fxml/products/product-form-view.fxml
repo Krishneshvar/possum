@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.possum.ui.products.ProductFormController"
+            fitToWidth="true"
+            style="-fx-background-color: transparent;">
+
+    <VBox spacing="20" alignment="TOP_LEFT" style="-fx-background-color: white; -fx-padding: 24;">
+
+        <HBox alignment="CENTER_LEFT" spacing="15">
+            <Button text="← Back" onAction="#handleCancel" style="-fx-background-color: transparent; -fx-text-fill: #64748b; -fx-cursor: hand; -fx-font-weight: bold;"/>
+            <Label fx:id="titleLabel" text="Add Product" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;"/>
+            <Button text="Save Product" onAction="#handleSave" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16; -fx-cursor: hand; -fx-font-weight: bold;"/>
+        </HBox>
+
+        <HBox spacing="20" VBox.vgrow="ALWAYS">
+
+            <!-- Left Column: Product Details -->
+            <VBox spacing="20" HBox.hgrow="ALWAYS" maxWidth="800">
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
+                    <Label text="General Information" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+
+                    <VBox spacing="5">
+                        <Label text="Product Name *" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
+                        <TextField fx:id="nameField" promptText="Enter product name" style="-fx-padding: 8; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6;"/>
+                    </VBox>
+
+                    <VBox spacing="5">
+                        <Label text="Description" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
+                        <TextArea fx:id="descriptionField" promptText="Enter product description" prefRowCount="4" style="-fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6;"/>
+                    </VBox>
+                </VBox>
+
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Variants" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="+ Add Variant" onAction="#handleAddVariant" style="-fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 12; -fx-cursor: hand;"/>
+                    </HBox>
+
+                    <VBox fx:id="variantsContainer" spacing="15"/>
+                </VBox>
+            </VBox>
+
+            <!-- Right Column: Settings -->
+            <VBox spacing="20" minWidth="300" maxWidth="400">
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
+                    <Label text="Organization" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+
+                    <VBox spacing="5">
+                        <Label text="Category" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
+                        <ComboBox fx:id="categoryCombo" promptText="Select category" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 4;"/>
+                    </VBox>
+
+                    <VBox spacing="5">
+                        <Label text="Status" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
+                        <ComboBox fx:id="statusCombo" promptText="Select status" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 4;"/>
+                    </VBox>
+                </VBox>
+
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
+                    <Label text="Pricing Setup" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+
+                    <VBox spacing="5">
+                        <Label text="Tax Category" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
+                        <ComboBox fx:id="taxCombo" promptText="Select tax category" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 4;"/>
+                    </VBox>
+                </VBox>
+            </VBox>
+
+        </HBox>
+    </VBox>
+</ScrollPane>
