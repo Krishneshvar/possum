@@ -1,85 +1,161 @@
 package com.possum.ui.workspace;
 
-import javafx.scene.layout.Pane;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.*;
+import javafx.scene.input.MouseEvent;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class WorkspaceDesktop extends Pane {
-    
+/**
+ * WorkspaceDesktop – a BorderPane that fills the content area.
+ *
+ *  ┌──────────────────────────────────────┐
+ *  │         content (center)             │  ← active InternalWindow fills this
+ *  │                                      │
+ *  ├──────────────────────────────────────┤
+ *  │  [Tab A ×]  [Tab B ×]  [Tab C ×]    │  ← tab bar (bottom)
+ *  └──────────────────────────────────────┘
+ */
+public class WorkspaceDesktop extends BorderPane {
+
     private final List<InternalWindow> windows = new ArrayList<>();
     private InternalWindow activeWindow;
-    
+
+    // Center: shows the active window
+    private final StackPane contentPane = new StackPane();
+
+    // Bottom: scrollable tab bar
+    private final HBox tabBar = new HBox();
+    private final ScrollPane tabScroll = new ScrollPane(tabBar);
+
     public WorkspaceDesktop() {
         getStyleClass().add("workspace-desktop");
-        setOnMousePressed(e -> {
-            if (e.getTarget() == this) {
-                clearActiveWindow();
-            }
-        });
+
+        // ---- content area ----
+        contentPane.getStyleClass().add("workspace-content-pane");
+        setCenter(contentPane);
+
+        // ---- tab bar ----
+        tabBar.getStyleClass().add("workspace-tab-bar");
+        tabBar.setSpacing(2);
+        tabBar.setPadding(new Insets(4, 8, 4, 8));
+
+        tabScroll.setFitToHeight(true);
+        tabScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        tabScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        tabScroll.getStyleClass().add("workspace-tab-scroll");
+        setBottom(tabScroll);
     }
 
-    public void tileWindows() {
-        int count = windows.size();
-        if (count == 0) return;
-
-        int cols = (int) Math.ceil(Math.sqrt(count));
-        int rows = (int) Math.ceil((double) count / cols);
-
-        double w = getWidth() / cols;
-        double h = getHeight() / rows;
-
-        for (int i = 0; i < count; i++) {
-
-            int r = i / cols;
-            int c = i % cols;
-
-            InternalWindow win = windows.get(i);
-
-            win.setLayoutX(c * w);
-            win.setLayoutY(r * h);
-            win.setPrefWidth(w);
-            win.setPrefHeight(h);
-        }
-    }
+    // -----------------------------------------------------------------------
+    // Window management
+    // -----------------------------------------------------------------------
 
     public void addWindow(InternalWindow window) {
         windows.add(window);
-        getChildren().add(window);
-        setActiveWindow(window);
-        
-        window.setOnMousePressed(e -> {
-            setActiveWindow(window);
-            e.consume();
-        });
-        
+        contentPane.getChildren().add(window);
+
+        // Listen for focus clicks on the content pane so clicking inside
+        // a window's content still activates it.
+        window.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> setActiveWindow(window));
+
         window.setOnCloseRequest(() -> removeWindow(window));
+
+        addTab(window);
+        setActiveWindow(window);
     }
-    
+
     public void removeWindow(InternalWindow window) {
         windows.remove(window);
-        getChildren().remove(window);
+        contentPane.getChildren().remove(window);
+        rebuildTabBar();
+
         if (activeWindow == window) {
             activeWindow = null;
+            if (!windows.isEmpty()) {
+                setActiveWindow(windows.get(windows.size() - 1));
+            }
         }
     }
-    
+
     public void setActiveWindow(InternalWindow window) {
-        if (activeWindow != null) {
-            activeWindow.setActive(false);
-        }
         activeWindow = window;
-        window.setActive(true);
-        window.toFront();
+        // Show only the active window; hide all others
+        for (InternalWindow w : windows) {
+            w.setVisible(w == activeWindow);
+            w.setManaged(w == activeWindow);
+        }
+        refreshTabBar();
     }
-    
+
     private void clearActiveWindow() {
         if (activeWindow != null) {
             activeWindow.setActive(false);
             activeWindow = null;
         }
     }
-    
+
     public List<InternalWindow> getWindows() {
         return new ArrayList<>(windows);
+    }
+
+    // -----------------------------------------------------------------------
+    // Tab bar
+    // -----------------------------------------------------------------------
+
+    private void addTab(InternalWindow window) {
+        // Just rebuild the whole bar – it's cheap for typical tab counts
+        rebuildTabBar();
+    }
+
+    private void rebuildTabBar() {
+        tabBar.getChildren().clear();
+        for (InternalWindow w : windows) {
+            tabBar.getChildren().add(buildTab(w));
+        }
+    }
+
+    private void refreshTabBar() {
+        // Re-render so the active tab gets its style applied
+        rebuildTabBar();
+    }
+
+    private HBox buildTab(InternalWindow window) {
+        HBox tab = new HBox();
+        tab.getStyleClass().add("workspace-tab");
+        if (window == activeWindow) {
+            tab.getStyleClass().add("workspace-tab-active");
+        }
+        tab.setSpacing(6);
+        tab.setPadding(new Insets(4, 8, 4, 12));
+        tab.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        Label title = new Label(window.getTitle());
+        title.getStyleClass().add("workspace-tab-label");
+
+        Button closeBtn = new Button("×");
+        closeBtn.getStyleClass().add("workspace-tab-close");
+        closeBtn.setOnAction(e -> {
+            e.consume();
+            Runnable req = window.getOnCloseRequest();
+            if (req != null) req.run();
+        });
+
+        tab.getChildren().addAll(title, closeBtn);
+        tab.setOnMouseClicked(e -> setActiveWindow(window));
+
+        return tab;
+    }
+
+    // -----------------------------------------------------------------------
+    // Tiling (kept for API compatibility; not used in tab mode)
+    // -----------------------------------------------------------------------
+
+    public void tileWindows() {
+        // No-op – windows are now tabbed, not tiled.
     }
 }

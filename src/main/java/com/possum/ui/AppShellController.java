@@ -44,8 +44,8 @@ public class AppShellController {
         WorkspaceDesktop desktop = new WorkspaceDesktop();
         workspaceManager = new WorkspaceManager(desktop, dependencyInjector);
         contentArea.getChildren().add(desktop);
-        desktop.prefWidthProperty().bind(contentArea.widthProperty());
-        desktop.prefHeightProperty().bind(contentArea.heightProperty());
+        // Let the desktop stretch to fill the StackPane in both directions
+        desktop.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         
         RouteGuard routeGuard = new RouteGuard(new com.possum.application.auth.AuthorizationService());
         navigationManager = new NavigationManager(contentArea, routeGuard);
