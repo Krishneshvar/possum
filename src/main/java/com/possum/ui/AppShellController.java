@@ -21,6 +21,7 @@ public class AppShellController {
         }
         if (navigationManager != null) {
             navigationManager.setDependencyInjector(dependencyInjector);
+            dependencyInjector.setNavigationManager(navigationManager);
         }
     }
 
