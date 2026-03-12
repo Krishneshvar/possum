@@ -18,6 +18,7 @@ public class RouteRegistry {
 
         // Products & Inventory
         register("products", "/fxml/products/products-view.fxml", "products.view");
+        register("product-form", "/fxml/products/product-form-view.fxml", "products.view");
         register("inventory", "/fxml/inventory/inventory-view.fxml", "inventory.view");
 
         // Sales & Commercial
