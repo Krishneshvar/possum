@@ -31,15 +31,11 @@
                 <CheckMenuItem text="Cancelled" fx:id="statusCancelledItem"/>
             </items>
         </MenuButton>
-        <MenuButton text="Date Filter" fx:id="dateMenuButton">
-            <items>
-                <CheckMenuItem text="Today" fx:id="dateTodayItem"/>
-                <CheckMenuItem text="Yesterday" fx:id="dateYesterdayItem"/>
-                <CheckMenuItem text="Last 7 Days" fx:id="dateLast7DaysItem"/>
-                <CheckMenuItem text="Last 30 Days" fx:id="dateLast30DaysItem"/>
-                <CheckMenuItem text="This Month" fx:id="dateThisMonthItem"/>
-            </items>
-        </MenuButton>
+        <Label text="From:"/>
+        <DatePicker fx:id="fromDatePicker" promptText="Start Date"/>
+        <Label text="To:"/>
+        <DatePicker fx:id="toDatePicker" promptText="End Date"/>
+        <Button text="Clear Dates" onAction="#handleClearDates" style="-fx-background-color: transparent; -fx-text-fill: #1976d2; -fx-border-color: transparent; -fx-cursor: hand;"/>
     </HBox>
 
     <DataTableView fx:id="purchaseTable" VBox.vgrow="ALWAYS"/>

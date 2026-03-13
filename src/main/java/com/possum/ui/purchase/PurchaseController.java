@@ -42,12 +42,8 @@ public class PurchaseController {
     @FXML private CheckMenuItem statusReceivedItem;
     @FXML private CheckMenuItem statusCancelledItem;
 
-    @FXML private MenuButton dateMenuButton;
-    @FXML private CheckMenuItem dateTodayItem;
-    @FXML private CheckMenuItem dateYesterdayItem;
-    @FXML private CheckMenuItem dateLast7DaysItem;
-    @FXML private CheckMenuItem dateLast30DaysItem;
-    @FXML private CheckMenuItem dateThisMonthItem;
+    @FXML private DatePicker fromDatePicker;
+    @FXML private DatePicker toDatePicker;
 
     private PurchaseService purchaseService;
     private SupplierRepository supplierRepository;
@@ -88,6 +84,8 @@ this.purchaseService = purchaseService;
         purchaseTable.addActionColumn("Actions", this::showActions);
     }
 
+    private boolean isAdjustingDates = false;
+
     private void setupFilters() {
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -102,11 +100,34 @@ this.purchaseService = purchaseService;
         statusReceivedItem.setOnAction(filterHandler);
         statusCancelledItem.setOnAction(filterHandler);
 
-        dateTodayItem.setOnAction(filterHandler);
-        dateYesterdayItem.setOnAction(filterHandler);
-        dateLast7DaysItem.setOnAction(filterHandler);
-        dateLast30DaysItem.setOnAction(filterHandler);
-        dateThisMonthItem.setOnAction(filterHandler);
+        fromDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (isAdjustingDates) return;
+            if (newVal != null && toDatePicker.getValue() != null && newVal.isAfter(toDatePicker.getValue())) {
+                isAdjustingDates = true;
+                toDatePicker.setValue(newVal);
+                isAdjustingDates = false;
+            }
+            loadPurchaseOrders();
+        });
+
+        toDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (isAdjustingDates) return;
+            if (newVal != null && fromDatePicker.getValue() != null && newVal.isBefore(fromDatePicker.getValue())) {
+                isAdjustingDates = true;
+                fromDatePicker.setValue(newVal);
+                isAdjustingDates = false;
+            }
+            loadPurchaseOrders();
+        });
+    }
+
+    @FXML
+    private void handleClearDates() {
+        isAdjustingDates = true;
+        fromDatePicker.setValue(null);
+        toDatePicker.setValue(null);
+        isAdjustingDates = false;
+        loadPurchaseOrders();
     }
 
     private String getSelectedStatuses() {
@@ -120,40 +141,14 @@ this.purchaseService = purchaseService;
     }
 
     private void applyDateFilters(String[] dateRange) {
-        LocalDate today = LocalDate.now();
-        LocalDate earliestFrom = null;
-        LocalDate latestTo = null;
+        LocalDate from = fromDatePicker.getValue();
+        LocalDate to = toDatePicker.getValue();
 
-        if (dateTodayItem.isSelected()) {
-            earliestFrom = today;
-            latestTo = today;
+        if (from != null) {
+            dateRange[0] = from.format(DateTimeFormatter.ISO_LOCAL_DATE);
         }
-        if (dateYesterdayItem.isSelected()) {
-            LocalDate yesterday = today.minusDays(1);
-            if (earliestFrom == null || yesterday.isBefore(earliestFrom)) earliestFrom = yesterday;
-            if (latestTo == null || yesterday.isAfter(latestTo)) latestTo = yesterday;
-        }
-        if (dateLast7DaysItem.isSelected()) {
-            LocalDate last7 = today.minusDays(7);
-            if (earliestFrom == null || last7.isBefore(earliestFrom)) earliestFrom = last7;
-            if (latestTo == null || today.isAfter(latestTo)) latestTo = today;
-        }
-        if (dateLast30DaysItem.isSelected()) {
-            LocalDate last30 = today.minusDays(30);
-            if (earliestFrom == null || last30.isBefore(earliestFrom)) earliestFrom = last30;
-            if (latestTo == null || today.isAfter(latestTo)) latestTo = today;
-        }
-        if (dateThisMonthItem.isSelected()) {
-            LocalDate startOfMonth = today.withDayOfMonth(1);
-            if (earliestFrom == null || startOfMonth.isBefore(earliestFrom)) earliestFrom = startOfMonth;
-            if (latestTo == null || today.isAfter(latestTo)) latestTo = today;
-        }
-
-        if (earliestFrom != null) {
-            dateRange[0] = earliestFrom.format(DateTimeFormatter.ISO_LOCAL_DATE);
-        }
-        if (latestTo != null) {
-            dateRange[1] = latestTo.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        if (to != null) {
+            dateRange[1] = to.format(DateTimeFormatter.ISO_LOCAL_DATE);
         }
     }
 
