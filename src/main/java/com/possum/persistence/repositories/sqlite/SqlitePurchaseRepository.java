@@ -249,8 +249,14 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
             params.add(fuzzy);
         }
         if (filter.status() != null && !filter.status().isBlank() && !"all".equalsIgnoreCase(filter.status())) {
-            joiner.add("po.status = ?");
-            params.add(filter.status());
+            String[] statuses = filter.status().split(",");
+            String placeholders = java.util.Arrays.stream(statuses)
+                    .map(s -> "?")
+                    .collect(java.util.stream.Collectors.joining(","));
+            joiner.add("po.status IN (" + placeholders + ")");
+            for (String status : statuses) {
+                params.add(status.trim());
+            }
         }
         if (filter.fromDate() != null && !filter.fromDate().isBlank()) {
             joiner.add("po.order_date >= ?");
