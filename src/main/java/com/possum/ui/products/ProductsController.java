@@ -2,6 +2,8 @@ package com.possum.ui.products;
 
 import com.possum.application.auth.AuthContext;
 import com.possum.application.products.ProductService;
+import com.possum.application.categories.CategoryService;
+import com.possum.domain.model.Category;
 import com.possum.domain.model.Product;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ProductFilter;
@@ -28,11 +30,16 @@ public class ProductsController {
     @FXML private PaginationBar paginationBar;
     
     private final ProductService productService;
+    private final CategoryService categoryService;
     private final NavigationManager navigationManager;
     private String currentSearch = "";
+    private java.util.List<String> currentStatusFilters = java.util.Collections.emptyList();
+    private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
+    private java.util.List<Long> currentCategoryFilters = java.util.Collections.emptyList();
 
-    public ProductsController(ProductService productService, NavigationManager navigationManager) {
+    public ProductsController(ProductService productService, CategoryService categoryService, NavigationManager navigationManager) {
         this.productService = productService;
+        this.categoryService = categoryService;
         this.navigationManager = navigationManager;
     }
 
@@ -62,8 +69,32 @@ public class ProductsController {
     }
 
     private void setupFilters() {
+        java.util.List<Category> categories = categoryService.getAllCategories();
+        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"), String::toString);
+        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
+
+        com.possum.ui.common.controls.MultiSelectFilter<Category> categoryFilter =
+            filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
+
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+
+            @SuppressWarnings("unchecked")
+            java.util.List<String> statusFilter = (java.util.List<String>) filters.get("status");
+            currentStatusFilters = statusFilter != null ? statusFilter : java.util.Collections.emptyList();
+
+            @SuppressWarnings("unchecked")
+            java.util.List<String> stockFilter = (java.util.List<String>) filters.get("stockStatus");
+            currentStockFilters = stockFilter != null ? stockFilter : java.util.Collections.emptyList();
+
+            @SuppressWarnings("unchecked")
+            java.util.List<Category> cats = (java.util.List<Category>) filters.get("categories");
+            if (cats != null) {
+                currentCategoryFilters = cats.stream().map(Category::id).toList();
+            } else {
+                currentCategoryFilters = java.util.Collections.emptyList();
+            }
+
             loadProducts();
         });
         
@@ -76,10 +107,10 @@ public class ProductsController {
         Platform.runLater(() -> {
             try {
                 ProductFilter filter = new ProductFilter(
-                    currentSearch.isEmpty() ? null : currentSearch,
-                    null,
-                    null,
-                    null,
+                    currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
+                    currentStockFilters.isEmpty() ? null : currentStockFilters,
+                    currentStatusFilters.isEmpty() ? null : currentStatusFilters,
+                    currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
                     paginationBar.getCurrentPage(),
                     paginationBar.getPageSize(),
                     "name",
