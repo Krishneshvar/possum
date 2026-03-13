@@ -17,7 +17,7 @@
             <Label fx:id="titleLabel" text="Add Product" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="Cancel" onAction="#handleCancel" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;"/>
-            <Button text="Save Product" onAction="#handleSave" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16; -fx-cursor: hand; -fx-font-weight: bold;"/>
+            <Button fx:id="saveButton" text="Save Product" onAction="#handleSave" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16; -fx-cursor: hand; -fx-font-weight: bold;"/>
         </HBox>
 
         <HBox spacing="20" VBox.vgrow="ALWAYS">
@@ -42,7 +42,7 @@
                     <HBox alignment="CENTER_LEFT">
                         <Label text="Variants" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="+ Add Variant" onAction="#handleAddVariant" style="-fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 12; -fx-cursor: hand;"/>
+                        <Button fx:id="addVariantButton" text="+ Add Variant" onAction="#handleAddVariant" style="-fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 12; -fx-cursor: hand;"/>
                     </HBox>
 
                     <VBox fx:id="variantsContainer" spacing="15"/>

@@ -140,13 +140,19 @@ public class ProductsController {
         alert.setHeaderText(product.name());
         alert.setContentText("Choose action:");
         
+        ButtonType viewBtn = new ButtonType("View");
+        ButtonType editBtn = new ButtonType("Edit");
         ButtonType deleteBtn = new ButtonType("Delete");
         ButtonType cancelBtn = ButtonType.CANCEL;
         
-        alert.getButtonTypes().setAll(deleteBtn, cancelBtn);
+        alert.getButtonTypes().setAll(viewBtn, editBtn, deleteBtn, cancelBtn);
         
         alert.showAndWait().ifPresent(type -> {
-            if (type == deleteBtn) {
+            if (type == viewBtn) {
+                navigationManager.navigateTo("product-form", Map.of("productId", product.id(), "mode", "view"));
+            } else if (type == editBtn) {
+                navigationManager.navigateTo("product-form", Map.of("productId", product.id(), "mode", "edit"));
+            } else if (type == deleteBtn) {
                 handleDelete(product);
             }
         });
