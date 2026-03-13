@@ -17,6 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.geometry.Insets;
+import javafx.application.Platform;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -38,6 +39,8 @@ public class ProductFormController implements Parameterizable {
     @FXML private ComboBox<String> statusCombo;
     @FXML private ComboBox<TaxCategoryItem> taxCombo;
     @FXML private VBox variantsContainer;
+    @FXML private Button saveButton;
+    @FXML private Button addVariantButton;
 
     private Long productId = null;
     private final List<VariantRow> variantRows = new ArrayList<>();
@@ -57,11 +60,83 @@ public class ProductFormController implements Parameterizable {
     public void setParameters(Map<String, Object> params) {
         if (params != null && params.containsKey("productId")) {
             this.productId = (Long) params.get("productId");
-            titleLabel.setText("Edit Product");
-            // Loading existing product not implemented based on requirements
+            String mode = (String) params.get("mode");
+            boolean isView = "view".equals(mode);
+
+            titleLabel.setText(isView ? "View Product" : "Edit Product");
+
+            Platform.runLater(() -> loadProductDetails(isView));
         } else {
             this.productId = null;
             titleLabel.setText("Add Product");
+            Platform.runLater(() -> {
+                if (variantRows.isEmpty()) {
+                    addVariantRow(true);
+                }
+            });
+        }
+    }
+
+    private void loadProductDetails(boolean isView) {
+        try {
+            ProductService.ProductWithVariantsDTO dto = productService.getProductWithVariants(productId);
+
+            nameField.setText(dto.product().name());
+            descriptionField.setText(dto.product().description());
+
+            if (dto.product().categoryId() != null) {
+                categoryCombo.getItems().stream()
+                    .filter(c -> c.id().equals(dto.product().categoryId()))
+                    .findFirst()
+                    .ifPresent(categoryCombo::setValue);
+            }
+
+            statusCombo.setValue(dto.product().status() != null ? dto.product().status() : "active");
+
+            if (dto.product().taxCategoryId() != null) {
+                taxCombo.getItems().stream()
+                    .filter(t -> t.id().equals(dto.product().taxCategoryId()))
+                    .findFirst()
+                    .ifPresent(taxCombo::setValue);
+            }
+
+            variantRows.clear();
+            variantsContainer.getChildren().clear();
+
+            if (dto.variants() != null && !dto.variants().isEmpty()) {
+                for (com.possum.domain.model.Variant v : dto.variants()) {
+                    VariantRow row = new VariantRow(Boolean.TRUE.equals(v.defaultVariant()));
+                    row.setVariantId(v.id());
+                    row.variantNameField.setText(v.name());
+                    row.skuField.setText(v.sku() != null ? v.sku() : "");
+                    row.priceField.setText(v.price() != null ? v.price().toString() : "");
+                    row.costPriceField.setText(v.costPrice() != null ? v.costPrice().toString() : "");
+                    row.stockAlertField.setText(v.stockAlertCap() != null ? v.stockAlertCap().toString() : "");
+                    row.variantStatusCombo.setValue(v.status() != null ? v.status() : "active");
+
+                    if (isView) {
+                        row.setReadOnly();
+                    }
+
+                    variantRows.add(row);
+                    variantsContainer.getChildren().add(row.getView());
+                }
+            } else {
+                addVariantRow(true);
+            }
+
+            if (isView) {
+                nameField.setEditable(false);
+                descriptionField.setEditable(false);
+                categoryCombo.setDisable(true);
+                statusCombo.setDisable(true);
+                taxCombo.setDisable(true);
+                saveButton.setVisible(false);
+                addVariantButton.setVisible(false);
+            }
+
+        } catch (Exception e) {
+            NotificationService.error("Failed to load product details: " + e.getMessage());
         }
     }
 
@@ -72,11 +147,6 @@ public class ProductFormController implements Parameterizable {
 
         statusCombo.setItems(FXCollections.observableArrayList("active", "inactive", "discontinued"));
         statusCombo.setValue("active");
-
-        // Add one default variant row initially
-        if (variantRows.isEmpty() && productId == null) {
-            addVariantRow(true);
-        }
     }
 
     private void loadCategories() {
@@ -245,6 +315,8 @@ public class ProductFormController implements Parameterizable {
         private final RadioButton defaultRadio;
         private Long variantId = null;
 
+        private final Button removeBtn;
+
         public VariantRow(boolean isDefault) {
             view = new VBox(10);
             view.setStyle("-fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 15;");
@@ -261,7 +333,7 @@ public class ProductFormController implements Parameterizable {
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
-            Button removeBtn = new Button("Remove");
+            removeBtn = new Button("Remove");
             removeBtn.setStyle("-fx-text-fill: #ef4444; -fx-background-color: transparent; -fx-cursor: hand;");
             removeBtn.setOnAction(e -> removeVariantRow(this));
 
@@ -285,6 +357,17 @@ public class ProductFormController implements Parameterizable {
             row3.getChildren().addAll(createFieldBox("Stock Alert", stockAlertField), createFieldBox("Status", variantStatusCombo));
 
             view.getChildren().addAll(headerBox, row1, row2, row3);
+        }
+
+        public void setReadOnly() {
+            variantNameField.setEditable(false);
+            skuField.setEditable(false);
+            priceField.setEditable(false);
+            costPriceField.setEditable(false);
+            stockAlertField.setEditable(false);
+            variantStatusCombo.setDisable(true);
+            defaultRadio.setDisable(true);
+            removeBtn.setVisible(false);
         }
 
         private TextField createTextField(String prompt, String text) {
