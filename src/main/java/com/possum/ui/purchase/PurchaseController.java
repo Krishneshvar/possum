@@ -26,7 +26,10 @@ import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PurchaseController {
     
@@ -34,6 +37,18 @@ public class PurchaseController {
     @FXML private DataTableView<PurchaseOrder> purchaseTable;
     @FXML private PaginationBar paginationBar;
     
+    @FXML private MenuButton statusMenuButton;
+    @FXML private CheckMenuItem statusPendingItem;
+    @FXML private CheckMenuItem statusReceivedItem;
+    @FXML private CheckMenuItem statusCancelledItem;
+
+    @FXML private MenuButton dateMenuButton;
+    @FXML private CheckMenuItem dateTodayItem;
+    @FXML private CheckMenuItem dateYesterdayItem;
+    @FXML private CheckMenuItem dateLast7DaysItem;
+    @FXML private CheckMenuItem dateLast30DaysItem;
+    @FXML private CheckMenuItem dateThisMonthItem;
+
     private PurchaseService purchaseService;
     private SupplierRepository supplierRepository;
     private VariantRepository variantRepository;
@@ -80,6 +95,66 @@ this.purchaseService = purchaseService;
         });
         
         paginationBar.setOnPageChange((page, size) -> loadPurchaseOrders());
+
+        javafx.event.EventHandler<javafx.event.ActionEvent> filterHandler = e -> loadPurchaseOrders();
+
+        statusPendingItem.setOnAction(filterHandler);
+        statusReceivedItem.setOnAction(filterHandler);
+        statusCancelledItem.setOnAction(filterHandler);
+
+        dateTodayItem.setOnAction(filterHandler);
+        dateYesterdayItem.setOnAction(filterHandler);
+        dateLast7DaysItem.setOnAction(filterHandler);
+        dateLast30DaysItem.setOnAction(filterHandler);
+        dateThisMonthItem.setOnAction(filterHandler);
+    }
+
+    private String getSelectedStatuses() {
+        List<String> statuses = new ArrayList<>();
+        if (statusPendingItem.isSelected()) statuses.add("pending");
+        if (statusReceivedItem.isSelected()) statuses.add("received");
+        if (statusCancelledItem.isSelected()) statuses.add("cancelled");
+
+        if (statuses.isEmpty()) return null;
+        return String.join(",", statuses);
+    }
+
+    private void applyDateFilters(String[] dateRange) {
+        LocalDate today = LocalDate.now();
+        LocalDate earliestFrom = null;
+        LocalDate latestTo = null;
+
+        if (dateTodayItem.isSelected()) {
+            earliestFrom = today;
+            latestTo = today;
+        }
+        if (dateYesterdayItem.isSelected()) {
+            LocalDate yesterday = today.minusDays(1);
+            if (earliestFrom == null || yesterday.isBefore(earliestFrom)) earliestFrom = yesterday;
+            if (latestTo == null || yesterday.isAfter(latestTo)) latestTo = yesterday;
+        }
+        if (dateLast7DaysItem.isSelected()) {
+            LocalDate last7 = today.minusDays(7);
+            if (earliestFrom == null || last7.isBefore(earliestFrom)) earliestFrom = last7;
+            if (latestTo == null || today.isAfter(latestTo)) latestTo = today;
+        }
+        if (dateLast30DaysItem.isSelected()) {
+            LocalDate last30 = today.minusDays(30);
+            if (earliestFrom == null || last30.isBefore(earliestFrom)) earliestFrom = last30;
+            if (latestTo == null || today.isAfter(latestTo)) latestTo = today;
+        }
+        if (dateThisMonthItem.isSelected()) {
+            LocalDate startOfMonth = today.withDayOfMonth(1);
+            if (earliestFrom == null || startOfMonth.isBefore(earliestFrom)) earliestFrom = startOfMonth;
+            if (latestTo == null || today.isAfter(latestTo)) latestTo = today;
+        }
+
+        if (earliestFrom != null) {
+            dateRange[0] = earliestFrom.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        }
+        if (latestTo != null) {
+            dateRange[1] = latestTo.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        }
     }
 
     private void loadPurchaseOrders() {
@@ -87,13 +162,16 @@ this.purchaseService = purchaseService;
         
         Platform.runLater(() -> {
             try {
+                String[] dateRange = new String[2];
+                applyDateFilters(dateRange);
+
                 PurchaseOrderFilter filter = new PurchaseOrderFilter(
                     paginationBar.getCurrentPage(),
                     paginationBar.getPageSize(),
                     currentSearch.isEmpty() ? null : currentSearch,
-                    null,
-                    null,
-                    null,
+                    getSelectedStatuses(),
+                    dateRange[0],
+                    dateRange[1],
                     "order_date",
                     "DESC"
                 );
