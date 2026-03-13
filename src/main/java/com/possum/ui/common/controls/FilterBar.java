@@ -5,21 +5,31 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
+import java.util.function.Function;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class FilterBar extends HBox {
+public class FilterBar extends VBox {
     private final TextField searchField;
     private final Map<String, ComboBox<?>> filters = new HashMap<>();
+    private final Map<String, MultiSelectFilter<?>> multiSelectFilters = new HashMap<>();
     private Consumer<Map<String, Object>> onFilterChange;
+
+    private final HBox topRow;
+    private final HBox bottomRow;
+    private boolean isResetting = false;
 
     public FilterBar() {
         setSpacing(10);
         setPadding(new Insets(10));
         setStyle("-fx-background-color: #f5f5f5;");
+
+        topRow = new HBox(10);
+        bottomRow = new HBox(10);
 
         searchField = new TextField();
         searchField.setPromptText("Search...");
@@ -29,8 +39,10 @@ public class FilterBar extends HBox {
         Button resetButton = new Button("Reset");
         resetButton.setOnAction(e -> reset());
 
-        getChildren().addAll(searchField, resetButton);
+        topRow.getChildren().addAll(searchField, resetButton);
         HBox.setHgrow(searchField, Priority.NEVER);
+
+        getChildren().addAll(topRow, bottomRow);
     }
 
     public <T> ComboBox<T> addFilter(String key, String prompt) {
@@ -40,9 +52,21 @@ public class FilterBar extends HBox {
         combo.valueProperty().addListener((obs, old, val) -> notifyFilterChange());
         
         filters.put(key, combo);
-        getChildren().add(getChildren().size() - 1, combo);
+        bottomRow.getChildren().add(combo);
         
         return combo;
+    }
+
+    public <T> MultiSelectFilter<T> addMultiSelectFilter(String key, String prompt, java.util.List<T> items, Function<T, String> labelExtractor) {
+        MultiSelectFilter<T> multiSelect = new MultiSelectFilter<>(prompt, labelExtractor);
+        multiSelect.setPrefWidth(150);
+        multiSelect.setItems(items);
+        multiSelect.getSelectedItems().addListener((javafx.collections.ListChangeListener.Change<? extends T> c) -> notifyFilterChange());
+
+        multiSelectFilters.put(key, multiSelect);
+        bottomRow.getChildren().add(multiSelect);
+
+        return multiSelect;
     }
 
     public void setOnFilterChange(Consumer<Map<String, Object>> handler) {
@@ -50,17 +74,25 @@ public class FilterBar extends HBox {
     }
 
     private void notifyFilterChange() {
-        if (onFilterChange != null) {
+        if (onFilterChange != null && !isResetting) {
             Map<String, Object> values = new HashMap<>();
             values.put("search", searchField.getText());
             filters.forEach((key, combo) -> values.put(key, combo.getValue()));
+            multiSelectFilters.forEach((key, multiSelect) -> values.put(key, multiSelect.getSelectedItems()));
             onFilterChange.accept(values);
         }
     }
 
     public void reset() {
-        searchField.clear();
-        filters.values().forEach(combo -> combo.setValue(null));
+        isResetting = true;
+        try {
+            searchField.clear();
+            filters.values().forEach(combo -> combo.setValue(null));
+            multiSelectFilters.values().forEach(MultiSelectFilter::clearSelection);
+        } finally {
+            isResetting = false;
+            notifyFilterChange();
+        }
     }
 
     public String getSearchText() {
