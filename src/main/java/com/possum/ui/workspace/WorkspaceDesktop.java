@@ -103,6 +103,10 @@ public class WorkspaceDesktop extends BorderPane {
         return new ArrayList<>(windows);
     }
 
+    public InternalWindow getActiveWindow() {
+        return activeWindow;
+    }
+
     // -----------------------------------------------------------------------
     // Tab bar
     // -----------------------------------------------------------------------

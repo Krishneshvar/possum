@@ -44,6 +44,9 @@ public class AppShellController {
         
         WorkspaceDesktop desktop = new WorkspaceDesktop();
         workspaceManager = new WorkspaceManager(desktop, dependencyInjector);
+        if (dependencyInjector != null) {
+            dependencyInjector.setWorkspaceManager(workspaceManager);
+        }
         contentArea.getChildren().add(desktop);
         // Let the desktop stretch to fill the StackPane in both directions
         desktop.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
