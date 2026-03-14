@@ -34,6 +34,7 @@ public class DependencyInjector {
     private final com.possum.infrastructure.filesystem.AppPaths appPaths;
 
     private NavigationManager navigationManager;
+    private com.possum.ui.workspace.WorkspaceManager workspaceManager;
 
     public DependencyInjector(ApplicationModule applicationModule, ServiceLocator serviceLocator,
                               SalesService salesService, com.possum.application.sales.TaxEngine taxEngine, ProductSearchIndex productSearchIndex,
@@ -83,6 +84,10 @@ public class DependencyInjector {
 
     public void setNavigationManager(NavigationManager navigationManager) {
         this.navigationManager = navigationManager;
+    }
+
+    public void setWorkspaceManager(com.possum.ui.workspace.WorkspaceManager workspaceManager) {
+        this.workspaceManager = workspaceManager;
     }
 
     public void injectDependencies(Object controller) {
@@ -139,12 +144,14 @@ public class DependencyInjector {
             return serviceLocator.getPrinterService();
         } else if (type.equals(com.possum.ui.navigation.NavigationManager.class)) {
             return navigationManager;
+        } else if (type.equals(com.possum.ui.workspace.WorkspaceManager.class)) {
+            return workspaceManager;
         } else if (type.equals(com.possum.ui.products.ProductFormController.class)) {
             return new com.possum.ui.products.ProductFormController(
                 applicationModule.getProductService(),
                 applicationModule.getCategoryService(),
                 taxRepository,
-                navigationManager
+                workspaceManager
             );
         } else if (type.equals(com.possum.ui.auth.SessionStore.class)) {
             return new com.possum.ui.auth.SessionStore(appPaths, serviceLocator.getJsonService()); // Or instantiate properly

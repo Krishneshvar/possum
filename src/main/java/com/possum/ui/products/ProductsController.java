@@ -11,7 +11,7 @@ import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.PaginationBar;
-import com.possum.ui.navigation.NavigationManager;
+import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -31,16 +31,16 @@ public class ProductsController {
     
     private final ProductService productService;
     private final CategoryService categoryService;
-    private final NavigationManager navigationManager;
+    private final WorkspaceManager workspaceManager;
     private String currentSearch = "";
     private java.util.List<String> currentStatusFilters = java.util.Collections.emptyList();
     private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
     private java.util.List<Long> currentCategoryFilters = java.util.Collections.emptyList();
 
-    public ProductsController(ProductService productService, CategoryService categoryService, NavigationManager navigationManager) {
+    public ProductsController(ProductService productService, CategoryService categoryService, WorkspaceManager workspaceManager) {
         this.productService = productService;
         this.categoryService = categoryService;
-        this.navigationManager = navigationManager;
+        this.workspaceManager = workspaceManager;
     }
 
     @FXML
@@ -131,7 +131,7 @@ public class ProductsController {
 
     @FXML
     private void handleAdd() {
-        navigationManager.navigateTo("product-form");
+        workspaceManager.openWindow("Add Product", "/fxml/products/product-form-view.fxml");
     }
 
     private void showActions(Product product) {
@@ -149,9 +149,9 @@ public class ProductsController {
         
         alert.showAndWait().ifPresent(type -> {
             if (type == viewBtn) {
-                navigationManager.navigateTo("product-form", Map.of("productId", product.id(), "mode", "view"));
+                workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view"));
             } else if (type == editBtn) {
-                navigationManager.navigateTo("product-form", Map.of("productId", product.id(), "mode", "edit"));
+                workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit"));
             } else if (type == deleteBtn) {
                 handleDelete(product);
             }

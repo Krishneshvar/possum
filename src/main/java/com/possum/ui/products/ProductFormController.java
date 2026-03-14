@@ -7,7 +7,7 @@ import com.possum.domain.model.Category;
 import com.possum.domain.model.TaxCategory;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
 import com.possum.ui.common.controls.NotificationService;
-import com.possum.ui.navigation.NavigationManager;
+import com.possum.ui.workspace.WorkspaceManager;
 import com.possum.ui.navigation.Parameterizable;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -30,7 +30,7 @@ public class ProductFormController implements Parameterizable {
     private final ProductService productService;
     private final CategoryService categoryService;
     private final TaxRepository taxRepository;
-    private final NavigationManager navigationManager;
+    private final WorkspaceManager workspaceManager;
 
     @FXML private Label titleLabel;
     @FXML private TextField nameField;
@@ -49,11 +49,11 @@ public class ProductFormController implements Parameterizable {
     public ProductFormController(ProductService productService,
                                  CategoryService categoryService,
                                  TaxRepository taxRepository,
-                                 NavigationManager navigationManager) {
+                                 WorkspaceManager workspaceManager) {
         this.productService = productService;
         this.categoryService = categoryService;
         this.taxRepository = taxRepository;
-        this.navigationManager = navigationManager;
+        this.workspaceManager = workspaceManager;
     }
 
     @Override
@@ -126,11 +126,23 @@ public class ProductFormController implements Parameterizable {
             }
 
             if (isView) {
+                String readOnlyStyle = "-fx-background-color: transparent; -fx-border-color: transparent; -fx-opacity: 1; -fx-text-fill: black;";
+
                 nameField.setEditable(false);
+                nameField.setStyle(readOnlyStyle);
+
                 descriptionField.setEditable(false);
+                descriptionField.setStyle(readOnlyStyle);
+
                 categoryCombo.setDisable(true);
+                categoryCombo.setStyle(readOnlyStyle);
+
                 statusCombo.setDisable(true);
+                statusCombo.setStyle(readOnlyStyle);
+
                 taxCombo.setDisable(true);
+                taxCombo.setStyle(readOnlyStyle);
+
                 saveButton.setVisible(false);
                 addVariantButton.setVisible(false);
             }
@@ -235,7 +247,7 @@ public class ProductFormController implements Parameterizable {
                 NotificationService.success("Product updated successfully");
             }
 
-            navigationManager.navigateTo("products");
+            workspaceManager.closeActiveWindow();
         } catch (Exception e) {
             NotificationService.error("Failed to save product: " + e.getMessage());
         }
@@ -287,7 +299,7 @@ public class ProductFormController implements Parameterizable {
 
     @FXML
     private void handleCancel() {
-        navigationManager.navigateTo("products");
+        workspaceManager.closeActiveWindow();
     }
 
     private record CategoryItem(Long id, String name) {
@@ -360,13 +372,29 @@ public class ProductFormController implements Parameterizable {
         }
 
         public void setReadOnly() {
+            String readOnlyStyle = "-fx-background-color: transparent; -fx-border-color: transparent; -fx-opacity: 1; -fx-text-fill: black;";
+
             variantNameField.setEditable(false);
+            variantNameField.setStyle(readOnlyStyle);
+
             skuField.setEditable(false);
+            skuField.setStyle(readOnlyStyle);
+
             priceField.setEditable(false);
+            priceField.setStyle(readOnlyStyle);
+
             costPriceField.setEditable(false);
+            costPriceField.setStyle(readOnlyStyle);
+
             stockAlertField.setEditable(false);
+            stockAlertField.setStyle(readOnlyStyle);
+
             variantStatusCombo.setDisable(true);
+            variantStatusCombo.setStyle(readOnlyStyle);
+
             defaultRadio.setDisable(true);
+            defaultRadio.setStyle(readOnlyStyle);
+
             removeBtn.setVisible(false);
         }
 
