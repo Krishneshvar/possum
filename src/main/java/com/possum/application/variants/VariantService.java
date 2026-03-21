@@ -60,6 +60,7 @@ public class VariantService {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -124,6 +125,7 @@ public class VariantService {
                 command.stockAlertCap() != null ? command.stockAlertCap() : 10,
                 command.isDefault() != null && command.isDefault(),
                 command.status() != null ? command.status() : "active",
+                null,
                 null,
                 null,
                 null,

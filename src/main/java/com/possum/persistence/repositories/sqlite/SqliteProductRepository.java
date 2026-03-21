@@ -216,6 +216,7 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
                     variant.status(),
                     variant.imagePath(),
                     inventoryRepository.getStockByVariantId(variant.id()),
+                    variant.categoryName(),
                     variant.createdAt(),
                     variant.updatedAt(),
                     variant.deletedAt()
