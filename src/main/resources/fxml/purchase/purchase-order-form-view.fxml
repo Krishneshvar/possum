@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.purchase.PurchaseOrderFormController"
+      spacing="15"
+      alignment="TOP_LEFT">
+      
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label fx:id="titleLabel" text="Purchase Order Form" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    
+    <Label text="Supplier:"/>
+    <ComboBox fx:id="supplierCombo" promptText="Select supplier"/>
+    
+    <Label text="Items:"/>
+    <ScrollPane fitToWidth="true" prefHeight="400" VBox.vgrow="ALWAYS">
+        <VBox fx:id="itemsBox" spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+        </VBox>
+    </ScrollPane>
+    
+    <Button text="+ Add Item" onAction="#handleAddItem"/>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" onAction="#handleCancel" styleClass="btn-secondary"/>
+        <Button text="Save" onAction="#handleSave" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 8 16; -fx-background-radius: 4;"/>
+    </HBox>
+</VBox>

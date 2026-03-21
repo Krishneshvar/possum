@@ -103,9 +103,9 @@ public class AppShellController {
     private void buildNavigation() {
         createNavButton("🏠 Dashboard", "Dashboard", "/fxml/dashboard/dashboard-view.fxml");
         createNavMenu("📦 Inventory", new String[][]{
-            {"Categories", "/fxml/categories/categories-view.fxml"},
             {"Products", "/fxml/products/products-view.fxml"},
             {"Variants", "/fxml/inventory/variants-view.fxml"},
+            {"Categories", "/fxml/categories/categories-view.fxml"},
             {"Stock", "/fxml/inventory/inventory-view.fxml"},
             {"Stock History", "/fxml/inventory/stock-history-view.fxml"}
         });
@@ -114,7 +114,10 @@ public class AppShellController {
             {"Transactions", "/fxml/transactions/transactions-view.fxml"},
             {"Returns", "/fxml/returns/returns-view.fxml"}
         });
-        createNavButton("📋 Purchase", "Purchase Orders", "/fxml/purchase/purchase-view.fxml");
+        createNavMenu("📋 Purchase", new String[][]{
+            {"Suppliers", "/fxml/purchase/suppliers-view.fxml"},
+            {"Purchase Orders", "/fxml/purchase/purchase-view.fxml"}
+        });
         createNavMenu("📊 Insights", new String[][]{
             {"Reports", "/fxml/reports/reports-view.fxml"},
             {"Audit Log", "/fxml/audit/audit-view.fxml"}
