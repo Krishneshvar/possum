@@ -149,9 +149,9 @@ public class ProductsController {
         
         alert.showAndWait().ifPresent(type -> {
             if (type == viewBtn) {
-                workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view"));
+                workspaceManager.openWindow("View Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view"));
             } else if (type == editBtn) {
-                workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit"));
+                workspaceManager.openWindow("Edit Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit"));
             } else if (type == deleteBtn) {
                 handleDelete(product);
             }

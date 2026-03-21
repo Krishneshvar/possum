@@ -64,16 +64,13 @@ public class ProductFormController implements Parameterizable {
             boolean isView = "view".equals(mode);
 
             titleLabel.setText(isView ? "View Product" : "Edit Product");
-
-            Platform.runLater(() -> loadProductDetails(isView));
+            loadProductDetails(isView);
         } else {
             this.productId = null;
             titleLabel.setText("Add Product");
-            Platform.runLater(() -> {
-                if (variantRows.isEmpty()) {
-                    addVariantRow(true);
-                }
-            });
+            if (variantRows.isEmpty()) {
+                addVariantRow(true);
+            }
         }
     }
 
@@ -126,28 +123,26 @@ public class ProductFormController implements Parameterizable {
             }
 
             if (isView) {
-                String readOnlyStyle = "-fx-background-color: transparent; -fx-border-color: transparent; -fx-opacity: 1; -fx-text-fill: black;";
-
-                nameField.setEditable(false);
-                nameField.setStyle(readOnlyStyle);
-
-                descriptionField.setEditable(false);
-                descriptionField.setStyle(readOnlyStyle);
-
-                categoryCombo.setDisable(true);
-                categoryCombo.setStyle(readOnlyStyle);
-
-                statusCombo.setDisable(true);
-                statusCombo.setStyle(readOnlyStyle);
-
-                taxCombo.setDisable(true);
-                taxCombo.setStyle(readOnlyStyle);
+                replaceFieldWithLabel(nameField, dto.product().name());
+                replaceFieldWithLabel(descriptionField, dto.product().description());
+                
+                String catName = categoryCombo.getValue() != null ? categoryCombo.getValue().name() : "None";
+                replaceFieldWithLabel(categoryCombo, catName);
+                
+                replaceFieldWithLabel(statusCombo, statusCombo.getValue());
+                
+                String taxName = taxCombo.getValue() != null ? taxCombo.getValue().name() : "None";
+                replaceFieldWithLabel(taxCombo, taxName);
 
                 saveButton.setVisible(false);
+                saveButton.setManaged(false);
                 addVariantButton.setVisible(false);
+                addVariantButton.setManaged(false);
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Failed to load product details: " + e.getMessage());
             NotificationService.error("Failed to load product details: " + e.getMessage());
         }
     }
@@ -302,6 +297,26 @@ public class ProductFormController implements Parameterizable {
         workspaceManager.closeActiveWindow();
     }
 
+    private void replaceFieldWithLabel(Control field, String text) {
+        if (field == null || field.getParent() == null) return;
+        Label label = new Label(text != null ? text : "");
+        label.setStyle("-fx-font-size: 14px; -fx-text-fill: #1e293b; -fx-padding: 8 12;");
+        label.setWrapText(true);
+        
+        javafx.scene.Parent parent = field.getParent();
+        if (parent instanceof VBox box) {
+            int index = box.getChildren().indexOf(field);
+            if (index != -1) {
+                box.getChildren().set(index, label);
+            }
+        } else if (parent instanceof HBox box) {
+            int index = box.getChildren().indexOf(field);
+            if (index != -1) {
+                box.getChildren().set(index, label);
+            }
+        }
+    }
+
     private record CategoryItem(Long id, String name) {
         @Override
         public String toString() {
@@ -372,30 +387,18 @@ public class ProductFormController implements Parameterizable {
         }
 
         public void setReadOnly() {
-            String readOnlyStyle = "-fx-background-color: transparent; -fx-border-color: transparent; -fx-opacity: 1; -fx-text-fill: black;";
-
-            variantNameField.setEditable(false);
-            variantNameField.setStyle(readOnlyStyle);
-
-            skuField.setEditable(false);
-            skuField.setStyle(readOnlyStyle);
-
-            priceField.setEditable(false);
-            priceField.setStyle(readOnlyStyle);
-
-            costPriceField.setEditable(false);
-            costPriceField.setStyle(readOnlyStyle);
-
-            stockAlertField.setEditable(false);
-            stockAlertField.setStyle(readOnlyStyle);
-
-            variantStatusCombo.setDisable(true);
-            variantStatusCombo.setStyle(readOnlyStyle);
+            replaceFieldWithLabel(variantNameField, variantNameField.getText());
+            replaceFieldWithLabel(skuField, skuField.getText());
+            replaceFieldWithLabel(priceField, priceField.getText());
+            replaceFieldWithLabel(costPriceField, costPriceField.getText());
+            replaceFieldWithLabel(stockAlertField, stockAlertField.getText());
+            replaceFieldWithLabel(variantStatusCombo, variantStatusCombo.getValue());
 
             defaultRadio.setDisable(true);
-            defaultRadio.setStyle(readOnlyStyle);
+            defaultRadio.setStyle("-fx-opacity: 1; -fx-text-fill: black;");
 
             removeBtn.setVisible(false);
+            removeBtn.setManaged(false);
         }
 
         private TextField createTextField(String prompt, String text) {

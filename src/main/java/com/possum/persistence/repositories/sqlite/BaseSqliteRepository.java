@@ -30,7 +30,7 @@ abstract class BaseSqliteRepository {
             if (!rs.next()) {
                 return Optional.empty();
             }
-            return Optional.of(mapper.map(rs));
+            return Optional.ofNullable(mapper.map(rs));
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed queryOne for SQL: " + sql, ex);
         }
