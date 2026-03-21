@@ -31,12 +31,16 @@ public class InventoryController {
     
     private InventoryService inventoryService;
     private VariantRepository variantRepository;
+    private com.possum.application.categories.CategoryService categoryService;
     private String currentSearch = "";
+    private java.util.List<Long> currentCategoryFilters = java.util.Collections.emptyList();
+    private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public InventoryController(InventoryService inventoryService, VariantRepository variantRepository) {
-this.inventoryService = inventoryService;
+    public InventoryController(InventoryService inventoryService, VariantRepository variantRepository, com.possum.application.categories.CategoryService categoryService) {
+        this.inventoryService = inventoryService;
         this.variantRepository = variantRepository;
+        this.categoryService = categoryService;
     }
 
     @FXML
@@ -54,11 +58,43 @@ this.inventoryService = inventoryService;
         TableColumn<Variant, String> variantCol = new TableColumn<>("Variant");
         variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
         
+        TableColumn<Variant, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().categoryName() != null ? cellData.getValue().categoryName() : "Uncategorized"
+        ));
+
         TableColumn<Variant, String> skuCol = new TableColumn<>("SKU");
         skuCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().sku()));
         
-        TableColumn<Variant, Integer> stockCol = new TableColumn<>("Stock");
+        TableColumn<Variant, Integer> stockCol = new TableColumn<>("Current Stock");
         stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
+        stockCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            private final javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(5);
+            private final javafx.scene.control.Label textLabel = new javafx.scene.control.Label();
+            private final javafx.scene.control.Button editBtn = new javafx.scene.control.Button("✏️");
+            {
+                editBtn.setStyle("-fx-background-color: transparent; -fx-padding: 0; -fx-cursor: hand;");
+                editBtn.setOnAction(e -> {
+                    Variant variant = getTableView().getItems().get(getIndex());
+                    if (variant != null) {
+                        handleAdjust(variant);
+                    }
+                });
+                box.getChildren().addAll(textLabel, editBtn);
+                box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            }
+
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    textLabel.setText(String.valueOf(item));
+                    setGraphic(box);
+                }
+            }
+        });
         
         TableColumn<Variant, Integer> alertCol = new TableColumn<>("Alert Level");
         alertCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stockAlertCap()));
@@ -73,14 +109,32 @@ this.inventoryService = inventoryService;
             }
         });
         
-        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, stockCol, alertCol, priceCol);
-        
-        inventoryTable.addActionColumn("Adjust", this::handleAdjust);
+        TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+
+        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, categoryCol, skuCol, stockCol, alertCol, priceCol, statusCol);
     }
 
     private void setupFilters() {
+        java.util.List<com.possum.domain.model.Category> categories = categoryService.getAllCategories();
+        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
+        filterBar.addMultiSelectFilter("categories", "Categories", categories, com.possum.domain.model.Category::name);
+
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+
+            @SuppressWarnings("unchecked")
+            java.util.List<String> stockFilter = (java.util.List<String>) filters.get("stockStatus");
+            currentStockFilters = stockFilter != null ? stockFilter : java.util.Collections.emptyList();
+
+            @SuppressWarnings("unchecked")
+            java.util.List<com.possum.domain.model.Category> cats = (java.util.List<com.possum.domain.model.Category>) filters.get("categories");
+            if (cats != null) {
+                currentCategoryFilters = cats.stream().map(com.possum.domain.model.Category::id).toList();
+            } else {
+                currentCategoryFilters = java.util.Collections.emptyList();
+            }
+
             loadInventory();
         });
         
@@ -93,10 +147,10 @@ this.inventoryService = inventoryService;
         Platform.runLater(() -> {
             try {
                 PagedResult<Variant> result = variantRepository.findVariants(
-                    currentSearch.isEmpty() ? null : currentSearch,
+                    currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
                     null,
-                    null,
-                    null,
+                    currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
+                    currentStockFilters.isEmpty() ? null : currentStockFilters,
                     null,
                     "stock",
                     "ASC",
