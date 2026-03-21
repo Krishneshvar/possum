@@ -127,11 +127,19 @@ public class VariantsController {
         stockCol.setId("stock");
         stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
 
+        TableColumn<Variant, java.math.BigDecimal> mrpCol = new TableColumn<>("MRP");
+        mrpCol.setId("price");
+        mrpCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
+
+        TableColumn<Variant, java.math.BigDecimal> costCol = new TableColumn<>("Cost");
+        costCol.setId("cost_price");
+        costCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().costPrice()));
+
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
         statusCol.setId("status");
         statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
 
-        variantsTable.getTableView().getColumns().addAll(nameCol, stockCol, statusCol);
+        variantsTable.getTableView().getColumns().addAll(nameCol, mrpCol, costCol, stockCol, statusCol);
 
         variantsTable.getTableView().setOnSort(event -> {
             if (!variantsTable.getTableView().getSortOrder().isEmpty()) {

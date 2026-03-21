@@ -106,13 +106,13 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
         int limit = Math.max(1, itemsPerPage);
         int offset = (page - 1) * limit;
 
-        String sortColumn = switch (sortBy == null ? "p.name" : sortBy) {
-            case "v.name" -> "v.name";
-            case "v.sku" -> "v.sku";
-            case "v.mrp", "price" -> "price";
-            case "v.cost_price" -> "v.cost_price";
+        String sortColumn = switch (sortBy == null ? "product_name" : sortBy) {
+            case "name" -> "v.name";
+            case "sku" -> "v.sku";
+            case "price", "mrp" -> "v.mrp";
+            case "cost_price" -> "v.cost_price";
             case "stock" -> "stock";
-            case "c.name" -> "category_name";
+            case "category_name" -> "c.name";
             default -> "product_name";
         };
         String order = "DESC".equalsIgnoreCase(sortOrder) ? "DESC" : "ASC";

@@ -8,6 +8,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.scene.Cursor;
 
 import java.util.function.Consumer;
 
@@ -68,22 +70,25 @@ public class DataTableView<T> extends StackPane {
     }
 
     public void addActionColumn(String title, Consumer<T> onAction) {
-        TableColumn<T, Void> column = new TableColumn<>(title);
+        TableColumn<T, T> column = new TableColumn<>(title);
         column.setSortable(false);
-        column.setCellFactory(col -> new TableCell<>() {
+        column.setCellValueFactory(features -> new ReadOnlyObjectWrapper<>(features.getValue()));
+        column.setCellFactory(col -> new TableCell<T, T>() {
             private final Button button = new Button(title);
             {
+                button.setCursor(Cursor.HAND);
+                button.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 4 12; -fx-font-size: 13px;");
                 button.setOnAction(e -> {
-                    T item = getTableView().getItems().get(getIndex());
+                    T item = getItem();
                     if (item != null) {
                         onAction.accept(item);
                     }
                 });
             }
             @Override
-            protected void updateItem(Void item, boolean empty) {
+            protected void updateItem(T item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getIndex() >= getTableView().getItems().size()) {
+                if (empty || item == null) {
                     setGraphic(null);
                 } else {
                     setGraphic(button);
