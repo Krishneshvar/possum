@@ -8,19 +8,24 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.inventory.InventoryController"
-      spacing="20"
-      alignment="TOP_LEFT">
-    
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
 
-    <Label text="Inventory" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <!-- Header -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Inventory" styleClass="view-title"/>
+            <Label text="Monitor stock levels and statuses across all products" styleClass="view-subtitle"/>
+        </VBox>
+    </HBox>
     
-    <FilterBar fx:id="filterBar"/>
-    
-    <DataTableView fx:id="inventoryTable" VBox.vgrow="ALWAYS"/>
-    
-    <PaginationBar fx:id="paginationBar"/>
+    <!-- Main Content -->
+    <VBox styleClass="card" VBox.vgrow="ALWAYS">
+        <FilterBar fx:id="filterBar"/>
+
+        <DataTableView fx:id="inventoryTable" VBox.vgrow="ALWAYS" styleClass="data-table"/>
+
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 
 </VBox>

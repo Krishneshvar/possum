@@ -8,21 +8,24 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.inventory.VariantsController"
-      spacing="20"
-      alignment="TOP_LEFT">
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
 
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="Variants" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <!-- Header -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Variants" styleClass="view-title"/>
+            <Label text="Manage all item variations" styleClass="view-subtitle"/>
+        </VBox>
     </HBox>
 
-    <FilterBar fx:id="filterBar"/>
+    <!-- Main Content -->
+    <VBox styleClass="card" VBox.vgrow="ALWAYS">
+        <FilterBar fx:id="filterBar"/>
 
-    <DataTableView fx:id="variantsTable" VBox.vgrow="ALWAYS"/>
+        <DataTableView fx:id="variantsTable" VBox.vgrow="ALWAYS" styleClass="data-table"/>
 
-    <PaginationBar fx:id="paginationBar"/>
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 
 </VBox>

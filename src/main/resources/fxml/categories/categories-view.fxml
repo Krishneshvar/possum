@@ -7,35 +7,38 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.categories.CategoriesController"
-      spacing="20"
-      alignment="TOP_LEFT">
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
 
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <HBox alignment="CENTER_LEFT" spacing="20">
-        <Label text="Categories" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <!-- Header -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Categories" styleClass="view-title"/>
+            <Label text="Manage product classifications and hierarchy" styleClass="view-subtitle"/>
+        </VBox>
         <Region HBox.hgrow="ALWAYS" />
-        <Button text="Add Category" onAction="#handleAddCategory" styleClass="action-button, primary-button" />
+        <Button text="+ Add Category" onAction="#handleAddCategory" styleClass="action-button, primary-button" accessibleText="Create a new category" tooltip="Add a new category" />
     </HBox>
 
-    <SplitPane dividerPositions="0.4" VBox.vgrow="ALWAYS">
+    <SplitPane dividerPositions="0.35" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-padding: 0;">
         <!-- Tree View on the left -->
-        <VBox spacing="10">
-            <Label text="Category Hierarchy" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
-            <TreeView fx:id="categoryTreeView" VBox.vgrow="ALWAYS" />
+        <VBox styleClass="card">
+            <Label text="Category Hierarchy" styleClass="card-title" />
+            <TreeView fx:id="categoryTreeView" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-color: #cbd5e1; -fx-border-radius: 6;"/>
         </VBox>
 
         <!-- Table View on the right -->
-        <VBox spacing="10">
-            <Label text="All Categories" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
-            <TableView fx:id="categoryTableView" VBox.vgrow="ALWAYS">
+        <VBox styleClass="card">
+            <Label text="All Categories" styleClass="card-title" />
+            <TableView fx:id="categoryTableView" VBox.vgrow="ALWAYS" styleClass="data-table">
                 <columns>
                     <TableColumn fx:id="idCol" text="ID" prefWidth="50" />
-                    <TableColumn fx:id="nameCol" text="Name" prefWidth="200" />
-                    <TableColumn fx:id="parentCol" text="Parent Category" prefWidth="200" />
+                    <TableColumn fx:id="nameCol" text="Name" prefWidth="250" />
+                    <TableColumn fx:id="parentCol" text="Parent Category" prefWidth="250" />
                 </columns>
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                </columnResizePolicy>
             </TableView>
         </VBox>
     </SplitPane>

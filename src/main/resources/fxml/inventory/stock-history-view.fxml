@@ -8,7 +8,8 @@
 <VBox fx:id="container" xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.inventory.StockHistoryController"
-      styleClass="workspace-view">
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
 
     <!-- Header -->
     <HBox styleClass="view-header" alignment="CENTER_LEFT">
