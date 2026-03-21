@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import com.possum.ui.common.controls.PaginationBar?>
+
+<VBox fx:id="container" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.inventory.StockHistoryController"
+      styleClass="workspace-view">
+
+    <!-- Header -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Stock History" styleClass="view-title"/>
+            <Label text="View inventory adjustments and stock flow history" styleClass="view-subtitle"/>
+        </VBox>
+    </HBox>
+
+    <!-- Data Table -->
+    <VBox styleClass="card" VBox.vgrow="ALWAYS">
+        <TableView fx:id="historyTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+            <columns>
+                <TableColumn fx:id="productCol" text="Product" prefWidth="150"/>
+                <TableColumn fx:id="variantCol" text="Variant" prefWidth="150"/>
+                <TableColumn fx:id="skuCol" text="SKU" prefWidth="120"/>
+                <TableColumn fx:id="changeCol" text="Change" prefWidth="80" style="-fx-alignment: CENTER-RIGHT;"/>
+                <TableColumn fx:id="reasonCol" text="Reason" prefWidth="150"/>
+                <TableColumn fx:id="adjustedByCol" text="Adjusted By" prefWidth="150"/>
+                <TableColumn fx:id="dateCol" text="Date &amp; Time" prefWidth="150"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+        </TableView>
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
+</VBox>

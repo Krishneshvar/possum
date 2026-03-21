@@ -95,6 +95,51 @@ public final class SqliteInventoryRepository extends BaseSqliteRepository implem
     }
 
     @Override
+    public List<com.possum.shared.dto.StockHistoryDto> findStockHistory(String search, List<String> reasons, int limit, int offset) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT
+                    ia.id,
+                    ia.variant_id,
+                    p.name AS product_name,
+                    v.name AS variant_name,
+                    v.sku,
+                    ia.quantity_change,
+                    ia.reason,
+                    u.name AS adjusted_by_name,
+                    ia.adjusted_at
+                FROM inventory_adjustments ia
+                JOIN variants v ON ia.variant_id = v.id
+                JOIN products p ON v.product_id = p.id
+                LEFT JOIN users u ON ia.adjusted_by = u.id
+                WHERE 1=1
+                """);
+
+        java.util.List<Object> params = new java.util.ArrayList<>();
+
+        if (search != null && !search.trim().isEmpty()) {
+            sql.append(" AND (p.name LIKE ? OR v.name LIKE ? OR v.sku LIKE ?) ");
+            String searchPattern = "%" + search.trim() + "%";
+            params.add(searchPattern);
+            params.add(searchPattern);
+            params.add(searchPattern);
+        }
+
+        if (reasons != null && !reasons.isEmpty()) {
+            sql.append(" AND ia.reason IN (");
+            sql.append("?,".repeat(reasons.size()));
+            sql.setLength(sql.length() - 1); // remove last comma
+            sql.append(") ");
+            params.addAll(reasons);
+        }
+
+        sql.append(" ORDER BY ia.adjusted_at DESC LIMIT ? OFFSET ? ");
+        params.add(limit);
+        params.add(offset);
+
+        return queryList(sql.toString(), new com.possum.persistence.mappers.StockHistoryMapper(), params.toArray());
+    }
+
+    @Override
     public List<InventoryAdjustment> findAdjustmentsByVariantId(long variantId, int limit, int offset) {
         return queryList(
                 """
