@@ -18,7 +18,11 @@
             <Label text="Manage inventory items, pricing, and variants" styleClass="view-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="addButton" text="+ Add Product" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new product" tooltip="Create a new product record"/>
+        <Button fx:id="addButton" text="+ Add Product" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new product">
+            <tooltip>
+                <Tooltip text="Create a new product record"/>
+            </tooltip>
+        </Button>
     </HBox>
 
     <!-- Main Content -->

@@ -38,8 +38,16 @@
 
         <!-- Actions -->
         <HBox alignment="CENTER_RIGHT" spacing="12">
-            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true" accessibleText="Cancel category creation" tooltip="Discard and close"/>
-            <Button text="Save Category" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save new category" tooltip="Create the category"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true" accessibleText="Cancel category creation">
+                <tooltip>
+                    <Tooltip text="Discard and close"/>
+                </tooltip>
+            </Button>
+            <Button text="Save Category" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save new category">
+                <tooltip>
+                    <Tooltip text="Create the category"/>
+                </tooltip>
+            </Button>
         </HBox>
     </VBox>
 
