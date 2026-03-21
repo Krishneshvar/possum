@@ -16,6 +16,7 @@ public record Variant(
         String status,
         String imagePath,
         Integer stock,
+        String categoryName,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt

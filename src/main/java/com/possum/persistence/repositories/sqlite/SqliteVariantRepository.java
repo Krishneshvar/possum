@@ -44,9 +44,10 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                 """
                 SELECT
                   v.id, v.product_id, p.name AS product_name, v.name, v.sku, v.mrp AS price, v.cost_price,
-                  v.stock_alert_cap, v.is_default, v.status, p.image_path, 0 AS stock, v.created_at, v.updated_at, v.deleted_at
+                  v.stock_alert_cap, v.is_default, v.status, p.image_path, 0 AS stock, c.name AS category_name, v.created_at, v.updated_at, v.deleted_at
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
+                LEFT JOIN categories c ON p.category_id = c.id
                 WHERE v.id = ? AND v.deleted_at IS NULL
                 """,
                 mapper,
@@ -96,6 +97,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                 SELECT COUNT(*) AS total
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
+                LEFT JOIN categories c ON p.category_id = c.id
                 %s
                 """.formatted(where),
                 rs -> rs.getInt("total"),
@@ -128,7 +130,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                   (
                     COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
                     + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
-                  ) AS stock,
+                  ) AS stock, c.name AS category_name,
                   v.created_at, v.updated_at, v.deleted_at
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
