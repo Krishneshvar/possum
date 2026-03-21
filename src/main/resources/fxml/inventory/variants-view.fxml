@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import com.possum.ui.common.controls.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.inventory.VariantsController"
+      spacing="20"
+      alignment="TOP_LEFT">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <Label text="Variants" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <FilterBar fx:id="filterBar"/>
+
+    <DataTableView fx:id="variantsTable" VBox.vgrow="ALWAYS"/>
+
+    <PaginationBar fx:id="paginationBar"/>
+
+</VBox>
