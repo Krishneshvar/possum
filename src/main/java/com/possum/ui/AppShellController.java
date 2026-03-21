@@ -102,6 +102,7 @@ public class AppShellController {
     private void buildNavigation() {
         createNavButton("🏠 Dashboard", "Dashboard", "/fxml/dashboard/dashboard-view.fxml");
         createNavMenu("📦 Inventory", new String[][]{
+            {"Categories", "/fxml/categories/categories-view.fxml"},
             {"Products", "/fxml/products/products-view.fxml"},
             {"Stock", "/fxml/inventory/inventory-view.fxml"}
         });
