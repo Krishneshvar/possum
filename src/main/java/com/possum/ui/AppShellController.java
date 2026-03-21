@@ -106,7 +106,8 @@ public class AppShellController {
             {"Categories", "/fxml/categories/categories-view.fxml"},
             {"Products", "/fxml/products/products-view.fxml"},
             {"Variants", "/fxml/inventory/variants-view.fxml"},
-            {"Stock", "/fxml/inventory/inventory-view.fxml"}
+            {"Stock", "/fxml/inventory/inventory-view.fxml"},
+            {"Stock History", "/fxml/inventory/stock-history-view.fxml"}
         });
         createNavMenu("🛒 Sales", new String[][]{
             {"Point of Sale", "/fxml/sales/pos-view.fxml"},
