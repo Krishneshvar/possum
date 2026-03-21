@@ -8,23 +8,26 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.products.ProductsController"
-      spacing="20"
-      alignment="TOP_LEFT">
-    
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
 
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="Products" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <!-- Header -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Products" styleClass="view-title"/>
+            <Label text="Manage inventory items, pricing, and variants" styleClass="view-subtitle"/>
+        </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="addButton" text="+ Add Product" onAction="#handleAdd" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6;"/>
+        <Button fx:id="addButton" text="+ Add Product" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new product" tooltip="Create a new product record"/>
     </HBox>
-    
-    <FilterBar fx:id="filterBar"/>
-    
-    <DataTableView fx:id="productsTable" VBox.vgrow="ALWAYS"/>
-    
-    <PaginationBar fx:id="paginationBar"/>
+
+    <!-- Main Content -->
+    <VBox styleClass="card" VBox.vgrow="ALWAYS">
+        <FilterBar fx:id="filterBar"/>
+
+        <DataTableView fx:id="productsTable" VBox.vgrow="ALWAYS" styleClass="data-table"/>
+
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 
 </VBox>

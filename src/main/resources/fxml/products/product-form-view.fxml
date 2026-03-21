@@ -8,41 +8,42 @@
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.possum.ui.products.ProductFormController"
             fitToWidth="true"
-            style="-fx-background-color: transparent;">
+            stylesheets="@../../styles/inventory.css"
+            styleClass="workspace-view">
 
-    <VBox spacing="20" alignment="TOP_LEFT" style="-fx-background-color: white; -fx-padding: 24;">
+    <VBox spacing="20" alignment="TOP_LEFT">
 
-        <HBox alignment="CENTER_LEFT" spacing="15">
-            <Button text="← Back" onAction="#handleCancel" style="-fx-background-color: transparent; -fx-text-fill: #64748b; -fx-cursor: hand; -fx-font-weight: bold;"/>
-            <Label fx:id="titleLabel" text="Add Product" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+        <HBox styleClass="view-header">
+            <Button text="← Back" onAction="#handleCancel" styleClass="back-link" accessibleText="Go back to products list" tooltip="Return without saving"/>
+            <Label fx:id="titleLabel" text="Add Product" styleClass="view-title"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Cancel" onAction="#handleCancel" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 8 16; -fx-cursor: hand;"/>
-            <Button fx:id="saveButton" text="Save Product" onAction="#handleSave" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16; -fx-cursor: hand; -fx-font-weight: bold;"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
+            <Button fx:id="saveButton" text="Save Product" onAction="#handleSave" styleClass="action-button, primary-button" accessibleText="Save the product" tooltip="Save product and variants"/>
         </HBox>
 
         <HBox spacing="20" VBox.vgrow="ALWAYS">
 
             <!-- Left Column: Product Details -->
             <VBox spacing="20" HBox.hgrow="ALWAYS" maxWidth="800">
-                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
-                    <Label text="General Information" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                <VBox styleClass="card">
+                    <Label text="General Information" styleClass="card-title"/>
 
-                    <VBox spacing="5">
-                        <Label text="Product Name *" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
-                        <TextField fx:id="nameField" promptText="Enter product name" style="-fx-padding: 8; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6;"/>
+                    <VBox styleClass="form-group">
+                        <Label text="Product Name *" styleClass="form-label" labelFor="$nameField"/>
+                        <TextField fx:id="nameField" promptText="Enter product name" styleClass="text-field" accessibleText="Product name input"/>
                     </VBox>
 
-                    <VBox spacing="5">
-                        <Label text="Description" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
-                        <TextArea fx:id="descriptionField" promptText="Enter product description" prefRowCount="4" style="-fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6;"/>
+                    <VBox styleClass="form-group">
+                        <Label text="Description" styleClass="form-label" labelFor="$descriptionField"/>
+                        <TextArea fx:id="descriptionField" promptText="Enter product description" prefRowCount="4" styleClass="text-area" accessibleText="Product description input"/>
                     </VBox>
                 </VBox>
 
-                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
+                <VBox styleClass="card">
                     <HBox alignment="CENTER_LEFT">
-                        <Label text="Variants" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                        <Label text="Variants" styleClass="card-title"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button fx:id="addVariantButton" text="+ Add Variant" onAction="#handleAddVariant" style="-fx-background-color: #f1f5f9; -fx-text-fill: #334155; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 12; -fx-cursor: hand;"/>
+                        <Button fx:id="addVariantButton" text="+ Add Variant" onAction="#handleAddVariant" styleClass="action-button" tooltip="Add another variant configuration"/>
                     </HBox>
 
                     <VBox fx:id="variantsContainer" spacing="15"/>
@@ -51,26 +52,26 @@
 
             <!-- Right Column: Settings -->
             <VBox spacing="20" minWidth="300" maxWidth="400">
-                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
-                    <Label text="Organization" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                <VBox styleClass="card">
+                    <Label text="Organization" styleClass="card-title"/>
 
-                    <VBox spacing="5">
-                        <Label text="Category" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
-                        <ComboBox fx:id="categoryCombo" promptText="Select category" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 4;"/>
+                    <VBox styleClass="form-group">
+                        <Label text="Category" styleClass="form-label" labelFor="$categoryCombo"/>
+                        <ComboBox fx:id="categoryCombo" promptText="Select category" maxWidth="Infinity" styleClass="combo-box" accessibleText="Product category selection"/>
                     </VBox>
 
-                    <VBox spacing="5">
-                        <Label text="Status" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
-                        <ComboBox fx:id="statusCombo" promptText="Select status" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 4;"/>
+                    <VBox styleClass="form-group">
+                        <Label text="Status" styleClass="form-label" labelFor="$statusCombo"/>
+                        <ComboBox fx:id="statusCombo" promptText="Select status" maxWidth="Infinity" styleClass="combo-box" accessibleText="Product status selection"/>
                     </VBox>
                 </VBox>
 
-                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
-                    <Label text="Pricing Setup" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+                <VBox styleClass="card">
+                    <Label text="Pricing Setup" styleClass="card-title"/>
 
-                    <VBox spacing="5">
-                        <Label text="Tax Category" style="-fx-font-weight: 500; -fx-text-fill: #475569;"/>
-                        <ComboBox fx:id="taxCombo" promptText="Select tax category" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 4;"/>
+                    <VBox styleClass="form-group">
+                        <Label text="Tax Category" styleClass="form-label" labelFor="$taxCombo"/>
+                        <ComboBox fx:id="taxCombo" promptText="Select tax category" maxWidth="Infinity" styleClass="combo-box" accessibleText="Tax category selection"/>
                     </VBox>
                 </VBox>
             </VBox>

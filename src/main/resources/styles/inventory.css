@@ -1,0 +1,215 @@
+/* =====================================================
+   Inventory Suite Common Styles
+   ===================================================== */
+
+/* Base View Layout */
+.workspace-view {
+    -fx-background-color: #f1f5f9;
+    -fx-padding: 24;
+    -fx-spacing: 20;
+    -fx-alignment: top-left;
+}
+
+/* Header Area */
+.view-header {
+    -fx-spacing: 15;
+    -fx-alignment: center-left;
+}
+
+.view-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0f172a;
+    -fx-font-family: 'Segoe UI';
+}
+
+.view-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #64748b;
+    -fx-font-weight: 400;
+}
+
+/* Card Containers */
+.card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 20;
+    -fx-spacing: 16;
+}
+
+.card-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #1e293b;
+    -fx-padding: 0 0 8 0;
+}
+
+/* Form Controls */
+.form-group {
+    -fx-spacing: 6;
+    -fx-alignment: top-left;
+}
+
+.form-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #475569;
+}
+
+.text-field, .combo-box, .text-area, .date-picker {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 12;
+    -fx-font-size: 14px;
+    -fx-text-fill: #0f172a;
+}
+
+.text-field:focused, .combo-box:focused, .text-area:focused, .date-picker:focused {
+    -fx-border-color: #3b82f6;
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.2), 4, 0, 0, 0);
+}
+
+.text-field:disabled, .combo-box:disabled, .text-area:disabled, .date-picker:disabled {
+    -fx-background-color: #f8fafc;
+    -fx-text-fill: #94a3b8;
+    -fx-opacity: 0.8;
+}
+
+/* Checkboxes */
+.check-box {
+    -fx-text-fill: #1e293b;
+    -fx-font-size: 14px;
+}
+
+/* Buttons */
+.action-button {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #334155;
+    -fx-cursor: hand;
+}
+
+.action-button:hover {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #94a3b8;
+}
+
+.action-button:focused {
+    -fx-border-color: #3b82f6;
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.2), 4, 0, 0, 0);
+}
+
+.primary-button {
+    -fx-background-color: #2563eb;
+    -fx-border-color: transparent;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: 600;
+}
+
+.primary-button:hover {
+    -fx-background-color: #1d4ed8;
+    -fx-border-color: transparent;
+}
+
+.primary-button:focused {
+    -fx-border-color: #93c5fd;
+    -fx-border-width: 2;
+    -fx-effect: none;
+}
+
+.danger-button {
+    -fx-background-color: #fee2e2;
+    -fx-border-color: transparent;
+    -fx-text-fill: #dc2626;
+    -fx-font-weight: 600;
+}
+
+.danger-button:hover {
+    -fx-background-color: #fecaca;
+    -fx-text-fill: #b91c1c;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #64748b;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+}
+
+.icon-button:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 6;
+    -fx-text-fill: #0f172a;
+}
+
+/* Data Tables */
+.data-table {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.data-table .column-header-background {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: transparent transparent #e2e8f0 transparent;
+    -fx-border-width: 1;
+}
+
+.data-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent transparent transparent;
+    -fx-padding: 12 16;
+}
+
+.data-table .column-header .label {
+    -fx-text-fill: #475569;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.data-table .table-row-cell {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #f1f5f9 transparent;
+    -fx-border-width: 1;
+    -fx-padding: 8 0;
+}
+
+.data-table .table-row-cell:hover {
+    -fx-background-color: #f8fafc;
+}
+
+.data-table .table-row-cell:selected {
+    -fx-background-color: #eff6ff;
+}
+
+.data-table .table-cell {
+    -fx-text-fill: #1e293b;
+    -fx-font-size: 14px;
+    -fx-padding: 0 16;
+    -fx-alignment: center-left;
+    -fx-border-color: transparent;
+}
+
+/* Breadcrumbs / Back navigation */
+.back-link {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748b;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+    -fx-font-size: 14px;
+}
+
+.back-link:hover {
+    -fx-text-fill: #0f172a;
+}
