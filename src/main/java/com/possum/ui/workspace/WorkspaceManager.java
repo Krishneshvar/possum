@@ -63,6 +63,41 @@ public class WorkspaceManager {
         }
     }
 
+    public void showDialog(String title, String fxmlPath, Map<String, Object> params) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            if (dependencyInjector != null) {
+                loader.setControllerFactory(dependencyInjector.getControllerFactory());
+            }
+            javafx.scene.Parent root = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof Parameterizable && params != null) {
+                ((Parameterizable) controller).setParameters(params);
+            }
+
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle(title);
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            if (desktop.getScene() != null && desktop.getScene().getWindow() != null) {
+                stage.initOwner(desktop.getScene().getWindow());
+            }
+
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            if (desktop.getScene() != null) {
+                scene.getStylesheets().addAll(desktop.getScene().getStylesheets());
+            }
+            
+            stage.setScene(scene);
+            stage.centerOnScreen();
+            stage.showAndWait();
+
+        } catch (Exception e) {
+            System.err.println("Failed to show dialog: " + fxmlPath);
+            e.printStackTrace();
+        }
+    }
+
     public void closeActiveWindow() {
         InternalWindow activeWindow = desktop.getActiveWindow();
         if (activeWindow != null) {

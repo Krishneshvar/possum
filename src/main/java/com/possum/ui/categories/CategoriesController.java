@@ -79,6 +79,7 @@ public class CategoriesController {
 
     @FXML
     private void handleAddCategory() {
-        workspaceManager.openWindow("Add Category", "/fxml/categories/add-category-dialog.fxml");
+        workspaceManager.showDialog("Add Category", "/fxml/categories/add-category-dialog.fxml", null);
+        loadData();
     }
 }

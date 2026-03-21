@@ -62,7 +62,7 @@ public class AddCategoryDialogController {
 
         try {
             categoryService.createCategory(name.trim(), parentId);
-            workspaceManager.closeActiveWindow();
+            nameField.getScene().getWindow().hide();
         } catch (Exception e) {
             showAlert("Error", "Failed to create category: " + e.getMessage());
         }
@@ -70,7 +70,7 @@ public class AddCategoryDialogController {
 
     @FXML
     private void handleCancel() {
-        workspaceManager.closeActiveWindow();
+        nameField.getScene().getWindow().hide();
     }
 
     private void showAlert(String title, String message) {

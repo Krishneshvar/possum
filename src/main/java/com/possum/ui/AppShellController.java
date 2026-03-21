@@ -18,6 +18,7 @@ public class AppShellController {
         this.dependencyInjector = dependencyInjector;
         if (workspaceManager != null) {
             workspaceManager.setDependencyInjector(dependencyInjector);
+            dependencyInjector.setWorkspaceManager(workspaceManager);
         }
         if (navigationManager != null) {
             navigationManager.setDependencyInjector(dependencyInjector);
