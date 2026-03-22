@@ -417,4 +417,10 @@ public class SalesService {
     public List<PaymentMethod> getPaymentMethods() {
         return paymentService.getActivePaymentMethods();
     }
+
+    public List<Customer> getAllCustomers() {
+        return customerRepository.findCustomers(
+            new com.possum.shared.dto.CustomerFilter(null, null, null, 1, 1000, "name", "asc")
+        ).items();
+    }
 }

@@ -3,71 +3,126 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.possum.ui.sales.PosController">
-    
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" 
+            fx:controller="com.possum.ui.sales.PosController"
+            style="-fx-background-color: #f8fafc;">
     <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
+        <Insets top="16" right="16" bottom="16" left="16"/>
     </padding>
 
-    <top>
-        <Label text="Point of Sale" style="-fx-font-size: 24px; -fx-font-weight: bold;" BorderPane.alignment="CENTER_LEFT">
-            <BorderPane.margin>
-                <Insets bottom="20"/>
-            </BorderPane.margin>
-        </Label>
-    </top>
-
     <center>
-        <HBox spacing="20">
-            <VBox spacing="15" HBox.hgrow="ALWAYS">
-                <TextField fx:id="searchField" promptText="Search products by name or SKU..." onAction="#handleSearch"/>
-                
-                <ListView fx:id="productList" VBox.vgrow="ALWAYS"/>
-            </VBox>
-            
-            <VBox spacing="15" prefWidth="400" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8;">
-                <Label text="Cart" style="-fx-font-size: 16px; -fx-font-weight: 600;"/>
-                
-                <ListView fx:id="cartList" VBox.vgrow="ALWAYS"/>
-                
-                <Separator/>
-                
-                <HBox spacing="10">
-                    <Label text="Discount:"/>
-                    <TextField fx:id="discountField" promptText="0.00" prefWidth="100"/>
-                    <Button text="Apply" onAction="#handleApplyDiscount"/>
+        <HBox spacing="16">
+            <!-- Left Side: Cart and Search -->
+            <VBox spacing="0" HBox.hgrow="ALWAYS" style="-fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-border-radius: 8; -fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 4, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 8 16;">
+                    <Label text="Cart Items" style="-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 14px;"/>
                 </HBox>
-                
-                <VBox spacing="5">
-                    <HBox>
-                        <Label text="Subtotal:"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="subtotalLabel" text="\$0.00"/>
+                <Separator/>
+                <TableView fx:id="cartTable" VBox.vgrow="ALWAYS" style="-fx-border-width: 0; -fx-background-color: transparent;">
+                    <columns>
+                        <TableColumn fx:id="colSno" text="#" prefWidth="50" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colProduct" text="Product" prefWidth="250"/>
+                        <TableColumn fx:id="colQty" text="Qty" prefWidth="80" style="-fx-alignment: CENTER;"/>
+                        <TableColumn fx:id="colPrice" text="Price" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
+                        <TableColumn fx:id="colDiscount" text="Discount" prefWidth="120" style="-fx-alignment: CENTER-RIGHT;"/>
+                        <TableColumn fx:id="colTotal" text="Total" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
+                        <TableColumn fx:id="colAction" text="" prefWidth="60" style="-fx-alignment: CENTER;"/>
+                    </columns>
+                </TableView>
+                <Separator/>
+                <HBox alignment="CENTER" spacing="10" style="-fx-padding: 8 16; -fx-background-color: #f8fafc; -fx-background-radius: 0 0 8 8;">
+                    <Label text="+" style="-fx-font-size: 18px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
+                    <TextField fx:id="searchField" promptText="Search product, variant, or SKU... (Ctrl+K)" HBox.hgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-font-size: 14px;"/>
+                </HBox>
+                <Separator/>
+                <HBox alignment="CENTER_RIGHT" spacing="20" style="-fx-padding: 12 16; -fx-background-color: transparent;">
+                    <Label text="Totals" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                    <Label fx:id="totalQtyLabel" text="0" style="-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 14px;"/>
+                    <Region prefWidth="50" HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="bottomTotalLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 14px;"/>
+                </HBox>
+            </VBox>
+
+            <!-- Right Side: Billing -->
+            <VBox spacing="16" prefWidth="380">
+                <!-- Customer & Payment Setup -->
+                <VBox spacing="16" style="-fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-color: white; -fx-background-radius: 8; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 4, 0, 0, 2);">
+                    <VBox spacing="8">
+                        <Label text="Customer" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+                        <ComboBox fx:id="customerCombo" promptText="Walk-in Customer" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 2;"/>
+                    </VBox>
+                    <Separator/>
+                    <VBox spacing="8">
+                        <Label text="Payment Method" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+                        <ComboBox fx:id="paymentMethodCombo" promptText="Select method" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 2;"/>
+                        
+                        <Label text="Payment Type" style="-fx-font-size: 10px; -fx-text-fill: #64748b;"/>
+                        <HBox>
+                            <ToggleButton fx:id="btnFullPayment" text="Full Payment" maxWidth="Infinity" HBox.hgrow="ALWAYS" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-border-color: #0f172a; -fx-background-radius: 6 0 0 6; -fx-border-radius: 6 0 0 6; -fx-font-weight: bold;"/>
+                            <ToggleButton fx:id="btnPartialPayment" text="Partial Payment" maxWidth="Infinity" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-background-radius: 0 6 6 0; -fx-border-radius: 0 6 6 0; -fx-font-weight: bold;"/>
+                        </HBox>
+                    </VBox>
+                    <Separator/>
+                    <VBox spacing="8">
+                        <Label text="Discount" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+                        <HBox spacing="8">
+                            <TextField fx:id="discountField" promptText="0.00" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6;"/>
+                            <HBox>
+                                <ToggleButton fx:id="btnDiscountFixed" text="\$" prefWidth="40" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-border-color: #0f172a; -fx-background-radius: 6 0 0 6; -fx-border-radius: 6 0 0 6; -fx-font-weight: bold;"/>
+                                <ToggleButton fx:id="btnDiscountPercent" text="\%" prefWidth="40" style="-fx-background-color: white; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-background-radius: 0 6 6 0; -fx-border-radius: 0 6 6 0; -fx-font-weight: bold;"/>
+                            </HBox>
+                        </HBox>
+                    </VBox>
+                    <Separator/>
+                    <VBox spacing="10">
+                        <HBox>
+                            <Label text="Subtotal" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="subtotalLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+                        </HBox>
+                        <HBox>
+                            <Label text="Tax" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="taxLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+                        </HBox>
+                        <Separator/>
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Total" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="totalLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 20px;"/>
+                        </HBox>
+                    </VBox>
+
+                    <HBox spacing="10">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Tendered" style="-fx-font-weight: bold; -fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                            <TextField fx:id="tenderedField" promptText="0.00" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 6 10;"/>
+                        </VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label fx:id="balanceTypeLabel" text="Change" style="-fx-font-weight: bold; -fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                            <Label fx:id="balanceLabel" text="\$0.00" maxWidth="Infinity" style="-fx-background-color: #f1f5f9; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;"/>
+                        </VBox>
                     </HBox>
-                    <HBox>
-                        <Label text="Tax:"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="taxLabel" text="\$0.00"/>
-                    </HBox>
-                    <HBox>
-                        <Label text="Total:" style="-fx-font-size: 18px; -fx-font-weight: 600;"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="totalLabel" text="\$0.00" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-                    </HBox>
+                    
+                    <Button fx:id="completeButton" text="Complete Sale" maxWidth="Infinity" onAction="#handleCompleteSale" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-padding: 12; -fx-background-radius: 6; -fx-font-size: 14px; -fx-font-weight: bold; -fx-effect: dropshadow(three-pass-box, rgba(15,23,42,0.2), 6, 0, 0, 4);"/>
                 </VBox>
                 
-                <Separator/>
-                
-                <Label text="Payment" style="-fx-font-weight: 600;"/>
-                <ComboBox fx:id="paymentMethodCombo" promptText="Select payment method" maxWidth="Infinity"/>
-                
-                <Button fx:id="completeButton" text="Complete Sale" maxWidth="Infinity" onAction="#handleCompleteSale" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 15 20; -fx-background-radius: 6; -fx-font-size: 16px;"/>
-                <Button text="Clear Cart" maxWidth="Infinity" onAction="#handleClearCart"/>
+                <!-- Active Bills -->
+                <VBox spacing="10" style="-fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-color: white; -fx-background-radius: 8; -fx-padding: 16; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 4, 0, 0, 2);">
+                    <HBox>
+                        <Label text="Active Bills" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label text="Ctrl+1-9 to switch" style="-fx-text-fill: #94a3b8; -fx-font-size: 10px;"/>
+                    </HBox>
+                    <FlowPane fx:id="billsFlowPane" hgap="8" vgap="8">
+                        <!-- Add ToggleButtons inside Controller -->
+                    </FlowPane>
+                    <Button text="Clear Current Bill" maxWidth="Infinity" onAction="#handleClearCart" style="-fx-background-color: transparent; -fx-text-fill: #ef4444; -fx-border-color: #ef4444; -fx-border-radius: 6; -fx-padding: 6 10; -fx-font-weight: bold; -fx-font-size: 12px; -fx-margin-top: 5;"/>
+                </VBox>
             </VBox>
         </HBox>
     </center>
-
 </BorderPane>
