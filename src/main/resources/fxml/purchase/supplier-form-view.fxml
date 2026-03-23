@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.possum.ui.purchase.SupplierFormController"
+            fitToWidth="true"
+            stylesheets="@../../styles/inventory.css"
+            styleClass="workspace-view">
+
+    <VBox spacing="20" alignment="TOP_LEFT">
+        <HBox styleClass="view-header">
+            <Label fx:id="titleLabel" text="Add Supplier" styleClass="view-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
+            <Button fx:id="saveButton" text="Save Supplier" onAction="#handleSave" styleClass="action-button, primary-button"/>
+        </HBox>
+
+        <VBox spacing="20" maxWidth="600">
+            <VBox styleClass="card">
+                <Label text="Supplier Information" styleClass="card-title"/>
+                <VBox styleClass="form-group">
+                    <Label text="Supplier Name *" styleClass="form-label"/>
+                    <TextField fx:id="nameField" promptText="Enter supplier name" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Contact Person" styleClass="form-label"/>
+                    <TextField fx:id="contactPersonField" promptText="Enter contact person name" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Phone Number" styleClass="form-label"/>
+                    <TextField fx:id="phoneField" promptText="Enter phone number" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Email Address" styleClass="form-label"/>
+                    <TextField fx:id="emailField" promptText="Enter email address" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="GSTIN" styleClass="form-label"/>
+                    <TextField fx:id="gstinField" promptText="Enter GSTIN" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Payment Policy" styleClass="form-label"/>
+                    <ComboBox fx:id="paymentPolicyCombo" promptText="Select payment policy" styleClass="combo-box"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Physical Address" styleClass="form-label"/>
+                    <TextArea fx:id="addressField" promptText="Enter full address" prefRowCount="3" styleClass="text-area"/>
+                </VBox>
+            </VBox>
+        </VBox>
+    </VBox>
+</ScrollPane>

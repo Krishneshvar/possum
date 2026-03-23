@@ -2,6 +2,7 @@ package com.possum.ui.common.controls;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
@@ -17,6 +18,7 @@ public class FilterBar extends VBox {
     private final TextField searchField;
     private final Map<String, ComboBox<?>> filters = new HashMap<>();
     private final Map<String, MultiSelectFilter<?>> multiSelectFilters = new HashMap<>();
+    private final Map<String, DatePicker> dateFilters = new HashMap<>();
     private Consumer<Map<String, Object>> onFilterChange;
 
     private final HBox topRow;
@@ -69,6 +71,17 @@ public class FilterBar extends VBox {
         return multiSelect;
     }
 
+    public DatePicker addDateFilter(String key, String prompt) {
+        DatePicker picker = new DatePicker();
+        picker.setPromptText(prompt);
+        picker.setPrefWidth(150);
+        picker.valueProperty().addListener((obs, old, val) -> notifyFilterChange());
+        
+        dateFilters.put(key, picker);
+        bottomRow.getChildren().add(picker);
+        return picker;
+    }
+
     public void setOnFilterChange(Consumer<Map<String, Object>> handler) {
         this.onFilterChange = handler;
     }
@@ -79,6 +92,7 @@ public class FilterBar extends VBox {
             values.put("search", searchField.getText());
             filters.forEach((key, combo) -> values.put(key, combo.getValue()));
             multiSelectFilters.forEach((key, multiSelect) -> values.put(key, multiSelect.getSelectedItems()));
+            dateFilters.forEach((key, picker) -> values.put(key, picker.getValue()));
             onFilterChange.accept(values);
         }
     }
@@ -89,6 +103,7 @@ public class FilterBar extends VBox {
             searchField.clear();
             filters.values().forEach(combo -> combo.setValue(null));
             multiSelectFilters.values().forEach(MultiSelectFilter::clearSelection);
+            dateFilters.values().forEach(picker -> picker.setValue(null));
         } finally {
             isResetting = false;
             notifyFilterChange();

@@ -28,7 +28,10 @@ public class PurchaseOrderFormController implements Parameterizable {
 
     @FXML private Label titleLabel;
     @FXML private ComboBox<Supplier> supplierCombo;
+    @FXML private TextField searchVariantField;
     @FXML private VBox itemsBox;
+    @FXML private Button saveButton;
+    @FXML private Label totalCostLabel;
 
     private PurchaseService purchaseService;
     private SupplierRepository supplierRepository;
@@ -49,10 +52,13 @@ public class PurchaseOrderFormController implements Parameterizable {
 
     @Override
     public void setParameters(Map<String, Object> params) {
+        boolean isView = false;
         if (params != null) {
+            isView = "view".equals(params.get("mode"));
             if (params.containsKey("order")) {
                 existingPo = (PurchaseOrder) params.get("order");
-                Platform.runLater(() -> titleLabel.setText("Edit Purchase Order"));
+                final boolean finalIsView = isView;
+                Platform.runLater(() -> titleLabel.setText(finalIsView ? "View Purchase Order" : "Edit Purchase Order"));
             } else {
                 existingPo = null;
                 Platform.runLater(() -> titleLabel.setText("Create Purchase Order"));
@@ -64,21 +70,48 @@ public class PurchaseOrderFormController implements Parameterizable {
             existingPo = null;
             Platform.runLater(() -> titleLabel.setText("Create Purchase Order"));
         }
-        loadData();
+        final boolean finalIsView = isView;
+        Platform.runLater(() -> {
+            if (finalIsView) {
+                saveButton.setVisible(false);
+                saveButton.setManaged(false);
+                if (searchVariantField != null) {
+                    searchVariantField.setVisible(false);
+                    searchVariantField.setManaged(false);
+                }
+                supplierCombo.setDisable(true);
+            }
+        });
+        loadData(isView);
     }
 
     @FXML
     public void initialize() {
-        if (existingPo == null) {
-            handleAddItem();
+        if (searchVariantField != null) {
+            searchVariantField.setOnAction(e -> {
+                String query = searchVariantField.getText().trim();
+                if (query.isEmpty()) return;
+                try {
+                    PagedResult<Variant> result = variantRepository.findVariants(
+                        query, null, null, null, null, "name", "ASC", 0, 10
+                    );
+                    if (!result.items().isEmpty()) {
+                        Variant v = result.items().get(0);
+                        addVariantToCart(v);
+                        searchVariantField.clear();
+                    } else {
+                        NotificationService.warning("No product matching: " + query);
+                    }
+                } catch (Exception ex) {}
+            });
         }
     }
 
-    private void loadData() {
+    private void loadData(boolean isView) {
         Platform.runLater(() -> {
             try {
-                PagedResult<Supplier> suppliers = supplierRepository.getAllSuppliers(new com.possum.shared.dto.SupplierFilter(0, 100, null, null, "name", "ASC"));
-                supplierCombo.setItems(FXCollections.observableArrayList(suppliers.items()));
+                PagedResult<Supplier> suppliers = supplierRepository.getAllSuppliers(new com.possum.shared.dto.SupplierFilter(0, 1000, null, null, "name", "ASC"));
+                makeSupplierComboSearchable(suppliers.items());
                 
                 if (existingPo != null) {
                     Supplier existingSupplier = suppliers.items().stream()
@@ -88,25 +121,77 @@ public class PurchaseOrderFormController implements Parameterizable {
 
                     PurchaseService.PurchaseOrderDetail detail = purchaseService.getPurchaseOrderById(existingPo.id());
                     for (PurchaseOrderItem item : detail.items()) {
-                        PurchaseItemRow row = new PurchaseItemRow();
-                        row.setVariant(item.variantId());
-                        row.setQuantity(item.quantity());
-                        row.setUnitCost(item.unitCost());
-                        itemRows.add(row);
-                        itemsBox.getChildren().add(row.getRow());
+                        variantRepository.findVariantByIdSync(item.variantId()).ifPresent(v -> {
+                            PurchaseItemRow row = new PurchaseItemRow(v);
+                            row.setQuantity(item.quantity());
+                            row.setUnitCost(item.unitCost());
+                            if (isView) row.disableInputs();
+                            itemRows.add(row);
+                            itemsBox.getChildren().add(row.getRow());
+                        });
                     }
                 }
+                if (totalCostLabel != null) recalculateTotal();
             } catch (Exception e) {
                 NotificationService.error("Failed to load data for PO Form");
             }
         });
     }
 
-    @FXML
-    private void handleAddItem() {
-        PurchaseItemRow row = new PurchaseItemRow();
+    private void makeSupplierComboSearchable(List<Supplier> allSuppliers) {
+        supplierCombo.setItems(FXCollections.observableArrayList(allSuppliers));
+        supplierCombo.setConverter(new javafx.util.StringConverter<Supplier>() {
+            @Override
+            public String toString(Supplier s) { return s == null ? "" : s.name(); }
+            @Override
+            public Supplier fromString(String string) {
+                return allSuppliers.stream().filter(s -> s.name().equals(string)).findFirst().orElse(null);
+            }
+        });
+        supplierCombo.setEditable(true);
+        supplierCombo.getEditor().textProperty().addListener((obs, oldV, newV) -> {
+            if (newV == null || newV.isEmpty()) {
+                supplierCombo.setItems(FXCollections.observableArrayList(allSuppliers));
+            } else {
+                Supplier selected = supplierCombo.getSelectionModel().getSelectedItem();
+                if (selected != null && selected.name().equals(newV)) return;
+                
+                List<Supplier> filtered = allSuppliers.stream()
+                        .filter(s -> s.name().toLowerCase().contains(newV.toLowerCase()))
+                        .toList();
+                supplierCombo.setItems(FXCollections.observableArrayList(filtered));
+                if (!filtered.isEmpty()) supplierCombo.show();
+            }
+        });
+    }
+
+    private void recalculateTotal() {
+        BigDecimal total = BigDecimal.ZERO;
+        for (PurchaseItemRow row : itemRows) {
+            BigDecimal cost = row.getUnitCost();
+            BigDecimal qty = new BigDecimal(row.getQuantity());
+            total = total.add(cost.multiply(qty));
+        }
+        final BigDecimal finalTotal = total;
+        Platform.runLater(() -> {
+            if (totalCostLabel != null) {
+                totalCostLabel.setText(String.format("$%.2f", finalTotal));
+            }
+        });
+    }
+
+    private void addVariantToCart(Variant variant) {
+        for (PurchaseItemRow row : itemRows) {
+            if (row.getVariantId() != null && row.getVariantId().equals(variant.id())) {
+                row.setQuantity(row.getQuantity() + 1);
+                recalculateTotal();
+                return;
+            }
+        }
+        PurchaseItemRow row = new PurchaseItemRow(variant);
         itemRows.add(row);
         itemsBox.getChildren().add(row.getRow());
+        recalculateTotal();
     }
 
     @FXML
@@ -156,63 +241,52 @@ public class PurchaseOrderFormController implements Parameterizable {
     }
 
     private class PurchaseItemRow {
-        private ComboBox<Variant> variantCombo;
+        private Variant variant;
         private TextField quantityField;
         private TextField costField;
         private HBox row;
+        private Button removeBtn;
         
-        PurchaseItemRow() {
-            variantCombo = new ComboBox<>();
-            variantCombo.setPromptText("Select variant");
-            variantCombo.setPrefWidth(200);
+        PurchaseItemRow(Variant variant) {
+            this.variant = variant;
             
-            quantityField = new TextField();
+            Label variantNameLabel = new Label(variant.productName() + " - " + variant.name() + " (" + variant.sku() + ")");
+            variantNameLabel.setPrefWidth(250);
+            
+            quantityField = new TextField("1");
             quantityField.setPromptText("Qty");
             quantityField.setPrefWidth(60);
+            quantityField.textProperty().addListener((o, old, val) -> recalculateTotal());
             
-            costField = new TextField();
+            costField = new TextField(variant.costPrice() != null ? variant.costPrice().toString() : "0.00");
             costField.setPromptText("Cost");
             costField.setPrefWidth(80);
+            costField.textProperty().addListener((o, old, val) -> recalculateTotal());
             
-            Button searchBtn = new Button("Search");
-            searchBtn.setOnAction(e -> searchVariants());
-
-            Button removeBtn = new Button("Remove");
-            removeBtn.setStyle("-fx-text-fill: red;");
+            removeBtn = new Button("x");
+            removeBtn.setStyle("-fx-text-fill: red; -fx-background-color: transparent; -fx-cursor: hand; -fx-font-weight: bold;");
             removeBtn.setOnAction(e -> {
                 itemRows.remove(this);
                 itemsBox.getChildren().remove(row);
+                recalculateTotal();
             });
             
-            row = new HBox(10, variantCombo, searchBtn, quantityField, costField, removeBtn);
+            row = new HBox(10, variantNameLabel, quantityField, costField, removeBtn);
             row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         }
         
-        private void searchVariants() {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Search Variants");
-            dialog.setHeaderText("Enter product name or SKU:");
-            dialog.showAndWait().ifPresent(query -> {
-                PagedResult<Variant> result = variantRepository.findVariants(
-                    query, null, null, null, null, "name", "ASC", 0, 50
-                );
-                variantCombo.setItems(FXCollections.observableArrayList(result.items()));
-            });
+        void disableInputs() {
+            quantityField.setDisable(true);
+            costField.setDisable(true);
+            removeBtn.setVisible(false);
         }
         
         HBox getRow() { return row; }
         
-        void setVariant(Long variantId) {
-            variantRepository.findVariantByIdSync(variantId).ifPresent(variantCombo::setValue);
-        }
-        
         void setQuantity(int qty) { quantityField.setText(String.valueOf(qty)); }
         void setUnitCost(BigDecimal cost) { costField.setText(cost.toString()); }
         
-        Long getVariantId() {
-            Variant v = variantCombo.getValue();
-            return v != null ? v.id() : null;
-        }
+        Long getVariantId() { return variant != null ? variant.id() : null; }
         
         int getQuantity() {
             try { return Integer.parseInt(quantityField.getText()); }

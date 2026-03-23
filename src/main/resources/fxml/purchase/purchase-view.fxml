@@ -18,6 +18,7 @@
     <HBox alignment="CENTER_LEFT" spacing="15">
         <Label text="Purchase Orders" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
         <Region HBox.hgrow="ALWAYS"/>
+        <Button text="⟳ Refresh" onAction="#handleRefresh" style="-fx-background-color: #e0e0e0; -fx-text-fill: black; -fx-padding: 10 20; -fx-background-radius: 6;"/>
         <Button fx:id="createButton" text="+ Create Purchase Order" onAction="#handleCreate" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6;"/>
     </HBox>
     

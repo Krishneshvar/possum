@@ -27,6 +27,9 @@ public class PurchaseController {
     private PurchaseService purchaseService;
     private WorkspaceManager workspaceManager;
     private String currentSearch = "";
+    private String currentStatus = null;
+    private java.time.LocalDate currentFromDate = null;
+    private java.time.LocalDate currentToDate = null;
 
     public PurchaseController(PurchaseService purchaseService, WorkspaceManager workspaceManager) {
         this.purchaseService = purchaseService;
@@ -59,8 +62,17 @@ public class PurchaseController {
     }
 
     private void setupFilters() {
+        ComboBox<String> statusFilter = filterBar.addFilter("status", "Filter by Status");
+        statusFilter.setItems(FXCollections.observableArrayList("pending", "received", "cancelled"));
+        
+        filterBar.addDateFilter("fromDate", "From Date");
+        filterBar.addDateFilter("toDate", "To Date");
+
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+            currentStatus = (String) filters.get("status");
+            currentFromDate = (java.time.LocalDate) filters.get("fromDate");
+            currentToDate = (java.time.LocalDate) filters.get("toDate");
             loadPurchaseOrders();
         });
         
@@ -76,9 +88,9 @@ public class PurchaseController {
                     paginationBar.getCurrentPage(),
                     paginationBar.getPageSize(),
                     currentSearch.isEmpty() ? null : currentSearch,
-                    null,
-                    null,
-                    null,
+                    currentStatus,
+                    currentFromDate != null ? currentFromDate.atStartOfDay().toString() : null,
+                    currentToDate != null ? currentToDate.atTime(23, 59, 59).toString() : null,
                     "order_date",
                     "DESC"
                 );
@@ -96,6 +108,11 @@ public class PurchaseController {
     }
 
     @FXML
+    private void handleRefresh() {
+        loadPurchaseOrders();
+    }
+
+    @FXML
     private void handleCreate() {
         Map<String, Object> params = new HashMap<>();
         params.put("onSave", (Runnable) this::loadPurchaseOrders);
@@ -108,20 +125,57 @@ public class PurchaseController {
         alert.setHeaderText("PO #" + po.id() + " - " + po.supplierName());
         alert.setContentText("Choose action:");
         
+        ButtonType viewBtn = new ButtonType("View Details");
         ButtonType editBtn = new ButtonType("Edit");
         ButtonType receiveBtn = new ButtonType("Receive");
+        ButtonType cancelOrderBtn = new ButtonType("Cancel Order");
         ButtonType refreshBtn = new ButtonType("Refresh List");
         ButtonType cancelBtn = ButtonType.CANCEL;
         
-        alert.getButtonTypes().setAll(editBtn, receiveBtn, refreshBtn, cancelBtn);
+        if ("pending".equals(po.status())) {
+            alert.getButtonTypes().setAll(viewBtn, editBtn, receiveBtn, cancelOrderBtn, refreshBtn, cancelBtn);
+        } else {
+            alert.getButtonTypes().setAll(viewBtn, refreshBtn, cancelBtn);
+        }
         
         alert.showAndWait().ifPresent(type -> {
-            if (type == editBtn) {
+            if (type == viewBtn) {
+                handleView(po);
+            } else if (type == editBtn) {
                 handleEdit(po);
             } else if (type == receiveBtn) {
                 handleReceive(po);
+            } else if (type == cancelOrderBtn) {
+                handleCancelOrder(po);
             } else if (type == refreshBtn) {
                 loadPurchaseOrders();
+            }
+        });
+    }
+
+    private void handleView(PurchaseOrder po) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("order", po);
+        params.put("mode", "view");
+        workspaceManager.openWindow("View Purchase Order", "/fxml/purchase/purchase-order-form-view.fxml", params);
+    }
+    
+    private void handleCancelOrder(PurchaseOrder po) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Cancel Purchase Order");
+        confirm.setHeaderText("Cancel PO #" + po.id() + "?");
+        confirm.setContentText("This action cannot be undone.");
+        
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                try {
+                    long userId = AuthContext.getCurrentUser().id();
+                    purchaseService.cancelPurchaseOrder(po.id(), userId);
+                    NotificationService.success("Purchase order cancelled");
+                    loadPurchaseOrders();
+                } catch (Exception e) {
+                    NotificationService.error("Failed to cancel: " + e.getMessage());
+                }
             }
         });
     }

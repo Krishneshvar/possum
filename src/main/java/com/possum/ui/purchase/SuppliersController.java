@@ -1,5 +1,6 @@
 package com.possum.ui.purchase;
 
+import com.possum.domain.model.PaymentPolicy;
 import com.possum.domain.model.Supplier;
 import com.possum.persistence.repositories.interfaces.SupplierRepository;
 import com.possum.shared.dto.PagedResult;
@@ -8,11 +9,17 @@ import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.PaginationBar;
 import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SuppliersController {
     @FXML private FilterBar filterBar;
@@ -20,10 +27,13 @@ public class SuppliersController {
     @FXML private PaginationBar paginationBar;
     
     private SupplierRepository supplierRepository;
+    private WorkspaceManager workspaceManager;
     private String currentSearch = "";
+    private Long currentPolicyId = null;
 
-    public SuppliersController(SupplierRepository supplierRepository) {
+    public SuppliersController(SupplierRepository supplierRepository, WorkspaceManager workspaceManager) {
         this.supplierRepository = supplierRepository;
+        this.workspaceManager = workspaceManager;
     }
 
     @FXML
@@ -45,13 +55,25 @@ public class SuppliersController {
         
         TableColumn<Supplier, String> emailCol = new TableColumn<>("Email");
         emailCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().email()));
+
+        TableColumn<Supplier, String> policyCol = new TableColumn<>("Policy");
+        policyCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentPolicyName() != null ? cellData.getValue().paymentPolicyName() : "-"));
+
+        suppliersTable.getTableView().getColumns().addAll(nameCol, contactCol, phoneCol, emailCol, policyCol);
         
-        suppliersTable.getTableView().getColumns().addAll(nameCol, contactCol, phoneCol, emailCol);
+        suppliersTable.addActionColumn("Actions", this::showActions);
     }
 
     private void setupFilters() {
+        javafx.scene.control.ComboBox<PaymentPolicy> policyFilter = filterBar.addFilter("policy", "Filter by Policy");
+        try {
+            policyFilter.setItems(FXCollections.observableArrayList(supplierRepository.getPaymentPolicies()));
+        } catch(Exception e) {}
+
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+            PaymentPolicy policy = (PaymentPolicy) filters.get("policy");
+            currentPolicyId = policy != null ? policy.id() : null;
             loadSuppliers();
         });
         
@@ -66,7 +88,7 @@ public class SuppliersController {
                     paginationBar.getCurrentPage(),
                     paginationBar.getPageSize(),
                     currentSearch.isEmpty() ? null : currentSearch,
-                    null,
+                    currentPolicyId,
                     "name",
                     "ASC"
                 );
@@ -79,6 +101,68 @@ public class SuppliersController {
             } catch (Exception e) {
                 suppliersTable.setLoading(false);
                 NotificationService.error("Failed to load suppliers");
+            }
+        });
+    }
+
+    @FXML
+    private void handleRefresh() {
+        loadSuppliers();
+    }
+
+    @FXML
+    private void handleCreate() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("onSave", (Runnable) this::loadSuppliers);
+        workspaceManager.openWindow("Add Supplier", "/fxml/purchase/supplier-form-view.fxml", params);
+    }
+
+    private void showActions(Supplier supplier) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Supplier Actions");
+        alert.setHeaderText(supplier.name());
+        alert.setContentText("Choose action:");
+        
+        ButtonType editBtn = new ButtonType("Edit");
+        ButtonType deleteBtn = new ButtonType("Delete");
+        ButtonType refreshBtn = new ButtonType("Refresh List");
+        ButtonType cancelBtn = ButtonType.CANCEL;
+        
+        alert.getButtonTypes().setAll(editBtn, deleteBtn, refreshBtn, cancelBtn);
+        
+        alert.showAndWait().ifPresent(type -> {
+            if (type == editBtn) {
+                handleEdit(supplier);
+            } else if (type == deleteBtn) {
+                handleDelete(supplier);
+            } else if (type == refreshBtn) {
+                loadSuppliers();
+            }
+        });
+    }
+
+    private void handleEdit(Supplier supplier) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("supplierId", supplier.id());
+        params.put("onSave", (Runnable) this::loadSuppliers);
+        workspaceManager.openWindow("Edit Supplier", "/fxml/purchase/supplier-form-view.fxml", params);
+    }
+
+    private void handleDelete(Supplier supplier) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete Supplier");
+        confirm.setHeaderText("Delete " + supplier.name() + "?");
+        confirm.setContentText("This will delete the supplier.");
+        
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                try {
+                    supplierRepository.deleteSupplier(supplier.id());
+                    NotificationService.success("Supplier deleted");
+                    loadSuppliers();
+                } catch (Exception e) {
+                    NotificationService.error("Failed to delete: " + e.getMessage());
+                }
             }
         });
     }

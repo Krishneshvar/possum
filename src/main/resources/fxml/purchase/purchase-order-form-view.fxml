@@ -19,6 +19,7 @@
     <ComboBox fx:id="supplierCombo" promptText="Select supplier"/>
     
     <Label text="Items:"/>
+    <TextField fx:id="searchVariantField" promptText="Search product/variant by SKU or Name and press Enter to add..." />
     <ScrollPane fitToWidth="true" prefHeight="400" VBox.vgrow="ALWAYS">
         <VBox fx:id="itemsBox" spacing="10">
             <padding>
@@ -26,11 +27,14 @@
             </padding>
         </VBox>
     </ScrollPane>
-    
-    <Button text="+ Add Item" onAction="#handleAddItem"/>
 
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Label text="Total Order Cost:" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+        <Label fx:id="totalCostLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #1976d2;"/>
+    </HBox>
+    
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button text="Cancel" onAction="#handleCancel" styleClass="btn-secondary"/>
-        <Button text="Save" onAction="#handleSave" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 8 16; -fx-background-radius: 4;"/>
+        <Button fx:id="saveButton" text="Save" onAction="#handleSave" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 8 16; -fx-background-radius: 4;"/>
     </HBox>
 </VBox>
