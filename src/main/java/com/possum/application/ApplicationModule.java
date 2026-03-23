@@ -13,6 +13,8 @@ import com.possum.infrastructure.security.PasswordHasher;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.persistence.repositories.interfaces.*;
+import com.possum.application.people.UserService;
+import com.possum.application.people.CustomerService;
 
 public final class ApplicationModule {
     private final AuthModule authModule;
@@ -21,6 +23,8 @@ public final class ApplicationModule {
     private final InventoryService inventoryService;
     private final ProductFlowService productFlowService;
     private final AuditService auditService;
+    private final UserService userService;
+    private final CustomerService customerService;
 
     public ApplicationModule(UserRepository userRepository,
                             SessionRepository sessionRepository,
@@ -30,11 +34,14 @@ public final class ApplicationModule {
                             InventoryRepository inventoryRepository,
                             ProductFlowRepository productFlowRepository,
                             AuditRepository auditRepository,
+                            CustomerRepository customerRepository,
                             TransactionManager transactionManager,
                             PasswordHasher passwordHasher,
                             JsonService jsonService,
                             AppPaths appPaths) {
         this.authModule = new AuthModule(userRepository, sessionRepository, transactionManager, passwordHasher);
+        this.userService = new com.possum.application.people.UserService(userRepository, passwordHasher);
+        this.customerService = new com.possum.application.people.CustomerService(customerRepository);
         
         this.auditService = new AuditService(auditRepository, jsonService.getObjectMapper());
         
@@ -86,5 +93,13 @@ public final class ApplicationModule {
     
     public AuditService getAuditService() {
         return auditService;
+    }
+
+    public com.possum.application.people.UserService getUserService() {
+        return userService;
+    }
+
+    public com.possum.application.people.CustomerService getCustomerService() {
+        return customerService;
     }
 }

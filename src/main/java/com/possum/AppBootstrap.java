@@ -108,16 +108,16 @@ public final class AppBootstrap {
         SqliteInventoryRepository inventoryRepository = new SqliteInventoryRepository(databaseManager);
         SqliteProductFlowRepository productFlowRepository = new SqliteProductFlowRepository(databaseManager);
         SqliteAuditRepository auditRepository = new SqliteAuditRepository(databaseManager);
+        com.possum.persistence.repositories.sqlite.SqliteCustomerRepository customerRepository = new com.possum.persistence.repositories.sqlite.SqliteCustomerRepository(databaseManager);
 
         applicationModule = new ApplicationModule(
             userRepository, sessionRepository, productRepository, variantRepository,
             categoryRepository, inventoryRepository, productFlowRepository, auditRepository,
-            transactionManager, passwordHasher, jsonService, appPaths
+            customerRepository, transactionManager, passwordHasher, jsonService, appPaths
         );
 
         // Other repositories required
         salesRepository = new SqliteSalesRepository(databaseManager);
-        com.possum.persistence.repositories.sqlite.SqliteCustomerRepository customerRepository = new com.possum.persistence.repositories.sqlite.SqliteCustomerRepository(databaseManager);
         com.possum.persistence.repositories.sqlite.SqliteTransactionRepository transactionRepo = new com.possum.persistence.repositories.sqlite.SqliteTransactionRepository(databaseManager);
         com.possum.persistence.repositories.sqlite.SqliteReturnsRepository returnRepository = new com.possum.persistence.repositories.sqlite.SqliteReturnsRepository(databaseManager);
 

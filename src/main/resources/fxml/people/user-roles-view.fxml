@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.possum.ui.people.UserRolesController"
+            fitToWidth="true"
+            stylesheets="@../../styles/inventory.css"
+            styleClass="workspace-view">
+
+    <VBox spacing="20" alignment="TOP_LEFT">
+        <HBox styleClass="view-header">
+            <Button text="← Back" onAction="#handleCancel" styleClass="back-link"/>
+            <VBox>
+                <Label fx:id="titleLabel" text="Manage Roles &amp; Permissions" styleClass="view-title"/>
+                <Label fx:id="subtitleLabel" text="Assign roles and customize permissions" styleClass="view-subtitle"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
+            <Button fx:id="saveButton" text="Save Changes" onAction="#handleSave" styleClass="action-button, primary-button"/>
+        </HBox>
+
+        <VBox spacing="30" maxWidth="800">
+            
+            <!-- Roles Section -->
+            <VBox spacing="10">
+                <VBox>
+                    <Label text="Roles" styleClass="card-title" style="-fx-font-size: 16px;"/>
+                    <Label text="Roles provide a set of permissions to the user" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                </VBox>
+                
+                <VBox fx:id="rolesContainer" spacing="10"/>
+            </VBox>
+
+            <Separator/>
+
+            <!-- Permission Overrides Section -->
+            <VBox spacing="10">
+                <VBox>
+                    <Label text="Permission Overrides" styleClass="card-title" style="-fx-font-size: 16px;"/>
+                    <Label text="Grant or revoke specific permissions regardless of role assignments" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                </VBox>
+
+                <VBox fx:id="permissionsContainer" spacing="15"/>
+            </VBox>
+
+        </VBox>
+    </VBox>
+</ScrollPane>

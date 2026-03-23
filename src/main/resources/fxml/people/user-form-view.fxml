@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.possum.ui.people.UserFormController"
+            fitToWidth="true"
+            stylesheets="@../../styles/inventory.css"
+            styleClass="workspace-view">
+
+    <VBox spacing="20" alignment="TOP_LEFT">
+        <HBox styleClass="view-header">
+            <Button text="← Back" onAction="#handleCancel" styleClass="back-link"/>
+            <Label fx:id="titleLabel" text="Add Employee" styleClass="view-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
+            <Button fx:id="saveButton" text="Save Employee" onAction="#handleSave" styleClass="action-button, primary-button"/>
+        </HBox>
+
+        <VBox spacing="20" maxWidth="600">
+            <VBox styleClass="card">
+                <Label text="Employee Details" styleClass="card-title"/>
+                <VBox styleClass="form-group">
+                    <Label text="Full Name *" styleClass="form-label"/>
+                    <TextField fx:id="nameField" promptText="Enter full name" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Username *" styleClass="form-label"/>
+                    <TextField fx:id="usernameField" promptText="Enter username" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Password" styleClass="form-label"/>
+                    <PasswordField fx:id="passwordField" promptText="Enter password (leave blank to keep current if editing)" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Status *" styleClass="form-label"/>
+                    <ComboBox fx:id="statusCombo" maxWidth="Infinity" styleClass="combo-box"/>
+                </VBox>
+            </VBox>
+        </VBox>
+    </VBox>
+</ScrollPane>

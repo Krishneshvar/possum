@@ -124,6 +124,10 @@ public class DependencyInjector {
             return purchaseService;
         } else if (type.equals(com.possum.application.audit.AuditService.class)) {
             return applicationModule.getAuditService();
+        } else if (type.equals(com.possum.application.people.UserService.class)) {
+            return applicationModule.getUserService();
+        } else if (type.equals(com.possum.application.people.CustomerService.class)) {
+            return applicationModule.getCustomerService();
         }
 
         // Repositories

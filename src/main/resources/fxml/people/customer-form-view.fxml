@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.possum.ui.people.CustomerFormController"
+            fitToWidth="true"
+            stylesheets="@../../styles/inventory.css"
+            styleClass="workspace-view">
+
+    <VBox spacing="20" alignment="TOP_LEFT">
+        <HBox styleClass="view-header">
+            <Button text="← Back" onAction="#handleCancel" styleClass="back-link"/>
+            <Label fx:id="titleLabel" text="Add Customer" styleClass="view-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
+            <Button fx:id="saveButton" text="Save Customer" onAction="#handleSave" styleClass="action-button, primary-button"/>
+        </HBox>
+
+        <VBox spacing="20" maxWidth="600">
+            <VBox styleClass="card">
+                <Label text="Customer Information" styleClass="card-title"/>
+                <VBox styleClass="form-group">
+                    <Label text="Full Name *" styleClass="form-label"/>
+                    <TextField fx:id="nameField" promptText="Enter full name" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Phone Number" styleClass="form-label"/>
+                    <TextField fx:id="phoneField" promptText="Enter phone number" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Email Address" styleClass="form-label"/>
+                    <TextField fx:id="emailField" promptText="Enter email address" styleClass="text-field"/>
+                </VBox>
+                <VBox styleClass="form-group">
+                    <Label text="Physical Address" styleClass="form-label"/>
+                    <TextArea fx:id="addressField" promptText="Enter full address" prefRowCount="3" styleClass="text-area"/>
+                </VBox>
+            </VBox>
+        </VBox>
+    </VBox>
+</ScrollPane>
