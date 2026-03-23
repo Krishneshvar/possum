@@ -96,8 +96,13 @@ public class UsersController {
     }
 
     @FXML
+    private void handleRefresh() {
+        loadUsers();
+    }
+
+    @FXML
     private void handleAdd() {
-        workspaceManager.openWindow("Add Employee", "/fxml/people/user-form-view.fxml");
+        workspaceManager.openDialog("Add Employee", "/fxml/people/user-form-view.fxml");
     }
 
     private void showActions(User user) {
@@ -115,7 +120,7 @@ public class UsersController {
         
         alert.showAndWait().ifPresent(type -> {
             if (type == editBtn) {
-                workspaceManager.openWindow("Edit Employee: " + user.name(), "/fxml/people/user-form-view.fxml", Map.of("userId", user.id(), "mode", "edit"));
+                workspaceManager.openDialog("Edit Employee: " + user.name(), "/fxml/people/user-form-view.fxml", Map.of("userId", user.id(), "mode", "edit"));
             } else if (type == rolesBtn) {
                 workspaceManager.openWindow("Roles & Permissions: " + user.name(), "/fxml/people/user-roles-view.fxml", Map.of("userId", user.id()));
             } else if (type == deleteBtn) {

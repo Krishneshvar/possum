@@ -12,7 +12,6 @@
 
     <VBox spacing="20" alignment="TOP_LEFT">
         <HBox styleClass="view-header">
-            <Button text="← Back" onAction="#handleCancel" styleClass="back-link"/>
             <Label fx:id="titleLabel" text="Add Customer" styleClass="view-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>

@@ -100,7 +100,7 @@ public class CustomerFormController implements Parameterizable {
                 NotificationService.success("Customer updated successfully");
             }
 
-            workspaceManager.closeActiveWindow();
+            workspaceManager.close(titleLabel);
         } catch (Exception e) {
             NotificationService.error("Failed to save customer: " + e.getMessage());
         }
@@ -114,7 +114,7 @@ public class CustomerFormController implements Parameterizable {
 
     @FXML
     private void handleCancel() {
-        workspaceManager.closeActiveWindow();
+        workspaceManager.close(titleLabel);
     }
 
     private void replaceFieldWithLabel(Control field, String text) {

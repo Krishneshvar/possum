@@ -17,6 +17,11 @@
             <Label text="Manage employees and system users" styleClass="view-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Refresh" onAction="#handleRefresh" styleClass="action-button">
+            <tooltip>
+                <Tooltip text="Reload employee list"/>
+            </tooltip>
+        </Button>
         <Button fx:id="addButton" text="+ Add Employee" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new employee">
             <tooltip>
                 <Tooltip text="Create a new employee record"/>

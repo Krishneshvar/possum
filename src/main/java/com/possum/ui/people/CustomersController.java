@@ -109,8 +109,13 @@ public class CustomersController {
     }
 
     @FXML
+    private void handleRefresh() {
+        loadCustomers();
+    }
+
+    @FXML
     private void handleAdd() {
-        workspaceManager.openWindow("Add Customer", "/fxml/people/customer-form-view.fxml");
+        workspaceManager.openDialog("Add Customer", "/fxml/people/customer-form-view.fxml");
     }
 
     private void showActions(Customer customer) {
@@ -127,7 +132,7 @@ public class CustomersController {
         
         alert.showAndWait().ifPresent(type -> {
             if (type == editBtn) {
-                workspaceManager.openWindow("Edit Customer: " + customer.name(), "/fxml/people/customer-form-view.fxml", Map.of("customerId", customer.id(), "mode", "edit"));
+                workspaceManager.openDialog("Edit Customer: " + customer.name(), "/fxml/people/customer-form-view.fxml", Map.of("customerId", customer.id(), "mode", "edit"));
             } else if (type == deleteBtn) {
                 handleDelete(customer);
             }

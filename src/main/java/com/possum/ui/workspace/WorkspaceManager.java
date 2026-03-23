@@ -98,10 +98,43 @@ public class WorkspaceManager {
         }
     }
 
+    public void openDialog(String title, String fxmlPath) {
+        showDialog(title, fxmlPath, null);
+    }
+
+    public void openDialog(String title, String fxmlPath, Map<String, Object> params) {
+        showDialog(title, fxmlPath, params);
+    }
+
     public void closeActiveWindow() {
         InternalWindow activeWindow = desktop.getActiveWindow();
         if (activeWindow != null) {
             desktop.removeWindow(activeWindow);
+        }
+    }
+
+    /**
+     * Closes the window or dialog containing the given node.
+     */
+    public void close(Node node) {
+        if (node == null || node.getScene() == null) return;
+
+        javafx.stage.Window window = node.getScene().getWindow();
+        
+        // If it's a separate Stage (Dialog), close it
+        if (window instanceof javafx.stage.Stage stage && stage != desktop.getScene().getWindow()) {
+            stage.close();
+            return;
+        }
+
+        // Otherwise, look for an InternalWindow in the hierarchy
+        Node current = node;
+        while (current != null) {
+            if (current instanceof InternalWindow internalWindow) {
+                desktop.removeWindow(internalWindow);
+                return;
+            }
+            current = current.getParent();
         }
     }
 

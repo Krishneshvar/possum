@@ -271,7 +271,7 @@ public class UserRolesController implements Parameterizable {
             }
             
             NotificationService.success("Roles and permissions updated successfully");
-            workspaceManager.closeActiveWindow();
+            workspaceManager.close(titleLabel);
         } catch (Exception e) {
             e.printStackTrace();
             NotificationService.error("Failed to update roles and permissions: " + e.getMessage());
@@ -283,6 +283,6 @@ public class UserRolesController implements Parameterizable {
 
     @FXML
     private void handleCancel() {
-        workspaceManager.closeActiveWindow();
+        workspaceManager.close(titleLabel);
     }
 }

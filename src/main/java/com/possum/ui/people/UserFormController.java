@@ -116,7 +116,7 @@ public class UserFormController implements Parameterizable {
                 NotificationService.success("User updated successfully");
             }
 
-            workspaceManager.closeActiveWindow();
+            workspaceManager.close(titleLabel);
         } catch (Exception e) {
             NotificationService.error("Failed to save user: " + e.getMessage());
         }
@@ -133,7 +133,7 @@ public class UserFormController implements Parameterizable {
 
     @FXML
     private void handleCancel() {
-        workspaceManager.closeActiveWindow();
+        workspaceManager.close(titleLabel);
     }
 
     private void replaceFieldWithLabel(Control field, String text) {
