@@ -23,6 +23,14 @@ public class ProductFlowService {
         return productFlowRepository.getFlowSummary(variantId);
     }
 
+    public List<ProductFlow> getProductTimeline(long productId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods) {
+        return productFlowRepository.findFlowByProductId(productId, limit, offset, startDate, endDate, paymentMethods);
+    }
+
+    public Map<String, Object> getProductFlowSummary(long productId) {
+        return productFlowRepository.getProductFlowSummary(productId);
+    }
+
     public List<ProductFlow> getFlowByReference(String referenceType, long referenceId) {
         return productFlowRepository.findFlowByReference(referenceType, referenceId);
     }

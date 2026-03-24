@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.insights.ProductFlowController"
+      spacing="0"
+      style="-fx-background-color: #f8fafc;">
+    
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <!-- Header Section -->
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <VBox>
+            <Label text="Product Flow Analysis" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+            <Label text="Track movement history across products and variants" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <VBox spacing="2">
+                <Label text="Analyze By:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                <ComboBox fx:id="selectionTypeCombo" prefWidth="120"/>
+            </VBox>
+            <VBox spacing="2">
+                <Label text="Select Item:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                <ComboBox fx:id="itemSelector" prefWidth="200" promptText="Choose..."/>
+            </VBox>
+            <VBox spacing="2">
+                <Label text="Date Range:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                <ComboBox fx:id="dateRangeCombo" prefWidth="150"/>
+            </VBox>
+            <HBox fx:id="customDateRange" spacing="10" visible="false" managed="false">
+                <VBox spacing="2">
+                    <Label text="From:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                    <DatePicker fx:id="startDatePicker" prefWidth="130"/>
+                </VBox>
+                <VBox spacing="2">
+                    <Label text="To:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                    <DatePicker fx:id="endDatePicker" prefWidth="130"/>
+                </VBox>
+            </HBox>
+        </HBox>
+    </HBox>
+    
+    <Separator style="-fx-padding: 20 0;"/>
+
+    <!-- Summary Statistics Cards -->
+    <GridPane hgap="20" vgap="0" style="-fx-padding: 0 0 20 0;">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+        </columnConstraints>
+        
+        <VBox GridPane.columnIndex="0" styleClass="pos-card" spacing="5">
+            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
+            <Label text="TOTAL SOLD" style="-fx-text-fill: #64748b; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+            <Label fx:id="totalSoldLabel" text="0" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #ef4444;"/>
+        </VBox>
+        
+        <VBox GridPane.columnIndex="1" styleClass="pos-card" spacing="5">
+            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
+            <Label text="TOTAL PURCHASED" style="-fx-text-fill: #64748b; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+            <Label fx:id="totalPurchasedLabel" text="0" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #10b981;"/>
+        </VBox>
+        
+        <VBox GridPane.columnIndex="2" styleClass="pos-card" spacing="5">
+            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
+            <Label text="RETURNS" style="-fx-text-fill: #64748b; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+            <Label fx:id="totalReturnedLabel" text="0" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #f59e0b;"/>
+        </VBox>
+        
+        <VBox GridPane.columnIndex="3" styleClass="pos-card" spacing="5">
+            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
+            <Label text="NET MOVEMENT" style="-fx-text-fill: #64748b; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+            <Label fx:id="netMovementLabel" text="0" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #2563eb;"/>
+        </VBox>
+    </GridPane>
+    
+    <!-- Flow Timeline Table -->
+    <VBox spacing="15" VBox.vgrow="ALWAYS" styleClass="pos-card">
+        <TableView fx:id="flowTable" VBox.vgrow="ALWAYS" styleClass="pos-table">
+            <columns>
+                <TableColumn fx:id="dateCol" text="Date &amp; Time" prefWidth="180"/>
+                <TableColumn fx:id="typeCol" text="Event Type" prefWidth="130" style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="quantityCol" text="Quantity" prefWidth="100" style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="variantNameCol" text="Variant" prefWidth="180"/>
+                <TableColumn fx:id="refTypeCol" text="Reference" prefWidth="120"/>
+                <TableColumn fx:id="refIdCol" text="Ref ID" prefWidth="80" style="-fx-alignment: CENTER;"/>
+            </columns>
+            <placeholder>
+                <VBox alignment="CENTER" spacing="10">
+                    <Label text="Select a product or variant to view flow history" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+    </VBox>
+
+</VBox>

@@ -104,6 +104,8 @@ public class DependencyInjector {
             return applicationModule.getCategoryService();
         } else if (type.equals(com.possum.application.inventory.InventoryService.class)) {
             return applicationModule.getInventoryService();
+        } else if (type.equals(com.possum.application.inventory.ProductFlowService.class)) {
+            return applicationModule.getProductFlowService();
         } else if (type.equals(com.possum.application.auth.AuthService.class)) {
             return applicationModule.getAuthModule().getAuthService();
         } else if (type.equals(com.possum.application.auth.AuthorizationService.class)) {

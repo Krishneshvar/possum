@@ -9,8 +9,10 @@ public interface ProductFlowRepository {
     long insertProductFlow(ProductFlow flow);
 
     List<ProductFlow> findFlowByVariantId(long variantId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods);
-
     Map<String, Object> getFlowSummary(long variantId);
+
+    List<ProductFlow> findFlowByProductId(long productId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods);
+    Map<String, Object> getProductFlowSummary(long productId);
 
     List<ProductFlow> findFlowByReference(String referenceType, long referenceId);
 }
