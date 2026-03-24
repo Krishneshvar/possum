@@ -59,8 +59,15 @@ public class DependencyInjector {
     }
 
 
+    public com.possum.infrastructure.filesystem.AppPaths getAppPaths() {
+        return appPaths;
+    }
+
+    public ApplicationModule getApplicationModule() {
+        return applicationModule;
+    }
+
     public javafx.util.Callback<Class<?>, Object> getControllerFactory() {
-        return type -> {
             try {
                 java.lang.reflect.Constructor<?>[] constructors = type.getConstructors();
                 if (constructors.length > 0) {

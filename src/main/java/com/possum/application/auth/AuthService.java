@@ -1,18 +1,25 @@
 package com.possum.application.auth;
 
 import com.possum.domain.exceptions.AuthenticationException;
+import com.possum.domain.model.Role;
 import com.possum.domain.model.SessionRecord;
 import com.possum.domain.model.User;
 import com.possum.infrastructure.security.PasswordHasher;
 import com.possum.persistence.repositories.interfaces.SessionRepository;
 import com.possum.persistence.repositories.interfaces.UserRepository;
+import com.possum.shared.dto.PagedResult;
+import com.possum.shared.dto.UserFilter;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class AuthService {
 
     private static final int SESSION_DURATION_SECONDS = 30 * 60;
     private static final String DUMMY_HASH = "$2b$10$InCX8UtTmhbQP3NuHPaRAeCdfZeaIngIzsAjWjbAYxjprs6WHcoAG";
+    private static final String LEGACY_DEFAULT_ADMIN_USERNAME = "admin";
+    private static final String LEGACY_DEFAULT_ADMIN_PASSWORD = "admin123";
 
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
@@ -52,10 +59,20 @@ public class AuthService {
         return new LoginResponse(userData, token);
     }
 
-    public AuthUser validateSession(String token) {
-        if (token == null || token.isBlank()) {
-            return null;
+    public void rotateDefaultAdminPassword(String username, String currentPassword, String newPassword) {
+        if (!isLegacyDefaultAdminPasswordInUse()) {
+            throw new AuthenticationException("Default password is no longer in use");
         }
+
+        AuthUser user = login(username, currentPassword);
+        if (user == null) {
+            throw new AuthenticationException("Invalid current credentials");
+        }
+
+        userRepository.updatePassword(user.id(), passwordHasher.hashPassword(newPassword));
+    }
+
+    public AuthUser validateSession(String token) {
 
         long now = System.currentTimeMillis() / 1000;
 
@@ -103,5 +120,57 @@ public class AuthService {
 
     public void clearAllSessions() {
         sessionRepository.deleteAll();
+    }
+
+    public AuthBootstrapStatus getAuthBootstrapStatus() {
+        boolean requiresInitialSetup = !hasAnyActiveUsers();
+        boolean requiresPasswordRotation = !requiresInitialSetup && isLegacyDefaultAdminPasswordInUse();
+        return new AuthBootstrapStatus(requiresInitialSetup, requiresPasswordRotation);
+    }
+
+    public LoginResponse setupInitialAdmin(String name, String username, String password) {
+        AuthBootstrapStatus status = getAuthBootstrapStatus();
+        if (!status.requiresInitialSetup()) {
+            throw new AuthenticationException("Initial setup has already been completed");
+        }
+
+        String trimmedName = name.trim();
+        String trimmedUsername = username.trim();
+        if (trimmedName.isEmpty()) throw new AuthenticationException("Name is required");
+        if (trimmedUsername.length() < 3) throw new AuthenticationException("Username must be at least 3 characters");
+        if (password.length() < 8) throw new AuthenticationException("Password must be at least 8 characters");
+
+        Optional<User> existing = userRepository.findUserByUsername(trimmedUsername);
+        if (existing.isPresent()) {
+            throw new AuthenticationException("Username already exists");
+        }
+
+        Optional<Role> adminRole = userRepository.getAllRoles().stream()
+                .filter(role -> role.name().equalsIgnoreCase("admin"))
+                .findFirst();
+
+        if (adminRole.isEmpty()) {
+            throw new AuthenticationException("Admin role is missing from data");
+        }
+
+        String passwordHash = passwordHasher.hashPassword(password);
+        User user = new User(0, trimmedName, trimmedUsername, passwordHash, true, null, null);
+        User createdUser = userRepository.insertUserWithRoles(user, Collections.singletonList(adminRole.get().id()));
+
+        AuthUser authUser = sessionService.buildAuthUser(createdUser.id());
+        String token = sessionService.createSession(authUser);
+        return new LoginResponse(authUser, token);
+    }
+
+    private boolean hasAnyActiveUsers() {
+        PagedResult<User> usersPage = userRepository.findUsers(new UserFilter(null, 1, 1));
+        return usersPage.totalCount() > 0;
+    }
+
+    private boolean isLegacyDefaultAdminPasswordInUse() {
+        return userRepository.findUserByUsername(LEGACY_DEFAULT_ADMIN_USERNAME)
+                .filter(u -> u.active() && u.deletedAt() == null)
+                .map(u -> passwordHasher.verifyPassword(LEGACY_DEFAULT_ADMIN_PASSWORD, u.passwordHash()))
+                .orElse(false);
     }
 }

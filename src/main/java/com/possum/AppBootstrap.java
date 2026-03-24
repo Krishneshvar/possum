@@ -16,17 +16,11 @@ import com.possum.application.reports.ReportsService;
 import com.possum.application.purchase.PurchaseService;
 import com.possum.persistence.repositories.sqlite.*;
 import com.possum.ui.DependencyInjector;
-import com.possum.application.auth.AuthModule;
-import com.possum.infrastructure.filesystem.AppPaths;
-import com.possum.infrastructure.lazy.ServiceLocator;
-import com.possum.infrastructure.logging.LoggingConfig;
-import com.possum.infrastructure.security.PasswordHasher;
-import com.possum.infrastructure.serialization.JsonService;
-import com.possum.persistence.db.DatabaseManager;
-import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.sqlite.SqliteSessionRepository;
-import com.possum.persistence.repositories.sqlite.SqliteUserRepository;
-import com.possum.ui.AppShellController;
+import com.possum.application.auth.AuthBootstrapStatus;
+import com.possum.application.auth.AuthContext;
+import com.possum.ui.auth.SessionStore;
+import com.possum.ui.navigation.NavigationManager;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -62,7 +56,31 @@ public final class AppBootstrap {
     public void start(Stage stage) {
         try {
             initializeCore();
-            loadMainShell(stage);
+            
+            // Check session/bootstrap status
+            AuthBootstrapStatus bootstrapStatus = authModule.getAuthService().getAuthBootstrapStatus();
+            
+            if (bootstrapStatus.requiresInitialSetup() || bootstrapStatus.requiresPasswordRotation()) {
+                loadLoginScreen(stage);
+            } else {
+                // Try to restore existing session
+                SessionStore sessionStore = new SessionStore(appPaths, new JsonService());
+                var tokenOpt = sessionStore.getToken();
+                if (tokenOpt.isPresent()) {
+                    try {
+                        var authUser = authModule.getAuthService().validateSession(tokenOpt.get());
+                        if (authUser != null) {
+                            AuthContext.setCurrentUser(authUser);
+                            loadMainShell(stage);
+                            return;
+                        }
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to validate existing session", e);
+                    }
+                }
+                loadLoginScreen(stage);
+            }
+            
             LOGGER.info("Application bootstrap completed");
         } catch (RuntimeException ex) {
             shutdown();
@@ -141,12 +159,49 @@ public final class AppBootstrap {
         LOGGER.info("Core services initialized");
     }
 
+    private void loadLoginScreen(Stage stage) {
+        try {
+            FXMLLoader loader = new FXMLLoader(AppBootstrap.class.getResource("/fxml/auth/login-view.fxml"));
+            
+            // Navigate to main shell on login
+            NavigationManager dummyNav = new NavigationManager(null, null) {
+                @Override
+                public void navigateTo(String routeId) {
+                    if ("dashboard".equals(routeId)) {
+                        Platform.runLater(() -> loadMainShell(stage));
+                    }
+                }
+            };
+            
+            SessionStore sessionStore = new SessionStore(appPaths, new JsonService());
+            loader.setControllerFactory(type -> {
+                if (type.equals(com.possum.ui.auth.LoginController.class)) {
+                    return new com.possum.ui.auth.LoginController(
+                        authModule.getAuthService(),
+                        dummyNav,
+                        sessionStore
+                    );
+                }
+                return null;
+            });
+
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 1280, 800);
+            stage.setTitle("POSSUM - Login");
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to load login screen", ex);
+        }
+    }
+
     private void loadMainShell(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader(AppBootstrap.class.getResource("/fxml/app-shell.fxml"));
+            loader.setControllerFactory(dependencyInjector.getControllerFactory());
             Parent root = loader.load();
 
-                        AppShellController shellController = loader.getController();
+            AppShellController shellController = loader.getController();
             shellController.setDependencyInjector(dependencyInjector);
 
             Scene scene = new Scene(root, 1280, 800);

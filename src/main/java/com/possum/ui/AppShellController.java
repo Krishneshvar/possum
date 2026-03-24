@@ -4,8 +4,15 @@ import com.possum.ui.navigation.NavigationManager;
 import com.possum.ui.navigation.RouteGuard;
 import com.possum.ui.workspace.WorkspaceDesktop;
 import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.application.auth.AuthContext;
+import com.possum.ui.auth.SessionStore;
+import com.possum.AppBootstrap;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -41,7 +48,10 @@ public class AppShellController {
 
     @FXML
     public void initialize() {
-        TestAuthSetup.setupMockAdminUser();
+        var currentUser = AuthContext.getCurrentUser();
+        if (currentUser != null) {
+            currentUserName = currentUser.name();
+        }
         
         WorkspaceDesktop desktop = new WorkspaceDesktop();
         workspaceManager = new WorkspaceManager(desktop, dependencyInjector);
@@ -169,7 +179,53 @@ public class AppShellController {
     }
 
     private void handleLogout() {
-        System.out.println("Logout clicked");
+        AuthContext.clear();
+        new SessionStore(dependencyInjector.getAppPaths(), new com.possum.infrastructure.serialization.JsonService()).clearSession();
+        
+        // Switch back to login screen
+        javafx.stage.Stage stage = (javafx.stage.Stage) contentArea.getScene().getWindow();
+        AppBootstrap bootstrap = new AppBootstrap(); 
+        // Note: In a real app, we'd probably want to reuse the existing bootstrap instance
+        // but since bootstrap doesn't hold much state once started, this is okay for now.
+        // Or we can just call Platform.exit() and restart, but that's harsh.
+        // Better yet, pass the bootstrap instance to the controller.
+        
+        // Let's assume AppBootstrap has a static instance or we can just redirect to login screen via the same logic as AppLauncher
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/auth/login-view.fxml"));
+            
+            // Re-using the logic from AppBootstrap.loadLoginScreen
+            NavigationManager dummyNav = new NavigationManager(null, null) {
+                @Override
+                public void navigateTo(String routeId) {
+                    if ("dashboard".equals(routeId)) {
+                        com.possum.AppBootstrap b = new com.possum.AppBootstrap();
+                        b.start(stage); // This will re-initialize everything, which is safe
+                    }
+                }
+            };
+            
+            SessionStore sessionStore = new SessionStore(dependencyInjector.getAppPaths(), new com.possum.infrastructure.serialization.JsonService());
+            com.possum.application.auth.AuthModule authModule = dependencyInjector.getApplicationModule().getAuthModule();
+            
+            loader.setControllerFactory(type -> {
+                if (type.equals(com.possum.ui.auth.LoginController.class)) {
+                    return new com.possum.ui.auth.LoginController(
+                        authModule.getAuthService(),
+                        dummyNav,
+                        sessionStore
+                    );
+                }
+                return null;
+            });
+
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 1280, 800);
+            stage.setTitle("POSSUM - Login");
+            stage.setScene(scene);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleThemeToggle() {
