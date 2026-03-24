@@ -44,7 +44,11 @@ public class ProductSearchIndex {
     }
 
     public List<Variant> searchByName(String query) {
-        if (query == null || query.isEmpty()) return Collections.emptyList();
+        if (query == null || query.trim().isEmpty()) {
+            return allVariants.stream()
+                .limit(50)
+                .collect(Collectors.toList());
+        }
         
         String lowerQuery = query.toLowerCase();
         return allVariants.stream()

@@ -111,6 +111,7 @@ public class AppShellController {
         });
         createNavMenu("🛒 Sales", new String[][]{
             {"Point of Sale", "/fxml/sales/pos-view.fxml"},
+            {"Bill History", "/fxml/sales/sales-history-view.fxml"},
             {"Transactions", "/fxml/transactions/transactions-view.fxml"},
             {"Returns", "/fxml/returns/returns-view.fxml"}
         });

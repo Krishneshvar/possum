@@ -24,6 +24,8 @@ public interface SalesRepository {
 
     PagedResult<Sale> findSales(SaleFilter filter);
 
+    com.possum.application.sales.dto.SaleStats getSaleStats(SaleFilter filter);
+
     int updateSaleStatus(long id, String status);
 
     int updateFulfillmentStatus(long id, String status);

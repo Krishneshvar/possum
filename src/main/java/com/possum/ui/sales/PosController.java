@@ -22,17 +22,24 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.Locale;
+import java.util.Collections;
+import javafx.beans.binding.Bindings;
+import javafx.scene.input.KeyEvent;
+import javafx.stage.Popup;
+import javafx.scene.input.KeyCode;
 
 public class PosController {
 
+    @FXML private VBox leftVBox;
     @FXML private TableView<CartItem> cartTable;
-    @FXML private TableColumn<CartItem, Integer> colSno;
+    @FXML private TableColumn<CartItem, String> colSno;
     @FXML private TableColumn<CartItem, String> colProduct;
     @FXML private TableColumn<CartItem, CartItem> colQty;
-    @FXML private TableColumn<CartItem, String> colPrice;
-    @FXML private TableColumn<CartItem, String> colDiscount;
+    @FXML private TableColumn<CartItem, CartItem> colPrice;
+    @FXML private TableColumn<CartItem, CartItem> colDiscount;
     @FXML private TableColumn<CartItem, String> colTotal;
-    @FXML private TableColumn<CartItem, CartItem> colAction;
+    @FXML private TableColumn<CartItem, String> colMrp;
 
     @FXML private TextField searchField;
     @FXML private Label totalQtyLabel;
@@ -57,6 +64,10 @@ public class PosController {
     
     @FXML private Button completeButton;
     @FXML private FlowPane billsFlowPane;
+    @FXML private StackPane rootPane;
+
+    private Popup searchPopup = new Popup();
+    private ListView<Variant> searchResultsView = new ListView<>();
 
     private final SalesService salesService;
     private final ProductSearchIndex searchIndex;
@@ -68,6 +79,9 @@ public class PosController {
     private static final int MAX_BILLS = 9;
     private final List<BillState> bills = new ArrayList<>();
     private BillState currentBill;
+    
+    private int focusRow = -1;
+    private int focusColIdx = -1;
 
     public PosController(SalesService salesService, ProductSearchIndex searchIndex,
                           TaxEngine taxEngine, PrinterService printerService) {
@@ -85,12 +99,23 @@ public class PosController {
         }
         currentBill = bills.get(0);
 
+        NotificationService.initialize(rootPane);
         setupTable();
         loadCombos();
         setupBillingToggles();
         setupListeners();
-        renderBillsFlowPane();
+        
+        // Cap left side at 75% of viewpoint
+        Platform.runLater(() -> {
+            if (rootPane.getScene() != null) {
+                leftVBox.maxHeightProperty().bind(rootPane.heightProperty().multiply(0.75));
+            }
+        });
+
+    renderBillsFlowPane();
         switchBill(0);
+        taxEngine.init();
+        setupSearchAutocomplete();
         
         Platform.runLater(() -> {
             cartTable.getScene().setOnKeyPressed(e -> {
@@ -109,64 +134,242 @@ public class PosController {
     }
 
     private void setupTable() {
-        colSno.setCellValueFactory(cell -> new SimpleIntegerProperty(cartTable.getItems().indexOf(cell.getValue()) + 1).asObject());
-        colProduct.setCellValueFactory(cell -> new SimpleStringProperty(
-            cell.getValue().variant.productName() + " - " + cell.getValue().variant.name() + "\n" + cell.getValue().variant.sku()
-        ));
+        colSno.setCellValueFactory(cell -> new SimpleStringProperty(String.valueOf(cartTable.getItems().indexOf(cell.getValue()) + 1)));
+        colSno.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item);
+            }
+        });
+
+        colProduct.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().variant.productName()));
+        colProduct.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item);
+            }
+        });
         
-        // Qty cell with +/-
         colQty.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
         colQty.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(CartItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    HBox box = new HBox(5);
-                    box.setAlignment(javafx.geometry.Pos.CENTER);
-                    Button minus = new Button("-");
-                    minus.setStyle("-fx-padding: 0 4;");
-                    Button plus = new Button("+");
-                    plus.setStyle("-fx-padding: 0 4;");
-                    Label qty = new Label(String.valueOf(item.quantity));
-                    qty.setStyle("-fx-font-weight: bold;");
-                    
-                    minus.setOnAction(e -> adjustQuantity(item, -1));
-                    plus.setOnAction(e -> adjustQuantity(item, 1));
-                    
-                    box.getChildren().addAll(minus, qty, plus);
-                    setGraphic(box);
-                }
+            private final TextField field = new TextField();
+            {
+                field.getStyleClass().add("table-input");
+                field.setAlignment(javafx.geometry.Pos.CENTER);
+                field.setPrefWidth(60);
+                field.setFocusTraversable(true);
+                field.setEditable(true); // Explicit
+                field.setOnAction(e -> commit());
+                field.focusedProperty().addListener((obs, old, val) -> { if (!val) commit(); });
+                field.setOnKeyPressed(e -> handleArrowNav(e, this));
+                field.setOnMouseClicked(e -> field.requestFocus());
             }
-        });
-
-        colPrice.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().pricePerUnit)));
-        
-        colDiscount.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().discountAmount)));
-        
-        colTotal.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().netLineTotal)));
-
-        colAction.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colAction.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(CartItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    Button del = new Button("x");
-                    del.setStyle("-fx-text-fill: red; -fx-background-color: transparent; -fx-cursor: hand; -fx-font-weight: bold;");
-                    del.setOnAction(e -> {
-                        currentBill.items.remove(item);
+            private void commit() {
+                CartItem item = getItem();
+                if (item != null) {
+                    try {
+                        item.quantity = Integer.parseInt(field.getText());
+                        if (item.quantity < 1) item.quantity = 1;
                         refreshCurrentBill();
-                    });
-                    setGraphic(del);
+                    } catch (Exception e) {}
+                }
+            }
+            @Override protected void updateItem(CartItem item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    field.setText(String.valueOf(item.quantity));
+                    setGraphic(field);
+                    checkFocus(this, field);
                 }
             }
         });
+
+        colPrice.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
+        colPrice.setCellFactory(col -> new TableCell<>() {
+            private final TextField field = new TextField();
+            {
+                field.getStyleClass().add("table-input");
+                field.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+                field.setFocusTraversable(true);
+                field.setEditable(true);
+                field.setOnAction(e -> commit());
+                field.focusedProperty().addListener((obs, old, val) -> { if (!val) commit(); });
+                field.setOnKeyPressed(e -> handleArrowNav(e, this));
+                field.setOnMouseClicked(e -> field.requestFocus());
+            }
+            private void commit() {
+                CartItem item = getItem();
+                if (item != null) {
+                    try {
+                        BigDecimal val = new BigDecimal(field.getText().replace("$", "").replace(",", ""));
+                        item.pricePerUnit = val.max(BigDecimal.ZERO);
+                        refreshCurrentBill();
+                    } catch (Exception e) {}
+                }
+            }
+            @Override protected void updateItem(CartItem item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    field.setText(item.pricePerUnit.toString());
+                    setGraphic(field);
+                    checkFocus(this, field);
+                }
+            }
+        });
+        
+        colMrp.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().variant.price())));
+        colMrp.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item);
+            }
+        });
+
+        colDiscount.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
+        colDiscount.setCellFactory(col -> new TableCell<>() {
+            private final TextField field = new TextField();
+            private final ToggleButton btnPct = new ToggleButton("%");
+            private final ToggleButton btnAmt = new ToggleButton("$");
+            private final HBox box = new HBox(4);
+            {
+                field.getStyleClass().add("table-input");
+                field.setPrefWidth(80);
+                field.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+                field.setFocusTraversable(true);
+                field.setEditable(true);
+                ToggleGroup group = new ToggleGroup();
+                btnPct.setToggleGroup(group);
+                btnAmt.setToggleGroup(group);
+                btnPct.getStyleClass().add("toggle-btn-neon");
+                btnAmt.getStyleClass().add("toggle-btn-neon");
+                HBox toggleBox = new HBox(btnAmt, btnPct);
+                toggleBox.getStyleClass().add("toggle-group-neon");
+                box.getChildren().addAll(field, toggleBox);
+                box.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+                field.setOnAction(e -> commit());
+                field.focusedProperty().addListener((obs, old, val) -> { if (!val) commit(); });
+                group.selectedToggleProperty().addListener((obs, old, val) -> {
+                    if (val == null) { if (old != null) old.setSelected(true); } else { commit(); }
+                });
+                field.setOnKeyPressed(e -> handleArrowNav(e, this));
+                field.setOnMouseClicked(e -> field.requestFocus());
+            }
+            private void commit() {
+                CartItem item = getItem();
+                if (item != null) {
+                    try {
+                        String text = field.getText().trim();
+                        item.discountValue = text.isEmpty() ? BigDecimal.ZERO : new BigDecimal(text);
+                        item.discountType = btnPct.isSelected() ? "pct" : "fixed";
+                        refreshCurrentBill();
+                    } catch (Exception e) {}
+                }
+            }
+            @Override protected void updateItem(CartItem item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    field.setText(item.discountValue.compareTo(BigDecimal.ZERO) == 0 ? "" : item.discountValue.toString());
+                    if ("pct".equals(item.discountType)) btnPct.setSelected(true);
+                    else btnAmt.setSelected(true);
+                    setGraphic(box);
+                    checkFocus(this, field);
+                }
+            }
+        });
+
+        colTotal.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().netLineTotal)));
+        colTotal.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item);
+            }
+        });
+
+        cartTable.setEditable(true);
+        cartTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        // We use row selection to avoid cell selection model from intercepting clicks to TextFields
+        cartTable.getSelectionModel().setCellSelectionEnabled(false);
+        cartTable.getFocusModel().focusedCellProperty().addListener((obs, old, val) -> {
+            if (val != null && val.getTableColumn() != null) {
+                focusRow = val.getRow();
+                focusColIdx = val.getColumn();
+                // No refresh needed, updateItem will be called naturally or we handle it
+            }
+        });
+
+        cartTable.setOnKeyPressed(e -> {
+            TablePosition pos = cartTable.getFocusModel().getFocusedCell();
+            if (pos == null || pos.getTableColumn() == null) return;
+            
+            // Handle cross-component navigation for standard cells
+            if (e.getCode() == KeyCode.DOWN && pos.getRow() == cartTable.getItems().size() - 1) {
+                searchField.requestFocus();
+                searchField.selectAll();
+            }
+        });
+
+        cartTable.setFixedCellSize(60);
+        bindTableHeight();
     }
 
+    private void checkFocus(TableCell<?, ?> cell, TextField field) {
+        if (cell.getIndex() == focusRow && cartTable.getColumns().indexOf(cell.getTableColumn()) == focusColIdx) {
+            Platform.runLater(() -> {
+                field.requestFocus();
+                field.selectAll();
+                // Don't reset focusRow/focusColIdx here to avoid issues with multiple updates
+            });
+        }
+    }
+
+    private void bindTableHeight() {
+        cartTable.prefHeightProperty().unbind();
+        cartTable.prefHeightProperty().bind(
+            Bindings.size(cartTable.getItems()).multiply(cartTable.getFixedCellSize()).add(45)
+        );
+    }
+
+    private void handleArrowNav(KeyEvent e, TableCell<?, ?> cell) {
+        int row = cell.getIndex();
+        List<TableColumn<CartItem, ?>> cols = cartTable.getColumns();
+        int colIdx = cols.indexOf(cell.getTableColumn());
+
+        int nextRow = row;
+        int nextCol = colIdx;
+
+        switch (e.getCode()) {
+            case UP -> nextRow--;
+            case DOWN -> nextRow++;
+            case LEFT -> nextCol--;
+            case RIGHT -> nextCol++;
+            case ENTER -> { nextRow++; } // move down on enter
+            default -> { return; }
+        }
+
+        if (nextRow >= 0 && nextRow < cartTable.getItems().size()) {
+            if (nextCol < 0) nextCol = 0;
+            if (nextCol >= cols.size()) nextCol = cols.size() - 1;
+            
+            focusRow = nextRow;
+            focusColIdx = nextCol;
+            cartTable.getSelectionModel().select(nextRow, cols.get(nextCol));
+            cartTable.refresh();
+        } else if (nextRow >= cartTable.getItems().size()) {
+            searchField.requestFocus();
+            searchField.selectAll();
+        } else if (nextRow < 0) {
+            // Stay at top
+            cartTable.getSelectionModel().select(0, cols.get(nextCol));
+        }
+        e.consume();
+    }
+    
     private void loadCombos() {
         customerCombo.setCellFactory(lv -> new ListCell<>() {
             @Override
@@ -244,19 +447,23 @@ public class PosController {
         searchField.setOnAction(e -> {
             String query = searchField.getText().trim();
             if (query.isEmpty()) return;
-            try {
-                Optional<Variant> bySku = searchIndex.findBySku(query);
-                if (bySku.isPresent()) {
-                    addToCart(bySku.get());
-                    searchField.clear();
-                    return;
-                }
-                Optional<Variant> byBarcode = searchIndex.findByBarcode(query);
-                if (byBarcode.isPresent()) {
-                    addToCart(byBarcode.get());
-                    searchField.clear();
-                    return;
-                }
+            
+            // Try Barcode first
+            Optional<Variant> byBarcode = searchIndex.findByBarcode(query);
+            if (byBarcode.isPresent()) {
+                addToCart(byBarcode.get());
+                searchField.clear();
+                searchPopup.hide();
+                return;
+            }
+
+            // Otherwise take first from current results if popup is visible
+            if (searchPopup.isShowing() && !searchResultsView.getItems().isEmpty()) {
+                addToCart(searchResultsView.getItems().get(0));
+                searchField.clear();
+                searchPopup.hide();
+            } else {
+                // Last ditch search
                 List<Variant> results = searchIndex.searchByName(query);
                 if (!results.isEmpty()) {
                     addToCart(results.get(0));
@@ -264,7 +471,43 @@ public class PosController {
                 } else {
                     NotificationService.warning("No product found");
                 }
-            } catch (Exception ex) {}
+            }
+        });
+
+        searchResultsView.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                Variant v = searchResultsView.getSelectionModel().getSelectedItem();
+                if (v != null) {
+                    addToCart(v);
+                    searchField.clear();
+                    searchPopup.hide();
+                }
+            } else if (e.getCode() == KeyCode.UP && searchResultsView.getSelectionModel().getSelectedIndex() == 0) {
+                searchField.requestFocus();
+            }
+        });
+
+        searchResultsView.setOnMouseClicked(e -> {
+            Variant v = searchResultsView.getSelectionModel().getSelectedItem();
+            if (v != null) {
+                addToCart(v);
+                searchField.clear();
+                searchPopup.hide();
+            }
+        });
+
+        searchField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.UP) {
+                if (!cartTable.getItems().isEmpty()) {
+                    cartTable.requestFocus();
+                    cartTable.getSelectionModel().select(cartTable.getItems().size() - 1);
+                }
+            }
+        });
+
+        searchField.setOnMouseClicked(e -> {
+            String query = searchField.getText().trim();
+            showAutocompletePopup(query);
         });
 
         discountField.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -325,6 +568,7 @@ public class PosController {
         customerCombo.setValue(currentBill.selectedCustomer);
         if (currentBill.selectedPaymentMethod != null) paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
         
+        bindTableHeight();
         refreshCurrentBill();
     }
 
@@ -333,17 +577,32 @@ public class PosController {
             .filter(item -> item.variant.id().equals(variant.id()))
             .findFirst();
         
+        int newQty = existing.map(cartItem -> cartItem.quantity + 1).orElse(1);
+
+        if (variant.stock() != null && newQty > variant.stock()) {
+            NotificationService.warning("Insufficient stock! Available: " + variant.stock());
+            return;
+        }
+
         if (existing.isPresent()) {
-            existing.get().quantity++;
+            existing.get().quantity = newQty;
         } else {
             currentBill.items.add(new CartItem(variant, 1));
         }
         
         refreshCurrentBill();
+        searchField.requestFocus();
     }
 
     private void adjustQuantity(CartItem item, int delta) {
-        item.quantity += delta;
+        int newQty = item.quantity + delta;
+        
+        if (delta > 0 && item.variant.stock() != null && newQty > item.variant.stock()) {
+            NotificationService.warning("Cannot exceed available stock (" + item.variant.stock() + ")");
+            return;
+        }
+
+        item.quantity = newQty;
         if (item.quantity <= 0) {
             currentBill.items.remove(item);
         }
@@ -357,40 +616,84 @@ public class PosController {
     }
 
     private void recalculateTotals() {
-        BigDecimal subtotal = BigDecimal.ZERO;
-        int qty = 0;
-        
+        if (currentBill.items.isEmpty()) {
+            currentBill.subtotal = BigDecimal.ZERO;
+            currentBill.taxAmount = BigDecimal.ZERO;
+            currentBill.total = BigDecimal.ZERO;
+            updateUI();
+            return;
+        }
+
+        BigDecimal grossTotal = BigDecimal.ZERO;
         for (CartItem item : currentBill.items) {
             BigDecimal lineTotal = item.pricePerUnit.multiply(BigDecimal.valueOf(item.quantity));
-            BigDecimal lineDiscount = item.discountType.equals("fixed") ? item.discountValue : lineTotal.multiply(item.discountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            BigDecimal lineDiscount = "fixed".equals(item.discountType) 
+                ? item.discountValue 
+                : lineTotal.multiply(item.discountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            
             item.discountAmount = lineDiscount;
             item.netLineTotal = lineTotal.subtract(lineDiscount).max(BigDecimal.ZERO);
-            
-            subtotal = subtotal.add(item.netLineTotal);
-            qty += item.quantity;
+            grossTotal = grossTotal.add(item.netLineTotal);
         }
-        
-        currentBill.subtotal = subtotal;
-        
+
         BigDecimal overallDiscountAmount = BigDecimal.ZERO;
         if (currentBill.overallDiscountValue.compareTo(BigDecimal.ZERO) > 0) {
             if (currentBill.isDiscountFixed) {
                 overallDiscountAmount = currentBill.overallDiscountValue;
             } else {
-                overallDiscountAmount = subtotal.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                overallDiscountAmount = grossTotal.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             }
         }
+
+        List<TaxableItem> taxableItems = new ArrayList<>();
+        BigDecimal distributedGlobalDiscount = BigDecimal.ZERO;
+
+        for (int i = 0; i < currentBill.items.size(); i++) {
+            CartItem item = currentBill.items.get(i);
+            BigDecimal itemGlobalDiscount = BigDecimal.ZERO;
+            if (grossTotal.compareTo(BigDecimal.ZERO) > 0 && overallDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
+                if (i == currentBill.items.size() - 1) {
+                    itemGlobalDiscount = overallDiscountAmount.subtract(distributedGlobalDiscount);
+                } else {
+                    itemGlobalDiscount = item.netLineTotal
+                            .divide(grossTotal, 10, RoundingMode.HALF_UP)
+                            .multiply(overallDiscountAmount);
+                    distributedGlobalDiscount = distributedGlobalDiscount.add(itemGlobalDiscount);
+                }
+            }
+
+            BigDecimal finalTaxableAmount = item.netLineTotal.subtract(itemGlobalDiscount).max(BigDecimal.ZERO);
+            BigDecimal effectiveUnitPrice = item.quantity > 0
+                    ? finalTaxableAmount.divide(BigDecimal.valueOf(item.quantity), 10, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+
+            TaxableItem taxable = new TaxableItem(
+                item.variant.productName(),
+                item.variant.name(),
+                effectiveUnitPrice,
+                item.quantity,
+                null, // taxCategoryId not easily available here
+                item.variant.id(),
+                item.variant.productId()
+            );
+            taxableItems.add(taxable);
+        }
         
-        BigDecimal amountAfterTax = subtotal.subtract(overallDiscountAmount).max(BigDecimal.ZERO);
-        // Note: Simple Tax for UI preview
-        BigDecimal taxAmount = amountAfterTax.multiply(new BigDecimal("0.10")); // Assuming 10%
-        currentBill.taxAmount = taxAmount;
-        currentBill.total = amountAfterTax.add(taxAmount);
-        
+        TaxCalculationResult taxResult = taxEngine.calculate(new TaxableInvoice(taxableItems), currentBill.selectedCustomer);
+        currentBill.subtotal = grossTotal;
+        currentBill.taxAmount = taxResult.totalTax();
+        currentBill.total = taxResult.grandTotal();
+
+        updateUI();
+    }
+
+    private void updateUI() {
         subtotalLabel.setText(currencyFormat.format(currentBill.subtotal));
         taxLabel.setText(currencyFormat.format(currentBill.taxAmount));
         totalLabel.setText(currencyFormat.format(currentBill.total));
         bottomTotalLabel.setText(currencyFormat.format(currentBill.total));
+        
+        int qty = currentBill.items.stream().mapToInt(i -> i.quantity).sum();
         totalQtyLabel.setText(String.valueOf(qty));
         
         updateBalanceLabel();
@@ -485,6 +788,81 @@ public class PosController {
         currentBill.reset();
         refreshCurrentBill();
         switchBill(currentBill.index);
+    }
+
+    private void setupSearchAutocomplete() {
+        searchResultsView.getStyleClass().add("search-results-list");
+        searchPopup.getContent().add(searchResultsView);
+        searchPopup.setAutoHide(true);
+
+        searchResultsView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Variant item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("-fx-background-color: transparent;");
+                } else {
+                    VBox box = new VBox(2);
+                    box.setPadding(new javafx.geometry.Insets(8, 12, 8, 12));
+                    
+                    Label name = new Label(item.productName() + (item.name().equals("Default") ? "" : " - " + item.name()));
+                    name.getStyleClass().add("search-item-name");
+                    name.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-font-size: 13px;");
+                    
+                    Label details = new Label(item.sku() + " • " + currencyFormat.format(item.price()) + " • Stock: " + (item.stock() != null ? item.stock() : "∞"));
+                    details.getStyleClass().add("search-item-details");
+                    details.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+                    
+                    box.getChildren().addAll(name, details);
+                    setGraphic(box);
+                }
+            }
+        });
+
+        searchField.textProperty().addListener((obs, old, query) -> {
+            showAutocompletePopup(query != null ? query.trim() : "");
+        });
+        
+        searchField.focusedProperty().addListener((obs, old, isFocused) -> {
+            if (!isFocused) {
+                Platform.runLater(() -> {
+                    if (!searchResultsView.isFocused()) searchPopup.hide();
+                });
+            }
+        });
+    }
+
+    private void showAutocompletePopup(String query) {
+        List<Variant> results;
+        if (query.isEmpty()) {
+            // Show top results/all
+            results = searchIndex.searchByName(""); // Assuming empty string returns all/top
+            if (results.isEmpty()) results = searchIndex.searchByName(" "); 
+        } else {
+            results = searchIndex.searchByName(query);
+        }
+
+        if (!results.isEmpty()) {
+            searchResultsView.setItems(FXCollections.observableArrayList(results));
+            searchResultsView.setPrefHeight(Math.min(results.size() * 52 + 10, 400));
+            searchResultsView.setPrefWidth(Math.max(searchField.getWidth(), 300));
+            
+            javafx.geometry.Point2D pos = searchField.localToScreen(0, searchField.getHeight() + 5);
+            if (pos != null) {
+                // Ensure the popup doesn't go off screen bottom
+                double screenHeight = searchField.getScene().getWindow().getHeight();
+                if (pos.getY() + searchResultsView.getPrefHeight() > screenHeight) {
+                    // Show above instead
+                    searchPopup.show(searchField, pos.getX(), pos.getY() - searchField.getHeight() - searchResultsView.getPrefHeight() - 10);
+                } else {
+                    searchPopup.show(searchField, pos.getX(), pos.getY());
+                }
+            }
+        } else {
+            searchPopup.hide();
+        }
     }
 
     private static class BillState {

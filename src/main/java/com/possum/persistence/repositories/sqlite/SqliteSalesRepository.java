@@ -173,6 +173,32 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     }
 
     @Override
+    public com.possum.application.sales.dto.SaleStats getSaleStats(SaleFilter filter) {
+        List<Object> params = new ArrayList<>();
+        String whereClause = buildWhere(filter, params);
+
+        return queryOne(
+                """
+                SELECT
+                    COUNT(*) AS total_bills,
+                    SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_count,
+                    SUM(CASE WHEN status IN ('partially_paid', 'draft') THEN 1 ELSE 0 END) AS partial_count,
+                    SUM(CASE WHEN status IN ('cancelled', 'refunded') THEN 1 ELSE 0 END) AS cancelled_count
+                FROM sales s
+                LEFT JOIN customers c ON s.customer_id = c.id
+                %s
+                """.formatted(whereClause),
+                rs -> new com.possum.application.sales.dto.SaleStats(
+                        rs.getLong("total_bills"),
+                        rs.getLong("paid_count"),
+                        rs.getLong("partial_count"),
+                        rs.getLong("cancelled_count")
+                ),
+                params.toArray()
+        ).orElse(new com.possum.application.sales.dto.SaleStats(0, 0, 0, 0));
+    }
+
+    @Override
     public int updateSaleStatus(long id, String status) {
         return executeUpdate("UPDATE sales SET status = ? WHERE id = ?", status, id);
     }

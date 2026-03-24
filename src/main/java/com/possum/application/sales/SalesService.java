@@ -423,4 +423,12 @@ public class SalesService {
             new com.possum.shared.dto.CustomerFilter(null, null, null, 1, 1000, "name", "asc")
         ).items();
     }
+
+    public com.possum.shared.dto.PagedResult<Sale> findSales(com.possum.shared.dto.SaleFilter filter) {
+        return salesRepository.findSales(filter);
+    }
+
+    public com.possum.application.sales.dto.SaleStats getSaleStats(com.possum.shared.dto.SaleFilter filter) {
+        return salesRepository.getSaleStats(filter);
+    }
 }

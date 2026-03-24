@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import com.possum.ui.common.controls.PaginationBar?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.sales.SalesHistoryController"
+      fx:id="container"
+      spacing="20"
+      style="-fx-background-color: #f8fafc;">
+
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Bill History" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="🔄 Refresh" onAction="#loadHistory" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand;"/>
+    </HBox>
+
+    <GridPane hgap="20" vgap="20">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+        </columnConstraints>
+        
+        <!-- Total Bills -->
+        <VBox GridPane.columnIndex="0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="📄" style="-fx-font-size: 20px; -fx-text-fill: #3b82f6;"/>
+                <Label text="Total Bills" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+            </HBox>
+            <Label fx:id="totalBillsLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+        </VBox>
+        
+        <!-- Paid -->
+        <VBox GridPane.columnIndex="1" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="✅" style="-fx-font-size: 20px; -fx-text-fill: #10b981;"/>
+                <Label text="Paid" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+            </HBox>
+            <Label fx:id="paidLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+        </VBox>
+        
+        <!-- Partial / Draft -->
+        <VBox GridPane.columnIndex="2" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="⏳" style="-fx-font-size: 20px; -fx-text-fill: #f59e0b;"/>
+                <Label text="Partial / Draft" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+            </HBox>
+            <Label fx:id="partialLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+        </VBox>
+        
+        <!-- Cancelled / Refunded -->
+        <VBox GridPane.columnIndex="3" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="❌" style="-fx-font-size: 20px; -fx-text-fill: #ef4444;"/>
+                <Label text="Cancelled" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+            </HBox>
+            <Label fx:id="cancelledLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+        </VBox>
+    </GridPane>
+
+    <!-- Table Section -->
+    <VBox spacing="15" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-padding: 0;">
+        <TableView fx:id="salesTable" VBox.vgrow="ALWAYS" style="-fx-background-radius: 12 12 0 0; -fx-border-width: 0;">
+            <columns>
+                <TableColumn fx:id="invoiceCol" text="Invoice #" prefWidth="120"/>
+                <TableColumn fx:id="customerCol" text="Customer" prefWidth="250"/>
+                <TableColumn fx:id="dateCol" text="Date &amp; Time" prefWidth="180"/>
+                <TableColumn fx:id="amountCol" text="Total Amount" prefWidth="150" style="-fx-alignment: CENTER-RIGHT;"/>
+                <TableColumn fx:id="paidAmountCol" text="Paid Amount" prefWidth="150" style="-fx-alignment: CENTER-RIGHT;"/>
+                <TableColumn fx:id="statusCol" text="Status" prefWidth="120" style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="actionsCol" text="Actions" prefWidth="150" style="-fx-alignment: CENTER;"/>
+            </columns>
+            <placeholder>
+                <VBox alignment="CENTER" spacing="10">
+                    <Label text="No bills found" style="-fx-font-size: 16px; -fx-text-fill: #64748b;"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+        
+        <PaginationBar fx:id="paginationBar" style="-fx-padding: 10 20; -fx-background-color: #f8fafc; -fx-background-radius: 0 0 12 12;"/>
+    </VBox>
+
+</VBox>
