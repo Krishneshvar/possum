@@ -11,4 +11,7 @@ public record BreakdownItem(
         BigDecimal totalTax,
         BigDecimal totalDiscount
 ) {
+    public BigDecimal getNetSales() {
+        return totalSales.subtract(totalDiscount != null ? totalDiscount : BigDecimal.ZERO);
+    }
 }

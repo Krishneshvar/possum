@@ -2,15 +2,17 @@ package com.possum.ui.reports;
 
 import com.possum.application.inventory.InventoryService;
 import com.possum.application.reports.ReportsService;
-import com.possum.application.reports.dto.DailyReport;
-import com.possum.application.reports.dto.SalesReportSummary;
-import com.possum.application.reports.dto.TopProduct;
+import com.possum.application.sales.SalesService;
+import com.possum.application.reports.dto.*;
+import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.Variant;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.LineChart;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -26,34 +28,62 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 
-public class ReportsController {
+public class SalesAnalyticsController {
     
     @FXML private ComboBox<String> dateRangeCombo;
+    @FXML private ComboBox<String> reportTypeCombo;
+    @FXML private ComboBox<String> paymentMethodCombo;
     @FXML private Label totalSalesLabel;
     @FXML private Label transactionsLabel;
     @FXML private Label avgSaleLabel;
     @FXML private Label totalTaxLabel;
     @FXML private BarChart<String, Number> topProductsChart;
     @FXML private LineChart<String, Number> salesTrendChart;
+    @FXML private PieChart paymentMethodsChart;
     @FXML private TableView<Variant> inventoryTable;
     
     private ReportsService reportsService;
     private InventoryService inventoryService;
+    private SalesService salesService;
     private LocalDate startDate;
     private LocalDate endDate;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public ReportsController(ReportsService reportsService, InventoryService inventoryService) {
-this.reportsService = reportsService;
+    public SalesAnalyticsController(ReportsService reportsService, InventoryService inventoryService, SalesService salesService) {
+        this.reportsService = reportsService;
         this.inventoryService = inventoryService;
+        this.salesService = salesService;
     }
 
     @FXML
     public void initialize() {
-        
+        setupReportTypes();
         setupDateRanges();
+        setupPaymentMethods();
         setupInventoryTable();
         loadReports();
+    }
+
+    private void setupReportTypes() {
+        reportTypeCombo.setItems(FXCollections.observableArrayList(
+            "Daily", "Monthly", "Yearly"
+        ));
+        reportTypeCombo.setValue("Daily");
+    }
+
+    private void setupPaymentMethods() {
+        try {
+            List<PaymentMethod> methods = salesService.getPaymentMethods();
+            List<String> methodNames = new java.util.ArrayList<>();
+            methodNames.add("All Methods");
+            for (PaymentMethod m : methods) {
+                methodNames.add(m.name());
+            }
+            paymentMethodCombo.setItems(FXCollections.observableArrayList(methodNames));
+            paymentMethodCombo.setValue("All Methods");
+        } catch (Exception e) {
+            NotificationService.error("Failed to load payment methods");
+        }
     }
 
     private void setupDateRanges() {
@@ -84,6 +114,16 @@ this.reportsService = reportsService;
     private void handleDateRangeChange() {
         String range = dateRangeCombo.getValue();
         updateDateRange(range);
+        loadReports();
+    }
+
+    @FXML
+    private void handleReportTypeChange() {
+        loadReports();
+    }
+
+    @FXML
+    private void handlePaymentMethodChange() {
         loadReports();
     }
 
@@ -123,6 +163,7 @@ this.reportsService = reportsService;
             loadSalesSummary();
             loadTopProducts();
             loadSalesTrend();
+            loadSalesByPaymentMethod();
             loadInventoryMovement();
         } catch (Exception e) {
             NotificationService.error("Failed to load reports");
@@ -130,7 +171,8 @@ this.reportsService = reportsService;
     }
 
     private void loadSalesSummary() {
-        SalesReportSummary summary = reportsService.getSalesSummary(startDate, endDate, null);
+        Long paymentMethodId = getSelectedPaymentMethodId();
+        SalesReportSummary summary = reportsService.getSalesSummary(startDate, endDate, paymentMethodId);
         
         totalSalesLabel.setText(currencyFormat.format(summary.totalSales()));
         transactionsLabel.setText(String.valueOf(summary.totalTransactions()));
@@ -138,14 +180,28 @@ this.reportsService = reportsService;
         totalTaxLabel.setText(currencyFormat.format(summary.totalTax()));
     }
 
+    private Long getSelectedPaymentMethodId() {
+        String selected = paymentMethodCombo.getValue();
+        if (selected == null || "All Methods".equals(selected)) {
+            return null;
+        }
+        
+        return salesService.getPaymentMethods().stream()
+                .filter(m -> m.name().equals(selected))
+                .map(PaymentMethod::id)
+                .findFirst()
+                .orElse(null);
+    }
+
     private void loadTopProducts() {
-        List<TopProduct> topProducts = reportsService.getTopProducts(startDate, endDate, 10, null);
+        Long paymentMethodId = getSelectedPaymentMethodId();
+        List<TopProduct> topProducts = reportsService.getTopProducts(startDate, endDate, 10, paymentMethodId);
         
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Quantity Sold");
         
         for (TopProduct product : topProducts) {
-            String label = product.productName() + " - " + product.variantName();
+            String label = product.productName() + (product.variantName() != null ? " - " + product.variantName() : "");
             if (label.length() > 20) label = label.substring(0, 20) + "...";
             series.getData().add(new XYChart.Data<>(label, product.totalQuantitySold()));
         }
@@ -155,17 +211,39 @@ this.reportsService = reportsService;
     }
 
     private void loadSalesTrend() {
-        DailyReport report = reportsService.getSalesAnalytics(startDate, endDate, null);
+        Long paymentMethodId = getSelectedPaymentMethodId();
+        String type = reportTypeCombo.getValue();
+        List<? extends BreakdownItem> breakdown;
+        
+        if ("Monthly".equals(type)) {
+            breakdown = reportsService.getMonthlyReport(startDate, endDate, paymentMethodId).breakdown();
+        } else if ("Yearly".equals(type)) {
+            breakdown = reportsService.getYearlyReport(startDate, endDate, paymentMethodId).breakdown();
+        } else {
+            breakdown = reportsService.getSalesAnalytics(startDate, endDate, paymentMethodId).breakdown();
+        }
         
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Sales");
         
-        for (var item : report.breakdown()) {
-            series.getData().add(new XYChart.Data<>(item.name(), item.totalSales()));
+        for (BreakdownItem item : breakdown) {
+            series.getData().add(new XYChart.Data<>(item.name(), item.sales()));
         }
         
         salesTrendChart.getData().clear();
         salesTrendChart.getData().add(series);
+        salesTrendChart.setTitle(type + " Sales Trend");
+    }
+
+    private void loadSalesByPaymentMethod() {
+        List<PaymentMethodStat> stats = reportsService.getSalesByPaymentMethod(startDate, endDate);
+        
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+        for (PaymentMethodStat stat : stats) {
+            pieData.add(new PieChart.Data(stat.paymentMethod(), stat.totalAmount().doubleValue()));
+        }
+        
+        paymentMethodsChart.setData(pieData);
     }
 
     private void loadInventoryMovement() {

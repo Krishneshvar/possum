@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.reports.SalesReportsController"
+      spacing="0"
+      style="-fx-background-color: #f8fafc;">
+    
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <VBox>
+            <Label text="Sales Reports" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+            <Label text="Detailed period-wise sales breakdowns" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        
+        <VBox spacing="2">
+            <Label text="Period Type:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+            <ComboBox fx:id="reportTypeCombo" onAction="#handleReportTypeChange"/>
+        </VBox>
+        
+        <VBox spacing="2">
+            <Label text="Date Range:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+            <ComboBox fx:id="dateRangeCombo" onAction="#handleDateRangeChange"/>
+        </VBox>
+        
+        <VBox spacing="2">
+            <Label text="Payment Method:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+            <ComboBox fx:id="paymentMethodCombo" onAction="#handlePaymentMethodChange"/>
+        </VBox>
+        
+        <Button text="🔄 Refresh" onAction="#handleRefresh" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand;">
+            <HBox.margin>
+                <Insets top="13"/>
+            </HBox.margin>
+        </Button>
+    </HBox>
+    
+    <Separator style="-fx-padding: 20 0;"/>
+    
+    <VBox spacing="15" VBox.vgrow="ALWAYS" styleClass="pos-card">
+        <TableView fx:id="breakdownTable" VBox.vgrow="ALWAYS" styleClass="pos-table">
+            <columns>
+                <TableColumn fx:id="periodCol" text="Period" prefWidth="250"/>
+                <TableColumn fx:id="transactionsCol" text="Transactions" prefWidth="150" style="-fx-alignment: CENTER;"/>
+                <TableColumn fx:id="salesCol" text="Gross Sales" prefWidth="180" style="-fx-alignment: CENTER-RIGHT;"/>
+                <TableColumn fx:id="taxCol" text="Total Tax" prefWidth="150" style="-fx-alignment: CENTER-RIGHT;"/>
+                <TableColumn fx:id="discountCol" text="Discounts" prefWidth="150" style="-fx-alignment: CENTER-RIGHT;"/>
+            </columns>
+            <placeholder>
+                <VBox alignment="CENTER" spacing="10">
+                    <Label text="No records found for selected period" style="-fx-font-size: 14px; -fx-text-fill: #64748b;"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+    </VBox>
+
+</VBox>

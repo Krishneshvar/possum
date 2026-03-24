@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.reports.SalesAnalyticsController"
+      spacing="0"
+      style="-fx-background-color: #f8fafc;">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <VBox>
+            <Label text="Sales Analytics" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+            <Label text="Visual performance trends and product insights" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        
+        <VBox spacing="2">
+            <Label text="Breakdown By:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+            <ComboBox fx:id="reportTypeCombo" onAction="#handleReportTypeChange"/>
+        </VBox>
+        
+        <VBox spacing="2">
+            <Label text="Date Range:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+            <ComboBox fx:id="dateRangeCombo" onAction="#handleDateRangeChange"/>
+        </VBox>
+        
+        <VBox spacing="2">
+            <Label text="Payment Method:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+            <ComboBox fx:id="paymentMethodCombo" onAction="#handlePaymentMethodChange"/>
+        </VBox>
+        
+        <Button text="Refresh" onAction="#handleRefresh" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16;">
+            <HBox.margin>
+                <Insets top="13"/>
+            </HBox.margin>
+        </Button>
+    </HBox>
+    
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background: #f8fafc; -fx-background-color: transparent; -fx-padding: 0 20 20 20;">
+        <VBox spacing="20">
+            <VBox spacing="10" styleClass="pos-card">
+                <Label text="Sales Summary" styleClass="pos-card-title"/>
+                <GridPane hgap="20" vgap="10">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="25"/>
+                        <ColumnConstraints percentWidth="25"/>
+                        <ColumnConstraints percentWidth="25"/>
+                        <ColumnConstraints percentWidth="25"/>
+                    </columnConstraints>
+                    <VBox alignment="CENTER" spacing="5">
+                        <Label text="Total Sales" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        <Label fx:id="totalSalesLabel" text="0.00" style="-fx-font-size: 22px; -fx-font-weight: 800; -fx-text-fill: #2563eb;"/>
+                    </VBox>
+                    <VBox alignment="CENTER" spacing="5" GridPane.columnIndex="1">
+                        <Label text="Transactions" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        <Label fx:id="transactionsLabel" text="0" style="-fx-font-size: 22px; -fx-font-weight: 800;"/>
+                    </VBox>
+                    <VBox alignment="CENTER" spacing="5" GridPane.columnIndex="2">
+                        <Label text="Average Sale" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        <Label fx:id="avgSaleLabel" text="0.00" style="-fx-font-size: 22px; -fx-font-weight: 800;"/>
+                    </VBox>
+                    <VBox alignment="CENTER" spacing="5" GridPane.columnIndex="3">
+                        <Label text="Total Tax" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        <Label fx:id="totalTaxLabel" text="0.00" style="-fx-font-size: 22px; -fx-font-weight: 800;"/>
+                    </VBox>
+                </GridPane>
+            </VBox>
+            
+            <VBox spacing="10" styleClass="pos-card">
+                <Label text="Top Selling Products" styleClass="pos-card-title"/>
+                <BarChart fx:id="topProductsChart" prefHeight="350" animated="false" legendVisible="false">
+                    <xAxis>
+                        <CategoryAxis side="BOTTOM"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis side="LEFT"/>
+                    </yAxis>
+                </BarChart>
+            </VBox>
+            
+            <HBox spacing="20">
+                <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="pos-card">
+                    <Label text="Sales Trend" styleClass="pos-card-title"/>
+                    <LineChart fx:id="salesTrendChart" prefHeight="350" animated="false">
+                        <xAxis>
+                            <CategoryAxis side="BOTTOM"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis side="LEFT"/>
+                        </yAxis>
+                    </LineChart>
+                </VBox>
+                
+                <VBox spacing="10" styleClass="pos-card" minWidth="400">
+                    <Label text="Sales by Payment Method" styleClass="pos-card-title"/>
+                    <PieChart fx:id="paymentMethodsChart" prefHeight="350" animated="false" legendSide="BOTTOM"/>
+                </VBox>
+            </HBox>
+            
+            <VBox spacing="10" styleClass="pos-card">
+                <Label text="Inventory Movement - Low Stock Alerts" styleClass="pos-card-title"/>
+                <TableView fx:id="inventoryTable" prefHeight="250" styleClass="pos-table">
+                </TableView>
+            </VBox>
+        </VBox>
+    </ScrollPane>
+
+</VBox>

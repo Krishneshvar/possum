@@ -124,7 +124,8 @@ public class AppShellController {
             {"Customers", "/fxml/people/customers-view.fxml"}
         });
         createNavMenu("📊 Insights", new String[][]{
-            {"Reports", "/fxml/reports/reports-view.fxml"},
+            {"Sales Reports", "/fxml/reports/sales-reports-view.fxml"},
+            {"Sales Analytics", "/fxml/reports/sales-analytics-view.fxml"},
             {"Audit Log", "/fxml/audit/audit-view.fxml"}
         });
         createNavButton("⚙ Settings", "Settings", "/fxml/settings/settings-view.fxml");
