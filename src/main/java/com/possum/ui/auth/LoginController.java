@@ -10,6 +10,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
 
 public class LoginController {
     
@@ -152,15 +154,46 @@ this.authService = authService;
     }
 
     private void handleRotate() {
-        // Implementation for rotate if needed, for now just show error as it's not fully implemented in AuthService yet
-        showError("Password rotation not yet implemented in UI");
+        String username = "admin"; // Default admin
+        String current = rotateCurrentPasswordField.getText();
+        String newPass = rotateNewPasswordField.getText();
+        String confirm = rotateConfirmNewPasswordField.getText();
+
+        if (current.isEmpty() || newPass.isEmpty()) {
+            showError("All fields are required");
+            return;
+        }
+
+        if (!newPass.equals(confirm)) {
+            showError("New passwords do not match");
+            return;
+        }
+
+        authService.rotateDefaultAdminPassword(username, current, newPass);
+        
+        // After rotation, force re-login
+        NotificationService.success("Password rotated successully. Please sign in with your new password.");
+        setMode(Mode.LOGIN);
+        passwordField.requestFocus();
     }
 
     private void completeLogin(LoginResponse response) {
+        if (response.mustRotate()) {
+            NotificationService.warning("Default credentials detected. Please rotate your password.");
+            setMode(Mode.ROTATE);
+            rotateUsernameField.setText(response.user().username());
+            return;
+        }
+
         sessionStore.saveSession(response.token());
         AuthContext.setCurrentUser(response.user());
         NotificationService.success("Welcome, " + response.user().name());
         navigationManager.navigateTo("dashboard");
+    }
+
+    @FXML
+    private void handleBack() {
+        setMode(Mode.LOGIN);
     }
     
     private void showError(String message) {

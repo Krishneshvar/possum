@@ -17,7 +17,7 @@ import java.util.Optional;
 public class AuthService {
 
     private static final int SESSION_DURATION_SECONDS = 30 * 60;
-    private static final String DUMMY_HASH = "$2b$10$InCX8UtTmhbQP3NuHPaRAeCdfZeaIngIzsAjWjbAYxjprs6WHcoAG";
+    private static final String DUMMY_HASH = "$2a$10$InCX8UtTmhbQP3NuHPaRAeCdfZeaIngIzsAjWjbAYxjprs6WHcoAG";
     private static final String LEGACY_DEFAULT_ADMIN_USERNAME = "admin";
     private static final String LEGACY_DEFAULT_ADMIN_PASSWORD = "admin123";
 
@@ -41,22 +41,26 @@ public class AuthService {
     public LoginResponse login(String username, String password) {
         Optional<User> userOpt = userRepository.findUserByUsername(username);
         
-        String userPasswordHash = userOpt
-                .filter(u -> u.active() && u.deletedAt() == null)
-                .map(User::passwordHash)
-                .orElse(DUMMY_HASH);
-
-        boolean isValid = passwordHasher.verifyPassword(password, userPasswordHash);
-
-        if (userOpt.isEmpty() || !userOpt.get().active() || userOpt.get().deletedAt() != null || !isValid) {
+        if (userOpt.isEmpty() || !userOpt.get().active() || userOpt.get().deletedAt() != null) {
+            passwordHasher.verifyPassword(password, DUMMY_HASH); // Prevent timing attacks
             throw new AuthenticationException("Invalid username or password");
         }
 
         User user = userOpt.get();
+        boolean isValid = passwordHasher.verifyPassword(password, user.passwordHash());
+
+        if (!isValid) {
+            throw new AuthenticationException("Invalid username or password");
+        }
+
+        // Check if this is the legacy default account that needs rotation
+        boolean mustRotate = username.equals(LEGACY_DEFAULT_ADMIN_USERNAME) && 
+                            password.equals(LEGACY_DEFAULT_ADMIN_PASSWORD);
+
         AuthUser userData = sessionService.buildAuthUser(user.id());
         String token = sessionService.createSession(userData);
 
-        return new LoginResponse(userData, token);
+        return new LoginResponse(userData, token, mustRotate);
     }
 
     public void rotateDefaultAdminPassword(String username, String currentPassword, String newPassword) {
@@ -64,12 +68,20 @@ public class AuthService {
             throw new AuthenticationException("Default password is no longer in use");
         }
 
-        AuthUser user = login(username, currentPassword);
+        AuthUser user = login(username, currentPassword).user();
         if (user == null) {
             throw new AuthenticationException("Invalid current credentials");
         }
 
-        userRepository.updatePassword(user.id(), passwordHasher.hashPassword(newPassword));
+        Optional<User> uOpt = userRepository.findUserById(user.id());
+        if (uOpt.isPresent()) {
+            User existing = uOpt.get();
+            List<Long> currentRoleIds = userRepository.getUserRoles(existing.id()).stream().map(Role::id).toList();
+            User updated = new User(existing.id(), existing.name(), existing.username(), 
+                passwordHasher.hashPassword(newPassword), existing.active(), existing.createdAt(), 
+                java.time.LocalDateTime.now(), existing.deletedAt());
+            userRepository.updateUserWithRolesById(existing.id(), updated, currentRoleIds);
+        }
     }
 
     public AuthUser validateSession(String token) {
@@ -124,8 +136,8 @@ public class AuthService {
 
     public AuthBootstrapStatus getAuthBootstrapStatus() {
         boolean requiresInitialSetup = !hasAnyActiveUsers();
-        boolean requiresPasswordRotation = !requiresInitialSetup && isLegacyDefaultAdminPasswordInUse();
-        return new AuthBootstrapStatus(requiresInitialSetup, requiresPasswordRotation);
+        // We no longer force rotation on startup, we do it during login
+        return new AuthBootstrapStatus(requiresInitialSetup, false);
     }
 
     public LoginResponse setupInitialAdmin(String name, String username, String password) {
@@ -154,12 +166,13 @@ public class AuthService {
         }
 
         String passwordHash = passwordHasher.hashPassword(password);
-        User user = new User(0, trimmedName, trimmedUsername, passwordHash, true, null, null);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        User user = new User(0L, trimmedName, trimmedUsername, passwordHash, true, now, now, null);
         User createdUser = userRepository.insertUserWithRoles(user, Collections.singletonList(adminRole.get().id()));
 
         AuthUser authUser = sessionService.buildAuthUser(createdUser.id());
         String token = sessionService.createSession(authUser);
-        return new LoginResponse(authUser, token);
+        return new LoginResponse(authUser, token, false);
     }
 
     private boolean hasAnyActiveUsers() {

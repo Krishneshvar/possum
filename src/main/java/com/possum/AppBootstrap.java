@@ -29,6 +29,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import com.possum.infrastructure.filesystem.AppPaths;
+import com.possum.persistence.db.DatabaseManager;
+import com.possum.persistence.db.TransactionManager;
+import com.possum.application.auth.AuthModule;
+import com.possum.infrastructure.lazy.ServiceLocator;
+import com.possum.infrastructure.serialization.JsonService;
+import com.possum.infrastructure.security.PasswordHasher;
+import com.possum.infrastructure.logging.LoggingConfig;
+import com.possum.ui.AppShellController;
 
 public final class AppBootstrap {
 

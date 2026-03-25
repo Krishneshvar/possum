@@ -106,7 +106,7 @@
                 <Region prefHeight="40"/>
                 <Label text="Secured by POSSUM Authentication" style="-fx-text-fill: #adb5bd; -fx-font-size: 12px;" maxWidth="Infinity" alignment="CENTER"/>
             </VBox>
-        </HBox>
+        </VBox>
     </HBox>
 
 </StackPane>

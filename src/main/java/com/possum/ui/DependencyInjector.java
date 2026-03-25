@@ -68,6 +68,7 @@ public class DependencyInjector {
     }
 
     public javafx.util.Callback<Class<?>, Object> getControllerFactory() {
+        return type -> {
             try {
                 java.lang.reflect.Constructor<?>[] constructors = type.getConstructors();
                 if (constructors.length > 0) {
