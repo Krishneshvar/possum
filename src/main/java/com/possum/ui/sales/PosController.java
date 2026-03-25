@@ -7,7 +7,10 @@ import com.possum.application.sales.dto.*;
 import com.possum.domain.model.Customer;
 import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.Variant;
+import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrinterService;
+import com.possum.ui.common.dialogs.BillPreviewDialog;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.application.Platform;
 import javafx.beans.property.*;
@@ -73,6 +76,7 @@ public class PosController {
     private final ProductSearchIndex searchIndex;
     private final TaxEngine taxEngine;
     private final PrinterService printerService;
+    private final SettingsStore settingsStore;
     
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
@@ -84,11 +88,12 @@ public class PosController {
     private int focusColIdx = -1;
 
     public PosController(SalesService salesService, ProductSearchIndex searchIndex,
-                          TaxEngine taxEngine, PrinterService printerService) {
+                          TaxEngine taxEngine, PrinterService printerService, SettingsStore settingsStore) {
         this.salesService = salesService;
         this.searchIndex = searchIndex;
         this.taxEngine = taxEngine;
         this.printerService = printerService;
+        this.settingsStore = settingsStore;
     }
 
     @FXML
@@ -764,23 +769,18 @@ public class PosController {
     }
 
     private void printReceipt(SaleResponse sale) {
-        StringBuilder html = new StringBuilder("<html><body style='font-family: monospace;'>");
-        html.append("<h2>RECEIPT</h2>");
-        html.append("<p>Invoice: ").append(sale.sale().invoiceNumber()).append("</p>");
-        html.append("<p>Date: ").append(sale.sale().saleDate()).append("</p>");
-        html.append("<hr>");
-        for (var item : sale.items()) {
-            html.append("<p>").append(item.quantity()).append(" x Item - ")
-                .append(currencyFormat.format(item.pricePerUnit())).append("</p>");
-        }
-        html.append("<hr>");
-        html.append("<p>Total: ").append(currencyFormat.format(sale.sale().totalAmount())).append("</p>");
-        html.append("</body></html>");
+        String billHtml = BillRenderer.renderBill(sale, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
         
-        printerService.printInvoice(html.toString())
+        printerService.printInvoice(billHtml)
             .thenAccept(success -> {
                 if (!success) Platform.runLater(() -> NotificationService.warning("Print failed"));
             });
+
+        // Also show preview
+        Platform.runLater(() -> {
+            BillPreviewDialog dialog = new BillPreviewDialog(billHtml, rootPane.getScene().getWindow());
+            dialog.showAndWait();
+        });
     }
 
     @FXML

@@ -95,6 +95,22 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     }
 
     @Override
+    public Optional<Sale> findSaleByInvoiceNumber(String invoiceNumber) {
+        return queryOne(
+                """
+                SELECT
+                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name
+                FROM sales s
+                LEFT JOIN customers c ON s.customer_id = c.id
+                LEFT JOIN users u ON s.user_id = u.id
+                WHERE s.invoice_number = ?
+                """,
+                saleMapper,
+                invoiceNumber
+        );
+    }
+
+    @Override
     public List<SaleItem> findSaleItems(long saleId) {
         return queryList(
                 """

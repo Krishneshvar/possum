@@ -1,12 +1,18 @@
 package com.possum.ui.sales;
 
 import com.possum.application.sales.SalesService;
+import com.possum.application.sales.dto.SaleResponse;
 import com.possum.application.sales.dto.SaleStats;
 import com.possum.domain.model.Sale;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.SaleFilter;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.PaginationBar;
+import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.printing.BillRenderer;
+import com.possum.infrastructure.printing.PrinterService;
+import com.possum.ui.common.dialogs.BillPreviewDialog;
+import com.possum.ui.common.controls.*;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -46,6 +52,8 @@ public class SalesHistoryController {
 
     private FilterBar filterBar;
     private final SalesService salesService;
+    private final SettingsStore settingsStore;
+    private final PrinterService printerService;
     private final ObservableList<Sale> salesList = FXCollections.observableArrayList();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
@@ -55,8 +63,10 @@ public class SalesHistoryController {
     private String currentSearch = "";
     private List<String> currentStatus = null;
 
-    public SalesHistoryController(SalesService salesService) {
+    public SalesHistoryController(SalesService salesService, SettingsStore settingsStore, PrinterService printerService) {
         this.salesService = salesService;
+        this.settingsStore = settingsStore;
+        this.printerService = printerService;
     }
 
     @FXML
@@ -215,14 +225,22 @@ public class SalesHistoryController {
 
     private void handleView(Sale sale) {
         if (sale == null) return;
-        // In a real app, this would open a detail view
-        System.out.println("Viewing sale: " + sale.invoiceNumber());
+        SaleResponse saleResponse = salesService.getSaleDetails(sale.id());
+        String billHtml = BillRenderer.renderBill(saleResponse, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
+        
+        BillPreviewDialog dialog = new BillPreviewDialog(billHtml, salesTable.getScene().getWindow());
+        dialog.showAndWait();
     }
 
     private void handlePrint(Sale sale) {
         if (sale == null) return;
-        System.out.println("Printing sale: " + sale.invoiceNumber());
-        // Integration with a print service would go here
+        SaleResponse saleResponse = salesService.getSaleDetails(sale.id());
+        String billHtml = BillRenderer.renderBill(saleResponse, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
+        
+        printerService.printInvoice(billHtml)
+            .thenAccept(success -> {
+                if (!success) Platform.runLater(() -> NotificationService.warning("Print failed"));
+            });
     }
 
     private void handleCancel(Sale sale) {

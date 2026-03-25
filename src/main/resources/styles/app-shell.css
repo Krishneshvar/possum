@@ -53,16 +53,21 @@
     -fx-background-radius: 6;
 }
 
-.nav-menu-btn:hover {
+/* Ensure the main button's direct label/text gets the color, not sub-items */
+.nav-menu-btn > .label, 
+.nav-menu-btn > .text {
+    -fx-text-fill: #cbd5e1;
+}
+
+.nav-menu-btn:hover,
+.nav-menu-btn:focused {
     -fx-background-color: #334155;
     -fx-text-fill: #ffffff;
 }
 
-.nav-menu-btn:focused {
-    -fx-border-color: #3b82f6;
-    -fx-border-width: 2px;
-    -fx-border-radius: 6;
-    -fx-background-color: #334155;
+.nav-menu-btn:hover > .label,
+.nav-menu-btn:focused > .label {
+    -fx-text-fill: #ffffff;
 }
 
 .nav-menu-btn.active {
@@ -186,15 +191,17 @@
 }
 
 .menu-item .label {
-    -fx-text-fill: #334155;
+    -fx-text-fill: #334155; /* Explicit dark text for white backgrounds */
     -fx-font-size: 14px;
     -fx-font-weight: 500;
 }
 
+.menu-item:hover,
 .menu-item:focused {
     -fx-background-color: #eff6ff;
 }
 
+.menu-item:hover .label,
 .menu-item:focused .label {
     -fx-text-fill: #1d4ed8;
 }
@@ -234,7 +241,16 @@
     -fx-padding: 0 16 8 16;
 }
 
-/* ========== CONTENT AREA ========== */
+.nav-icon {
+    -fx-icon-color: #cbd5e1;
+    -fx-icon-size: 16px;
+}
+
+.nav-menu-btn:hover .nav-icon,
+.nav-menu-btn:focused .nav-icon,
+.nav-menu-btn.active .nav-icon {
+    -fx-icon-color: #ffffff;
+}
 
 .content-area {
     -fx-background-color: #fafbfc;

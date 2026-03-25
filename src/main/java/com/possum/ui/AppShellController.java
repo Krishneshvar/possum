@@ -16,6 +16,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import org.kordamp.ikonli.javafx.FontIcon;
+import java.util.List;
 
 public class AppShellController {
 
@@ -143,39 +145,44 @@ public class AppShellController {
     }
 
     private void buildNavigation() {
-        createNavButton("🏠 Dashboard", "Dashboard", "/fxml/dashboard/dashboard-view.fxml");
-        createNavMenu("📦 Inventory", new String[][]{
+        createNavButton("Dashboard", "bx-home", "Dashboard", "/fxml/dashboard/dashboard-view.fxml");
+        createNavMenu("Inventory", "bx-package", new String[][]{
             {"Products", "/fxml/products/products-view.fxml"},
             {"Variants", "/fxml/inventory/variants-view.fxml"},
             {"Categories", "/fxml/categories/categories-view.fxml"},
             {"Stock", "/fxml/inventory/inventory-view.fxml"},
             {"Stock History", "/fxml/inventory/stock-history-view.fxml"}
         });
-        createNavMenu("🛒 Sales", new String[][]{
+        createNavMenu("Sales", "bx-cart", new String[][]{
             {"Point of Sale", "/fxml/sales/pos-view.fxml"},
             {"Bill History", "/fxml/sales/sales-history-view.fxml"},
             {"Transactions", "/fxml/transactions/transactions-view.fxml"},
             {"Returns", "/fxml/returns/returns-view.fxml"}
         });
-        createNavMenu("📋 Purchase", new String[][]{
+        createNavMenu("Purchase", "bx-purchase-tag", new String[][]{
             {"Suppliers", "/fxml/purchase/suppliers-view.fxml"},
             {"Purchase Orders", "/fxml/purchase/purchase-view.fxml"}
         });
-        createNavMenu("👥 People", new String[][]{
+        createNavMenu("People", "bx-group", new String[][]{
             {"Employees", "/fxml/people/users-view.fxml"},
             {"Customers", "/fxml/people/customers-view.fxml"}
         });
-        createNavMenu("📊 Insights", new String[][]{
+        createNavMenu("Insights", "bx-bar-chart-alt-2", new String[][]{
             {"Sales Reports", "/fxml/reports/sales-reports-view.fxml"},
             {"Sales Analytics", "/fxml/reports/sales-analytics-view.fxml"},
             {"Product Flow", "/fxml/insights/product-flow-view.fxml"},
             {"Audit Log", "/fxml/audit/audit-view.fxml"}
         });
-        createNavButton("⚙ Settings", "Settings", "/fxml/settings/settings-view.fxml");
+        createNavButton("Settings", "bx-cog", "Settings", "/fxml/settings/settings-view.fxml");
     }
 
-    private void createNavButton(String label, String title, String fxmlPath) {
+    private void createNavButton(String label, String iconName, String title, String fxmlPath) {
         Button btn = new Button(label);
+        FontIcon icon = new FontIcon(iconName);
+        icon.getStyleClass().add("nav-icon");
+        btn.setGraphic(icon);
+        btn.setGraphicTextGap(8);
+        
         btn.getStyleClass().add("nav-menu-btn");
         btn.setOnAction(e -> workspaceManager.openOrFocusWindow(title, fxmlPath));
         btn.setAccessibleText(label);
@@ -184,8 +191,13 @@ public class AppShellController {
         navItems.getChildren().add(btn);
     }
 
-    private void createNavMenu(String label, String[][] items) {
+    private void createNavMenu(String label, String iconName, String[][] items) {
         MenuButton menuBtn = new MenuButton(label);
+        FontIcon icon = new FontIcon(iconName);
+        icon.getStyleClass().add("nav-icon");
+        menuBtn.setGraphic(icon);
+        menuBtn.setGraphicTextGap(8);
+
         menuBtn.getStyleClass().add("nav-menu-btn");
         menuBtn.setAccessibleText(label);
         menuBtn.setTooltip(new Tooltip(label));

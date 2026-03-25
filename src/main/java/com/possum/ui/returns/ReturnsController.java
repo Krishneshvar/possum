@@ -1,30 +1,30 @@
 package com.possum.ui.returns;
 
-import com.possum.application.auth.AuthContext;
 import com.possum.application.returns.ReturnsService;
-import com.possum.application.returns.dto.CreateReturnItemRequest;
-import com.possum.application.returns.dto.CreateReturnRequest;
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Return;
-import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
 import com.possum.persistence.repositories.interfaces.SalesRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ReturnFilter;
-import com.possum.shared.dto.SaleFilter;
+import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.printing.BillRenderer;
+import com.possum.ui.common.dialogs.BillPreviewDialog;
 import com.possum.ui.common.controls.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
@@ -36,16 +36,18 @@ public class ReturnsController {
     @FXML private DataTableView<Return> returnsTable;
     @FXML private PaginationBar paginationBar;
     
-    private ReturnsService returnsService;
-    private SalesService salesService;
-    private SalesRepository salesRepository;
+    private final ReturnsService returnsService;
+    private final SalesService salesService;
+    private final SalesRepository salesRepository;
+    private final SettingsStore settingsStore;
     private String currentSearch = "";
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public ReturnsController(ReturnsService returnsService, SalesService salesService, SalesRepository salesRepository) {
-this.returnsService = returnsService;
+    public ReturnsController(ReturnsService returnsService, SalesService salesService, SalesRepository salesRepository, SettingsStore settingsStore) {
+        this.returnsService = returnsService;
         this.salesService = salesService;
         this.salesRepository = salesRepository;
+        this.settingsStore = settingsStore;
     }
 
     @FXML
@@ -121,174 +123,34 @@ this.returnsService = returnsService;
 
     @FXML
     private void handleCreateReturn() {
-        // Step 1: Select sale
-        Dialog<Sale> saleDialog = new Dialog<>();
-        saleDialog.setTitle("Select Sale");
-        saleDialog.setHeaderText("Enter invoice number or sale ID");
-        
-        TextField saleInput = new TextField();
-        saleInput.setPromptText("Invoice number or ID");
-        
-        VBox content = new VBox(10, new Label("Sale:"), saleInput);
-        content.setPadding(new Insets(20));
-        saleDialog.getDialogPane().setContent(content);
-        saleDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        
-        saleDialog.setResultConverter(btn -> {
-            if (btn == ButtonType.OK) {
-                try {
-                    String input = saleInput.getText().trim();
-                    if (input.startsWith("INV-")) {
-                        return salesRepository.findSaleById(Long.parseLong(input)).orElse(null);
-                    } else {
-                        long saleId = Long.parseLong(input);
-                        return salesRepository.findSaleById(saleId).orElse(null);
-                    }
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            return null;
-        });
-        
-        saleDialog.showAndWait().ifPresent(sale -> {
-            if (sale == null) {
-                NotificationService.error("Sale not found");
-                return;
-            }
-            showReturnItemsDialog(sale);
-        });
-    }
-
-    private void showReturnItemsDialog(Sale sale) {
-        // Step 2: Display sale items
-        SaleResponse saleDetails = salesService.getSaleDetails(sale.id());
-        
-        Dialog<List<ReturnItemSelection>> itemDialog = new Dialog<>();
-        itemDialog.setTitle("Select Items to Return");
-        itemDialog.setHeaderText("Sale: " + sale.invoiceNumber());
-        
-        VBox content = new VBox(10);
-        content.setPadding(new Insets(20));
-        
-        List<ReturnItemSelection> selections = new ArrayList<>();
-        
-        for (SaleItem item : saleDetails.items()) {
-            int available = item.quantity() - (item.returnedQuantity() != null ? item.returnedQuantity() : 0);
-            if (available <= 0) continue;
-            
-            HBox row = new HBox(10);
-            CheckBox check = new CheckBox(String.format("%s - %s (Available: %d)",
-                item.productName(), item.variantName(), available));
-            Spinner<Integer> spinner = new Spinner<>(0, available, 0);
-            spinner.setMaxWidth(80);
-            spinner.setDisable(true);
-            
-            check.selectedProperty().addListener((obs, old, selected) -> {
-                spinner.setDisable(!selected);
-                if (selected) spinner.getValueFactory().setValue(available);
-            });
-            
-            row.getChildren().addAll(check, spinner);
-            content.getChildren().add(row);
-            
-            selections.add(new ReturnItemSelection(item, check, spinner));
-        }
-        
-        ScrollPane scroll = new ScrollPane(content);
-        scroll.setFitToWidth(true);
-        scroll.setPrefHeight(300);
-        
-        itemDialog.getDialogPane().setContent(scroll);
-        itemDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        
-        itemDialog.setResultConverter(btn -> {
-            if (btn == ButtonType.OK) {
-                return selections.stream()
-                    .filter(s -> s.check.isSelected() && s.spinner.getValue() > 0)
-                    .toList();
-            }
-            return null;
-        });
-        
-        itemDialog.showAndWait().ifPresent(selected -> {
-            if (selected.isEmpty()) {
-                NotificationService.warning("No items selected");
-                return;
-            }
-            showRefundPreview(sale, selected);
-        });
-    }
-
-    private void showRefundPreview(Sale sale, List<ReturnItemSelection> selections) {
-        // Step 4: Calculate refund preview
-        BigDecimal refundTotal = selections.stream()
-            .map(s -> s.item.pricePerUnit().multiply(BigDecimal.valueOf(s.spinner.getValue())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        // Step 5: Confirm return
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Confirm Return");
-        confirm.setHeaderText("Refund Preview");
-        confirm.setContentText(String.format(
-            "Items: %d\nRefund Amount: %s\n\nConfirm return?",
-            selections.size(), currencyFormat.format(refundTotal)
-        ));
-        
-        TextInputDialog reasonDialog = new TextInputDialog();
-        reasonDialog.setTitle("Return Reason");
-        reasonDialog.setHeaderText("Enter reason for return:");
-        reasonDialog.setContentText("Reason:");
-        
-        reasonDialog.showAndWait().ifPresent(reason -> {
-            if (reason.trim().isEmpty()) {
-                NotificationService.error("Reason is required");
-                return;
-            }
-            
-            confirm.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    processReturn(sale, selections, reason);
-                }
-            });
-        });
-    }
-
-    private void processReturn(Sale sale, List<ReturnItemSelection> selections, String reason) {
         try {
-            List<CreateReturnItemRequest> items = selections.stream()
-                .map(s -> new CreateReturnItemRequest(s.item.id(), s.spinner.getValue()))
-                .toList();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/returns/create-return-dialog.fxml"));
             
-            CreateReturnRequest request = new CreateReturnRequest(
-                sale.id(),
-                items,
-                reason,
-                AuthContext.getCurrentUser().id()
-            );
+            CreateReturnDialogController controller = new CreateReturnDialogController(salesService, salesRepository, returnsService);
+            loader.setController(controller);
             
-            returnsService.createReturn(request);
-            NotificationService.success("Return processed successfully");
-            loadReturns();
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.setTitle("Process Return");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(returnsTable.getScene().getWindow());
+            stage.setScene(new Scene(root));
             
-        } catch (Exception e) {
-            NotificationService.error("Return failed: " + e.getMessage());
+            controller.setOnSuccess(this::loadReturns);
+            
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            NotificationService.error("Failed to open return dialog");
         }
     }
 
     private void handleViewDetails(Return returnRecord) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Return Details");
-        alert.setHeaderText("Return #" + returnRecord.id());
-        alert.setContentText(String.format(
-            "Invoice: %s\nDate: %s\nRefund: %s\nReason: %s\nProcessed by: %s",
-            returnRecord.invoiceNumber(),
-            returnRecord.createdAt(),
-            currencyFormat.format(returnRecord.totalRefund()),
-            returnRecord.reason(),
-            returnRecord.processedByName()
-        ));
-        alert.showAndWait();
+        SaleResponse saleResponse = salesService.getSaleDetails(returnRecord.saleId());
+        String billHtml = BillRenderer.renderBill(saleResponse, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
+        
+        BillPreviewDialog dialog = new BillPreviewDialog(billHtml, returnsTable.getScene().getWindow());
+        dialog.showAndWait();
     }
 
     private static class ReturnItemSelection {

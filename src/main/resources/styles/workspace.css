@@ -9,6 +9,10 @@
 /* The center pane that holds the active screen */
 .workspace-content-pane {
     -fx-background-color: #f8fafc;
+    -fx-background-image: url("../icons/wall.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: cover;
+    -fx-background-position: center center;
 }
 
 /* The internal window itself is just a transparent container now */

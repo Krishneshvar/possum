@@ -1,0 +1,48 @@
+.returns-header {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1e293b;
+}
+
+.create-return-btn {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+    -fx-padding: 10 20;
+    -fx-background-radius: 6;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.create-return-btn:hover {
+    -fx-background-color: #dc2626;
+}
+
+.return-item-card {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+}
+
+.return-item-card-selected {
+    -fx-background-color: #fef2f2;
+    -fx-border-color: #fecaca;
+}
+
+.refund-summary-box {
+    -fx-background-color: #f0f9ff;
+    -fx-border-color: #bae6fd;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 15;
+}
+
+.bill-preview-dialog {
+    -fx-background-color: white;
+}
+
+.bill-preview-webview {
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 4;
+}

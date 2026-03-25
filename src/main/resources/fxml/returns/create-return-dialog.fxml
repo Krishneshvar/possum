@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="15"
+      prefWidth="600"
+      style="-fx-background-color: white;"
+      stylesheets="@/styles/returns.css">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Header -->
+    <VBox spacing="5">
+        <Label text="Process Return" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+        <Label text="Select items to return from sale" style="-fx-text-fill: #64748b;"/>
+    </VBox>
+
+    <!-- Find Sale Section -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <TextField fx:id="saleInput" promptText="Enter Invoice # or Sale ID" HBox.hgrow="ALWAYS" style="-fx-padding: 10;"/>
+        <Button fx:id="findSaleButton" text="Find Sale" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-padding: 10 20; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <!-- Sale Details & Items Area (Initially hidden via logic) -->
+    <VBox fx:id="saleDetailsArea" spacing="15" VBox.vgrow="ALWAYS">
+        
+        <!-- Info Bar -->
+        <HBox spacing="20" style="-fx-background-color: #f1f5f9; -fx-padding: 10; -fx-background-radius: 6;">
+            <VBox>
+                <Label text="Invoice" style="-fx-text-fill: #64748b; -fx-font-size: 11px;"/>
+                <Label fx:id="invoiceLabel" style="-fx-font-weight: bold;"/>
+            </VBox>
+            <VBox>
+                <Label text="Sale ID" style="-fx-text-fill: #64748b; -fx-font-size: 11px;"/>
+                <Label fx:id="saleIdLabel" style="-fx-font-weight: bold;"/>
+            </VBox>
+            <VBox>
+                <Label text="Customer" style="-fx-text-fill: #64748b; -fx-font-size: 11px;"/>
+                <Label fx:id="customerLabel" style="-fx-font-weight: bold;"/>
+            </VBox>
+        </HBox>
+
+        <!-- Refund Summary Card -->
+        <HBox fx:id="refundSummaryCard" spacing="15" alignment="CENTER_LEFT" 
+              style="-fx-background-color: #f0f9ff; -fx-border-color: #bae6fd; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 15;">
+            <VBox HBox.hgrow="ALWAYS">
+                <Label text="Estimated Refund Amount" style="-fx-text-fill: #0369a1; -fx-font-size: 12px;"/>
+                <Label fx:id="totalRefundLabel" text="$0.00" style="-fx-text-fill: #0369a1; -fx-font-size: 24px; -fx-font-weight: bold;"/>
+            </VBox>
+            <Label fx:id="itemsSelectedLabel" text="0 items selected" style="-fx-text-fill: #0369a1; -fx-font-weight: bold;"/>
+        </HBox>
+
+        <Label text="Select Items to Return" style="-fx-font-weight: bold; -fx-text-fill: #475569;"/>
+        
+        <!-- Items List Wrapper -->
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+            <VBox fx:id="itemsListContainer" spacing="10" style="-fx-padding: 5;"/>
+        </ScrollPane>
+
+        <!-- Reason Section -->
+        <VBox spacing="8">
+            <Label text="Reason for Return *" style="-fx-font-weight: bold; -fx-text-fill: #475569;"/>
+            <TextArea fx:id="reasonArea" promptText="e.g., Defective product, Wrong item..." prefHeight="80" wrapText="true" style="-fx-padding: 5;"/>
+        </VBox>
+
+    </VBox>
+
+    <Separator/>
+
+    <!-- Footer Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button fx:id="cancelButton" text="Cancel" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 4; -fx-padding: 10 20;"/>
+        <Button fx:id="submitButton" text="Confirm Return" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-padding: 10 25; -fx-font-weight: bold; -fx-background-radius: 4;"/>
+    </HBox>
+
+</VBox>

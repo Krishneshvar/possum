@@ -9,7 +9,8 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.returns.ReturnsController"
       spacing="20"
-      alignment="TOP_LEFT">
+      alignment="TOP_LEFT"
+      stylesheets="@/styles/returns.css">
     
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>

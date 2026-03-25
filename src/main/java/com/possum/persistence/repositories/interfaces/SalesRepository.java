@@ -17,6 +17,8 @@ public interface SalesRepository {
     long insertSaleItem(SaleItem item);
 
     Optional<Sale> findSaleById(long id);
+    
+    Optional<Sale> findSaleByInvoiceNumber(String invoiceNumber);
 
     List<SaleItem> findSaleItems(long saleId);
 
