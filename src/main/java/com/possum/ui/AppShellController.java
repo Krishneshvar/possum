@@ -34,6 +34,7 @@ public class AppShellController {
     }
 
     @FXML private HBox navbar;
+    @FXML private HBox brandBox;
     @FXML private HBox navItems;
     @FXML private StackPane contentArea;
     @FXML private Label userAvatar;
@@ -69,6 +70,33 @@ public class AppShellController {
         loadBrandIcon();
         
         initializeUserAvatar();
+
+        // Accessibility and tooltips for brand
+        if (brandBox != null) {
+            Tooltip brandTooltip = new Tooltip("Go to POSSUM Dashboard");
+            Tooltip.install(brandBox, brandTooltip);
+            brandBox.setAccessibleRole(javafx.scene.AccessibleRole.BUTTON);
+            brandBox.setAccessibleText("POSSUM Dashboard");
+
+            // Allow keyboard activation (Enter/Space) on the brand icon
+            brandBox.setOnKeyPressed(e -> {
+                if (e.getCode() == javafx.scene.input.KeyCode.ENTER || e.getCode() == javafx.scene.input.KeyCode.SPACE) {
+                    workspaceManager.openOrFocusWindow("Dashboard", "/fxml/dashboard/dashboard-view.fxml");
+                }
+            });
+            // Also enable click
+            brandBox.setOnMouseClicked(e -> {
+                workspaceManager.openOrFocusWindow("Dashboard", "/fxml/dashboard/dashboard-view.fxml");
+            });
+            brandBox.setFocusTraversable(true);
+        }
+
+        // Ensure user menu is focusable for keyboard users
+        if (userMenuButton != null) {
+            userMenuButton.setAccessibleRole(javafx.scene.AccessibleRole.MENU_BUTTON);
+            userMenuButton.setAccessibleText("User options");
+            userMenuButton.setTooltip(new Tooltip("User options"));
+        }
     }
     
     private void loadBrandIcon() {
@@ -82,23 +110,27 @@ public class AppShellController {
     
     private void buildUserMenu() {
         Label nameLabel = new Label(currentUserName);
-        nameLabel.setStyle("-fx-font-weight: 600; -fx-font-size: 14px; -fx-padding: 8 12;");
+        nameLabel.getStyleClass().add("user-menu-header-name");
         
         Label roleLabel = new Label("Administrator");
-        roleLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 0 12 8 12;");
+        roleLabel.getStyleClass().add("user-menu-header-role");
+
+        VBox headerBox = new VBox(nameLabel, roleLabel);
+        headerBox.setStyle("-fx-background-color: transparent;"); // Ensure no artifacts
         
-        CustomMenuItem headerItem = new CustomMenuItem(new VBox(nameLabel, roleLabel));
+        CustomMenuItem headerItem = new CustomMenuItem(headerBox);
         headerItem.setHideOnClick(false);
         
         SeparatorMenuItem sep1 = new SeparatorMenuItem();
         
-        MenuItem themeItem = new MenuItem("🌓 Toggle Theme");
+        MenuItem themeItem = new MenuItem("Toggle Theme");
+        themeItem.getStyleClass().add("menu-item");
         themeItem.setOnAction(e -> handleThemeToggle());
         
         SeparatorMenuItem sep2 = new SeparatorMenuItem();
         
         MenuItem logoutItem = new MenuItem("Logout");
-        logoutItem.setStyle("-fx-text-fill: #dc2626;");
+        logoutItem.getStyleClass().add("logout-menu-item");
         logoutItem.setOnAction(e -> handleLogout());
         
         userMenuButton.getItems().addAll(headerItem, sep1, themeItem, sep2, logoutItem);
@@ -146,12 +178,18 @@ public class AppShellController {
         Button btn = new Button(label);
         btn.getStyleClass().add("nav-menu-btn");
         btn.setOnAction(e -> workspaceManager.openOrFocusWindow(title, fxmlPath));
+        btn.setAccessibleText(label);
+        btn.setTooltip(new Tooltip(label));
+        HBox.setMargin(btn, new javafx.geometry.Insets(0, 4, 0, 4));
         navItems.getChildren().add(btn);
     }
 
     private void createNavMenu(String label, String[][] items) {
         MenuButton menuBtn = new MenuButton(label);
         menuBtn.getStyleClass().add("nav-menu-btn");
+        menuBtn.setAccessibleText(label);
+        menuBtn.setTooltip(new Tooltip(label));
+        HBox.setMargin(menuBtn, new javafx.geometry.Insets(0, 4, 0, 4));
         
         for (String[] item : items) {
             MenuItem menuItem = new MenuItem(item[0]);
