@@ -93,6 +93,29 @@ public final class ReportsService {
                 .toList();
     }
 
+    public BusinessHealthReport getBusinessHealthOverview(LocalDate startDate, LocalDate endDate) {
+        Map<String, Object> data = reportsRepository.getBusinessHealthOverview(
+                startDate.toString(),
+                endDate.toString()
+        );
+        SalesReportSummary summary = mapToSummary(data);
+        int lowStock = (int) data.getOrDefault("low_stock_count", 0);
+        int outOfStock = (int) data.getOrDefault("out_of_stock_count", 0);
+        return new BusinessHealthReport(summary, lowStock, outOfStock);
+    }
+
+    public List<StockMovementStat> getStockMovementSummary(LocalDate startDate, LocalDate endDate, Long categoryId) {
+        List<Map<String, Object>> data = reportsRepository.getStockMovementSummary(
+                startDate.toString(),
+                endDate.toString(),
+                categoryId
+        );
+        return data.stream()
+                .map(this::mapToStockMovementStat)
+                .toList();
+    }
+
+
     public ProductFlowReport getProductFlowReport(long variantId, int limit, int offset, 
                                                    String startDate, String endDate, 
                                                    List<String> paymentMethods) {
@@ -113,6 +136,7 @@ public final class ReportsService {
         BigDecimal totalTax = (BigDecimal) data.getOrDefault("total_tax", BigDecimal.ZERO);
         BigDecimal totalDiscount = (BigDecimal) data.getOrDefault("total_discount", BigDecimal.ZERO);
         BigDecimal totalCollected = (BigDecimal) data.getOrDefault("total_collected", BigDecimal.ZERO);
+        BigDecimal totalRefunds = (BigDecimal) data.getOrDefault("total_refunds", BigDecimal.ZERO);
         BigDecimal netSales = (BigDecimal) data.getOrDefault("net_sales", BigDecimal.ZERO);
         BigDecimal averageSale = (BigDecimal) data.getOrDefault("average_sale", BigDecimal.ZERO);
         return new SalesReportSummary(
@@ -121,6 +145,7 @@ public final class ReportsService {
                 totalTax,
                 totalDiscount,
                 totalCollected,
+                totalRefunds,
                 netSales,
                 averageSale
         );
@@ -136,6 +161,7 @@ public final class ReportsService {
         BigDecimal totalDiscount = (BigDecimal) item.getOrDefault("total_discount", BigDecimal.ZERO);
         return new BreakdownItem(period, name, totalTransactions, totalSales, totalSales, totalTax, totalDiscount);
     }
+
 
     private TopProduct mapToTopProduct(Map<String, Object> item) {
         return new TopProduct(
@@ -156,7 +182,21 @@ public final class ReportsService {
         );
     }
 
+    private StockMovementStat mapToStockMovementStat(Map<String, Object> item) {
+        return new StockMovementStat(
+                (String) item.get("product_name"),
+                (String) item.get("variant_name"),
+                (String) item.get("sku"),
+                (int) item.get("incoming"),
+                (int) item.get("outgoing"),
+                (int) item.get("returns"),
+                (int) item.get("adjustments"),
+                (int) item.get("current_stock")
+        );
+    }
+
     private String formatDate(String dateStr) {
+
         LocalDate date = LocalDate.parse(dateStr);
         return date.format(DATE_FORMATTER);
     }

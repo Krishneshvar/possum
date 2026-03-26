@@ -86,8 +86,12 @@ public class ReturnsService {
                 );
                 long returnItemId = returnsRepository.insertReturnItem(returnItem);
 
+                // Update sale item returned quantity
+                salesRepository.updateReturnedQuantity(refundCalc.saleItemId(), refundCalc.quantity());
+
                 // Restore inventory
                 inventoryService.restoreStock(
+
                         refundCalc.variantId(),
                         "sale_item",
                         refundCalc.saleItemId(),

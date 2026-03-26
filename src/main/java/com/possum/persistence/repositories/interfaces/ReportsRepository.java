@@ -15,4 +15,9 @@ public interface ReportsRepository {
     List<Map<String, Object>> getTopSellingProducts(String startDate, String endDate, int limit, Long paymentMethodId);
 
     List<Map<String, Object>> getSalesByPaymentMethod(String startDate, String endDate);
+
+    Map<String, Object> getBusinessHealthOverview(String startDate, String endDate);
+
+    List<Map<String, Object>> getStockMovementSummary(String startDate, String endDate, Long categoryId);
 }
+

@@ -358,4 +358,15 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         }
         return "WHERE " + joiner;
     }
+
+    @Override
+    public int updateReturnedQuantity(long saleItemId, int quantity) {
+        return executeUpdate(
+                "UPDATE sale_items SET returned_quantity = IFNULL(returned_quantity, 0) + ? WHERE id = ?",
+                quantity,
+                saleItemId
+        );
+    }
 }
+
+
