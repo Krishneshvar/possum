@@ -32,16 +32,25 @@ public final class SqlMapperUtils {
     }
 
     public static LocalDateTime getLocalDateTime(ResultSet rs, String column) throws SQLException {
-        Timestamp timestamp = rs.getTimestamp(column);
-        if (timestamp != null) {
-            return timestamp.toLocalDateTime();
-        }
         String text = rs.getString(column);
         if (text == null || text.isBlank()) {
             return null;
         }
         text = text.replace(' ', 'T');
-        return LocalDateTime.parse(text);
+        if (text.length() == 10) {
+            text += "T00:00:00";
+        }
+        try {
+            return LocalDateTime.parse(text);
+        } catch (java.time.format.DateTimeParseException e) {
+            // Fallback for potentially weird formats, though SQLite standard is YYYY-MM-DD HH:MM:SS
+            try {
+                Timestamp ts = rs.getTimestamp(column);
+                return ts != null ? ts.toLocalDateTime() : null;
+            } catch (SQLException ex) {
+                return null;
+            }
+        }
     }
 
     public static LocalDate getLocalDate(ResultSet rs, String column) throws SQLException {

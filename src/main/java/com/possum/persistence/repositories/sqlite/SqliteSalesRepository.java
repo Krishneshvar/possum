@@ -13,6 +13,10 @@ import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.SaleFilter;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -255,8 +259,13 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     @Override
     public List<PaymentMethod> findPaymentMethods() {
         return queryList(
-                "SELECT id, name, is_active FROM payment_methods WHERE is_active = 1",
-                rs -> new PaymentMethod(rs.getLong("id"), rs.getString("name"), rs.getInt("is_active") == 1)
+                "SELECT id, name, code, is_active FROM payment_methods WHERE is_active = 1",
+                rs -> new PaymentMethod(
+                        rs.getLong("id"),
+                        rs.getString("name"),
+                        rs.getString("code"),
+                        rs.getInt("is_active") == 1
+                )
         );
     }
 
@@ -268,6 +277,46 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     @Override
     public boolean saleExists(long id) {
         return queryOne("SELECT id FROM sales WHERE id = ?", rs -> rs.getLong("id"), id).isPresent();
+    }
+
+    @Override
+    public Optional<String> getPaymentMethodCode(long paymentMethodId) {
+        return queryOne(
+                "SELECT code FROM payment_methods WHERE id = ?",
+                rs -> rs.getString("code"),
+                paymentMethodId
+        );
+    }
+
+    @Override
+    public long getNextSequenceForPaymentType(String paymentTypeCode) {
+        // Atomic UPSERT: insert or increment the counter, then return the new value.
+        // Uses a direct JDBC call because this must be a two-step operation within
+        // the same connection/transaction context.
+        Connection conn = connection();
+        try {
+            try (PreparedStatement upsert = conn.prepareStatement(
+                    """
+                    INSERT INTO invoice_sequences (payment_type_code, last_sequence)
+                    VALUES (?, 1)
+                    ON CONFLICT(payment_type_code) DO UPDATE SET last_sequence = last_sequence + 1
+                    """)) {
+                upsert.setString(1, paymentTypeCode);
+                upsert.executeUpdate();
+            }
+            try (PreparedStatement select = conn.prepareStatement(
+                    "SELECT last_sequence FROM invoice_sequences WHERE payment_type_code = ?")) {
+                select.setString(1, paymentTypeCode);
+                try (ResultSet rs = select.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getLong("last_sequence");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to get next sequence for payment type: " + paymentTypeCode, e);
+        }
+        throw new IllegalStateException("No sequence row found for payment type: " + paymentTypeCode);
     }
 
     private static String buildWhere(SaleFilter filter, List<Object> params) {

@@ -71,9 +71,10 @@ INSERT INTO customers (name, phone, email, address) VALUES
 
 INSERT INTO payment_methods (name) VALUES
 ('Cash'),
-('Card'),
-('UPI'),
-('Gift Card');
+('Debit Card'),
+('Credit Card'),
+('Gift Card'),
+('UPI');
 
 INSERT INTO tax_categories (name, description) VALUES
 ('Standard', 'Standard tax category'),
@@ -150,28 +151,40 @@ INSERT INTO purchase_order_items (id, purchase_order_id, variant_id, quantity, u
 (15, 11, 17, 10, 4000);
 
 INSERT INTO inventory_lots (variant_id, quantity, unit_cost, expiry_date, purchase_order_item_id) VALUES
-(1, 1, 900, '2025-12-31', 1),
-(3, 3, 100, '2026-06-30', 2),
+(1, 1, 900, '2025-12-31T00:00:00', 1),
+(3, 3, 100, '2026-06-30T00:00:00', 2),
 (7, 10, 800, NULL, 5),
 (8, 15, 800, NULL, 6),
 (9, 5, 800, NULL, 7),
-(13, 20, 300, '2026-10-31', 8),
-(14, 30, 150, '2025-08-15', 11),
-(14, 20, 150, '2025-08-16', 12),
-(15, 25, 200, '2025-08-20', 13);
+(13, 20, 300, '2026-10-31T00:00:00', 8),
+(14, 30, 150, '2025-08-15T00:00:00', 11),
+(14, 20, 150, '2025-08-16T00:00:00', 12),
+(15, 25, 200, '2025-08-20T00:00:00', 13);
 
+-- Invoice IDs: {PaymentTypeCode}{YY}{MM}{DD}{SEQ:4d}
+-- Sale 1:  CH (Cash)         2025-08-12 → CH2508120001
+-- Sale 2:  DC (Debit Card)   2025-08-12 → DC2508120001
+-- Sale 3:  CH (Cash partial) 2025-08-12 → CH2508120002
+-- Sale 4:  DC (Debit Card)   2025-08-12 → DC2508120002
+-- Sale 5:  CH (Cash)         2025-08-12 → CH2508120003
+-- Sale 6:  UP (UPI cancel)   2025-08-12 → UP2508120001
+-- Sale 7:  UP (UPI)          2025-08-12 → UP2508120002
+-- Sale 8:  DC (Debit refund) 2025-08-12 → DC2508120003
+-- Sale 9:  CH (Cash)         2025-08-12 → CH2508120004
+-- Sale 10: DC (Debit Card)   2025-08-12 → DC2508120004
+-- Sale 11: CH (Cash)         2025-08-12 → CH2508120005
 INSERT INTO sales (invoice_number, sale_date, total_amount, paid_amount, total_tax, discount, customer_id, user_id, status) VALUES
-('INV-001', '2025-08-12 10:00:00', 3150, 3150, 210, 0, 1, 3, 'paid'),
-('INV-002', '2025-08-12 11:30:00', 87000, 87000, 2200, 0, 2, 4, 'paid'),
-('INV-003', '2025-08-12 12:45:00', 2150, 1000, 150, 100, 3, 5, 'partially_paid'),
-('INV-004', '2025-08-12 14:00:00', 2000, 2000, 150, 0, 4, 3, 'paid'),
-('INV-005', '2025-08-12 15:15:00', 10800, 10800, 600, 0, 5, 4, 'paid'),
-('INV-006', '2025-08-12 16:30:00', 4300, 0, 300, 0, 6, 5, 'cancelled'),
-('INV-007', '2025-08-12 17:45:00', 7850, 7850, 750, 0, 7, 3, 'paid'),
-('INV-008', '2025-08-12 18:00:00', 3000, 3000, 200, 200, 8, 4, 'refunded'),
-('INV-009', '2025-08-12 19:15:00', 500, 500, 40, 0, 9, 7, 'paid'),
-('INV-010', '2025-08-12 20:30:00', 1250, 1250, 85, 0, 10, 7, 'paid'),
-('INV-011', '2025-08-12 21:00:00', 550, 550, 40, 0, 11, 7, 'paid');
+('CH2508120001', '2025-08-12 10:00:00', 3150,  3150,  210,  0,   1, 3, 'paid'),
+('DC2508120001', '2025-08-12 11:30:00', 87000, 87000, 2200, 0,   2, 4, 'paid'),
+('CH2508120002', '2025-08-12 12:45:00', 2150,  1000,  150,  100, 3, 5, 'partially_paid'),
+('DC2508120002', '2025-08-12 14:00:00', 2000,  2000,  150,  0,   4, 3, 'paid'),
+('CH2508120003', '2025-08-12 15:15:00', 10800, 10800, 600,  0,   5, 4, 'paid'),
+('UP2508120001', '2025-08-12 16:30:00', 4300,  0,     300,  0,   6, 5, 'cancelled'),
+('UP2508120002', '2025-08-12 17:45:00', 7850,  7850,  750,  0,   7, 3, 'paid'),
+('DC2508120003', '2025-08-12 18:00:00', 3000,  3000,  200,  200, 8, 4, 'refunded'),
+('CH2508120004', '2025-08-12 19:15:00', 500,   500,   40,   0,   9, 7, 'paid'),
+('DC2508120004', '2025-08-12 20:30:00', 1250,  1250,  85,   0,  10, 7, 'paid'),
+('CH2508120005', '2025-08-12 21:00:00', 550,   550,   40,   0,  11, 7, 'paid');
 
 INSERT INTO sale_items (sale_id, variant_id, quantity, price_per_unit, cost_per_unit, tax_rate, tax_amount, discount_amount) VALUES
 (1, 1, 1, 1800, 900, 0, 0, 0),
@@ -229,12 +242,12 @@ INSERT INTO audit_log (user_id, action, table_name, row_id, old_data, new_data, 
 (1, 'create', 'products', 1, NULL, '{"name": "Coffee Beans"}', '2025-08-12 08:00:00'),
 (2, 'update', 'products', 1, '{"price": 1500}', '{"price": 1600}', '2025-08-12 08:05:00'),
 (6, 'update', 'products', 1, '{"stock": 50}', '{"stock": 55}', '2025-08-12 08:10:00'),
-(3, 'create', 'sales', 1, NULL, '{"invoice_number": "INV-001"}', '2025-08-12 10:00:00'),
-(4, 'create', 'sales', 2, NULL, '{"invoice_number": "INV-002"}', '2025-08-12 11:30:00'),
+(3, 'create', 'sales', 1, NULL, '{"invoice_number": "CH2508120001"}', '2025-08-12 10:00:00'),
+(4, 'create', 'sales', 2, NULL, '{"invoice_number": "DC2508120001"}', '2025-08-12 11:30:00'),
 (5, 'update', 'sales', 3, '{"status": "pending"}', '{"status": "partially_paid"}', '2025-08-12 12:45:00'),
-(3, 'create', 'sales', 4, NULL, '{"invoice_number": "INV-004"}', '2025-08-12 14:00:00'),
+(3, 'create', 'sales', 4, NULL, '{"invoice_number": "DC2508120002"}', '2025-08-12 14:00:00'),
 (4, 'update', 'sales', 6, '{"status": "pending"}', '{"status": "cancelled"}', '2025-08-12 16:35:00'),
-(7, 'create', 'sales', 9, NULL, '{"invoice_number": "INV-009"}', '2025-08-12 19:15:00');
+(7, 'create', 'sales', 9, NULL, '{"invoice_number": "CH2508120004"}', '2025-08-12 19:15:00');
 
 -- Additional Dummy Data
 INSERT INTO customers (name, phone, email, address) VALUES
@@ -265,12 +278,17 @@ INSERT INTO inventory_lots (variant_id, quantity, unit_cost, expiry_date, purcha
 (23, 100, 80, '2025-12-01', NULL),
 (24, 100, 100, '2025-09-01', NULL);
 
+-- Sale 12: CH (Cash)       2025-08-13 → CH2508130001
+-- Sale 13: DC (Debit Card) 2025-08-13 → DC2508130001
+-- Sale 14: DC (Debit Card) 2025-08-13 → DC2508130002
+-- Sale 15: CH (Cash)       2025-08-13 → CH2508130002
+-- Sale 16: DC (Debit Card) 2025-08-13 → DC2508130003
 INSERT INTO sales (invoice_number, sale_date, total_amount, paid_amount, total_tax, discount, customer_id, user_id, status) VALUES
-('INV-012', '2025-08-13 10:00:00', 1500, 1500, 150, 0, 1, 3, 'paid'),
-('INV-013', '2025-08-13 10:30:00', 3000, 3000, 300, 0, 1, 3, 'paid'),
-('INV-014', '2025-08-13 11:00:00', 12000, 12000, 1200, 0, 1, 4, 'paid'),
-('INV-015', '2025-08-13 11:30:00', 350, 350, 35, 0, 1, 5, 'paid'),
-('INV-016', '2025-08-13 12:00:00', 4500, 4500, 450, 0, 1, 4, 'paid');
+('CH2508130001', '2025-08-13 10:00:00', 1500,  1500,  150,  0, 1, 3, 'paid'),
+('DC2508130001', '2025-08-13 10:30:00', 3000,  3000,  300,  0, 1, 3, 'paid'),
+('DC2508130002', '2025-08-13 11:00:00', 12000, 12000, 1200, 0, 1, 4, 'paid'),
+('CH2508130002', '2025-08-13 11:30:00', 350,   350,   35,   0, 1, 5, 'paid'),
+('DC2508130003', '2025-08-13 12:00:00', 4500,  4500,  450,  0, 1, 4, 'paid');
 
 INSERT INTO sale_items (sale_id, variant_id, quantity, price_per_unit, cost_per_unit, tax_rate, tax_amount, discount_amount) VALUES
 (12, 20, 1, 1500, 800, 0.10, 150, 0),

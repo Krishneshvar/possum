@@ -172,7 +172,9 @@ public class SalesService {
             String status = determineStatus(paidAmount, totalAmount);
             String fulfillmentStatus = "paid".equals(status) ? "fulfilled" : "pending";
 
-            String invoiceNumber = generateInvoiceNumber();
+            // Resolve primary payment method code (use first payment if multiple).
+            long primaryPaymentMethodId = payments.isEmpty() ? 0L : payments.get(0).paymentMethodId();
+            String invoiceNumber = generateInvoiceNumber(primaryPaymentMethodId);
 
             Sale sale = new Sale(
                     null,
@@ -304,15 +306,28 @@ public class SalesService {
         }
     }
 
-    private String generateInvoiceNumber() {
-        Optional<String> lastInvoice = salesRepository.getLastSaleInvoiceNumber();
-        if (lastInvoice.isEmpty()) {
-            return "INV-001";
+    /**
+     * Generates a new invoice number in the format: {PT}{YY}{MM}{DD}{SEQ:4d}
+     * e.g. CH2603260001 for Cash on 2026-03-26 (1st cash sale of all time).
+     *
+     * @param primaryPaymentMethodId the ID of the first/primary payment method on the sale
+     */
+    private String generateInvoiceNumber(long primaryPaymentMethodId) {
+        String code = "XX";
+        if (primaryPaymentMethodId > 0) {
+            code = salesRepository.getPaymentMethodCode(primaryPaymentMethodId)
+                    .filter(c -> c != null && !c.isBlank())
+                    .orElse("XX");
         }
 
-        String lastNumber = lastInvoice.get().replace("INV-", "");
-        int nextNumber = Integer.parseInt(lastNumber) + 1;
-        return String.format("INV-%03d", nextNumber);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        String yy = String.format("%02d", today.getYear() % 100);
+        String mm = String.format("%02d", today.getMonthValue());
+        String dd = String.format("%02d", today.getDayOfMonth());
+
+        long seq = salesRepository.getNextSequenceForPaymentType(code);
+
+        return String.format("%s%s%s%s%04d", code, yy, mm, dd, seq);
     }
 
     private record TempItem(CreateSaleItemRequest item, BigDecimal pricePerUnit, BigDecimal netLineTotal) {}

@@ -43,4 +43,8 @@ public interface SalesRepository {
     boolean paymentMethodExists(long id);
 
     boolean saleExists(long id);
+
+    Optional<String> getPaymentMethodCode(long paymentMethodId);
+
+    long getNextSequenceForPaymentType(String paymentTypeCode);
 }
