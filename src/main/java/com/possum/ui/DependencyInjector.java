@@ -160,12 +160,32 @@ public class DependencyInjector {
             return navigationManager;
         } else if (type.equals(com.possum.ui.workspace.WorkspaceManager.class)) {
             return workspaceManager;
+        } else if (type.equals(com.possum.ui.sales.SalesHistoryController.class)) {
+            return new com.possum.ui.sales.SalesHistoryController(
+                salesService,
+                serviceLocator.getSettingsStore(),
+                serviceLocator.getPrinterService(),
+                workspaceManager
+            );
+        } else if (type.equals(com.possum.ui.sales.SaleDetailController.class)) {
+            return new com.possum.ui.sales.SaleDetailController(
+                salesService,
+                workspaceManager,
+                serviceLocator.getSettingsStore(),
+                serviceLocator.getPrinterService()
+            );
         } else if (type.equals(com.possum.ui.products.ProductFormController.class)) {
             return new com.possum.ui.products.ProductFormController(
                 applicationModule.getProductService(),
                 applicationModule.getCategoryService(),
                 taxRepository,
                 workspaceManager
+            );
+        } else if (type.equals(com.possum.ui.returns.CreateReturnDialogController.class)) {
+            return new com.possum.ui.returns.CreateReturnDialogController(
+                salesService,
+                salesRepository,
+                returnsService
             );
         } else if (type.equals(com.possum.ui.auth.SessionStore.class)) {
             return new com.possum.ui.auth.SessionStore(appPaths, serviceLocator.getJsonService()); // Or instantiate properly

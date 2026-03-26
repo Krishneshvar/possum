@@ -6,13 +6,13 @@
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.returns.CreateReturnDialogController"
       spacing="15"
       prefWidth="600"
-      style="-fx-background-color: white;"
-      stylesheets="@/styles/returns.css">
+      style="-fx-background-color: white;">
     
     <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
+        <Insets top="24" right="24" bottom="24" left="24"/>
     </padding>
 
     <!-- Header -->
@@ -51,16 +51,16 @@
               style="-fx-background-color: #f0f9ff; -fx-border-color: #bae6fd; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 15;">
             <VBox HBox.hgrow="ALWAYS">
                 <Label text="Estimated Refund Amount" style="-fx-text-fill: #0369a1; -fx-font-size: 12px;"/>
-                <Label fx:id="totalRefundLabel" text="$0.00" style="-fx-text-fill: #0369a1; -fx-font-size: 24px; -fx-font-weight: bold;"/>
+                <Label fx:id="totalRefundLabel" text="0.00" style="-fx-text-fill: #0369a1; -fx-font-size: 24px; -fx-font-weight: bold;"/>
             </VBox>
             <Label fx:id="itemsSelectedLabel" text="0 items selected" style="-fx-text-fill: #0369a1; -fx-font-weight: bold;"/>
         </HBox>
 
-        <Label text="Select Items to Return" style="-fx-font-weight: bold; -fx-text-fill: #475569;"/>
+        <Label text="Select Items to Return" style="-fx-font-weight: bold; -fx-text-fill: #475569; -fx-padding: 5 0 0 0;"/>
         
         <!-- Items List Wrapper -->
-        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
-            <VBox fx:id="itemsListContainer" spacing="10" style="-fx-padding: 5;"/>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS" minHeight="250">
+            <VBox fx:id="itemsListContainer" spacing="12" style="-fx-padding: 5;"/>
         </ScrollPane>
 
         <!-- Reason Section -->
@@ -76,7 +76,7 @@
     <!-- Footer Buttons -->
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button fx:id="cancelButton" text="Cancel" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 4; -fx-padding: 10 20;"/>
-        <Button fx:id="submitButton" text="Confirm Return" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-padding: 10 25; -fx-font-weight: bold; -fx-background-radius: 4;"/>
+        <Button fx:id="submitButton" text="Confirm Return" onAction="#handleSubmit" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-padding: 10 25; -fx-font-weight: bold; -fx-background-radius: 4;"/>
     </HBox>
 
 </VBox>

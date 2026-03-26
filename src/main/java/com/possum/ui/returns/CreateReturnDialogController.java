@@ -10,6 +10,7 @@ import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
 import com.possum.persistence.repositories.interfaces.SalesRepository;
 import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.navigation.Parameterizable;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -29,9 +30,10 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
-public class CreateReturnDialogController {
+public class CreateReturnDialogController implements Parameterizable {
 
     @FXML private TextField saleInput;
     @FXML private Button findSaleButton;
@@ -40,7 +42,7 @@ public class CreateReturnDialogController {
     @FXML private Label invoiceLabel;
     @FXML private Label customerLabel;
     
-    @FXML private VBox refundSummaryCard;
+    @FXML private HBox refundSummaryCard;
     @FXML private Label totalRefundLabel;
     @FXML private Label itemsSelectedLabel;
     
@@ -81,6 +83,15 @@ public class CreateReturnDialogController {
         findSaleButton.setOnAction(e -> handleFindSale());
         
         cancelButton.setOnAction(e -> ((Stage)cancelButton.getScene().getWindow()).close());
+    }
+
+    @Override
+    public void setParameters(Map<String, Object> params) {
+        if (params != null && params.containsKey("invoiceNumber")) {
+            String inv = (String) params.get("invoiceNumber");
+            saleInput.setText(inv);
+            Platform.runLater(this::handleFindSale);
+        }
     }
 
     public void setOnSuccess(OnSuccessCallback callback) {
@@ -170,6 +181,7 @@ public class CreateReturnDialogController {
                 AuthContext.getCurrentUser().id()
             );
 
+            returnsService.createReturn(request);
             NotificationService.success("Return processed successfully");
             if (onSuccess != null) onSuccess.onSuccess();
             ((Stage)submitButton.getScene().getWindow()).close();
@@ -190,9 +202,12 @@ public class CreateReturnDialogController {
             this.item = item;
             this.maxQty = maxQty;
 
-            checkBox = new CheckBox(item.productName());
-            checkBox.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+            checkBox = new CheckBox();
+            checkBox.setStyle("-fx-font-size: 16px;");
 
+            Label nameLabel = new Label(item.productName());
+            nameLabel.setStyle("-fx-font-weight: 700; -fx-font-size: 15px; -fx-text-fill: #1e293b;");
+            
             Label variantLabel = new Label(item.variantName() != null ? item.variantName() : "Standard Variant");
             variantLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
             
@@ -200,32 +215,39 @@ public class CreateReturnDialogController {
                 currencyFormat.format(item.pricePerUnit()), maxQty));
             detailsLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px;");
 
+            VBox nameArea = new VBox(2, nameLabel, variantLabel, detailsLabel);
+            HBox itemInfo = new HBox(12, checkBox, nameArea);
+            itemInfo.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
             qtySpinner = new Spinner<>(1, maxQty, maxQty);
-            qtySpinner.setPrefWidth(100);
+            qtySpinner.setPrefWidth(90);
             qtySpinner.setDisable(true);
+            qtySpinner.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
             qtySpinner.valueProperty().addListener((obs, old, val) -> updateLineTotal());
 
-            lineTotalLabel = new Label(currencyFormat.format(BigDecimal.ZERO));
-            lineTotalLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #ef4444; -fx-font-size: 14px;");
+            lineTotalLabel = new Label("");
+            lineTotalLabel.setStyle("-fx-font-weight: 800; -fx-text-fill: #ef4444; -fx-font-size: 16px;");
 
-            HBox controls = new HBox(10, new Label("Qty:"), qtySpinner, new Region(), lineTotalLabel);
-            controls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            HBox.setHgrow(controls.getChildren().get(2), javafx.scene.layout.Priority.ALWAYS);
+            VBox actionArea = new VBox(5, new Label("Qty to Return:"), qtySpinner);
+            actionArea.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
             
-            VBox info = new VBox(2, checkBox, variantLabel, detailsLabel, controls);
-            info.getStyleClass().add("return-item-card");
-            info.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;");
+            HBox mainRow = new HBox(15, itemInfo, new Region(), actionArea, lineTotalLabel);
+            mainRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            HBox.setHgrow(mainRow.getChildren().get(1), Priority.ALWAYS);
+            
+            mainRow.getStyleClass().add("return-item-card");
+            mainRow.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 16;");
 
             checkBox.selectedProperty().addListener((obs, old, selected) -> {
                 qtySpinner.setDisable(!selected);
-                info.setStyle(selected 
-                    ? "-fx-background-color: #fef2f2; -fx-border-color: #fecaca; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;" 
-                    : "-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;");
+                mainRow.setStyle(selected 
+                    ? "-fx-background-color: #fef2f2; -fx-border-color: #fecaca; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 16;" 
+                    : "-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 16;");
                 updateLineTotal();
                 updateSummary();
             });
 
-            this.node = info;
+            this.node = new VBox(mainRow); // Wrapped in VBox for future expansion if needed
             updateLineTotal();
         }
 

@@ -13,6 +13,7 @@ import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.ui.common.dialogs.BillPreviewDialog;
 import com.possum.ui.common.controls.*;
+import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -27,8 +28,10 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class SalesHistoryController {
@@ -54,6 +57,7 @@ public class SalesHistoryController {
     private final SalesService salesService;
     private final SettingsStore settingsStore;
     private final PrinterService printerService;
+    private final WorkspaceManager workspaceManager;
     private final ObservableList<Sale> salesList = FXCollections.observableArrayList();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
@@ -63,10 +67,14 @@ public class SalesHistoryController {
     private String currentSearch = "";
     private List<String> currentStatus = null;
 
-    public SalesHistoryController(SalesService salesService, SettingsStore settingsStore, PrinterService printerService) {
+    public SalesHistoryController(SalesService salesService, 
+                                  SettingsStore settingsStore, 
+                                  PrinterService printerService,
+                                  WorkspaceManager workspaceManager) {
         this.salesService = salesService;
         this.settingsStore = settingsStore;
         this.printerService = printerService;
+        this.workspaceManager = workspaceManager;
     }
 
     @FXML
@@ -225,11 +233,9 @@ public class SalesHistoryController {
 
     private void handleView(Sale sale) {
         if (sale == null) return;
-        SaleResponse saleResponse = salesService.getSaleDetails(sale.id());
-        String billHtml = BillRenderer.renderBill(saleResponse, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
-        
-        BillPreviewDialog dialog = new BillPreviewDialog(billHtml, salesTable.getScene().getWindow());
-        dialog.showAndWait();
+        Map<String, Object> params = new HashMap<>();
+        params.put("sale", sale);
+        workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
     }
 
     private void handlePrint(Sale sale) {

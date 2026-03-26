@@ -62,6 +62,7 @@ public class AppShellController {
             dependencyInjector.setWorkspaceManager(workspaceManager);
         }
         contentArea.getChildren().add(desktop);
+        com.possum.ui.common.controls.NotificationService.initialize(contentArea);
         // Let the desktop stretch to fill the StackPane in both directions
         desktop.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         

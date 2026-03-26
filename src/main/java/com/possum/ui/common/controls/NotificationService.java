@@ -14,7 +14,8 @@ public class NotificationService {
     public enum Type {
         SUCCESS("#4caf50"),
         ERROR("#f44336"),
-        WARNING("#ff9800");
+        WARNING("#ff9800"),
+        INFO("#2196f3");
 
         private final String color;
         Type(String color) { this.color = color; }
@@ -72,5 +73,9 @@ public class NotificationService {
 
     public static void warning(String message) {
         show(message, Type.WARNING);
+    }
+
+    public static void info(String message) {
+        show(message, Type.INFO);
     }
 }

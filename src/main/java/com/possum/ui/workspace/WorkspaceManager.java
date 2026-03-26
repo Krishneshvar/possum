@@ -22,15 +22,20 @@ public class WorkspaceManager {
      * of creating a duplicate.
      */
     public void openOrFocusWindow(String title, String fxmlPath) {
+        openOrFocusWindow(title, fxmlPath, null);
+    }
+
+    public void openOrFocusWindow(String title, String fxmlPath, Map<String, Object> params) {
         // Check for existing window with the same title
         for (InternalWindow w : desktop.getWindows()) {
             if (w.getTitle().equals(title)) {
+                // If found, bring to front
                 desktop.setActiveWindow(w);
                 return;
             }
         }
 
-        openWindow(title, fxmlPath);
+        openWindow(title, fxmlPath, params);
     }
 
     public void openWindow(String title, String fxmlPath) {

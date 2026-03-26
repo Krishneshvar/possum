@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.sales.SaleDetailController"
+      spacing="20"
+      style="-fx-background-color: #f8fafc;">
+    
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <!-- Header Section -->
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <HBox spacing="10" alignment="BASELINE_LEFT">
+                <Label fx:id="invoiceLabel" text="#INV-001">
+                    <font><Font name="System Bold" size="24"/></font>
+                </Label>
+                <Label fx:id="statusBadge" text="PAID" 
+                       style="-fx-background-color: #dcfce7; -fx-text-fill: #166534; -fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-font-size: 11;"/>
+            </HBox>
+            <Label fx:id="dateLabel" text="Processed on March 25, 2026 at 10:30 AM" style="-fx-text-fill: #64748b;"/>
+        </VBox>
+        
+        <HBox spacing="10">
+            <Button text="Print Receipt" onAction="#handlePrint" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-cursor: hand; -fx-padding: 8 15;"/>
+            <Button text="Edit Bill" onAction="#handleEdit" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-cursor: hand; -fx-padding: 8 15;"/>
+            <Button text="Return Items" onAction="#handleReturn" 
+                    style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 8 15; -fx-font-weight: bold;"/>
+        </HBox>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Customer & Payment Info Cards -->
+    <HBox spacing="20">
+        <VBox spacing="10" HBox.hgrow="ALWAYS" 
+              style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 15;">
+            <Label text="CUSTOMER DETAILS" style="-fx-text-fill: #94a3b8; -fx-font-weight: bold; -fx-font-size: 11;"/>
+            <Label fx:id="customerNameLabel" text="Walk-in Customer" style="-fx-font-size: 15; -fx-font-weight: 600;"/>
+            <Label fx:id="customerContactLabel" text="No contact info" style="-fx-text-fill: #64748b;"/>
+        </VBox>
+        
+        <VBox spacing="10" HBox.hgrow="ALWAYS" 
+              style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 15;">
+            <Label text="PAYMENT INFO" style="-fx-text-fill: #94a3b8; -fx-font-weight: bold; -fx-font-size: 11;"/>
+            <Label fx:id="paymentMethodLabel" text="Cash Payment" style="-fx-font-size: 15; -fx-font-weight: 600;"/>
+            <Label fx:id="billerLabel" text="Biller: Admin User" style="-fx-text-fill: #64748b;"/>
+        </VBox>
+    </HBox>
+
+    <VBox spacing="20" VBox.vgrow="ALWAYS">
+        <!-- Active Items Table -->
+        <VBox spacing="10" VBox.vgrow="ALWAYS" 
+              style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+            <Label text="ITEMIZED BILL" style="-fx-padding: 15 15 5 15; -fx-text-fill: #64748b; -fx-font-weight: bold; -fx-font-size: 13;"/>
+            <TableView fx:id="itemsTable" styleClass="pos-table" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="productCol" text="Product / Variant" prefWidth="350"/>
+                    <TableColumn fx:id="skuCol" text="SKU" prefWidth="120"/>
+                    <TableColumn fx:id="qtyCol" text="Qty" prefWidth="80" style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="priceCol" text="Unit Price" prefWidth="120" style="-fx-alignment: CENTER-RIGHT;"/>
+                    <TableColumn fx:id="taxCol" text="Tax" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
+                    <TableColumn fx:id="discountCol" text="Discount" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
+                    <TableColumn fx:id="totalCol" text="Line Total" prefWidth="140" style="-fx-alignment: CENTER-RIGHT;"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- Returned Items Section (Initially hidden if no returns) -->
+        <VBox fx:id="returnedItemsContainer" spacing="10" 
+              style="-fx-background-color: #fef2f2; -fx-border-color: #fecaca; -fx-border-radius: 8;">
+            <Label text="RETURNED ITEMS" style="-fx-padding: 15 15 5 15; -fx-text-fill: #991b1b; -fx-font-weight: bold; -fx-font-size: 13;"/>
+            <TableView fx:id="returnedItemsTable" styleClass="pos-table" prefHeight="150">
+                <columns>
+                    <TableColumn fx:id="retProductCol" text="Product / Variant" prefWidth="350"/>
+                    <TableColumn fx:id="retQtyCol" text="Returned Qty" prefWidth="150" style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="retRefundCol" text="Refund Amount" prefWidth="150" style="-fx-alignment: CENTER-RIGHT;"/>
+                </columns>
+                <placeholder>
+                    <Label text="No items returned yet."/>
+                </placeholder>
+            </TableView>
+        </VBox>
+    </VBox>
+
+    <!-- Footer Summary Section -->
+    <HBox spacing="20" alignment="BOTTOM_RIGHT">
+        <GridPane hgap="40" vgap="10" style="-fx-padding: 20; -fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+            <columnConstraints>
+                <ColumnConstraints halignment="RIGHT" minWidth="100"/>
+                <ColumnConstraints halignment="RIGHT" minWidth="120"/>
+            </columnConstraints>
+            
+            <Label text="Subtotal" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-text-fill: #64748b;"/>
+            <Label fx:id="subtotalLabel" text="0.00" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-font-weight: 600;"/>
+            
+            <Label text="Tax total" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-text-fill: #64748b;"/>
+            <Label fx:id="taxTotalLabel" text="0.00" GridPane.columnIndex="1" GridPane.rowIndex="1" style="-fx-font-weight: 600;"/>
+            
+            <Label text="Discount" GridPane.columnIndex="0" GridPane.rowIndex="2" style="-fx-text-fill: #64748b;"/>
+            <Label fx:id="discountTotalLabel" text="-0.00" GridPane.columnIndex="1" GridPane.rowIndex="2" style="-fx-font-weight: 600; -fx-text-fill: #ef4444;"/>
+            
+            <Label text="TOTAL" GridPane.columnIndex="0" GridPane.rowIndex="3" style="-fx-font-weight: 900; -fx-font-size: 16;"/>
+            <Label fx:id="grandTotalLabel" text="0.00" GridPane.columnIndex="1" GridPane.rowIndex="3" style="-fx-font-weight: 900; -fx-font-size: 20; -fx-text-fill: #2563eb;"/>
+            
+            <Separator GridPane.columnSpan="2" GridPane.rowIndex="4" style="-fx-padding: 5 0;"/>
+            
+            <Label text="Paid Amount" GridPane.columnIndex="0" GridPane.rowIndex="5" style="-fx-text-fill: #64748b;"/>
+            <Label fx:id="paidAmountLabel" text="0.00" GridPane.columnIndex="1" GridPane.rowIndex="5" style="-fx-font-weight: 600;"/>
+            
+            <Label fx:id="balanceTypeLabel" text="Change" GridPane.columnIndex="0" GridPane.rowIndex="6" style="-fx-text-fill: #64748b;"/>
+            <Label fx:id="balanceAmountLabel" text="0.00" GridPane.columnIndex="1" GridPane.rowIndex="6" style="-fx-font-weight: 600;"/>
+        </GridPane>
+    </HBox>
+
+</VBox>
