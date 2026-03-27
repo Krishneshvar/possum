@@ -12,42 +12,60 @@ import com.possum.shared.dto.PagedResult;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.navigation.Parameterizable;
 import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.ui.sales.ProductSearchIndex;
 import javafx.application.Platform;
+import javafx.stage.Popup;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PurchaseOrderFormController implements Parameterizable {
 
     @FXML private Label titleLabel;
     @FXML private ComboBox<Supplier> supplierCombo;
     @FXML private TextField searchVariantField;
-    @FXML private VBox itemsBox;
+    @FXML private TableView<PurchaseItemRow> itemsTable;
     @FXML private Button saveButton;
     @FXML private Label totalCostLabel;
+    @FXML private Label itemCountLabel;
+    @FXML private Button addItemButton;
 
     private PurchaseService purchaseService;
     private SupplierRepository supplierRepository;
     private VariantRepository variantRepository;
     private WorkspaceManager workspaceManager;
+    private ProductSearchIndex searchIndex;
+
+    private Popup searchPopup = new Popup();
+    private ListView<Variant> searchResultsView = new ListView<>();
 
     private PurchaseOrder existingPo;
     private Runnable onSaveCallback;
-    private List<PurchaseItemRow> itemRows = new ArrayList<>();
+    private ObservableList<PurchaseItemRow> itemRows = FXCollections.observableArrayList();
+    private Variant selectedVariant = null;
+    private boolean isViewMode = false;
 
     public PurchaseOrderFormController(PurchaseService purchaseService, SupplierRepository supplierRepository,
-                                       VariantRepository variantRepository, WorkspaceManager workspaceManager) {
+                                       VariantRepository variantRepository, WorkspaceManager workspaceManager,
+                                       ProductSearchIndex searchIndex) {
         this.purchaseService = purchaseService;
         this.supplierRepository = supplierRepository;
         this.variantRepository = variantRepository;
         this.workspaceManager = workspaceManager;
+        this.searchIndex = searchIndex;
     }
 
     @Override
@@ -87,30 +105,341 @@ public class PurchaseOrderFormController implements Parameterizable {
 
     @FXML
     public void initialize() {
-        if (searchVariantField != null) {
-            searchVariantField.setOnAction(e -> {
-                String query = searchVariantField.getText().trim();
-                if (query.isEmpty()) return;
-                try {
-                    PagedResult<Variant> result = variantRepository.findVariants(
-                        query, null, null, null, null, "name", "ASC", 0, 10
-                    );
-                    if (!result.items().isEmpty()) {
-                        Variant v = result.items().get(0);
-                        addVariantToCart(v);
-                        searchVariantField.clear();
-                    } else {
-                        NotificationService.warning("No product matching: " + query);
+        setupItemsTable();
+        setupVariantSearch();
+        setupSearchAutocomplete();
+    }
+
+    private void setupItemsTable() {
+        if (itemsTable == null) return;
+        
+        TableColumn<PurchaseItemRow, String> productCol = new TableColumn<>("Product | Variant");
+        productCol.setCellValueFactory(new PropertyValueFactory<>("displayName"));
+        productCol.setPrefWidth(300);
+        productCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    PurchaseItemRow row = getTableView().getItems().get(getIndex());
+                    VBox vbox = new VBox(2);
+                    Label productLabel = new Label(row.getProductName());
+                    productLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+                    Label variantLabel = new Label(row.getSku() + " (" + row.getVariantName() + ")");
+                    variantLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
+                    vbox.getChildren().addAll(productLabel, variantLabel);
+                    setGraphic(vbox);
+                }
+            }
+        });
+        
+        TableColumn<PurchaseItemRow, Integer> qtyCol = new TableColumn<>("Qty");
+        qtyCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+        qtyCol.setPrefWidth(80);
+        qtyCol.setStyle("-fx-alignment: CENTER;");
+        qtyCol.setCellFactory(col -> new TableCell<>() {
+            private final Spinner<Integer> spinner = new Spinner<>(1, 10000, 1);
+            
+            {
+                spinner.setEditable(true);
+                spinner.setPrefWidth(70);
+                spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+                    PurchaseItemRow row = getTableRow().getItem();
+                    if (row != null && newVal != null) {
+                        row.setQuantity(newVal);
+                        recalculateTotal();
                     }
-                } catch (Exception ex) {}
-            });
+                });
+            }
+            
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setGraphic(null);
+                } else {
+                    PurchaseItemRow row = getTableRow().getItem();
+                    spinner.getValueFactory().setValue(row.getQuantity());
+                    spinner.setDisable(isViewMode);
+                    setGraphic(spinner);
+                }
+            }
+        });
+        
+        TableColumn<PurchaseItemRow, BigDecimal> costCol = new TableColumn<>("Unit Cost");
+        costCol.setCellValueFactory(new PropertyValueFactory<>("unitCost"));
+        costCol.setPrefWidth(100);
+        costCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        costCol.setCellFactory(col -> new TableCell<>() {
+            private final TextField textField = new TextField();
+            
+            {
+                textField.setPrefWidth(90);
+                textField.setAlignment(Pos.CENTER_RIGHT);
+                textField.textProperty().addListener((obs, oldVal, newVal) -> {
+                    PurchaseItemRow row = getTableRow().getItem();
+                    if (row != null && newVal != null && !newVal.isEmpty()) {
+                        try {
+                            row.setUnitCost(new BigDecimal(newVal));
+                            recalculateTotal();
+                        } catch (NumberFormatException ignored) {}
+                    }
+                });
+            }
+            
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setGraphic(null);
+                } else {
+                    PurchaseItemRow row = getTableRow().getItem();
+                    textField.setText(row.getUnitCost().toString());
+                    textField.setDisable(isViewMode);
+                    setGraphic(textField);
+                }
+            }
+        });
+        
+        TableColumn<PurchaseItemRow, BigDecimal> totalCol = new TableColumn<>("Total");
+        totalCol.setCellValueFactory(cellData -> {
+            PurchaseItemRow row = cellData.getValue();
+            BigDecimal total = row.getUnitCost().multiply(BigDecimal.valueOf(row.getQuantity()));
+            return new javafx.beans.property.SimpleObjectProperty<>(total);
+        });
+        totalCol.setPrefWidth(100);
+        totalCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        totalCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("$%.2f", item));
+                    setStyle("-fx-font-weight: bold; -fx-text-fill: #1976d2;");
+                }
+            }
+        });
+        
+        TableColumn<PurchaseItemRow, Void> actionCol = new TableColumn<>("Actions");
+        actionCol.setPrefWidth(80);
+        actionCol.setStyle("-fx-alignment: CENTER;");
+        actionCol.setCellFactory(col -> new TableCell<>() {
+            private final Button deleteBtn = new Button("✕");
+            
+            {
+                deleteBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #ef4444; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 14px; -fx-padding: 0;");
+                deleteBtn.setTooltip(new Tooltip("Remove from order"));
+                deleteBtn.setOnAction(e -> {
+                    PurchaseItemRow row = getTableRow().getItem();
+                    if (row != null) {
+                        itemRows.remove(row);
+                        recalculateTotal();
+                    }
+                });
+            }
+            
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || isViewMode) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(deleteBtn);
+                }
+            }
+        });
+        
+        itemsTable.getColumns().addAll(productCol, qtyCol, costCol, totalCol, actionCol);
+        itemsTable.setItems(itemRows);
+        itemsTable.setPlaceholder(new Label("No items added yet. Search and add products above."));
+    }
+
+    private void setupVariantSearch() {
+        if (searchVariantField == null) return;
+        
+        searchVariantField.textProperty().addListener((obs, oldVal, newVal) -> {
+            showAutocompletePopup(newVal != null ? newVal.trim() : "");
+        });
+        
+        searchVariantField.focusedProperty().addListener((obs, old, isFocused) -> {
+            if (isFocused) {
+                showAutocompletePopup(searchVariantField.getText().trim());
+            } else {
+                Platform.runLater(() -> {
+                    if (!searchResultsView.isFocused()) searchPopup.hide();
+                });
+            }
+        });
+        
+        searchVariantField.setOnMouseClicked(e -> {
+            showAutocompletePopup(searchVariantField.getText().trim());
+        });
+        
+        searchVariantField.setOnAction(e -> handleAddItem());
+    }
+
+    private void setupSearchAutocomplete() {
+        searchResultsView.getStyleClass().add("search-results-list");
+        searchResultsView.setStyle("-fx-background-color: white; -fx-background-radius: 5; -fx-border-color: #cbd5e1; -fx-border-radius: 5; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 4);");
+        
+        searchPopup.getContent().add(searchResultsView);
+        searchPopup.setAutoHide(true);
+
+        searchResultsView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Variant item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    VBox box = new VBox(2);
+                    box.setPadding(new Insets(8, 12, 8, 12));
+                    
+                    Label name = new Label(item.productName() + (item.name().equals("Default") ? "" : " - " + item.name()));
+                    name.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-font-size: 13px;");
+                    
+                    Label details = new Label(item.sku() + " • Cost: $" + (item.costPrice() != null ? item.costPrice() : "0.00") + " • Stock: " + (item.stock() != null ? item.stock() : "∞"));
+                    details.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+                    
+                    box.getChildren().addAll(name, details);
+                    setGraphic(box);
+                }
+            }
+        });
+
+        searchResultsView.setOnMouseClicked(e -> {
+            Variant v = searchResultsView.getSelectionModel().getSelectedItem();
+            if (v != null) {
+                addVariantToCart(v);
+                searchVariantField.clear();
+                searchPopup.hide();
+            }
+        });
+
+        searchResultsView.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                Variant v = searchResultsView.getSelectionModel().getSelectedItem();
+                if (v != null) {
+                    addVariantToCart(v);
+                    searchVariantField.clear();
+                    searchPopup.hide();
+                }
+            } else if (e.getCode() == javafx.scene.input.KeyCode.UP && searchResultsView.getSelectionModel().getSelectedIndex() <= 0) {
+                searchVariantField.requestFocus();
+            }
+        });
+
+        searchVariantField.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.DOWN && searchPopup.isShowing()) {
+                searchResultsView.requestFocus();
+                searchResultsView.getSelectionModel().selectFirst();
+            }
+        });
+    }
+
+    private void showAutocompletePopup(String query) {
+
+        List<Variant> results = searchIndex.searchByName(query);
+
+        if (!results.isEmpty()) {
+            searchResultsView.setItems(FXCollections.observableArrayList(results));
+            searchResultsView.setPrefHeight(Math.min(results.size() * 52 + 5, 300));
+            searchResultsView.setPrefWidth(Math.max(searchVariantField.getWidth(), 350));
+            
+            javafx.geometry.Point2D pos = searchVariantField.localToScreen(0, searchVariantField.getHeight() + 2);
+            if (pos != null) {
+                searchPopup.show(searchVariantField, pos.getX(), pos.getY());
+            }
+        } else {
+            searchPopup.hide();
         }
     }
 
+    @FXML
+    private void handleAddItem() {
+        String query = searchVariantField.getText().trim();
+        if (query.isEmpty()) {
+            NotificationService.warning("Enter a product name or SKU to search");
+            return;
+        }
+
+        // If something is selected in common, use it
+        if (searchPopup.isShowing() && !searchResultsView.getItems().isEmpty()) {
+            Variant selected = searchResultsView.getSelectionModel().getSelectedItem();
+            if (selected == null) selected = searchResultsView.getItems().get(0);
+            
+            addVariantToCart(selected);
+            searchVariantField.clear();
+            searchPopup.hide();
+            return;
+        }
+
+        // Search fallback
+        try {
+            List<Variant> results = searchIndex.searchByName(query);
+            if (results.isEmpty()) {
+                NotificationService.warning("No product found matching: " + query);
+                return;
+            }
+            
+            if (results.size() == 1) {
+                addVariantToCart(results.get(0));
+                searchVariantField.clear();
+            } else {
+                showVariantSelectionDialog(results);
+            }
+        } catch (Exception ex) {
+            NotificationService.error("Failed to search products");
+        }
+    }
+
+    private void showVariantSelectionDialog(List<Variant> variants) {
+        Dialog<Variant> dialog = new Dialog<>();
+        dialog.setTitle("Select Product Variant");
+        dialog.setHeaderText("Multiple products found. Select one:");
+        
+        ListView<Variant> listView = new ListView<>(FXCollections.observableArrayList(variants));
+        listView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Variant item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.productName() + " - " + item.name() + " (" + item.sku() + ") - $" + 
+                           (item.costPrice() != null ? item.costPrice() : "0.00"));
+                }
+            }
+        });
+        
+        dialog.getDialogPane().setContent(listView);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                return listView.getSelectionModel().getSelectedItem();
+            }
+            return null;
+        });
+        
+        dialog.showAndWait().ifPresent(variant -> {
+            addVariantToCart(variant);
+            searchVariantField.clear();
+        });
+    }
+
     private void loadData(boolean isView) {
+        this.isViewMode = isView;
         Platform.runLater(() -> {
             try {
-                PagedResult<Supplier> suppliers = supplierRepository.getAllSuppliers(new com.possum.shared.dto.SupplierFilter(0, 1000, null, null, "name", "ASC"));
+                PagedResult<Supplier> suppliers = supplierRepository.getAllSuppliers(
+                    new com.possum.shared.dto.SupplierFilter(0, 1000, null, null, "name", "ASC")
+                );
                 makeSupplierComboSearchable(suppliers.items());
                 
                 if (existingPo != null) {
@@ -125,13 +454,11 @@ public class PurchaseOrderFormController implements Parameterizable {
                             PurchaseItemRow row = new PurchaseItemRow(v);
                             row.setQuantity(item.quantity());
                             row.setUnitCost(item.unitCost());
-                            if (isView) row.disableInputs();
                             itemRows.add(row);
-                            itemsBox.getChildren().add(row.getRow());
                         });
                     }
                 }
-                if (totalCostLabel != null) recalculateTotal();
+                recalculateTotal();
             } catch (Exception e) {
                 NotificationService.error("Failed to load data for PO Form");
             }
@@ -167,15 +494,25 @@ public class PurchaseOrderFormController implements Parameterizable {
 
     private void recalculateTotal() {
         BigDecimal total = BigDecimal.ZERO;
+        int totalQty = 0;
         for (PurchaseItemRow row : itemRows) {
             BigDecimal cost = row.getUnitCost();
             BigDecimal qty = new BigDecimal(row.getQuantity());
             total = total.add(cost.multiply(qty));
+            totalQty += row.getQuantity();
         }
         final BigDecimal finalTotal = total;
+        final int finalQty = totalQty;
         Platform.runLater(() -> {
             if (totalCostLabel != null) {
                 totalCostLabel.setText(String.format("$%.2f", finalTotal));
+            }
+            if (itemCountLabel != null) {
+                itemCountLabel.setText(itemRows.size() + " item" + (itemRows.size() != 1 ? "s" : "") + 
+                                      " (" + finalQty + " units)");
+            }
+            if (itemsTable != null) {
+                itemsTable.refresh();
             }
         });
     }
@@ -184,13 +521,14 @@ public class PurchaseOrderFormController implements Parameterizable {
         for (PurchaseItemRow row : itemRows) {
             if (row.getVariantId() != null && row.getVariantId().equals(variant.id())) {
                 row.setQuantity(row.getQuantity() + 1);
+                NotificationService.success("Quantity updated for " + variant.name());
                 recalculateTotal();
                 return;
             }
         }
         PurchaseItemRow row = new PurchaseItemRow(variant);
         itemRows.add(row);
-        itemsBox.getChildren().add(row.getRow());
+        NotificationService.success("Added " + variant.name() + " to order");
         recalculateTotal();
     }
 
@@ -240,62 +578,33 @@ public class PurchaseOrderFormController implements Parameterizable {
         }
     }
 
-    private class PurchaseItemRow {
-        private Variant variant;
-        private TextField quantityField;
-        private TextField costField;
-        private HBox row;
-        private Button removeBtn;
+    public static class PurchaseItemRow {
+        private final Variant variant;
+        private int quantity;
+        private BigDecimal unitCost;
         
-        PurchaseItemRow(Variant variant) {
+        public PurchaseItemRow(Variant variant) {
             this.variant = variant;
-            
-            Label variantNameLabel = new Label(variant.productName() + " - " + variant.name() + " (" + variant.sku() + ")");
-            variantNameLabel.setPrefWidth(250);
-            
-            quantityField = new TextField("1");
-            quantityField.setPromptText("Qty");
-            quantityField.setPrefWidth(60);
-            quantityField.textProperty().addListener((o, old, val) -> recalculateTotal());
-            
-            costField = new TextField(variant.costPrice() != null ? variant.costPrice().toString() : "0.00");
-            costField.setPromptText("Cost");
-            costField.setPrefWidth(80);
-            costField.textProperty().addListener((o, old, val) -> recalculateTotal());
-            
-            removeBtn = new Button("x");
-            removeBtn.setStyle("-fx-text-fill: red; -fx-background-color: transparent; -fx-cursor: hand; -fx-font-weight: bold;");
-            removeBtn.setOnAction(e -> {
-                itemRows.remove(this);
-                itemsBox.getChildren().remove(row);
-                recalculateTotal();
-            });
-            
-            row = new HBox(10, variantNameLabel, quantityField, costField, removeBtn);
-            row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            this.quantity = 1;
+            this.unitCost = variant.costPrice() != null ? variant.costPrice() : BigDecimal.ZERO;
         }
         
-        void disableInputs() {
-            quantityField.setDisable(true);
-            costField.setDisable(true);
-            removeBtn.setVisible(false);
+        public Long getVariantId() { return variant != null ? variant.id() : null; }
+        public String getProductName() { return variant != null ? variant.productName() : ""; }
+        public String getVariantName() { return variant != null ? variant.name() : ""; }
+        public String getSku() { return variant != null ? variant.sku() : ""; }
+        public String getDisplayName() { 
+            return variant != null ? variant.productName() + " - " + variant.name() : ""; 
         }
         
-        HBox getRow() { return row; }
+        public int getQuantity() { return quantity; }
+        public void setQuantity(int quantity) { this.quantity = quantity; }
         
-        void setQuantity(int qty) { quantityField.setText(String.valueOf(qty)); }
-        void setUnitCost(BigDecimal cost) { costField.setText(cost.toString()); }
+        public BigDecimal getUnitCost() { return unitCost; }
+        public void setUnitCost(BigDecimal unitCost) { this.unitCost = unitCost; }
         
-        Long getVariantId() { return variant != null ? variant.id() : null; }
-        
-        int getQuantity() {
-            try { return Integer.parseInt(quantityField.getText()); }
-            catch (Exception e) { return 0; }
-        }
-        
-        BigDecimal getUnitCost() {
-            try { return new BigDecimal(costField.getText()); }
-            catch (Exception e) { return BigDecimal.ZERO; }
+        public BigDecimal getTotal() {
+            return unitCost.multiply(BigDecimal.valueOf(quantity));
         }
     }
 }

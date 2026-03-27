@@ -6,35 +6,81 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.purchase.PurchaseOrderFormController"
-      spacing="15"
-      alignment="TOP_LEFT">
+      spacing="20"
+      alignment="TOP_LEFT"
+      style="-fx-background-color: #f5f5f5;">
       
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <Label fx:id="titleLabel" text="Purchase Order Form" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <!-- Header -->
+    <VBox spacing="5">
+        <Label fx:id="titleLabel" text="Purchase Order Form" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Label text="Order new stock from suppliers" style="-fx-text-fill: gray; -fx-font-size: 12px;"/>
+    </VBox>
     
-    <Label text="Supplier:"/>
-    <ComboBox fx:id="supplierCombo" promptText="Select supplier"/>
+    <Separator/>
     
-    <Label text="Items:"/>
-    <TextField fx:id="searchVariantField" promptText="Search product/variant by SKU or Name and press Enter to add..." />
-    <ScrollPane fitToWidth="true" prefHeight="400" VBox.vgrow="ALWAYS">
-        <VBox fx:id="itemsBox" spacing="10">
-            <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
-            </padding>
+    <!-- Supplier Section -->
+    <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);">
+        <Label text="Supplier Information" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+        <Label text="Select the supplier for this purchase order" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Supplier:" style="-fx-min-width: 80px;"/>
+            <ComboBox fx:id="supplierCombo" promptText="Choose a supplier" prefWidth="300"/>
+        </HBox>
+    </VBox>
+    
+    <!-- Items Section -->
+    <VBox spacing="10" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);">
+        <Label text="Order Items" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+        <Label text="Add products to this purchase order" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+        
+        <!-- Search Bar -->
+        <VBox spacing="8" style="-fx-background-color: #f9f9f9; -fx-padding: 12; -fx-background-radius: 6; -fx-border-color: #e0e0e0; -fx-border-radius: 6;">
+            <Label text="Search Product / Variant" style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="searchVariantField" 
+                          promptText="Search by product name or SKU and press Enter..." 
+                          HBox.hgrow="ALWAYS"
+                          style="-fx-pref-height: 35px;"/>
+                <Button fx:id="addItemButton" text="+ Add Item" onAction="#handleAddItem" 
+                       style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 8 16; -fx-background-radius: 4; -fx-cursor: hand;"/>
+            </HBox>
         </VBox>
-    </ScrollPane>
-
-    <HBox alignment="CENTER_RIGHT" spacing="10">
-        <Label text="Total Order Cost:" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
-        <Label fx:id="totalCostLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #1976d2;"/>
-    </HBox>
+        
+        <!-- Items Table -->
+        <VBox spacing="5" VBox.vgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Order Summary" style="-fx-font-weight: bold;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="itemCountLabel" text="0 items" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+            </HBox>
+            <TableView fx:id="itemsTable" VBox.vgrow="ALWAYS" 
+                      style="-fx-border-color: #e0e0e0; -fx-border-radius: 6; -fx-background-radius: 6;">
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                </columnResizePolicy>
+            </TableView>
+        </VBox>
+    </VBox>
     
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Cancel" onAction="#handleCancel" styleClass="btn-secondary"/>
-        <Button fx:id="saveButton" text="Save" onAction="#handleSave" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 8 16; -fx-background-radius: 4;"/>
+    <Separator/>
+    
+    <!-- Footer -->
+    <HBox alignment="CENTER_RIGHT" spacing="15">
+        <Region HBox.hgrow="ALWAYS"/>
+        <VBox alignment="CENTER_RIGHT" spacing="5">
+            <Label text="Total Order Cost:" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+            <Label fx:id="totalCostLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #1976d2;"/>
+        </VBox>
+        <Separator orientation="VERTICAL" prefHeight="40"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Cancel" onAction="#handleCancel" 
+                   style="-fx-background-color: #e0e0e0; -fx-text-fill: black; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand;"/>
+            <Button fx:id="saveButton" text="Save Purchase Order" onAction="#handleSave" 
+                   style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-weight: bold;"/>
+        </HBox>
     </HBox>
 </VBox>

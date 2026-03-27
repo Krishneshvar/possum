@@ -142,7 +142,7 @@ public class ProductFlowController {
     }
 
     private void setupTable() {
-        dateCol.setCellValueFactory(new PropertyValueFactory<>("eventDate"));
+        dateCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().eventDate()));
         dateCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
@@ -151,7 +151,7 @@ public class ProductFlowController {
             }
         });
 
-        typeCol.setCellValueFactory(new PropertyValueFactory<>("eventType"));
+        typeCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().eventType()));
         typeCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -172,7 +172,7 @@ public class ProductFlowController {
             }
         });
 
-        quantityCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+        quantityCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().quantity()));
         quantityCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Integer item, boolean empty) {
@@ -187,9 +187,9 @@ public class ProductFlowController {
             }
         });
 
-        variantNameCol.setCellValueFactory(new PropertyValueFactory<>("variantName"));
-        refIdCol.setCellValueFactory(new PropertyValueFactory<>("referenceId"));
-        refTypeCol.setCellValueFactory(new PropertyValueFactory<>("referenceType"));
+        variantNameCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().variantName()));
+        refIdCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().referenceId()));
+        refTypeCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().referenceType()));
     }
 
     private void loadData() {

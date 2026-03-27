@@ -240,8 +240,8 @@ public class PurchaseService {
     }
 
     private void insertPurchaseTransaction(long purchaseOrderId, BigDecimal amount) {
-        try (Connection conn = connectionProvider.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
+        Connection conn = connectionProvider.getConnection();
+        try (PreparedStatement stmt = conn.prepareStatement(
                      "INSERT INTO transactions (purchase_order_id, amount, type, payment_method_id, status) VALUES (?, ?, ?, 1, 'completed')")) {
             stmt.setLong(1, purchaseOrderId);
             stmt.setBigDecimal(2, amount);

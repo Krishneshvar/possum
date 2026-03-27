@@ -74,11 +74,11 @@ public class SalesReportsController {
     }
 
     private void setupTable() {
-        periodCol.setCellValueFactory(new PropertyValueFactory<>("name"));
-        transactionsCol.setCellValueFactory(new PropertyValueFactory<>("totalTransactions"));
-        salesCol.setCellValueFactory(new PropertyValueFactory<>("totalSales"));
-        taxCol.setCellValueFactory(new PropertyValueFactory<>("totalTax"));
-        discountCol.setCellValueFactory(new PropertyValueFactory<>("totalDiscount"));
+        periodCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().name()));
+        transactionsCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().totalTransactions()));
+        salesCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().totalSales()));
+        taxCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().totalTax()));
+        discountCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().totalDiscount()));
         
         // Custom cell formatters for currency
         salesCol.setCellFactory(column -> new javafx.scene.control.TableCell<>() {

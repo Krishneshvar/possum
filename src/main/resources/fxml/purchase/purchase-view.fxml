@@ -9,23 +9,37 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.purchase.PurchaseController"
       spacing="20"
-      alignment="TOP_LEFT">
+      alignment="TOP_LEFT"
+      style="-fx-background-color: #f5f5f5;">
     
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="Purchase Orders" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button text="⟳ Refresh" onAction="#handleRefresh" style="-fx-background-color: #e0e0e0; -fx-text-fill: black; -fx-padding: 10 20; -fx-background-radius: 6;"/>
-        <Button fx:id="createButton" text="+ Create Purchase Order" onAction="#handleCreate" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6;"/>
-    </HBox>
+    <!-- Header Section -->
+    <VBox spacing="10">
+        <HBox alignment="CENTER_LEFT" spacing="15">
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label text="Purchase Orders" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                <Label text="Manage and track your purchase orders from suppliers" style="-fx-text-fill: gray; -fx-font-size: 12px;"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="⟳ Refresh" onAction="#handleRefresh" 
+                   style="-fx-background-color: #e0e0e0; -fx-text-fill: black; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand;"/>
+            <Button fx:id="createButton" text="+ New Purchase Order" onAction="#handleCreate" 
+                   style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-weight: bold;"/>
+        </HBox>
+        <Separator/>
+    </VBox>
     
-    <FilterBar fx:id="filterBar"/>
+    <!-- Filters -->
+    <FilterBar fx:id="filterBar" style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);"/>
     
-    <DataTableView fx:id="purchaseTable" VBox.vgrow="ALWAYS"/>
+    <!-- Data Table -->
+    <DataTableView fx:id="purchaseTable" VBox.vgrow="ALWAYS" 
+                  style="-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);"/>
     
-    <PaginationBar fx:id="paginationBar"/>
+    <!-- Pagination -->
+    <PaginationBar fx:id="paginationBar" style="-fx-background-color: white; -fx-padding: 10; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);"/>
 
 </VBox>

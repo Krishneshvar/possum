@@ -12,9 +12,14 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,20 +53,99 @@ public class PurchaseController {
     }
 
     private void setupTable() {
+        TableColumn<PurchaseOrder, String> idCol = new TableColumn<>("PO Number");
+        idCol.setCellValueFactory(cellData -> new SimpleStringProperty("#" + cellData.getValue().id()));
+        idCol.setPrefWidth(100);
+        idCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                    setStyle("-fx-font-weight: bold; -fx-text-fill: #1976d2;");
+                }
+            }
+        });
+        
         TableColumn<PurchaseOrder, String> supplierCol = new TableColumn<>("Supplier");
         supplierCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().supplierName()));
-        
-        TableColumn<PurchaseOrder, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        supplierCol.setPrefWidth(200);
+        supplierCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                    setStyle("-fx-font-weight: bold;");
+                }
+            }
+        });
         
         TableColumn<PurchaseOrder, LocalDateTime> dateCol = new TableColumn<>("Order Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().orderDate()));
+        dateCol.setPrefWidth(150);
+        dateCol.setCellFactory(col -> new TableCell<>() {
+            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                    setStyle("-fx-text-fill: gray;");
+                }
+            }
+        });
         
         TableColumn<PurchaseOrder, Integer> itemsCol = new TableColumn<>("Items");
         itemsCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().itemCount()));
+        itemsCol.setPrefWidth(80);
+        itemsCol.setStyle("-fx-alignment: CENTER;");
         
-        purchaseTable.getTableView().getColumns().addAll(supplierCol, statusCol, dateCol, itemsCol);
+        TableColumn<PurchaseOrder, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setPrefWidth(120);
+        statusCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    HBox box = new HBox(5);
+                    box.setAlignment(Pos.CENTER);
+                    
+                    Circle indicator = new Circle(4);
+                    Label label = new Label(item.toUpperCase());
+                    label.setStyle("-fx-font-size: 10px; -fx-font-weight: bold;");
+                    
+                    switch (item.toLowerCase()) {
+                        case "pending" -> {
+                            indicator.setFill(Color.ORANGE);
+                            label.setStyle(label.getStyle() + "-fx-text-fill: orange;");
+                        }
+                        case "received" -> {
+                            indicator.setFill(Color.GREEN);
+                            label.setStyle(label.getStyle() + "-fx-text-fill: green;");
+                        }
+                        case "cancelled" -> {
+                            indicator.setFill(Color.RED);
+                            label.setStyle(label.getStyle() + "-fx-text-fill: red;");
+                        }
+                    }
+                    
+                    box.getChildren().addAll(indicator, label);
+                    setGraphic(box);
+                }
+            }
+        });
         
+        purchaseTable.getTableView().getColumns().addAll(idCol, supplierCol, dateCol, itemsCol, statusCol);
         purchaseTable.addActionColumn("Actions", this::showActions);
     }
 
@@ -124,44 +208,39 @@ public class PurchaseController {
     }
 
     private void showActions(PurchaseOrder po) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Purchase Order Actions");
-        alert.setHeaderText("PO #" + po.id() + " - " + po.supplierName());
-        alert.setContentText("Choose action:");
+        ContextMenu menu = new ContextMenu();
         
-        ButtonType viewBtn = new ButtonType("View Details");
-        ButtonType editBtn = new ButtonType("Edit");
-        ButtonType receiveBtn = new ButtonType("Receive");
-        ButtonType cancelOrderBtn = new ButtonType("Cancel Order");
-        ButtonType refreshBtn = new ButtonType("Refresh List");
-        ButtonType cancelBtn = ButtonType.CANCEL;
+        MenuItem viewItem = new MenuItem("👁 View Details");
+        viewItem.setOnAction(e -> handleView(po));
+        menu.getItems().add(viewItem);
         
         if ("pending".equals(po.status())) {
-            alert.getButtonTypes().setAll(viewBtn, editBtn, receiveBtn, cancelOrderBtn, refreshBtn, cancelBtn);
-        } else {
-            alert.getButtonTypes().setAll(viewBtn, refreshBtn, cancelBtn);
+            MenuItem editItem = new MenuItem("✏ Edit Order");
+            editItem.setOnAction(e -> handleEdit(po));
+            
+            MenuItem receiveItem = new MenuItem("✅ Receive Order");
+            receiveItem.setStyle("-fx-text-fill: green;");
+            receiveItem.setOnAction(e -> handleReceive(po));
+            
+            MenuItem cancelItem = new MenuItem("❌ Cancel Order");
+            cancelItem.setStyle("-fx-text-fill: red;");
+            cancelItem.setOnAction(e -> handleCancelOrder(po));
+            
+            menu.getItems().addAll(new SeparatorMenuItem(), editItem, receiveItem, new SeparatorMenuItem(), cancelItem);
         }
         
-        alert.showAndWait().ifPresent(type -> {
-            if (type == viewBtn) {
-                handleView(po);
-            } else if (type == editBtn) {
-                handleEdit(po);
-            } else if (type == receiveBtn) {
-                handleReceive(po);
-            } else if (type == cancelOrderBtn) {
-                handleCancelOrder(po);
-            } else if (type == refreshBtn) {
-                loadPurchaseOrders();
-            }
-        });
+        MenuItem refreshItem = new MenuItem("⟳ Refresh List");
+        refreshItem.setOnAction(e -> loadPurchaseOrders());
+        menu.getItems().addAll(new SeparatorMenuItem(), refreshItem);
+        
+        menu.show(purchaseTable.getTableView().getScene().getWindow());
     }
 
     private void handleView(PurchaseOrder po) {
         Map<String, Object> params = new HashMap<>();
-        params.put("order", po);
-        params.put("mode", "view");
-        workspaceManager.openWindow("View Purchase Order", "/fxml/purchase/purchase-order-form-view.fxml", params);
+        params.put("orderId", po.id());
+        params.put("onAction", (Runnable) this::loadPurchaseOrders);
+        workspaceManager.openWindow("Purchase Order PO-" + po.id(), "/fxml/purchase/purchase-order-detail-view.fxml", params);
     }
     
     private void handleCancelOrder(PurchaseOrder po) {

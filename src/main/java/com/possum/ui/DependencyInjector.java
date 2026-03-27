@@ -197,6 +197,24 @@ public class DependencyInjector {
             );
         } else if (type.equals(com.possum.ui.auth.SessionStore.class)) {
             return new com.possum.ui.auth.SessionStore(appPaths, serviceLocator.getJsonService()); // Or instantiate properly
+        } else if (type.equals(com.possum.ui.purchase.PurchaseOrderDetailController.class)) {
+            return new com.possum.ui.purchase.PurchaseOrderDetailController(
+                purchaseService,
+                workspaceManager
+            );
+        } else if (type.equals(com.possum.ui.purchase.PurchaseOrderFormController.class)) {
+            return new com.possum.ui.purchase.PurchaseOrderFormController(
+                purchaseService,
+                supplierRepository,
+                variantRepository,
+                workspaceManager,
+                productSearchIndex
+            );
+        } else if (type.equals(com.possum.ui.purchase.PurchaseController.class)) {
+            return new com.possum.ui.purchase.PurchaseController(
+                purchaseService,
+                workspaceManager
+            );
         }
 
         System.err.println("Could not resolve dependency of type: " + type.getName());

@@ -164,74 +164,11 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
 
     @Override
     public boolean receivePurchaseOrder(long purchaseOrderId, long userId) {
-        Optional<Long> pending = queryOne(
-                "SELECT id FROM purchase_orders WHERE id = ? AND status = 'pending'",
-                rs -> rs.getLong("id"),
-                purchaseOrderId
-        );
-        if (pending.isEmpty()) {
-            throw new IllegalStateException("Purchase order not found or already processed: " + purchaseOrderId);
-        }
-
-        List<PurchaseOrderItem> items = getPurchaseOrderItems(purchaseOrderId);
-        if (items.isEmpty()) {
-            throw new IllegalStateException("Purchase order has no items: " + purchaseOrderId);
-        }
-
-        executeUpdate(
+        int rowsAffected = executeUpdate(
                 "UPDATE purchase_orders SET status = 'received', received_date = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'",
                 purchaseOrderId
         );
-
-        BigDecimal totalCost = BigDecimal.ZERO;
-        for (PurchaseOrderItem item : items) {
-            if (item.quantity() <= 0 || item.unitCost().compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalStateException("Invalid purchase order item data: " + item.id());
-            }
-            long lotId = executeInsert(
-                    """
-                    INSERT INTO inventory_lots (variant_id, quantity, unit_cost, purchase_order_item_id, created_at)
-                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                    """,
-                    item.variantId(),
-                    item.quantity(),
-                    item.unitCost(),
-                    item.id()
-            );
-            executeInsert(
-                    """
-                    INSERT INTO inventory_adjustments (variant_id, lot_id, quantity_change, reason, reference_type, reference_id, adjusted_by)
-                    VALUES (?, ?, ?, 'confirm_receive', 'purchase_order_item', ?, ?)
-                    """,
-                    item.variantId(),
-                    lotId,
-                    item.quantity(),
-                    item.id(),
-                    userId
-            );
-            executeInsert(
-                    """
-                    INSERT INTO product_flow (variant_id, event_type, quantity, reference_type, reference_id)
-                    VALUES (?, 'purchase', ?, 'purchase_order_item', ?)
-                    """,
-                    item.variantId(),
-                    item.quantity(),
-                    item.id()
-            );
-            totalCost = totalCost.add(item.unitCost().multiply(BigDecimal.valueOf(item.quantity())));
-        }
-
-        if (totalCost.compareTo(BigDecimal.ZERO) > 0) {
-            executeInsert(
-                    """
-                    INSERT INTO transactions (purchase_order_id, amount, type, payment_method_id, status)
-                    VALUES (?, ?, 'purchase', 1, 'completed')
-                    """,
-                    purchaseOrderId,
-                    totalCost.negate()
-            );
-        }
-        return true;
+        return rowsAffected > 0;
     }
 
     @Override
