@@ -53,7 +53,7 @@ public class WorkspaceManager {
             Node content = loader.load();
 
             Object controller = loader.getController();
-            if (controller instanceof Parameterizable && params != null) {
+            if (controller instanceof Parameterizable) {
                 ((Parameterizable) controller).setParameters(params);
             }
 
@@ -77,7 +77,7 @@ public class WorkspaceManager {
             javafx.scene.Parent root = loader.load();
 
             Object controller = loader.getController();
-            if (controller instanceof Parameterizable && params != null) {
+            if (controller instanceof Parameterizable) {
                 ((Parameterizable) controller).setParameters(params);
             }
 

@@ -69,7 +69,7 @@ public class ProductFormController implements Parameterizable {
             this.productId = null;
             titleLabel.setText("Add Product");
             if (variantRows.isEmpty()) {
-                addVariantRow(true);
+                addVariantRow(true, "Default");
             }
         }
     }
@@ -102,7 +102,7 @@ public class ProductFormController implements Parameterizable {
 
             if (dto.variants() != null && !dto.variants().isEmpty()) {
                 for (com.possum.domain.model.Variant v : dto.variants()) {
-                    VariantRow row = new VariantRow(Boolean.TRUE.equals(v.defaultVariant()));
+                    VariantRow row = new VariantRow(Boolean.TRUE.equals(v.defaultVariant()), null);
                     row.setVariantId(v.id());
                     row.variantNameField.setText(v.name());
                     row.skuField.setText(v.sku() != null ? v.sku() : "");
@@ -119,7 +119,7 @@ public class ProductFormController implements Parameterizable {
                     variantsContainer.getChildren().add(row.getView());
                 }
             } else {
-                addVariantRow(true);
+                addVariantRow(true, "Default");
             }
 
             if (isView) {
@@ -174,19 +174,25 @@ public class ProductFormController implements Parameterizable {
 
     @FXML
     private void handleAddVariant() {
-        addVariantRow(false);
+        addVariantRow(false, null);
     }
 
-    private void addVariantRow(boolean isDefault) {
-        VariantRow row = new VariantRow(isDefault);
+    private void addVariantRow(boolean isDefault, String name) {
+        VariantRow row = new VariantRow(isDefault, name);
         variantRows.add(row);
         variantsContainer.getChildren().add(row.getView());
     }
 
     private void removeVariantRow(VariantRow row) {
         if (variantRows.size() > 1) {
+            boolean wasDefault = row.isDefault();
             variantRows.remove(row);
             variantsContainer.getChildren().remove(row.getView());
+            
+            // If we removed the default variant, set the first remaining one as default
+            if (wasDefault && !variantRows.isEmpty()) {
+                variantRows.get(0).setDefault(true);
+            }
         }
     }
 
@@ -337,6 +343,7 @@ public class ProductFormController implements Parameterizable {
         private final TextField skuField;
         private final TextField priceField;
         private final TextField costPriceField;
+        private final TextField marginField;
         private final TextField stockAlertField;
         private final ComboBox<String> variantStatusCombo;
         private final RadioButton defaultRadio;
@@ -344,7 +351,7 @@ public class ProductFormController implements Parameterizable {
 
         private final Button removeBtn;
 
-        public VariantRow(boolean isDefault) {
+        public VariantRow(boolean isDefault, String initialName) {
             view = new VBox(10);
             view.setStyle("-fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 15;");
 
@@ -367,14 +374,25 @@ public class ProductFormController implements Parameterizable {
             headerBox.getChildren().addAll(title, defaultRadio, spacer, removeBtn);
 
             HBox row1 = new HBox(15);
-            variantNameField = createTextField("Variant Name", "e.g. Small, Red");
+            variantNameField = createTextField("Variant Name", initialName != null ? initialName : "e.g. Small, Red");
             skuField = createTextField("SKU", "Stock Keeping Unit");
             row1.getChildren().addAll(createFieldBox("Name *", variantNameField), createFieldBox("SKU", skuField));
 
             HBox row2 = new HBox(15);
             priceField = createTextField("Price", "0.00");
             costPriceField = createTextField("Cost Price", "0.00");
-            row2.getChildren().addAll(createFieldBox("Price *", priceField), createFieldBox("Cost Price *", costPriceField));
+            marginField = createTextField("Margin %", "0.00%");
+            marginField.setEditable(false);
+            marginField.setStyle("-fx-background-color: #f8fafc; -fx-text-fill: #64748b;");
+            
+            priceField.textProperty().addListener((obs, oldV, newV) -> updateMargin());
+            costPriceField.textProperty().addListener((obs, oldV, newV) -> updateMargin());
+
+            row2.getChildren().addAll(
+                createFieldBox("Price *", priceField), 
+                createFieldBox("Cost Price *", costPriceField),
+                createFieldBox("Margin %", marginField)
+            );
 
             HBox row3 = new HBox(15);
             stockAlertField = createTextField("Stock Alert Cap", "10");
@@ -384,6 +402,33 @@ public class ProductFormController implements Parameterizable {
             row3.getChildren().addAll(createFieldBox("Stock Alert", stockAlertField), createFieldBox("Status", variantStatusCombo));
 
             view.getChildren().addAll(headerBox, row1, row2, row3);
+            updateMargin();
+        }
+
+        private void updateMargin() {
+            try {
+                String priceStr = priceField.getText().trim();
+                String costStr = costPriceField.getText().trim();
+                
+                if (priceStr.isEmpty() || costStr.isEmpty()) {
+                    marginField.setText("0.00%");
+                    return;
+                }
+                
+                BigDecimal price = new BigDecimal(priceStr);
+                BigDecimal cost = new BigDecimal(costStr);
+                
+                if (price.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal margin = price.subtract(cost)
+                        .divide(price, 4, java.math.RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
+                    marginField.setText(String.format("%.2f%%", margin));
+                } else {
+                    marginField.setText("0.00%");
+                }
+            } catch (Exception e) {
+                marginField.setText("0.00%");
+            }
         }
 
         public void setReadOnly() {
@@ -391,9 +436,10 @@ public class ProductFormController implements Parameterizable {
             replaceFieldWithLabel(skuField, skuField.getText());
             replaceFieldWithLabel(priceField, priceField.getText());
             replaceFieldWithLabel(costPriceField, costPriceField.getText());
+            replaceFieldWithLabel(marginField, marginField.getText());
             replaceFieldWithLabel(stockAlertField, stockAlertField.getText());
             replaceFieldWithLabel(variantStatusCombo, variantStatusCombo.getValue());
-
+            
             defaultRadio.setDisable(true);
             defaultRadio.setStyle("-fx-opacity: 1; -fx-text-fill: black;");
 
@@ -430,6 +476,7 @@ public class ProductFormController implements Parameterizable {
         public String getStockAlert() { return stockAlertField.getText(); }
         public String getStatus() { return variantStatusCombo.getValue(); }
         public boolean isDefault() { return defaultRadio.isSelected(); }
+        public void setDefault(boolean isDefault) { defaultRadio.setSelected(isDefault); }
         public void setVariantId(Long id) { this.variantId = id; }
         public Long getVariantId() { return variantId; }
     }
