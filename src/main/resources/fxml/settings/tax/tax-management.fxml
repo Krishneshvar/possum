@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.settings.tax.TaxManagementController"
+      spacing="10">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Tax Management" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    <Label text="Configure tax profiles, categories, rules, and test calculations" style="-fx-text-fill: gray;"/>
+    
+    <Separator/>
+    
+    <TabPane fx:id="taxTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+        <Tab text="Profiles">
+            <fx:include source="tax-profiles.fxml" fx:id="taxProfiles"/>
+        </Tab>
+        <Tab text="Categories">
+            <fx:include source="tax-categories.fxml" fx:id="taxCategories"/>
+        </Tab>
+        <Tab text="Rules">
+            <fx:include source="tax-rules.fxml" fx:id="taxRules"/>
+        </Tab>
+        <Tab text="Simulator">
+            <fx:include source="tax-simulator.fxml" fx:id="taxSimulator"/>
+        </Tab>
+    </TabPane>
+
+</VBox>

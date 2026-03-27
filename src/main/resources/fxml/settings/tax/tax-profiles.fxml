@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.settings.tax.TaxProfilesController"
+      spacing="15">
+    
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <Label text="Tax Profiles" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+    
+    <TableView fx:id="profilesTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
+            <TableColumn fx:id="regionColumn" text="Region" prefWidth="100"/>
+            <TableColumn fx:id="modeColumn" text="Pricing Mode" prefWidth="120"/>
+            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+        </columns>
+    </TableView>
+    
+    <Separator/>
+    
+    <Label text="Profile Details" style="-fx-font-weight: bold;"/>
+    
+    <GridPane hgap="10" vgap="10">
+        <columnConstraints>
+            <ColumnConstraints minWidth="120" prefWidth="120"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+        
+        <Label text="Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0" promptText="e.g., GST India"/>
+        
+        <Label text="Country Code:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <TextField fx:id="countryCodeField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="e.g., IN"/>
+        
+        <Label text="Region Code:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="regionCodeField" GridPane.columnIndex="1" GridPane.rowIndex="2" promptText="Optional"/>
+        
+        <Label text="Pricing Mode:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="pricingModeCombo" GridPane.columnIndex="1" GridPane.rowIndex="3" maxWidth="Infinity"/>
+        
+        <CheckBox fx:id="activeCheckBox" text="Set as Active Profile" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+    </GridPane>
+    
+    <HBox spacing="10">
+        <Button text="Add" onAction="#handleAdd" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+        <Button text="Update" onAction="#handleUpdate" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+        <Button text="Delete" onAction="#handleDelete" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+        <Button text="Clear" onAction="#handleClear"/>
+    </HBox>
+
+</VBox>

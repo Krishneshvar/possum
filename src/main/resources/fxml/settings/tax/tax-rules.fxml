@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.settings.tax.TaxRulesController"
+      spacing="15">
+    
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Select Profile:" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="profileCombo" prefWidth="250"/>
+    </HBox>
+    
+    <Separator/>
+    
+    <Label text="Tax Rules" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+    
+    <TableView fx:id="rulesTable" VBox.vgrow="ALWAYS" prefHeight="200">
+        <columns>
+            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="150"/>
+            <TableColumn fx:id="rateColumn" text="Rate %" prefWidth="80"/>
+            <TableColumn fx:id="typeColumn" text="Type" prefWidth="100"/>
+            <TableColumn fx:id="priorityColumn" text="Priority" prefWidth="80"/>
+        </columns>
+    </TableView>
+    
+    <Separator/>
+    
+    <Label text="Rule Details" style="-fx-font-weight: bold;"/>
+    
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox spacing="10">
+            <padding>
+                <Insets top="5" right="5" bottom="5" left="5"/>
+            </padding>
+            
+            <GridPane hgap="10" vgap="10">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="120" prefWidth="120"/>
+                    <ColumnConstraints hgrow="ALWAYS"/>
+                    <ColumnConstraints minWidth="120" prefWidth="120"/>
+                    <ColumnConstraints hgrow="ALWAYS"/>
+                </columnConstraints>
+                
+                <Label text="Category:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <ComboBox fx:id="categoryCombo" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="Infinity"/>
+                
+                <Label text="Scope:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                <ComboBox fx:id="scopeCombo" GridPane.columnIndex="3" GridPane.rowIndex="0" maxWidth="Infinity"/>
+                
+                <Label text="Rate (%):" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <TextField fx:id="rateField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="e.g., 18"/>
+                
+                <Label text="Priority:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                <TextField fx:id="priorityField" GridPane.columnIndex="3" GridPane.rowIndex="1" promptText="0"/>
+                
+                <CheckBox fx:id="compoundCheckBox" text="Compound Tax" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+            </GridPane>
+            
+            <Label text="Constraints (Optional)" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+            
+            <GridPane hgap="10" vgap="10">
+                <columnConstraints>
+                    <ColumnConstraints minWidth="120" prefWidth="120"/>
+                    <ColumnConstraints hgrow="ALWAYS"/>
+                    <ColumnConstraints minWidth="120" prefWidth="120"/>
+                    <ColumnConstraints hgrow="ALWAYS"/>
+                </columnConstraints>
+                
+                <Label text="Min Price:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                <TextField fx:id="minPriceField" GridPane.columnIndex="1" GridPane.rowIndex="0" promptText="Optional"/>
+                
+                <Label text="Max Price:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                <TextField fx:id="maxPriceField" GridPane.columnIndex="3" GridPane.rowIndex="0" promptText="Optional"/>
+                
+                <Label text="Min Invoice:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                <TextField fx:id="minInvoiceField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="Optional"/>
+                
+                <Label text="Max Invoice:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                <TextField fx:id="maxInvoiceField" GridPane.columnIndex="3" GridPane.rowIndex="1" promptText="Optional"/>
+                
+                <Label text="Customer Type:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                <TextField fx:id="customerTypeField" GridPane.columnIndex="1" GridPane.rowIndex="2" promptText="Optional"/>
+                
+                <Label text="Valid From:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                <DatePicker fx:id="validFromPicker" GridPane.columnIndex="1" GridPane.rowIndex="3" maxWidth="Infinity"/>
+                
+                <Label text="Valid To:" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+                <DatePicker fx:id="validToPicker" GridPane.columnIndex="3" GridPane.rowIndex="3" maxWidth="Infinity"/>
+            </GridPane>
+        </VBox>
+    </ScrollPane>
+    
+    <HBox spacing="10">
+        <Button text="Add" onAction="#handleAdd" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+        <Button text="Update" onAction="#handleUpdate" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+        <Button text="Delete" onAction="#handleDelete" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+        <Button text="Clear" onAction="#handleClear"/>
+    </HBox>
+
+</VBox>

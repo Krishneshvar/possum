@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.settings.tax.TaxSimulatorController"
+      spacing="15">
+    
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <Label text="Tax Engine Simulator" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+    <Label text="Test tax calculations with sample data" style="-fx-text-fill: gray;"/>
+    
+    <Separator/>
+    
+    <VBox spacing="10" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-padding: 15; -fx-background-color: #f9f9f9;">
+        <Label text="Simulation Parameters" style="-fx-font-weight: bold;"/>
+        
+        <GridPane hgap="10" vgap="10">
+            <columnConstraints>
+                <ColumnConstraints minWidth="120" prefWidth="120"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+            
+            <Label text="Unit Price:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="amountField" GridPane.columnIndex="1" GridPane.rowIndex="0" promptText="Enter amount"/>
+            
+            <Label text="Quantity:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="quantityField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="Enter quantity"/>
+            
+            <Label text="Tax Category:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <ComboBox fx:id="categoryCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" maxWidth="Infinity"/>
+        </GridPane>
+        
+        <HBox spacing="10">
+            <Button fx:id="calculateButton" text="Calculate Tax" onAction="#handleCalculate" 
+                    style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 10 20;"/>
+            <Button text="Clear" onAction="#handleClear" style="-fx-padding: 10 20;"/>
+        </HBox>
+    </VBox>
+    
+    <Label text="Calculation Result" style="-fx-font-weight: bold;"/>
+    
+    <TextArea fx:id="resultArea" VBox.vgrow="ALWAYS" editable="false" 
+              style="-fx-font-family: 'Courier New'; -fx-font-size: 12px;"
+              promptText="Results will appear here after calculation..."/>
+
+</VBox>

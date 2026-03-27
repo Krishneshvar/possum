@@ -146,6 +146,8 @@ public class DependencyInjector {
             return applicationModule.getCustomerService();
         } else if (type.equals(ToastService.class)) {
             return toastService;
+        } else if (type.equals(com.possum.infrastructure.serialization.JsonService.class)) {
+            return serviceLocator.getJsonService();
         }
 
         // Repositories

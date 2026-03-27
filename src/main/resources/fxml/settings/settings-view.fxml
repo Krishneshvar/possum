@@ -59,13 +59,10 @@
         
         <Tab text="Tax" closable="false">
             <VBox spacing="15" style="-fx-padding: 20;">
-                <Label text="Tax Profiles" style="-fx-font-weight: bold;"/>
-                <ListView fx:id="taxProfilesList" prefHeight="200"/>
-                <HBox spacing="10">
-                    <Button text="Add Profile" onAction="#handleAddTaxProfile"/>
-                    <Button text="Edit Profile" onAction="#handleEditTaxProfile"/>
-                    <Button text="Delete Profile" onAction="#handleDeleteTaxProfile"/>
-                </HBox>
+                <Label text="Tax Configuration" style="-fx-font-weight: bold;"/>
+                <Label text="Manage tax profiles, categories, and rules for your business" style="-fx-text-fill: gray;"/>
+                <Button fx:id="manageTaxButton" text="Open Tax Management" onAction="#handleManageTax" 
+                        style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20;"/>
             </VBox>
         </Tab>
     </TabPane>

@@ -1,12 +1,12 @@
 package com.possum.ui.settings;
 
-import com.possum.domain.model.TaxProfile;
+import com.possum.application.taxes.TaxManagementService;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.PrinterService;
+import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
 import com.possum.shared.dto.BillSettings;
 import com.possum.shared.dto.GeneralSettings;
-import com.possum.ui.common.controls.FormDialog;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -22,27 +22,30 @@ public class SettingsController {
     @FXML private TextField paperWidthField;
     @FXML private TextArea footerNoteArea;
     @FXML private ComboBox<String> printerCombo;
-    @FXML private ListView<TaxProfile> taxProfilesList;
+    @FXML private Button manageTaxButton;
     
     private SettingsStore settingsStore;
     private PrinterService printerService;
     private TaxRepository taxRepository;
+    private TaxManagementService taxService;
+    private JsonService jsonService;
     private String selectedPrinter;
 
-    public SettingsController(SettingsStore settingsStore, PrinterService printerService, TaxRepository taxRepository) {
-this.settingsStore = settingsStore;
+    public SettingsController(SettingsStore settingsStore, PrinterService printerService, 
+                            TaxRepository taxRepository, JsonService jsonService) {
+        this.settingsStore = settingsStore;
         this.printerService = printerService;
         this.taxRepository = taxRepository;
+        this.jsonService = jsonService;
+        this.taxService = new TaxManagementService(taxRepository);
     }
 
     @FXML
     public void initialize() {
-        
         setupCurrencies();
         loadGeneralSettings();
         loadBillSettings();
         loadPrinters();
-        loadTaxProfiles();
     }
 
     private void setupCurrencies() {
@@ -71,18 +74,6 @@ this.settingsStore = settingsStore;
             printerCombo.setValue(printers.get(0));
             selectedPrinter = printers.get(0);
         }
-    }
-
-    private void loadTaxProfiles() {
-        List<TaxProfile> profiles = taxRepository.getAllTaxProfiles();
-        taxProfilesList.setItems(FXCollections.observableArrayList(profiles));
-        taxProfilesList.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(TaxProfile item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.name() + (item.active() ? " (Active)" : ""));
-            }
-        });
     }
 
     @FXML
@@ -147,86 +138,12 @@ this.settingsStore = settingsStore;
     }
 
     @FXML
-    private void handleAddTaxProfile() {
-        FormDialog.show("Add Tax Profile", dialog -> {
-            dialog.addTextField("name", "Profile Name", "");
-            dialog.addCheckBox("active", "Set as Active", false);
-        }, values -> {
-            try {
-                TaxProfile profile = new TaxProfile(
-                    null,
-                    (String) values.get("name"),
-                    "US",
-                    null,
-                    "inclusive",
-                    (Boolean) values.get("active"),
-                    null, null
-                );
-                
-                taxRepository.createTaxProfile(profile);
-                NotificationService.success("Tax profile created");
-                loadTaxProfiles();
-            } catch (Exception e) {
-                NotificationService.error("Failed to create profile: " + e.getMessage());
-            }
-        });
-    }
-
-    @FXML
-    private void handleEditTaxProfile() {
-        TaxProfile selected = taxProfilesList.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            NotificationService.warning("Select a tax profile");
-            return;
+    private void handleManageTax() {
+        try {
+            com.possum.ui.settings.tax.TaxManagementWindow.show(taxRepository, jsonService);
+        } catch (Exception e) {
+            NotificationService.error("Failed to open tax management: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-        FormDialog.show("Edit Tax Profile", dialog -> {
-            dialog.addTextField("name", "Profile Name", selected.name());
-            dialog.addCheckBox("active", "Set as Active", selected.active());
-        }, values -> {
-            try {
-                TaxProfile profile = new TaxProfile(
-                    selected.id(),
-                    (String) values.get("name"),
-                    selected.countryCode(),
-                    selected.regionCode(),
-                    selected.pricingMode(),
-                    (Boolean) values.get("active"),
-                    null, null
-                );
-                
-                taxRepository.updateTaxProfile(selected.id(), profile);
-                NotificationService.success("Tax profile updated");
-                loadTaxProfiles();
-            } catch (Exception e) {
-                NotificationService.error("Failed to update profile: " + e.getMessage());
-            }
-        });
-    }
-
-    @FXML
-    private void handleDeleteTaxProfile() {
-        TaxProfile selected = taxProfilesList.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            NotificationService.warning("Select a tax profile");
-            return;
-        }
-        
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete Tax Profile");
-        confirm.setHeaderText("Delete " + selected.name() + "?");
-        confirm.setContentText("This action cannot be undone.");
-        
-        confirm.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                try {
-                    taxRepository.deleteTaxProfile(selected.id());
-                    NotificationService.success("Tax profile deleted");
-                    loadTaxProfiles();
-                } catch (Exception e) {
-                    NotificationService.error("Failed to delete profile: " + e.getMessage());
-                }
-            }
-        });
     }
 }
