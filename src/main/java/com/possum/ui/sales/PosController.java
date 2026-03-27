@@ -168,8 +168,6 @@ public class PosController {
         cartTable.getSelectionModel().setCellSelectionEnabled(true);
         cartTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         
-        // Add total row at the bottom of Price column
-        addPriceColumnTotal();
         
         // Auto-edit on cell selection for editable columns
         cartTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newItem) -> {
@@ -220,24 +218,6 @@ public class PosController {
 
 
 
-    private void addPriceColumnTotal() {
-        // Create a label to display the total price
-        Label totalPriceLabel = new Label();
-        totalPriceLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 13px; -fx-padding: 8 12;");
-        totalPriceLabel.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-        totalPriceLabel.setMaxWidth(Double.MAX_VALUE);
-        
-        // Bind the label text to the sum of all prices
-        totalPriceLabel.textProperty().bind(Bindings.createStringBinding(() -> {
-            BigDecimal total = currentBill.items.stream()
-                .map(item -> item.pricePerUnit.multiply(BigDecimal.valueOf(item.quantity)))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-            return currencyFormat.format(total);
-        }, currentBill.items));
-        
-        // Set the label as the graphic for the Price column
-        colPrice.setGraphic(totalPriceLabel);
-    }
 
     private void bindTableHeight() {
         // Remove fixed height binding - let table grow to fill available space
