@@ -19,6 +19,7 @@ public class CategoriesController {
 
     @FXML private TreeView<String> categoryTreeView;
     @FXML private TableView<Category> categoryTableView;
+    @FXML private javafx.scene.control.Button addButton;
     @FXML private TableColumn<Category, String> idCol;
     @FXML private TableColumn<Category, String> nameCol;
     @FXML private TableColumn<Category, String> parentCol;
@@ -33,6 +34,9 @@ public class CategoriesController {
 
     @FXML
     public void initialize() {
+        if (addButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.CATEGORIES_MANAGE);
+        }
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().id())));
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
 

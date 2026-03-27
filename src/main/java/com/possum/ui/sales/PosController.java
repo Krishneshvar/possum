@@ -98,6 +98,10 @@ public class PosController {
 
     @FXML
     public void initialize() {
+        if (completeButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(completeButton, com.possum.application.auth.Permissions.SALES_CREATE);
+        }
+
         // Init Bills
         for (int i = 0; i < MAX_BILLS; i++) {
             bills.add(new BillState(i));

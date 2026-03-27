@@ -18,19 +18,30 @@ public class RouteRegistry {
 
         // Products & Inventory
         register("products", "/fxml/products/products-view.fxml", "products.view");
-        register("product-form", "/fxml/products/product-form-view.fxml", "products.view");
+        register("product-form", "/fxml/products/product-form-view.fxml", "products.manage");
         register("inventory", "/fxml/inventory/inventory-view.fxml", "inventory.view");
+        register("variants", "/fxml/inventory/variants-view.fxml", "inventory.view");
+        register("categories", "/fxml/categories/categories-view.fxml", "categories.view");
+        register("stock-history", "/fxml/inventory/stock-history-view.fxml", "inventory.view");
 
         // Sales & Commercial
         register("sales", "/fxml/sales/pos-view.fxml", "sales.create");
+        register("sales-history", "/fxml/sales/sales-history-view.fxml", "sales.view");
         register("transactions", "/fxml/transactions/transactions-view.fxml", "transactions.view");
         register("returns", "/fxml/returns/returns-view.fxml", "returns.view");
 
         // Purchase
         register("purchase", "/fxml/purchase/purchase-view.fxml", "purchase.view");
+        register("suppliers", "/fxml/purchase/suppliers-view.fxml", "suppliers.view");
 
-        // Reports
-        register("reports-sales", "/fxml/reports/reports-view.fxml", "reports.view");
+        // People
+        register("users", "/fxml/people/users-view.fxml", "users.view");
+        register("customers", "/fxml/people/customers-view.fxml", "customers.view");
+
+        // Reports & Insights
+        register("reports-sales", "/fxml/reports/sales-reports-view.fxml", "reports.view");
+        register("reports-analytics", "/fxml/reports/sales-analytics-view.fxml", "reports.view");
+        register("product-flow", "/fxml/insights/product-flow-view.fxml", "reports.view");
         register("audit-log", "/fxml/audit/audit-view.fxml", "audit.view");
 
         // System

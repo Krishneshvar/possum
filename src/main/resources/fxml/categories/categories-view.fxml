@@ -17,7 +17,7 @@
             <Label text="Manage product classifications and hierarchy" styleClass="view-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS" />
-        <Button text="+ Add Category" onAction="#handleAddCategory" styleClass="action-button, primary-button" accessibleText="Create a new category">
+        <Button fx:id="addButton" text="+ Add Category" onAction="#handleAddCategory" styleClass="action-button, primary-button" accessibleText="Create a new category">
             <tooltip>
                 <Tooltip text="Add a new category" />
             </tooltip>

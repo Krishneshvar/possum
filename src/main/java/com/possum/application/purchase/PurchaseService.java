@@ -62,6 +62,7 @@ public class PurchaseService {
     }
 
     public PurchaseOrderDetail createPurchaseOrder(long supplierId, long createdBy, List<PurchaseOrderItemRequest> items) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PURCHASE_MANAGE);
         validateSupplier(supplierId);
         validateItems(items);
 
@@ -90,6 +91,7 @@ public class PurchaseService {
     }
 
     public PurchaseOrderDetail updatePurchaseOrder(long id, long supplierId, long updatedBy, List<PurchaseOrderItemRequest> items) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PURCHASE_MANAGE);
         PurchaseOrderDetail existingPo = getPurchaseOrderById(id);
         if (!PurchaseStatus.PENDING.dbValue().equals(existingPo.purchaseOrder().status())) {
             throw new ValidationException("Only pending Purchase Orders can be updated");
@@ -122,6 +124,7 @@ public class PurchaseService {
     }
 
     public PurchaseOrderDetail receivePurchaseOrder(long id, long userId) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PURCHASE_MANAGE);
         PurchaseOrderDetail existingPo = getPurchaseOrderById(id);
         if (!PurchaseStatus.PENDING.dbValue().equals(existingPo.purchaseOrder().status())) {
             throw new ValidationException("Only pending Purchase Orders can be received");
@@ -182,6 +185,7 @@ public class PurchaseService {
     }
 
     public PurchaseOrderDetail cancelPurchaseOrder(long id, long userId) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PURCHASE_MANAGE);
         PurchaseOrderDetail existingPo = getPurchaseOrderById(id);
         if (!PurchaseStatus.PENDING.dbValue().equals(existingPo.purchaseOrder().status())) {
             throw new ValidationException("Only pending Purchase Orders can be cancelled");

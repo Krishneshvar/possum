@@ -59,6 +59,8 @@ public class SaleDetailController implements Parameterizable {
     @FXML private Label paidAmountLabel;
     @FXML private Label balanceTypeLabel;
     @FXML private Label balanceAmountLabel;
+    @FXML private javafx.scene.control.Button editButton;
+    @FXML private javafx.scene.control.Button returnButton;
 
     private final SalesService salesService;
     private final WorkspaceManager workspaceManager;
@@ -82,6 +84,12 @@ public class SaleDetailController implements Parameterizable {
 
     @FXML
     public void initialize() {
+        if (editButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(editButton, com.possum.application.auth.Permissions.SALES_MANAGE);
+        }
+        if (returnButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(returnButton, com.possum.application.auth.Permissions.SALES_REFUND);
+        }
         setupActiveItemsTable();
         setupReturnedItemsTable();
     }
