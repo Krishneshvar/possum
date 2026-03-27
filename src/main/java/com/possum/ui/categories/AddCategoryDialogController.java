@@ -3,24 +3,27 @@ package com.possum.ui.categories;
 import com.possum.application.categories.CategoryService;
 import com.possum.domain.model.Category;
 import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.ui.navigation.Parameterizable;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import javafx.scene.control.*;
 import javafx.util.StringConverter;
 
 import java.util.List;
+import java.util.Map;
 
-public class AddCategoryDialogController {
+public class AddCategoryDialogController implements Parameterizable {
 
+    @FXML private Label titleLabel;
+    @FXML private Label subtitleLabel;
     @FXML private TextField nameField;
     @FXML private ComboBox<Category> parentCategoryComboBox;
+    @FXML private Button saveButton;
 
     private final CategoryService categoryService;
     private final WorkspaceManager workspaceManager;
+    private Category editingCategory;
 
     public AddCategoryDialogController(CategoryService categoryService, WorkspaceManager workspaceManager) {
         this.categoryService = categoryService;
@@ -44,9 +47,43 @@ public class AddCategoryDialogController {
         Platform.runLater(this::loadCategories);
     }
 
+    @Override
+    public void setParameters(Map<String, Object> params) {
+        if (params != null && params.containsKey("category")) {
+            this.editingCategory = (Category) params.get("category");
+            updateUIForEdit();
+        }
+    }
+
+    private void updateUIForEdit() {
+        if (titleLabel != null) titleLabel.setText("Edit Category");
+        if (subtitleLabel != null) subtitleLabel.setText("Update existing category details");
+        if (saveButton != null) {
+            saveButton.setText("Update Category");
+            if (saveButton.getTooltip() != null) {
+                saveButton.getTooltip().setText("Save changes to the category");
+            }
+        }
+        
+        if (editingCategory != null) {
+            nameField.setText(editingCategory.name());
+        }
+    }
+
     private void loadCategories() {
         List<Category> allCategories = categoryService.getAllCategories();
+        // Remove the current category from the parent possibilities if editing
+        if (editingCategory != null) {
+            allCategories.removeIf(c -> c.id().equals(editingCategory.id()));
+        }
         parentCategoryComboBox.setItems(FXCollections.observableArrayList(allCategories));
+
+        if (editingCategory != null && editingCategory.parentId() != null) {
+            allCategories.stream()
+                    .filter(c -> c.id().equals(editingCategory.parentId()))
+                    .findFirst()
+                    .ifPresent(parentCategoryComboBox::setValue);
+        }
     }
 
     @FXML
@@ -61,10 +98,15 @@ public class AddCategoryDialogController {
         Long parentId = selectedParent != null ? selectedParent.id() : null;
 
         try {
-            categoryService.createCategory(name.trim(), parentId);
+            if (editingCategory == null) {
+                categoryService.createCategory(name.trim(), parentId);
+            } else {
+                categoryService.updateCategory(editingCategory.id(), name.trim(), parentId);
+            }
             nameField.getScene().getWindow().hide();
         } catch (Exception e) {
-            showAlert("Error", "Failed to create category: " + e.getMessage());
+            String action = editingCategory == null ? "create" : "update";
+            showAlert("Error", "Failed to " + action + " category: " + e.getMessage());
         }
     }
 

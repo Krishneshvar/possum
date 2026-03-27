@@ -20,6 +20,7 @@ public class CategoriesController {
     @FXML private TreeView<String> categoryTreeView;
     @FXML private TableView<Category> categoryTableView;
     @FXML private javafx.scene.control.Button addButton;
+    @FXML private javafx.scene.control.Button editButton;
     @FXML private TableColumn<Category, String> idCol;
     @FXML private TableColumn<Category, String> nameCol;
     @FXML private TableColumn<Category, String> parentCol;
@@ -36,6 +37,13 @@ public class CategoriesController {
     public void initialize() {
         if (addButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.CATEGORIES_MANAGE);
+        }
+        if (editButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(editButton, com.possum.application.auth.Permissions.CATEGORIES_MANAGE);
+            editButton.setDisable(true);
+            categoryTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                editButton.setDisable(newVal == null);
+            });
         }
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().id())));
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
@@ -85,5 +93,16 @@ public class CategoriesController {
     private void handleAddCategory() {
         workspaceManager.showDialog("Add Category", "/fxml/categories/add-category-dialog.fxml", null);
         loadData();
+    }
+
+    @FXML
+    private void handleEditCategory() {
+        Category selected = categoryTableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            java.util.Map<String, Object> params = new java.util.HashMap<>();
+            params.put("category", selected);
+            workspaceManager.showDialog("Edit Category", "/fxml/categories/add-category-dialog.fxml", params);
+            loadData();
+        }
     }
 }

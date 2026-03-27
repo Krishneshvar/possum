@@ -17,8 +17,8 @@
     <VBox spacing="24" VBox.vgrow="ALWAYS">
         <!-- Header -->
         <VBox spacing="8">
-            <Label text="Add Category" styleClass="view-title" style="-fx-font-size: 20px;"/>
-            <Label text="Create a new product classification" styleClass="view-subtitle"/>
+            <Label fx:id="titleLabel" text="Add Category" styleClass="view-title" style="-fx-font-size: 20px;"/>
+            <Label fx:id="subtitleLabel" text="Create a new product classification" styleClass="view-subtitle"/>
         </VBox>
 
         <!-- Form Fields -->
@@ -43,7 +43,7 @@
                     <Tooltip text="Discard and close"/>
                 </tooltip>
             </Button>
-            <Button text="Save Category" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save new category">
+            <Button fx:id="saveButton" text="Save Category" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save new category">
                 <tooltip>
                     <Tooltip text="Create the category"/>
                 </tooltip>
