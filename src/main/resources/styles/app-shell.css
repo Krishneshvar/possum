@@ -272,8 +272,9 @@
 }
 
 .toast-success {
-    -fx-background-color: #f0fdf4; /* Light Emerald */
-    -fx-border-color: #10b981; /* Emerald-500 */
+    -fx-background-color: #ecfdf5 !important; /* Fully opaque emerald light */
+    -fx-border-color: #10b981 !important;
+    -fx-opacity: 1.0 !important;
 }
 
 .toast-success .toast-icon {
@@ -281,12 +282,13 @@
 }
 
 .toast-success .toast-message {
-    -fx-text-fill: #166534;
+    -fx-text-fill: #064e3b;
 }
 
 .toast-error {
-    -fx-background-color: #fef2f2; /* Light Red */
-    -fx-border-color: #ef4444; /* Red-500 */
+    -fx-background-color: #fef2f2 !important; /* Fully opaque red light */
+    -fx-border-color: #ef4444 !important;
+    -fx-opacity: 1.0 !important;
 }
 
 .toast-error .toast-icon {
@@ -298,8 +300,9 @@
 }
 
 .toast-info {
-    -fx-background-color: #eff6ff; /* Light Blue */
-    -fx-border-color: #3b82f6; /* Blue-500 */
+    -fx-background-color: #eff6ff !important; /* Fully opaque blue light */
+    -fx-border-color: #3b82f6 !important;
+    -fx-opacity: 1.0 !important;
 }
 
 .toast-info .toast-icon {
@@ -307,5 +310,5 @@
 }
 
 .toast-info .toast-message {
-    -fx-text-fill: #1e40af;
+    -fx-text-fill: #1e3a8a;
 }

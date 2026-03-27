@@ -67,13 +67,14 @@ public class NotificationService {
             label.setWrapText(true);
             label.getStyleClass().add("toast-message");
 
+            toastBody.getStylesheets().add(NotificationService.class.getResource("/styles/app-shell.css").toExternalForm());
             toastBody.getChildren().addAll(icon, label);
             popup.getContent().add(toastBody);
             popup.setAutoHide(true);
 
             popup.setOnShown(e -> {
                 double x = stage.getX() + (stage.getWidth() / 2) - (toastBody.getWidth() / 2);
-                double y = stage.getY() + stage.getHeight() - toastBody.getHeight() - 60;
+                double y = stage.getY() + 70; // Position below the navbar at the top
                 popup.setX(x);
                 popup.setY(y);
             });

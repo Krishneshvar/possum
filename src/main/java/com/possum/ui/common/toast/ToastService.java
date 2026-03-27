@@ -84,6 +84,7 @@ public class ToastService {
             label.setWrapText(true);
             label.getStyleClass().add("toast-message");
 
+            toastBody.getStylesheets().add(getClass().getResource("/styles/app-shell.css").toExternalForm());
             toastBody.getChildren().addAll(icon, label);
             popup.getContent().add(toastBody);
 
@@ -93,7 +94,7 @@ public class ToastService {
             // Positioning logic after popup is shown (to get width/height)
             popup.setOnShown(e -> {
                 double x = mainStage.getX() + (mainStage.getWidth() / 2) - (toastBody.getWidth() / 2);
-                double y = mainStage.getY() + mainStage.getHeight() - toastBody.getHeight() - 60;
+                double y = mainStage.getY() + 70; // Position below the navbar at the top
                 popup.setX(x);
                 popup.setY(y);
             });
