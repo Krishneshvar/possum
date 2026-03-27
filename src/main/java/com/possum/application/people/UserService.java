@@ -31,12 +31,14 @@ public class UserService {
     }
 
     public User createUser(String name, String username, String password, boolean active, List<Long> roleIds) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         String hashedPassword = passwordHasher.hashPassword(password);
         User newUser = new User(null, name, username, hashedPassword, active, LocalDateTime.now(), LocalDateTime.now(), null);
         return userRepository.insertUserWithRoles(newUser, roleIds);
     }
 
     public User updateUser(long id, String name, String username, String password, boolean active, List<Long> roleIds) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         User existingUser = userRepository.findUserById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -50,6 +52,7 @@ public class UserService {
     }
 
     public void deleteUser(long id) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         if (!userRepository.softDeleteUser(id)) {
             throw new RuntimeException("Failed to delete user or user not found");
         }
@@ -72,6 +75,7 @@ public class UserService {
     }
 
     public void assignUserRoles(long userId, List<Long> roleIds) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         userRepository.assignUserRoles(userId, roleIds);
     }
 
@@ -80,6 +84,7 @@ public class UserService {
     }
 
     public void setUserPermission(long userId, long permissionId, boolean granted) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         userRepository.setUserPermission(userId, permissionId, granted);
     }
 }

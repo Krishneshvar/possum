@@ -25,6 +25,7 @@ public class UsersController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<User> usersTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private javafx.scene.control.Button addButton;
     
     private final UserService userService;
     private final WorkspaceManager workspaceManager;
@@ -37,6 +38,9 @@ public class UsersController {
 
     @FXML
     public void initialize() {
+        if (addButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.USERS_MANAGE);
+        }
         setupTable();
         setupFilters();
         loadUsers();
@@ -116,7 +120,15 @@ public class UsersController {
         ButtonType deleteBtn = new ButtonType("Delete");
         ButtonType cancelBtn = ButtonType.CANCEL;
         
-        alert.getButtonTypes().setAll(editBtn, rolesBtn, deleteBtn, cancelBtn);
+        java.util.List<javafx.scene.control.ButtonType> buttons = new java.util.ArrayList<>();
+        if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.USERS_MANAGE)) {
+            buttons.add(editBtn);
+            buttons.add(rolesBtn);
+            buttons.add(deleteBtn);
+        }
+        buttons.add(cancelBtn);
+
+        alert.getButtonTypes().setAll(buttons);
         
         alert.showAndWait().ifPresent(type -> {
             if (type == editBtn) {

@@ -146,6 +146,7 @@ public class SupplierFormController implements Parameterizable {
 
     @FXML
     private void handleSave() {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
         try {
             validateInputs();
 

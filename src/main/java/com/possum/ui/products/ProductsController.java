@@ -28,6 +28,7 @@ public class ProductsController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<Product> productsTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private javafx.scene.control.Button addButton;
     
     private final ProductService productService;
     private final CategoryService categoryService;
@@ -45,6 +46,9 @@ public class ProductsController {
 
     @FXML
     public void initialize() {
+        if (addButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
+        }
         setupTable();
         setupFilters();
         loadProducts();

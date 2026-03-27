@@ -25,6 +25,7 @@ public class CustomersController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<Customer> customersTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private javafx.scene.control.Button addButton;
     
     private final CustomerService customerService;
     private final WorkspaceManager workspaceManager;
@@ -37,6 +38,9 @@ public class CustomersController {
 
     @FXML
     public void initialize() {
+        if (addButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
+        }
         setupTable();
         setupFilters();
         loadCustomers();
@@ -128,7 +132,14 @@ public class CustomersController {
         ButtonType deleteBtn = new ButtonType("Delete");
         ButtonType cancelBtn = ButtonType.CANCEL;
         
-        alert.getButtonTypes().setAll(editBtn, deleteBtn, cancelBtn);
+        java.util.List<javafx.scene.control.ButtonType> buttons = new java.util.ArrayList<>();
+        if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE)) {
+            buttons.add(editBtn);
+            buttons.add(deleteBtn);
+        }
+        buttons.add(cancelBtn);
+
+        alert.getButtonTypes().setAll(buttons);
         
         alert.showAndWait().ifPresent(type -> {
             if (type == editBtn) {

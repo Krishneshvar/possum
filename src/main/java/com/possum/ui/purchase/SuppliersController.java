@@ -25,6 +25,7 @@ public class SuppliersController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<Supplier> suppliersTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private javafx.scene.control.Button createButton;
     
     private SupplierRepository supplierRepository;
     private WorkspaceManager workspaceManager;
@@ -38,6 +39,9 @@ public class SuppliersController {
 
     @FXML
     public void initialize() {
+        if (createButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(createButton, com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
+        }
         setupTable();
         setupFilters();
         loadSuppliers();
@@ -112,6 +116,7 @@ public class SuppliersController {
 
     @FXML
     private void handleCreate() {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
         Map<String, Object> params = new HashMap<>();
         params.put("onSave", (Runnable) this::loadSuppliers);
         workspaceManager.openWindow("Add Supplier", "/fxml/purchase/supplier-form-view.fxml", params);
@@ -142,6 +147,7 @@ public class SuppliersController {
     }
 
     private void handleEdit(Supplier supplier) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
         Map<String, Object> params = new HashMap<>();
         params.put("supplierId", supplier.id());
         params.put("onSave", (Runnable) this::loadSuppliers);
@@ -149,6 +155,7 @@ public class SuppliersController {
     }
 
     private void handleDelete(Supplier supplier) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Delete Supplier");
         confirm.setHeaderText("Delete " + supplier.name() + "?");

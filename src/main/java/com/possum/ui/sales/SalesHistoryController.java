@@ -146,6 +146,8 @@ public class SalesHistoryController {
                         btnView.setOnAction(e -> handleView(getTableRow().getItem()));
                         btnPrint.setOnAction(e -> handlePrint(getTableRow().getItem()));
                         btnCancel.setOnAction(e -> handleCancel(getTableRow().getItem()));
+
+                        com.possum.ui.common.UIPermissionUtil.requirePermission(btnCancel, com.possum.application.auth.Permissions.SALES_MANAGE);
                     }
 
                     @Override
@@ -155,7 +157,9 @@ public class SalesHistoryController {
                             setGraphic(null);
                         } else {
                             Sale sale = getTableRow().getItem();
-                            btnCancel.setVisible(!"cancelled".equals(sale.status()) && !"refunded".equals(sale.status()));
+                            if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.SALES_MANAGE)) {
+                                btnCancel.setVisible(!"cancelled".equals(sale.status()) && !"refunded".equals(sale.status()));
+                            }
                             setGraphic(pane);
                         }
                     }

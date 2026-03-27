@@ -35,6 +35,7 @@ public class ReturnsController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<Return> returnsTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private javafx.scene.control.Button createReturnButton;
     
     private final ReturnsService returnsService;
     private final SalesService salesService;
@@ -52,6 +53,9 @@ public class ReturnsController {
 
     @FXML
     public void initialize() {
+        if (createReturnButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(createReturnButton, com.possum.application.auth.Permissions.RETURNS_MANAGE);
+        }
         
         setupTable();
         setupFilters();

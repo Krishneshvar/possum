@@ -41,6 +41,7 @@ public class ProductService {
     }
 
     public long createProductWithVariants(CreateProductCommand command) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
         if (command.variants() == null || command.variants().isEmpty()) {
             throw new ValidationException("At least one variant is required");
         }
@@ -110,6 +111,7 @@ public class ProductService {
     }
 
     public void updateProduct(long productId, UpdateProductCommand command) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
         transactionManager.runInTransaction(() -> {
             Product oldProduct = productRepository.findProductById(productId)
                     .orElseThrow(() -> new NotFoundException("Product not found"));
@@ -193,6 +195,7 @@ public class ProductService {
     }
 
     public void deleteProduct(long id, long userId) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
         transactionManager.runInTransaction(() -> {
             Product oldProduct = productRepository.findProductById(id)
                     .orElseThrow(() -> new NotFoundException("Product not found"));

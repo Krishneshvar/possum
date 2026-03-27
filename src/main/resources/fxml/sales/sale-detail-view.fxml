@@ -29,9 +29,9 @@
         </VBox>
         
         <HBox spacing="10">
-            <Button text="Print Receipt" onAction="#handlePrint" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-cursor: hand; -fx-padding: 8 15;"/>
-            <Button text="Edit Bill" onAction="#handleEdit" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-cursor: hand; -fx-padding: 8 15;"/>
-            <Button text="Return Items" onAction="#handleReturn" 
+            <Button fx:id="printButton" text="Print Receipt" onAction="#handlePrint" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-cursor: hand; -fx-padding: 8 15;"/>
+            <Button fx:id="editButton" text="Edit Bill" onAction="#handleEdit" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-cursor: hand; -fx-padding: 8 15;"/>
+            <Button fx:id="returnButton" text="Return Items" onAction="#handleReturn"
                     style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 8 15; -fx-font-weight: bold;"/>
         </HBox>
     </HBox>

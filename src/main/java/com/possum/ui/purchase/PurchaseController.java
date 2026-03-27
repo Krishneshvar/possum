@@ -23,6 +23,7 @@ public class PurchaseController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<PurchaseOrder> purchaseTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private javafx.scene.control.Button createButton;
     
     private PurchaseService purchaseService;
     private WorkspaceManager workspaceManager;
@@ -38,6 +39,9 @@ public class PurchaseController {
 
     @FXML
     public void initialize() {
+        if (createButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(createButton, com.possum.application.auth.Permissions.PURCHASE_MANAGE);
+        }
         setupTable();
         setupFilters();
         loadPurchaseOrders();

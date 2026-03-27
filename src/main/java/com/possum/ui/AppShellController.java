@@ -146,38 +146,42 @@ public class AppShellController {
     }
 
     private void buildNavigation() {
-        createNavButton("Dashboard", "bx-home", "Dashboard", "/fxml/dashboard/dashboard-view.fxml");
-        createNavMenu("Inventory", "bx-package", new String[][]{
-            {"Products", "/fxml/products/products-view.fxml"},
-            {"Variants", "/fxml/inventory/variants-view.fxml"},
-            {"Categories", "/fxml/categories/categories-view.fxml"},
-            {"Stock", "/fxml/inventory/inventory-view.fxml"},
-            {"Stock History", "/fxml/inventory/stock-history-view.fxml"}
+        createNavButton("Dashboard", "bx-home", "Dashboard", "/fxml/dashboard/dashboard-view.fxml", null);
+        createNavMenu("Inventory", "bx-package", new Object[][]{
+            {"Products", "/fxml/products/products-view.fxml", com.possum.application.auth.Permissions.PRODUCTS_VIEW},
+            {"Variants", "/fxml/inventory/variants-view.fxml", com.possum.application.auth.Permissions.INVENTORY_VIEW},
+            {"Categories", "/fxml/categories/categories-view.fxml", com.possum.application.auth.Permissions.CATEGORIES_VIEW},
+            {"Stock", "/fxml/inventory/inventory-view.fxml", com.possum.application.auth.Permissions.INVENTORY_VIEW},
+            {"Stock History", "/fxml/inventory/stock-history-view.fxml", com.possum.application.auth.Permissions.INVENTORY_VIEW}
         });
-        createNavMenu("Sales", "bx-cart", new String[][]{
-            {"Point of Sale", "/fxml/sales/pos-view.fxml"},
-            {"Bill History", "/fxml/sales/sales-history-view.fxml"},
-            {"Transactions", "/fxml/transactions/transactions-view.fxml"},
-            {"Returns", "/fxml/returns/returns-view.fxml"}
+        createNavMenu("Sales", "bx-cart", new Object[][]{
+            {"Point of Sale", "/fxml/sales/pos-view.fxml", com.possum.application.auth.Permissions.SALES_CREATE},
+            {"Bill History", "/fxml/sales/sales-history-view.fxml", com.possum.application.auth.Permissions.SALES_VIEW},
+            {"Transactions", "/fxml/transactions/transactions-view.fxml", com.possum.application.auth.Permissions.TRANSACTIONS_VIEW},
+            {"Returns", "/fxml/returns/returns-view.fxml", com.possum.application.auth.Permissions.RETURNS_VIEW}
         });
-        createNavMenu("Purchase", "bx-purchase-tag", new String[][]{
-            {"Suppliers", "/fxml/purchase/suppliers-view.fxml"},
-            {"Purchase Orders", "/fxml/purchase/purchase-view.fxml"}
+        createNavMenu("Purchase", "bx-purchase-tag", new Object[][]{
+            {"Suppliers", "/fxml/purchase/suppliers-view.fxml", com.possum.application.auth.Permissions.SUPPLIERS_VIEW},
+            {"Purchase Orders", "/fxml/purchase/purchase-view.fxml", com.possum.application.auth.Permissions.PURCHASE_VIEW}
         });
-        createNavMenu("People", "bx-group", new String[][]{
-            {"Employees", "/fxml/people/users-view.fxml"},
-            {"Customers", "/fxml/people/customers-view.fxml"}
+        createNavMenu("People", "bx-group", new Object[][]{
+            {"Employees", "/fxml/people/users-view.fxml", com.possum.application.auth.Permissions.USERS_VIEW},
+            {"Customers", "/fxml/people/customers-view.fxml", com.possum.application.auth.Permissions.CUSTOMERS_VIEW}
         });
-        createNavMenu("Insights", "bx-bar-chart-alt-2", new String[][]{
-            {"Sales Reports", "/fxml/reports/sales-reports-view.fxml"},
-            {"Sales Analytics", "/fxml/reports/sales-analytics-view.fxml"},
-            {"Product Flow", "/fxml/insights/product-flow-view.fxml"},
-            {"Audit Log", "/fxml/audit/audit-view.fxml"}
+        createNavMenu("Insights", "bx-bar-chart-alt-2", new Object[][]{
+            {"Sales Reports", "/fxml/reports/sales-reports-view.fxml", com.possum.application.auth.Permissions.REPORTS_VIEW},
+            {"Sales Analytics", "/fxml/reports/sales-analytics-view.fxml", com.possum.application.auth.Permissions.REPORTS_VIEW},
+            {"Product Flow", "/fxml/insights/product-flow-view.fxml", com.possum.application.auth.Permissions.REPORTS_VIEW},
+            {"Audit Log", "/fxml/audit/audit-view.fxml", com.possum.application.auth.Permissions.AUDIT_VIEW}
         });
-        createNavButton("Settings", "bx-cog", "Settings", "/fxml/settings/settings-view.fxml");
+        createNavButton("Settings", "bx-cog", "Settings", "/fxml/settings/settings-view.fxml", com.possum.application.auth.Permissions.SETTINGS_VIEW);
     }
 
-    private void createNavButton(String label, String iconName, String title, String fxmlPath) {
+    private void createNavButton(String label, String iconName, String title, String fxmlPath, String permission) {
+        if (permission != null && !com.possum.ui.common.UIPermissionUtil.hasPermission(permission)) {
+            return;
+        }
+
         Button btn = new Button(label);
         FontIcon icon = new FontIcon(iconName);
         icon.getStyleClass().add("nav-icon");
@@ -192,7 +196,7 @@ public class AppShellController {
         navItems.getChildren().add(btn);
     }
 
-    private void createNavMenu(String label, String iconName, String[][] items) {
+    private void createNavMenu(String label, String iconName, Object[][] items) {
         MenuButton menuBtn = new MenuButton(label);
         FontIcon icon = new FontIcon(iconName);
         icon.getStyleClass().add("nav-icon");
@@ -204,13 +208,23 @@ public class AppShellController {
         menuBtn.setTooltip(new Tooltip(label));
         HBox.setMargin(menuBtn, new javafx.geometry.Insets(0, 4, 0, 4));
         
-        for (String[] item : items) {
-            MenuItem menuItem = new MenuItem(item[0]);
-            menuItem.setOnAction(e -> workspaceManager.openOrFocusWindow(item[0], item[1]));
-            menuBtn.getItems().add(menuItem);
+        int addedItems = 0;
+        for (Object[] item : items) {
+            String itemLabel = (String) item[0];
+            String fxmlPath = (String) item[1];
+            String permission = item.length > 2 ? (String) item[2] : null;
+
+            if (permission == null || com.possum.ui.common.UIPermissionUtil.hasPermission(permission)) {
+                MenuItem menuItem = new MenuItem(itemLabel);
+                menuItem.setOnAction(e -> workspaceManager.openOrFocusWindow(itemLabel, fxmlPath));
+                menuBtn.getItems().add(menuItem);
+                addedItems++;
+            }
         }
         
-        navItems.getChildren().add(menuBtn);
+        if (addedItems > 0) {
+            navItems.getChildren().add(menuBtn);
+        }
     }
 
 
