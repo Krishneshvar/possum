@@ -26,15 +26,16 @@
                         <Label text="Cart Items" styleClass="pos-card-title"/>
                     </HBox>
                     
-                    <TableView fx:id="cartTable" VBox.vgrow="NEVER" styleClass="pos-table" editable="true">
+                    <TableView fx:id="cartTable" VBox.vgrow="ALWAYS" styleClass="pos-table" editable="true">
                         <columns>
-                            <TableColumn fx:id="colSno" text="#" prefWidth="50" style="-fx-alignment: CENTER;" editable="false"/>
-                            <TableColumn fx:id="colProduct" text="Product" prefWidth="280" editable="false"/>
-                            <TableColumn fx:id="colQty" text="Qty" prefWidth="100" style="-fx-alignment: CENTER;" editable="true"/>
-                            <TableColumn fx:id="colPrice" text="Price" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
-                            <TableColumn fx:id="colMrp" text="MRP" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
-                            <TableColumn fx:id="colDiscount" text="Discount" prefWidth="180" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
-                            <TableColumn fx:id="colTotal" text="Total" prefWidth="120" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
+                            <TableColumn fx:id="colSno" text="#" prefWidth="50" minWidth="50" maxWidth="50" style="-fx-alignment: CENTER;" editable="false" resizable="false"/>
+                            <TableColumn fx:id="colSku" text="SKU" prefWidth="100" minWidth="80" style="-fx-alignment: CENTER-LEFT;" editable="false"/>
+                            <TableColumn fx:id="colProduct" text="Product" prefWidth="200" minWidth="150" editable="false"/>
+                            <TableColumn fx:id="colQty" text="Qty" prefWidth="80" minWidth="80" maxWidth="100" style="-fx-alignment: CENTER;" editable="true"/>
+                            <TableColumn fx:id="colPrice" text="Price" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
+                            <TableColumn fx:id="colMrp" text="MRP" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
+                            <TableColumn fx:id="colDiscount" text="Discount" prefWidth="180" minWidth="160" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
+                            <TableColumn fx:id="colTotal" text="Total" prefWidth="120" minWidth="100" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
                         </columns>
                     </TableView>
 

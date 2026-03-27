@@ -37,6 +37,7 @@ public class PosController {
     @FXML private VBox leftVBox;
     @FXML private TableView<CartItem> cartTable;
     @FXML private TableColumn<CartItem, String> colSno;
+    @FXML private TableColumn<CartItem, String> colSku;
     @FXML private TableColumn<CartItem, String> colProduct;
     @FXML private TableColumn<CartItem, CartItem> colQty;
     @FXML private TableColumn<CartItem, CartItem> colPrice;
@@ -83,9 +84,6 @@ public class PosController {
     private static final int MAX_BILLS = 9;
     private final List<BillState> bills = new ArrayList<>();
     private BillState currentBill;
-    
-    private int focusRow = -1;
-    private int focusColIdx = -1;
 
     public PosController(SalesService salesService, ProductSearchIndex searchIndex,
                           TaxEngine taxEngine, PrinterService printerService, SettingsStore settingsStore) {
@@ -110,9 +108,9 @@ public class PosController {
 
         NotificationService.initialize(rootPane);
         setupTable();
+        setupListeners();
         loadCombos();
         setupBillingToggles();
-        setupListeners();
         
         // Cap left side at 75% of viewpoint
         Platform.runLater(() -> {
@@ -144,240 +142,110 @@ public class PosController {
 
     private void setupTable() {
         colSno.setCellValueFactory(cell -> new SimpleStringProperty(String.valueOf(cartTable.getItems().indexOf(cell.getValue()) + 1)));
-        colSno.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item);
-            }
-        });
-
+        
+        colSku.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().variant.sku()));
+        
         colProduct.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().variant.productName()));
-        colProduct.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item);
-            }
-        });
         
         colQty.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colQty.setCellFactory(col -> new TableCell<>() {
-            private final TextField field = new TextField();
-            {
-                field.getStyleClass().add("table-input");
-                field.setAlignment(javafx.geometry.Pos.CENTER);
-                field.setPrefWidth(60);
-                field.setFocusTraversable(true);
-                field.setEditable(true); // Explicit
-                field.setOnAction(e -> commit());
-                field.focusedProperty().addListener((obs, old, val) -> { if (!val) commit(); });
-                field.setOnKeyPressed(e -> handleArrowNav(e, this));
-                field.setOnMouseClicked(e -> field.requestFocus());
-            }
-            private void commit() {
-                CartItem item = getItem();
-                if (item != null) {
-                    try {
-                        item.quantity = Integer.parseInt(field.getText());
-                        if (item.quantity < 1) item.quantity = 1;
-                        refreshCurrentBill();
-                    } catch (Exception e) {}
-                }
-            }
-            @Override protected void updateItem(CartItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    field.setText(String.valueOf(item.quantity));
-                    setGraphic(field);
-                    checkFocus(this, field);
-                }
-            }
-        });
+        colQty.setEditable(true);
+        colQty.setCellFactory(col -> new EditableQuantityCell());
 
         colPrice.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colPrice.setCellFactory(col -> new TableCell<>() {
-            private final TextField field = new TextField();
-            {
-                field.getStyleClass().add("table-input");
-                field.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-                field.setFocusTraversable(true);
-                field.setEditable(true);
-                field.setOnAction(e -> commit());
-                field.focusedProperty().addListener((obs, old, val) -> { if (!val) commit(); });
-                field.setOnKeyPressed(e -> handleArrowNav(e, this));
-                field.setOnMouseClicked(e -> field.requestFocus());
-            }
-            private void commit() {
-                CartItem item = getItem();
-                if (item != null) {
-                    try {
-                        BigDecimal val = new BigDecimal(field.getText().replace("$", "").replace(",", ""));
-                        item.pricePerUnit = val.max(BigDecimal.ZERO);
-                        refreshCurrentBill();
-                    } catch (Exception e) {}
-                }
-            }
-            @Override protected void updateItem(CartItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    field.setText(item.pricePerUnit.toString());
-                    setGraphic(field);
-                    checkFocus(this, field);
-                }
-            }
-        });
+        colPrice.setEditable(true);
+        colPrice.setCellFactory(col -> new EditablePriceCell());
         
         colMrp.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().variant.price())));
-        colMrp.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item);
-            }
-        });
 
         colDiscount.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colDiscount.setCellFactory(col -> new TableCell<>() {
-            private final TextField field = new TextField();
-            private final ToggleButton btnPct = new ToggleButton("%");
-            private final ToggleButton btnAmt = new ToggleButton("$");
-            private final HBox box = new HBox(4);
-            {
-                field.getStyleClass().add("table-input");
-                field.setPrefWidth(80);
-                field.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-                field.setFocusTraversable(true);
-                field.setEditable(true);
-                ToggleGroup group = new ToggleGroup();
-                btnPct.setToggleGroup(group);
-                btnAmt.setToggleGroup(group);
-                btnPct.getStyleClass().add("toggle-btn-neon");
-                btnAmt.getStyleClass().add("toggle-btn-neon");
-                HBox toggleBox = new HBox(btnAmt, btnPct);
-                toggleBox.getStyleClass().add("toggle-group-neon");
-                box.getChildren().addAll(field, toggleBox);
-                box.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-                field.setOnAction(e -> commit());
-                field.focusedProperty().addListener((obs, old, val) -> { if (!val) commit(); });
-                group.selectedToggleProperty().addListener((obs, old, val) -> {
-                    if (val == null) { if (old != null) old.setSelected(true); } else { commit(); }
-                });
-                field.setOnKeyPressed(e -> handleArrowNav(e, this));
-                field.setOnMouseClicked(e -> field.requestFocus());
-            }
-            private void commit() {
-                CartItem item = getItem();
-                if (item != null) {
-                    try {
-                        String text = field.getText().trim();
-                        item.discountValue = text.isEmpty() ? BigDecimal.ZERO : new BigDecimal(text);
-                        item.discountType = btnPct.isSelected() ? "pct" : "fixed";
-                        refreshCurrentBill();
-                    } catch (Exception e) {}
-                }
-            }
-            @Override protected void updateItem(CartItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    field.setText(item.discountValue.compareTo(BigDecimal.ZERO) == 0 ? "" : item.discountValue.toString());
-                    if ("pct".equals(item.discountType)) btnPct.setSelected(true);
-                    else btnAmt.setSelected(true);
-                    setGraphic(box);
-                    checkFocus(this, field);
-                }
-            }
-        });
+        colDiscount.setEditable(true);
+        colDiscount.setCellFactory(col -> new EditableDiscountCell());
 
         colTotal.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().netLineTotal)));
-        colTotal.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item);
-            }
-        });
 
         cartTable.setEditable(true);
         cartTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        // We use row selection to avoid cell selection model from intercepting clicks to TextFields
-        cartTable.getSelectionModel().setCellSelectionEnabled(false);
-        cartTable.getFocusModel().focusedCellProperty().addListener((obs, old, val) -> {
-            if (val != null && val.getTableColumn() != null) {
-                focusRow = val.getRow();
-                focusColIdx = val.getColumn();
-                // No refresh needed, updateItem will be called naturally or we handle it
+        cartTable.getSelectionModel().setCellSelectionEnabled(true);
+        cartTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        
+        // Add total row at the bottom of Price column
+        addPriceColumnTotal();
+        
+        // Auto-edit on cell selection for editable columns
+        cartTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newItem) -> {
+            if (newItem != null) {
+                Platform.runLater(() -> {
+                    TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+                    if (pos != null && pos.getTableColumn() != null) {
+                        TableColumn<CartItem, ?> col = pos.getTableColumn();
+                        if (col == colQty || col == colPrice || col == colDiscount) {
+                            cartTable.edit(pos.getRow(), col);
+                        }
+                    }
+                });
             }
         });
-
+        
         cartTable.setOnKeyPressed(e -> {
-            TablePosition pos = cartTable.getFocusModel().getFocusedCell();
-            if (pos == null || pos.getTableColumn() == null) return;
-            
-            // Handle cross-component navigation for standard cells
-            if (e.getCode() == KeyCode.DOWN && pos.getRow() == cartTable.getItems().size() - 1) {
-                searchField.requestFocus();
-                searchField.selectAll();
+            if (e.getCode() == KeyCode.DELETE || e.getCode() == KeyCode.BACK_SPACE) {
+                // Delete the selected row
+                CartItem selectedItem = cartTable.getSelectionModel().getSelectedItem();
+                if (selectedItem != null) {
+                    currentBill.items.remove(selectedItem);
+                    refreshCurrentBill();
+                    e.consume();
+                }
+            } else if (e.getCode() == KeyCode.DOWN) {
+                TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+                if (pos != null && pos.getRow() == cartTable.getItems().size() - 1) {
+                    searchField.requestFocus();
+                    searchField.selectAll();
+                    e.consume();
+                }
+            } else if (e.getCode() == KeyCode.ENTER || e.getCode() == KeyCode.SPACE || (!e.isControlDown() && !e.isAltDown() && e.getText().length() > 0)) {
+                // Start editing on Enter, Space, or any character key
+                TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+                if (pos != null && pos.getTableColumn() != null) {
+                    TableColumn<CartItem, ?> col = pos.getTableColumn();
+                    if (col == colQty || col == colPrice || col == colDiscount) {
+                        cartTable.edit(pos.getRow(), col);
+                        e.consume();
+                    }
+                }
             }
         });
 
         cartTable.setFixedCellSize(60);
-        bindTableHeight();
     }
 
-    private void checkFocus(TableCell<?, ?> cell, TextField field) {
-        if (cell.getIndex() == focusRow && cartTable.getColumns().indexOf(cell.getTableColumn()) == focusColIdx) {
-            Platform.runLater(() -> {
-                field.requestFocus();
-                field.selectAll();
-                // Don't reset focusRow/focusColIdx here to avoid issues with multiple updates
-            });
-        }
+
+
+    private void addPriceColumnTotal() {
+        // Create a label to display the total price
+        Label totalPriceLabel = new Label();
+        totalPriceLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 13px; -fx-padding: 8 12;");
+        totalPriceLabel.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+        totalPriceLabel.setMaxWidth(Double.MAX_VALUE);
+        
+        // Bind the label text to the sum of all prices
+        totalPriceLabel.textProperty().bind(Bindings.createStringBinding(() -> {
+            BigDecimal total = currentBill.items.stream()
+                .map(item -> item.pricePerUnit.multiply(BigDecimal.valueOf(item.quantity)))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            return currencyFormat.format(total);
+        }, currentBill.items));
+        
+        // Set the label as the graphic for the Price column
+        colPrice.setGraphic(totalPriceLabel);
     }
 
     private void bindTableHeight() {
+        // Remove fixed height binding - let table grow to fill available space
         cartTable.prefHeightProperty().unbind();
-        cartTable.prefHeightProperty().bind(
-            Bindings.size(cartTable.getItems()).multiply(cartTable.getFixedCellSize()).add(45)
-        );
+        cartTable.setMaxHeight(Double.MAX_VALUE);
     }
 
-    private void handleArrowNav(KeyEvent e, TableCell<?, ?> cell) {
-        int row = cell.getIndex();
-        List<TableColumn<CartItem, ?>> cols = cartTable.getColumns();
-        int colIdx = cols.indexOf(cell.getTableColumn());
 
-        int nextRow = row;
-        int nextCol = colIdx;
-
-        switch (e.getCode()) {
-            case UP -> nextRow--;
-            case DOWN -> nextRow++;
-            case LEFT -> nextCol--;
-            case RIGHT -> nextCol++;
-            case ENTER -> { nextRow++; } // move down on enter
-            default -> { return; }
-        }
-
-        if (nextRow >= 0 && nextRow < cartTable.getItems().size()) {
-            if (nextCol < 0) nextCol = 0;
-            if (nextCol >= cols.size()) nextCol = cols.size() - 1;
-            
-            focusRow = nextRow;
-            focusColIdx = nextCol;
-            cartTable.getSelectionModel().select(nextRow, cols.get(nextCol));
-            cartTable.refresh();
-        } else if (nextRow >= cartTable.getItems().size()) {
-            searchField.requestFocus();
-            searchField.selectAll();
-        } else if (nextRow < 0) {
-            // Stay at top
-            cartTable.getSelectionModel().select(0, cols.get(nextCol));
-        }
-        e.consume();
-    }
     
     private void loadCombos() {
         customerCombo.setCellFactory(lv -> new ListCell<>() {
@@ -509,7 +377,10 @@ public class PosController {
             if (e.getCode() == KeyCode.UP) {
                 if (!cartTable.getItems().isEmpty()) {
                     cartTable.requestFocus();
-                    cartTable.getSelectionModel().select(cartTable.getItems().size() - 1);
+                    int lastRow = cartTable.getItems().size() - 1;
+                    // Focus on SKU column (second column after #)
+                    cartTable.getSelectionModel().select(lastRow, colSku);
+                    cartTable.getFocusModel().focus(lastRow, colSku);
                 }
             }
         });
@@ -575,7 +446,7 @@ public class PosController {
         btnDiscountPercent.setSelected(!currentBill.isDiscountFixed);
         tenderedField.setText(currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0 ? currentBill.amountTendered.toString() : "");
         customerCombo.setValue(currentBill.selectedCustomer);
-        if (currentBill.selectedPaymentMethod != null) paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
+        paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
         
         bindTableHeight();
         refreshCurrentBill();
@@ -725,9 +596,14 @@ public class PosController {
         if (!currentBill.items.isEmpty() && currentBill.selectedPaymentMethod != null) {
             boolean validPayment;
             if (currentBill.fullPayment) {
-                validPayment = currentBill.amountTendered.compareTo(currentBill.total) >= 0;
+                // Full payment: either exactly the total OR any amount >= total (to allow for cash change)
+                // We also allow 0 (default) to represent paying exactly the total.
+                validPayment = currentBill.amountTendered.compareTo(BigDecimal.ZERO) == 0 
+                            || currentBill.amountTendered.compareTo(currentBill.total) >= 0;
             } else {
-                validPayment = currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0;
+                // Partial payment: tendered must be > 0 and < total
+                validPayment = currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0 
+                            && currentBill.amountTendered.compareTo(currentBill.total) < 0;
             }
             completeButton.setDisable(!validPayment);
         } else {
@@ -911,6 +787,342 @@ public class PosController {
             this.variant = variant;
             this.quantity = quantity;
             this.pricePerUnit = variant.price();
+        }
+    }
+
+    private class EditableQuantityCell extends TableCell<CartItem, CartItem> {
+        private TextField textField;
+
+        @Override
+        public void startEdit() {
+            super.startEdit();
+            if (textField == null) createTextField();
+            setText(null);
+            setGraphic(textField);
+            textField.selectAll();
+            textField.requestFocus();
+        }
+
+        @Override
+        public void cancelEdit() {
+            super.cancelEdit();
+            setText(String.valueOf(getItem().quantity));
+            setGraphic(null);
+        }
+
+        @Override
+        public void updateItem(CartItem item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                if (isEditing()) {
+                    if (textField != null) textField.setText(String.valueOf(item.quantity));
+                    setText(null);
+                    setGraphic(textField);
+                } else {
+                    setText(String.valueOf(item.quantity));
+                    setGraphic(null);
+                }
+            }
+        }
+
+        private void createTextField() {
+            textField = new TextField();
+            textField.getStyleClass().add("table-input");
+            textField.setAlignment(javafx.geometry.Pos.CENTER);
+            textField.setPrefWidth(60);
+            textField.setOnAction(e -> commitEdit(getItem()));
+            textField.focusedProperty().addListener((obs, old, focused) -> {
+                if (!focused && isEditing()) commitEdit(getItem());
+            });
+            textField.setOnKeyPressed(e -> {
+                if (e.getCode() == KeyCode.ESCAPE) cancelEdit();
+                else if (e.getCode() == KeyCode.ENTER) {
+                    commitEdit(getItem());
+                    moveDown();
+                    e.consume();
+                } else if (e.getCode() == KeyCode.TAB) {
+                    commitEdit(getItem());
+                    if (e.isShiftDown()) moveToPrevious();
+                    else moveToNext();
+                    e.consume();
+                }
+            });
+        }
+
+        @Override
+        public void commitEdit(CartItem item) {
+            if (textField != null && item != null) {
+                try {
+                    int newQty = Integer.parseInt(textField.getText().trim());
+                    if (newQty < 1) newQty = 1;
+                    item.quantity = newQty;
+                    refreshCurrentBill();
+                } catch (NumberFormatException e) {}
+            }
+            super.commitEdit(item);
+        }
+    }
+
+    private class EditablePriceCell extends TableCell<CartItem, CartItem> {
+        private TextField textField;
+
+        @Override
+        public void startEdit() {
+            super.startEdit();
+            if (textField == null) createTextField();
+            setText(null);
+            setGraphic(textField);
+            textField.selectAll();
+            textField.requestFocus();
+        }
+
+        @Override
+        public void cancelEdit() {
+            super.cancelEdit();
+            setText(getItem().pricePerUnit.toString());
+            setGraphic(null);
+        }
+
+        @Override
+        public void updateItem(CartItem item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                if (isEditing()) {
+                    if (textField != null) textField.setText(item.pricePerUnit.toString());
+                    setText(null);
+                    setGraphic(textField);
+                } else {
+                    setText(item.pricePerUnit.toString());
+                    setGraphic(null);
+                }
+            }
+        }
+
+        private void createTextField() {
+            textField = new TextField();
+            textField.getStyleClass().add("table-input");
+            textField.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            textField.setOnAction(e -> commitEdit(getItem()));
+            textField.focusedProperty().addListener((obs, old, focused) -> {
+                if (!focused && isEditing()) commitEdit(getItem());
+            });
+            textField.setOnKeyPressed(e -> {
+                if (e.getCode() == KeyCode.ESCAPE) cancelEdit();
+                else if (e.getCode() == KeyCode.ENTER) {
+                    commitEdit(getItem());
+                    moveDown();
+                    e.consume();
+                } else if (e.getCode() == KeyCode.TAB) {
+                    commitEdit(getItem());
+                    if (e.isShiftDown()) moveToPrevious();
+                    else moveToNext();
+                    e.consume();
+                }
+            });
+        }
+
+        @Override
+        public void commitEdit(CartItem item) {
+            if (textField != null && item != null) {
+                try {
+                    BigDecimal val = new BigDecimal(textField.getText().replace("$", "").replace(",", "").trim());
+                    val = val.max(BigDecimal.ZERO);
+                    
+                    // Validate: Price should not exceed MRP
+                    BigDecimal mrp = item.variant.price();
+                    if (val.compareTo(mrp) > 0) {
+                        NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(mrp) + ")");
+                        val = mrp;
+                    }
+                    
+                    item.pricePerUnit = val;
+                    refreshCurrentBill();
+                } catch (Exception e) {}
+            }
+            super.commitEdit(item);
+        }
+    }
+
+    private class EditableDiscountCell extends TableCell<CartItem, CartItem> {
+        private TextField textField;
+        private ToggleButton btnPct;
+        private ToggleButton btnAmt;
+        private HBox box;
+
+        @Override
+        public void startEdit() {
+            super.startEdit();
+            if (textField == null) createControls();
+            setText(null);
+            setGraphic(box);
+            textField.selectAll();
+            textField.requestFocus();
+        }
+
+        @Override
+        public void cancelEdit() {
+            super.cancelEdit();
+            updateDisplay();
+        }
+
+        @Override
+        public void updateItem(CartItem item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                if (isEditing()) {
+                    if (textField != null) {
+                        textField.setText(item.discountValue.compareTo(BigDecimal.ZERO) == 0 ? "" : item.discountValue.toString());
+                        if ("pct".equals(item.discountType)) btnPct.setSelected(true);
+                        else btnAmt.setSelected(true);
+                    }
+                    setText(null);
+                    setGraphic(box);
+                } else {
+                    updateDisplay();
+                }
+            }
+        }
+
+        private void updateDisplay() {
+            CartItem item = getItem();
+            if (item != null) {
+                String display = item.discountValue.compareTo(BigDecimal.ZERO) == 0 ? "0" 
+                    : item.discountValue + ("pct".equals(item.discountType) ? "%" : "$");
+                setText(display);
+            }
+            setGraphic(null);
+        }
+
+        private void createControls() {
+            textField = new TextField();
+            textField.getStyleClass().add("table-input");
+            textField.setPrefWidth(80);
+            textField.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            
+            btnPct = new ToggleButton("%");
+            btnAmt = new ToggleButton("$");
+            ToggleGroup group = new ToggleGroup();
+            btnPct.setToggleGroup(group);
+            btnAmt.setToggleGroup(group);
+            btnPct.getStyleClass().add("toggle-btn-neon");
+            btnAmt.getStyleClass().add("toggle-btn-neon");
+            
+            HBox toggleBox = new HBox(btnAmt, btnPct);
+            toggleBox.getStyleClass().add("toggle-group-neon");
+            
+            box = new HBox(4, textField, toggleBox);
+            box.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
+            
+            textField.setOnAction(e -> commitEdit(getItem()));
+            textField.focusedProperty().addListener((obs, old, focused) -> {
+                if (!focused && isEditing()) commitEdit(getItem());
+            });
+            textField.setOnKeyPressed(e -> {
+                if (e.getCode() == KeyCode.ESCAPE) cancelEdit();
+                else if (e.getCode() == KeyCode.ENTER) {
+                    commitEdit(getItem());
+                    moveDown();
+                    e.consume();
+                } else if (e.getCode() == KeyCode.TAB) {
+                    commitEdit(getItem());
+                    if (e.isShiftDown()) moveToPrevious();
+                    else moveToNext();
+                    e.consume();
+                }
+            });
+            
+            // Allow toggle switching during edit without committing
+            group.selectedToggleProperty().addListener((obs, old, val) -> {
+                if (val == null && old != null) {
+                    old.setSelected(true);
+                } else if (val != null && isEditing()) {
+                    // Update the item's discount type immediately for real-time feedback
+                    CartItem item = getItem();
+                    if (item != null) {
+                        item.discountType = btnPct.isSelected() ? "pct" : "fixed";
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void commitEdit(CartItem item) {
+            if (textField != null && item != null) {
+                try {
+                    String text = textField.getText().trim();
+                    BigDecimal discountValue = text.isEmpty() ? BigDecimal.ZERO : new BigDecimal(text);
+                    String discountType = btnPct.isSelected() ? "pct" : "fixed";
+                    
+                    // Validate discount
+                    if (discountValue.compareTo(BigDecimal.ZERO) > 0) {
+                        if ("pct".equals(discountType)) {
+                            // Percentage should not exceed 100%
+                            if (discountValue.compareTo(BigDecimal.valueOf(100)) > 0) {
+                                NotificationService.warning("Discount percentage cannot exceed 100%");
+                                discountValue = BigDecimal.valueOf(100);
+                            }
+                        } else {
+                            // Fixed discount should not exceed line total
+                            BigDecimal lineTotal = item.pricePerUnit.multiply(BigDecimal.valueOf(item.quantity));
+                            if (discountValue.compareTo(lineTotal) > 0) {
+                                NotificationService.warning("Discount cannot exceed line total (" + currencyFormat.format(lineTotal) + ")");
+                                discountValue = lineTotal;
+                            }
+                        }
+                    }
+                    
+                    item.discountValue = discountValue;
+                    item.discountType = discountType;
+                    refreshCurrentBill();
+                } catch (Exception e) {}
+            }
+            super.commitEdit(item);
+        }
+    }
+
+    private void moveDown() {
+        TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+        if (pos != null && pos.getRow() < cartTable.getItems().size() - 1) {
+            cartTable.getSelectionModel().select(pos.getRow() + 1, pos.getTableColumn());
+            cartTable.edit(pos.getRow() + 1, pos.getTableColumn());
+        }
+    }
+
+    private void moveToNext() {
+        TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+        if (pos != null) {
+            int col = cartTable.getVisibleLeafIndex(pos.getTableColumn());
+            if (col < cartTable.getVisibleLeafColumns().size() - 1) {
+                cartTable.getSelectionModel().select(pos.getRow(), cartTable.getVisibleLeafColumn(col + 1));
+                cartTable.edit(pos.getRow(), cartTable.getVisibleLeafColumn(col + 1));
+            } else if (pos.getRow() < cartTable.getItems().size() - 1) {
+                cartTable.getSelectionModel().select(pos.getRow() + 1, cartTable.getVisibleLeafColumn(0));
+                cartTable.edit(pos.getRow() + 1, cartTable.getVisibleLeafColumn(0));
+            }
+        }
+    }
+
+    private void moveToPrevious() {
+        TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+        if (pos != null) {
+            int col = cartTable.getVisibleLeafIndex(pos.getTableColumn());
+            if (col > 0) {
+                cartTable.getSelectionModel().select(pos.getRow(), cartTable.getVisibleLeafColumn(col - 1));
+                cartTable.edit(pos.getRow(), cartTable.getVisibleLeafColumn(col - 1));
+            } else if (pos.getRow() > 0) {
+                int lastCol = cartTable.getVisibleLeafColumns().size() - 1;
+                cartTable.getSelectionModel().select(pos.getRow() - 1, cartTable.getVisibleLeafColumn(lastCol));
+                cartTable.edit(pos.getRow() - 1, cartTable.getVisibleLeafColumn(lastCol));
+            }
         }
     }
 }
