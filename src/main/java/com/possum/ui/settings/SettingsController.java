@@ -1,5 +1,6 @@
 package com.possum.ui.settings;
 
+import com.possum.ui.settings.tax.TaxManagementController;
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.PrinterService;
@@ -10,7 +11,13 @@ import com.possum.shared.dto.GeneralSettings;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 import java.util.List;
 
@@ -18,11 +25,9 @@ public class SettingsController {
     
     @FXML private TextField storeNameField;
     @FXML private ComboBox<String> currencyCombo;
-    @FXML private CheckBox showLogoCheck;
-    @FXML private TextField paperWidthField;
-    @FXML private TextArea footerNoteArea;
     @FXML private ComboBox<String> printerCombo;
-    @FXML private Button manageTaxButton;
+    @FXML private AnchorPane taxSettingsTabContent;
+    @FXML private AnchorPane billSettingsTabContent;
     
     private SettingsStore settingsStore;
     private PrinterService printerService;
@@ -44,8 +49,9 @@ public class SettingsController {
     public void initialize() {
         setupCurrencies();
         loadGeneralSettings();
-        loadBillSettings();
         loadPrinters();
+        setupBillSettings();
+        setupTaxSettings();
     }
 
     private void setupCurrencies() {
@@ -58,13 +64,6 @@ public class SettingsController {
         GeneralSettings settings = settingsStore.loadGeneralSettings();
         storeNameField.setText(settings.getStoreName());
         currencyCombo.setValue(settings.getCurrencyCode());
-    }
-
-    private void loadBillSettings() {
-        BillSettings settings = settingsStore.loadBillSettings();
-        showLogoCheck.setSelected(settings.isShowLogo());
-        paperWidthField.setText(String.valueOf(settings.getPaperWidth()));
-        footerNoteArea.setText(settings.getFooterNote());
     }
 
     private void loadPrinters() {
@@ -85,23 +84,6 @@ public class SettingsController {
             
             settingsStore.saveGeneralSettings(settings);
             NotificationService.success("General settings saved");
-        } catch (Exception e) {
-            NotificationService.error("Failed to save settings: " + e.getMessage());
-        }
-    }
-
-    @FXML
-    private void handleSaveBill() {
-        try {
-            BillSettings settings = new BillSettings();
-            settings.setShowLogo(showLogoCheck.isSelected());
-            settings.setPaperWidth(Integer.parseInt(paperWidthField.getText()));
-            settings.setFooterNote(footerNoteArea.getText());
-            
-            settingsStore.saveBillSettings(settings);
-            NotificationService.success("Bill settings saved");
-        } catch (NumberFormatException e) {
-            NotificationService.error("Invalid paper width");
         } catch (Exception e) {
             NotificationService.error("Failed to save settings: " + e.getMessage());
         }
@@ -137,12 +119,39 @@ public class SettingsController {
         NotificationService.success("Printers refreshed");
     }
 
-    @FXML
-    private void handleManageTax() {
+    private void setupTaxSettings() {
         try {
-            com.possum.ui.settings.tax.TaxManagementWindow.show(taxRepository, jsonService);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/settings/tax/tax-management.fxml"));
+            Parent taxSettingsView = loader.load();
+            
+            TaxManagementController controller = loader.getController();
+            controller.setServices(taxService, taxRepository, jsonService);
+            
+            taxSettingsTabContent.getChildren().setAll(taxSettingsView);
+            AnchorPane.setTopAnchor(taxSettingsView, 0.0);
+            AnchorPane.setBottomAnchor(taxSettingsView, 0.0);
+            AnchorPane.setLeftAnchor(taxSettingsView, 0.0);
+            AnchorPane.setRightAnchor(taxSettingsView, 0.0);
         } catch (Exception e) {
-            NotificationService.error("Failed to open tax management: " + e.getMessage());
+            NotificationService.error("Failed to load embedded tax settings: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void setupBillSettings() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/settings/bill-settings-view.fxml"));
+            BillSettingsController controller = new BillSettingsController(settingsStore);
+            loader.setController(controller);
+            Parent billSettingsView = loader.load();
+            
+            billSettingsTabContent.getChildren().setAll(billSettingsView);
+            AnchorPane.setTopAnchor(billSettingsView, 0.0);
+            AnchorPane.setBottomAnchor(billSettingsView, 0.0);
+            AnchorPane.setLeftAnchor(billSettingsView, 0.0);
+            AnchorPane.setRightAnchor(billSettingsView, 0.0);
+        } catch (Exception e) {
+            NotificationService.error("Failed to load embedded bill settings: " + e.getMessage());
             e.printStackTrace();
         }
     }

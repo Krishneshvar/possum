@@ -32,18 +32,7 @@
         </Tab>
         
         <Tab text="Bill" closable="false">
-            <VBox spacing="15" style="-fx-padding: 20;">
-                <CheckBox fx:id="showLogoCheck" text="Show Logo on Receipt"/>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="Paper Width (mm):" prefWidth="150"/>
-                    <TextField fx:id="paperWidthField" prefWidth="100"/>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="Footer Note:" prefWidth="150"/>
-                    <TextArea fx:id="footerNoteArea" prefWidth="300" prefRowCount="3"/>
-                </HBox>
-                <Button text="Save Bill Settings" onAction="#handleSaveBill" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20;"/>
-            </VBox>
+            <AnchorPane fx:id="billSettingsTabContent"/>
         </Tab>
         
         <Tab text="Printer" closable="false">
@@ -58,12 +47,7 @@
         </Tab>
         
         <Tab text="Tax" closable="false">
-            <VBox spacing="15" style="-fx-padding: 20;">
-                <Label text="Tax Configuration" style="-fx-font-weight: bold;"/>
-                <Label text="Manage tax profiles, categories, and rules for your business" style="-fx-text-fill: gray;"/>
-                <Button fx:id="manageTaxButton" text="Open Tax Management" onAction="#handleManageTax" 
-                        style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20;"/>
-            </VBox>
+            <AnchorPane fx:id="taxSettingsTabContent"/>
         </Tab>
     </TabPane>
 

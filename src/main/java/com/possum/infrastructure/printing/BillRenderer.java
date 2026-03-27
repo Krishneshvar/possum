@@ -3,12 +3,16 @@ package com.possum.infrastructure.printing;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
+import com.possum.shared.dto.BillSection;
 import com.possum.shared.dto.BillSettings;
 import com.possum.shared.dto.GeneralSettings;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class BillRenderer {
 
@@ -45,7 +49,7 @@ public class BillRenderer {
       .col-rate { width: 20%; text-align: right; }
       .col-amount { width: 25%; text-align: right; }
       
-      .divider { border-top: 1px dashed black; margin: 5px 0; }
+      .divider { border-top: 1px solid black; margin: 5px 0; }
       .double-divider { border-top: 3px double black; margin: 5px 0; }
       
       .section { margin-bottom: 8px; }
@@ -59,8 +63,10 @@ public class BillRenderer {
 
     public static String renderBill(SaleResponse saleResponse, GeneralSettings general, BillSettings billSettings) {
         Sale sale = saleResponse.sale();
-        String paperWidth = billSettings.getPaperWidth() + "mm";
-        String currency = general.getCurrencyCode().equals("INR") ? "₹" : "$";
+        String paperWidth = billSettings.getPaperWidth();
+        String currency = billSettings.getCurrency() != null && !billSettings.getCurrency().isEmpty() 
+            ? billSettings.getCurrency() 
+            : (general.getCurrencyCode().equals("INR") ? "₹" : "$");
         
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>")
@@ -69,79 +75,12 @@ public class BillRenderer {
         
         html.append("<div class=\"bill-container w-").append(paperWidth).append("\">");
 
-        // Header
-        html.append("<div class=\"section text-center\">");
-        html.append("<div class=\"text-large\">").append(general.getStoreName()).append("</div>");
-        html.append("</div><div class=\"divider\"></div>");
+        List<BillSection> visibleSections = billSettings.getSections().stream()
+            .filter(BillSection::isVisible)
+            .collect(Collectors.toList());
 
-        // Meta
-        html.append("<div class=\"section text-left text-small\">");
-        html.append("<div><span class=\"bold\">Bill No:</span> ").append(sale.invoiceNumber()).append("</div>");
-        html.append("<div><span class=\"bold\">Date:</span> ").append(sale.saleDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))).append("</div>");
-        if (sale.billerName() != null) {
-            html.append("<div><span class=\"bold\">Cashier:</span> ").append(sale.billerName()).append("</div>");
-        }
-        if (sale.customerName() != null) {
-            html.append("<div><span class=\"bold\">Customer:</span> ").append(sale.customerName()).append("</div>");
-        }
-        html.append("</div><div class=\"divider\"></div>");
-
-        // Items
-        html.append("<div class=\"section text-medium\">");
-        html.append("<table><thead><tr class=\"text-small bold\" style=\"border-bottom: 1px dashed black;\">");
-        html.append("<th class=\"col-item\">Item</th>");
-        html.append("<th class=\"col-qty\" style=\"text-align: center;\">Qty</th>");
-        html.append("<th class=\"col-rate\" style=\"text-align: right;\">Rate</th>");
-        html.append("<th class=\"col-amount\" style=\"text-align: right;\">Amt</th>");
-        html.append("</tr></thead><tbody>");
-
-        for (SaleItem item : saleResponse.items()) {
-            BigDecimal qty = BigDecimal.valueOf(item.quantity());
-            BigDecimal rate = item.pricePerUnit();
-            BigDecimal amount = rate.multiply(qty);
-            
-            html.append("<tr>");
-            html.append("<td class=\"col-item\">").append(item.productName()).append("</td>");
-            html.append("<td class=\"col-qty\">").append(item.quantity()).append("</td>");
-            html.append("<td class=\"col-rate\">").append(formatCurrency(rate, currency)).append("</td>");
-            html.append("<td class=\"col-amount\">").append(formatCurrency(amount, currency)).append("</td>");
-            html.append("</tr>");
-        }
-        html.append("</tbody></table></div><div class=\"divider\"></div>");
-
-        // Totals
-        html.append("<div class=\"section text-medium\">");
-        html.append("<table style=\"width: 100%\">");
-        
-        BigDecimal discount = sale.discount() != null ? sale.discount() : BigDecimal.ZERO;
-        BigDecimal tax = sale.totalTax() != null ? sale.totalTax() : BigDecimal.ZERO;
-        BigDecimal total = sale.totalAmount();
-        BigDecimal subtotal = total.subtract(tax).add(discount);
-        
-        html.append("<tr><td>Subtotal:</td><td class=\"text-right\">").append(formatCurrency(subtotal, currency)).append("</td></tr>");
-        if (tax.compareTo(BigDecimal.ZERO) > 0) {
-            html.append("<tr><td>Tax:</td><td class=\"text-right\">").append(formatCurrency(tax, currency)).append("</td></tr>");
-        }
-        if (discount.compareTo(BigDecimal.ZERO) > 0) {
-            html.append("<tr><td>Discount:</td><td class=\"text-right\">-").append(formatCurrency(discount, currency)).append("</td></tr>");
-        }
-        
-        html.append("<tr class=\"text-large\" style=\"border-top: 1px dashed black;\">");
-        html.append("<td style=\"padding-top: 5px;\">Total:</td>");
-        html.append("<td class=\"text-right\" style=\"padding-top: 5px;\">").append(formatCurrency(total, currency)).append("</td>");
-        html.append("</tr></table>");
-        
-        int totalItems = saleResponse.items().stream().mapToInt(SaleItem::quantity).sum();
-        html.append("<div class=\"text-small text-left\" style=\"margin-top: 5px;\">Items: ").append(totalItems).append("</div>");
-        html.append("</div><div class=\"divider\"></div>");
-
-        // Footer
-        if (billSettings.getFooterNote() != null && !billSettings.getFooterNote().isEmpty()) {
-            html.append("<div class=\"section text-center text-small footer-text\">")
-                .append(billSettings.getFooterNote())
-                .append("</div>");
-        } else {
-            html.append("<div class=\"section text-center text-small\">Thank you for your visit!</div>");
+        for (BillSection section : visibleSections) {
+            html.append(renderSection(section, saleResponse, billSettings, currency));
         }
 
         html.append("</div></body></html>");
@@ -149,8 +88,187 @@ public class BillRenderer {
         return html.toString();
     }
 
+    private static String renderSection(BillSection section, SaleResponse saleResponse, 
+                                       BillSettings billSettings, String currency) {
+        Sale sale = saleResponse.sale();
+        String alignment = section.getOptionAsString("alignment", "left");
+        String fontSize = section.getOptionAsString("fontSize", "medium");
+        String alignClass = "text-" + alignment;
+        String sizeClass = "text-" + fontSize;
+        String commonClasses = "section " + alignClass + " " + sizeClass;
+
+        switch (section.getType()) {
+            case HEADER:
+                return renderHeader(section, commonClasses);
+            case META:
+                return renderMeta(section, sale, billSettings, commonClasses);
+            case ITEMS:
+                return renderItems(section, saleResponse, currency, commonClasses);
+            case TOTALS:
+                return renderTotals(section, sale, currency, commonClasses);
+            case FOOTER:
+                return renderFooter(section, commonClasses);
+            default:
+                return "";
+        }
+    }
+
+    private static String renderHeader(BillSection section, String commonClasses) {
+        boolean showLogo = section.getOptionAsBoolean("showLogo", false);
+        String logoUrl = section.getOptionAsString("logoUrl", "");
+        String storeName = section.getOptionAsString("storeName", "Store Name");
+        String storeDetails = section.getOptionAsString("storeDetails", "");
+        String phone = section.getOptionAsString("phone", "");
+        String gst = section.getOptionAsString("gst", "");
+        String alignment = section.getOptionAsString("alignment", "center");
+
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"").append(commonClasses).append("\">")
+            .append("<div class=\"header-container\" style=\"justify-content: ")
+            .append(alignment.equals("center") ? "center" : alignment.equals("right") ? "flex-end" : "flex-start")
+            .append(";\">");
+
+        if (showLogo && !logoUrl.isEmpty()) {
+            html.append("<img src=\"").append(escapeHtml(logoUrl)).append("\" class=\"header-logo\" />");
+        }
+
+        html.append("<div class=\"header-content\">");
+        html.append("<div class=\"text-large\">").append(escapeHtml(storeName)).append("</div>");
+        html.append("</div></div>");
+
+        html.append("<div class=\"text-small\" style=\"margin-top: 4px;\">");
+        if (!storeDetails.isEmpty()) {
+            html.append("<div style=\"white-space: pre-wrap;\">").append(escapeHtml(storeDetails)).append("</div>");
+        }
+        if (!phone.isEmpty()) {
+            html.append("<div><span class=\"bold\">Ph No:</span> ").append(escapeHtml(phone)).append("</div>");
+        }
+        if (!gst.isEmpty()) {
+            html.append("<div><span class=\"bold\">GSTIN:</span> ").append(escapeHtml(gst)).append("</div>");
+        }
+        html.append("</div></div><div class=\"divider\"></div>");
+
+        return html.toString();
+    }
+
+    private static String renderMeta(BillSection section, Sale sale, BillSettings billSettings, String commonClasses) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"").append(commonClasses).append("\">")
+            .append("<div><span class=\"bold\">Bill No:</span> ").append(escapeHtml(sale.invoiceNumber())).append("</div>")
+            .append("<div><span class=\"bold\">Date:</span> ").append(formatDate(sale.saleDate(), billSettings)).append("</div>");
+
+        if (sale.billerName() != null) {
+            html.append("<div><span class=\"bold\">Cashier:</span> ").append(escapeHtml(sale.billerName())).append("</div>");
+        }
+        if (sale.customerName() != null) {
+            html.append("<div><span class=\"bold\">Customer:</span> ").append(escapeHtml(sale.customerName())).append("</div>");
+        }
+
+        html.append("</div><div class=\"divider\"></div>");
+        return html.toString();
+    }
+
+    private static String renderItems(BillSection section, SaleResponse saleResponse, String currency, String commonClasses) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"").append(commonClasses).append("\">")
+            .append("<table><thead><tr class=\"text-small bold\" style=\"border-bottom: 1px solid black;\">");
+        html.append("<th class=\"col-item\">Item</th>")
+            .append("<th class=\"col-qty\" style=\"text-align: center;\">Qty</th>")
+            .append("<th class=\"col-rate\" style=\"text-align: right;\">Rate</th>")
+            .append("<th class=\"col-amount\" style=\"text-align: right;\">Amt</th>")
+            .append("</tr></thead><tbody>");
+
+        for (SaleItem item : saleResponse.items()) {
+            BigDecimal qty = BigDecimal.valueOf(item.quantity());
+            BigDecimal rate = item.pricePerUnit();
+            BigDecimal amount = rate.multiply(qty);
+            
+            String itemName = item.productName();
+            if (item.variantName() != null && !item.variantName().equals("Default")) {
+                itemName += " (" + item.variantName() + ")";
+            }
+            
+            html.append("<tr>")
+                .append("<td class=\"col-item\">").append(escapeHtml(itemName)).append("</td>")
+                .append("<td class=\"col-qty\">").append(item.quantity()).append("</td>")
+                .append("<td class=\"col-rate\">").append(formatCurrency(rate, currency)).append("</td>")
+                .append("<td class=\"col-amount\">").append(formatCurrency(amount, currency)).append("</td>")
+                .append("</tr>");
+        }
+        html.append("</tbody></table></div><div class=\"divider\"></div>");
+        return html.toString();
+    }
+
+    private static String renderTotals(BillSection section, Sale sale, String currency, String commonClasses) {
+        BigDecimal discount = sale.discount() != null ? sale.discount() : BigDecimal.ZERO;
+        BigDecimal tax = sale.totalTax() != null ? sale.totalTax() : BigDecimal.ZERO;
+        BigDecimal total = sale.totalAmount();
+        BigDecimal subtotal = total.subtract(tax).add(discount);
+
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"").append(commonClasses).append("\">")
+            .append("<table style=\"width: 100%\">")
+            .append("<tr><td>Subtotal:</td><td class=\"text-right\">").append(formatCurrency(subtotal, currency)).append("</td></tr>");
+
+        if (tax.compareTo(BigDecimal.ZERO) > 0) {
+            html.append("<tr><td>Tax:</td><td class=\"text-right\">").append(formatCurrency(tax, currency)).append("</td></tr>");
+        }
+        if (discount.compareTo(BigDecimal.ZERO) > 0) {
+            html.append("<tr><td>Discount:</td><td class=\"text-right\">-").append(formatCurrency(discount, currency)).append("</td></tr>");
+        }
+
+        html.append("<tr class=\"text-large\" style=\"border-top: 1px solid black;\">")
+            .append("<td style=\"padding-top: 5px;\">Total:</td>")
+            .append("<td class=\"text-right\" style=\"padding-top: 5px;\">").append(formatCurrency(total, currency)).append("</td>")
+            .append("</tr></table></div><div class=\"divider\"></div>");
+
+        return html.toString();
+    }
+
+    private static String renderFooter(BillSection section, String commonClasses) {
+        String text = section.getOptionAsString("text", "Thank you!");
+        return "<div class=\"" + commonClasses + " footer-text\">" + escapeHtml(text) + "</div>";
+    }
+
+    private static String formatDate(LocalDateTime dateTime, BillSettings billSettings) {
+        String dateFormat = billSettings.getDateFormat();
+        String timeFormat = billSettings.getTimeFormat();
+
+        DateTimeFormatter dateFormatter;
+        switch (dateFormat) {
+            case "ISO":
+                dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                break;
+            case "short":
+                dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy");
+                break;
+            case "long":
+                dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+                break;
+            default:
+                dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                break;
+        }
+
+        DateTimeFormatter timeFormatter = timeFormat.equals("24h") 
+            ? DateTimeFormatter.ofPattern("HH:mm") 
+            : DateTimeFormatter.ofPattern("hh:mm a");
+
+        return dateTime.format(dateFormatter) + " " + dateTime.format(timeFormatter);
+    }
+
     private static String formatCurrency(BigDecimal amount, String currency) {
         if (amount == null) return currency + "0.00";
         return currency + amount.setScale(2, RoundingMode.HALF_UP).toString();
+    }
+
+    private static String escapeHtml(String unsafe) {
+        if (unsafe == null) return "";
+        return unsafe
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#039;");
     }
 }

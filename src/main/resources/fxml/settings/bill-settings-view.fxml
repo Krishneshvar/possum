@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="15"
+      style="-fx-padding: 20;">
+
+    <HBox spacing="10" style="-fx-alignment: center-left;">
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <Label text="Bill Structure" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+            <Label text="Customize receipt layout and formatting" style="-fx-text-fill: gray;"/>
+        </VBox>
+        <Button fx:id="saveButton" text="Save Changes" onAction="#handleSave" 
+                style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20;"/>
+    </HBox>
+
+    <Separator/>
+
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <VBox spacing="15" HBox.hgrow="ALWAYS">
+            <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS">
+                <Tab text="Layout &amp; Sections" closable="false">
+                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                        <VBox spacing="15" style="-fx-padding: 15;">
+                            <Label text="Receipt Sections" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                            <Label text="Toggle visibility and reorder sections to customize your receipt layout" 
+                                   style="-fx-text-fill: gray; -fx-wrap-text: true;"/>
+                            <VBox fx:id="sectionsContainer" spacing="10"/>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+
+                <Tab text="General Options" closable="false">
+                    <VBox spacing="20" style="-fx-padding: 20;">
+                        <VBox spacing="10">
+                            <Label text="Format Settings" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                            <Label text="Configure paper size, date/time formats, and currency" style="-fx-text-fill: gray;"/>
+                            
+                            <GridPane hgap="15" vgap="15" style="-fx-padding: 10 0 0 0;">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="50"/>
+                                    <ColumnConstraints percentWidth="50"/>
+                                </columnConstraints>
+
+                                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                    <Label text="Paper Width"/>
+                                    <ComboBox fx:id="paperWidthCombo" maxWidth="Infinity"/>
+                                </VBox>
+
+                                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                    <Label text="Date Format"/>
+                                    <ComboBox fx:id="dateFormatCombo" maxWidth="Infinity"/>
+                                </VBox>
+
+                                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                    <Label text="Time Format"/>
+                                    <ComboBox fx:id="timeFormatCombo" maxWidth="Infinity"/>
+                                </VBox>
+
+                                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                    <Label text="Currency Symbol"/>
+                                    <TextField fx:id="currencyField" promptText="e.g. ₹, $, €"/>
+                                </VBox>
+                            </GridPane>
+                        </VBox>
+                    </VBox>
+                </Tab>
+            </TabPane>
+        </VBox>
+
+        <VBox spacing="10" style="-fx-min-width: 350; -fx-max-width: 350;">
+            <VBox spacing="5" style="-fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-color: white; -fx-padding: 15;">
+                <Label text="Live Preview" style="-fx-font-weight: bold;"/>
+                <Label text="Thermal receipt preview" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                <Separator/>
+                <ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background-color: #f5f5f5; -fx-min-height: 500;">
+                    <VBox style="-fx-alignment: center; -fx-padding: 20;">
+                        <WebView fx:id="previewWebView" prefWidth="300" prefHeight="600"/>
+                    </VBox>
+                </ScrollPane>
+            </VBox>
+        </VBox>
+    </HBox>
+</VBox>
