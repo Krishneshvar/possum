@@ -5,6 +5,7 @@ import com.possum.application.auth.AuthService;
 import com.possum.application.auth.LoginResponse;
 import com.possum.domain.exceptions.AuthenticationException;
 import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.common.toast.ToastService;
 import com.possum.ui.navigation.NavigationManager;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -41,14 +42,16 @@ public class LoginController {
     private final AuthService authService;
     private final NavigationManager navigationManager;
     private final SessionStore sessionStore;
+    private final ToastService toastService;
     
     private enum Mode { LOGIN, SETUP, ROTATE }
     private Mode currentMode = Mode.LOGIN;
 
-    public LoginController(AuthService authService, NavigationManager navigationManager, SessionStore sessionStore) {
-this.authService = authService;
+    public LoginController(AuthService authService, NavigationManager navigationManager, SessionStore sessionStore, ToastService toastService) {
+        this.authService = authService;
         this.navigationManager = navigationManager;
         this.sessionStore = sessionStore;
+        this.toastService = toastService;
     }
 
     @FXML
@@ -113,9 +116,11 @@ this.authService = authService;
             }
         } catch (AuthenticationException e) {
             showError(e.getMessage());
+            toastService.error(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             showError("An unexpected error occurred");
+            toastService.error("An unexpected error occurred");
         }
     }
 
@@ -149,7 +154,7 @@ this.authService = authService;
         }
 
         LoginResponse response = authService.setupInitialAdmin(name, username, password);
-        NotificationService.success("Initial setup complete");
+        toastService.success("Initial setup complete");
         completeLogin(response);
     }
 
@@ -172,14 +177,14 @@ this.authService = authService;
         authService.rotateDefaultAdminPassword(username, current, newPass);
         
         // After rotation, force re-login
-        NotificationService.success("Password rotated successully. Please sign in with your new password.");
+        toastService.success("Password rotated successully. Please sign in with your new password.");
         setMode(Mode.LOGIN);
         passwordField.requestFocus();
     }
 
     private void completeLogin(LoginResponse response) {
         if (response.mustRotate()) {
-            NotificationService.warning("Default credentials detected. Please rotate your password.");
+            toastService.info("Default credentials detected. Please rotate your password.");
             setMode(Mode.ROTATE);
             rotateUsernameField.setText(response.user().username());
             return;
@@ -187,7 +192,7 @@ this.authService = authService;
 
         sessionStore.saveSession(response.token());
         AuthContext.setCurrentUser(response.user());
-        NotificationService.success("Welcome, " + response.user().name());
+        toastService.success("Welcome, " + response.user().name());
         navigationManager.navigateTo("dashboard");
     }
 

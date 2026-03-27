@@ -1,24 +1,38 @@
 package com.possum.ui.common.controls;
 
-import javafx.animation.FadeTransition;
-import javafx.animation.PauseTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.stage.Popup;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Duration;
+import org.kordamp.ikonli.javafx.FontIcon;
 
+/**
+ * Legacy notification service, now upgraded to use the modern Toast system.
+ */
 public class NotificationService {
     private static StackPane notificationContainer;
 
     public enum Type {
-        SUCCESS("#4caf50"),
-        ERROR("#f44336"),
-        WARNING("#ff9800"),
-        INFO("#2196f3");
+        SUCCESS("toast-success", "bx-check-circle"),
+        ERROR("toast-error", "bx-error-circle"),
+        WARNING("toast-info", "bx-error"), // Map warning to info style for now
+        INFO("toast-info", "bx-info-circle");
 
-        private final String color;
-        Type(String color) { this.color = color; }
+        private final String styleClass;
+        private final String iconCode;
+        Type(String styleClass, String iconCode) { 
+            this.styleClass = styleClass;
+            this.iconCode = iconCode;
+        }
     }
 
     public static void initialize(StackPane container) {
@@ -26,41 +40,62 @@ public class NotificationService {
     }
 
     public static void show(String message, Type type) {
-        if (notificationContainer == null) {
-            System.err.println("NotificationService not initialized");
+        if (notificationContainer == null || notificationContainer.getScene() == null) {
+            // Fallback to console if not initialized
+            System.err.println("NotificationService: " + type.name() + ": " + message);
             return;
         }
 
-        Label label = new Label(message);
-        label.setStyle(String.format(
-            "-fx-background-color: %s; -fx-text-fill: white; " +
-            "-fx-padding: 15px 20px; -fx-background-radius: 5px; " +
-            "-fx-font-size: 14px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 2);",
-            type.color
-        ));
+        Window window = notificationContainer.getScene().getWindow();
+        if (!(window instanceof Stage stage)) return;
 
-        VBox notification = new VBox(label);
-        notification.setAlignment(Pos.TOP_CENTER);
-        notification.setStyle("-fx-padding: 20px;");
-        notification.setMouseTransparent(true);
+        Platform.runLater(() -> {
+            Popup popup = new Popup();
+            
+            HBox toastBody = new HBox(12);
+            toastBody.getStyleClass().addAll("toast-container", type.styleClass);
+            toastBody.setAlignment(Pos.CENTER_LEFT);
+            toastBody.setPadding(new Insets(12, 20, 12, 20));
+            toastBody.setMinWidth(300);
+            toastBody.setMaxWidth(450);
 
-        notificationContainer.getChildren().add(notification);
-        StackPane.setAlignment(notification, Pos.TOP_CENTER);
+            FontIcon icon = new FontIcon(type.iconCode);
+            icon.setIconSize(20);
+            icon.getStyleClass().add("toast-icon");
 
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(300), notification);
-        fadeIn.setFromValue(0);
-        fadeIn.setToValue(1);
+            Label label = new Label(message);
+            label.setWrapText(true);
+            label.getStyleClass().add("toast-message");
 
-        PauseTransition pause = new PauseTransition(Duration.seconds(3));
-        
-        FadeTransition fadeOut = new FadeTransition(Duration.millis(300), notification);
-        fadeOut.setFromValue(1);
-        fadeOut.setToValue(0);
-        fadeOut.setOnFinished(e -> notificationContainer.getChildren().remove(notification));
+            toastBody.getChildren().addAll(icon, label);
+            popup.getContent().add(toastBody);
+            popup.setAutoHide(true);
 
-        fadeIn.setOnFinished(e -> pause.play());
-        pause.setOnFinished(e -> fadeOut.play());
-        fadeIn.play();
+            popup.setOnShown(e -> {
+                double x = stage.getX() + (stage.getWidth() / 2) - (toastBody.getWidth() / 2);
+                double y = stage.getY() + stage.getHeight() - toastBody.getHeight() - 60;
+                popup.setX(x);
+                popup.setY(y);
+            });
+
+            popup.show(stage);
+
+            toastBody.setOpacity(0);
+            Timeline fadeIn = new Timeline(
+                new KeyFrame(Duration.ZERO, new KeyValue(toastBody.opacityProperty(), 0)),
+                new KeyFrame(Duration.millis(300), new KeyValue(toastBody.opacityProperty(), 1))
+            );
+
+            Timeline fadeOut = new Timeline(
+                new KeyFrame(Duration.ZERO, new KeyValue(toastBody.opacityProperty(), 1)),
+                new KeyFrame(Duration.millis(300), new KeyValue(toastBody.opacityProperty(), 0))
+            );
+            fadeOut.setDelay(Duration.seconds(3));
+            fadeOut.setOnFinished(ev -> popup.hide());
+
+            fadeIn.play();
+            fadeIn.setOnFinished(ev -> fadeOut.play());
+        });
     }
 
     public static void success(String message) {

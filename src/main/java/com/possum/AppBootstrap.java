@@ -164,6 +164,7 @@ public final class AppBootstrap {
         purchaseService = new PurchaseService(purchaseOrderRepository, supplierRepository, variantRepository, inventoryRepository, productFlowRepository, auditRepository, transactionManager, databaseManager, jsonService);
 
         dependencyInjector = new DependencyInjector(applicationModule, serviceLocator, salesService, taxEngine, productSearchIndex, transactionService, returnsService, reportsService, purchaseService, variantRepository, salesRepository, supplierRepository, taxRepository, appPaths);
+        dependencyInjector.getToastService().setMainStage(null); // Will be set in load methods
 
         LOGGER.info("Core services initialized");
     }
@@ -188,7 +189,8 @@ public final class AppBootstrap {
                     return new com.possum.ui.auth.LoginController(
                         authModule.getAuthService(),
                         dummyNav,
-                        sessionStore
+                        sessionStore,
+                        dependencyInjector.getToastService()
                     );
                 }
                 return null;
@@ -198,6 +200,7 @@ public final class AppBootstrap {
             Scene scene = new Scene(root, 1280, 800);
             stage.setTitle("POSSUM - Login");
             stage.setScene(scene);
+            dependencyInjector.getToastService().setMainStage(stage);
             stage.show();
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to load login screen", ex);
@@ -218,6 +221,7 @@ public final class AppBootstrap {
             stage.setMinWidth(1024);
             stage.setMinHeight(768);
             stage.setScene(scene);
+            dependencyInjector.getToastService().setMainStage(stage);
             stage.show();
 
             LOGGER.info("Main application shell loaded");

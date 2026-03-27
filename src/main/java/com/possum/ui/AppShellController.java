@@ -278,7 +278,8 @@ public class AppShellController {
                     return new com.possum.ui.auth.LoginController(
                         authModule.getAuthService(),
                         dummyNav,
-                        sessionStore
+                        sessionStore,
+                        dependencyInjector.getToastService()
                     );
                 }
                 return null;

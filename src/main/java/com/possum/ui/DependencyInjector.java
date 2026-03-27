@@ -9,6 +9,7 @@ import com.possum.application.returns.ReturnsService;
 import com.possum.application.reports.ReportsService;
 import com.possum.application.purchase.PurchaseService;
 import com.possum.persistence.repositories.interfaces.*;
+import com.possum.ui.common.toast.ToastService;
 import com.possum.ui.navigation.NavigationManager;
 
 import java.lang.reflect.Method;
@@ -35,6 +36,7 @@ public class DependencyInjector {
 
     private NavigationManager navigationManager;
     private com.possum.ui.workspace.WorkspaceManager workspaceManager;
+    private final ToastService toastService = new ToastService();
 
     public DependencyInjector(ApplicationModule applicationModule, ServiceLocator serviceLocator,
                               SalesService salesService, com.possum.application.sales.TaxEngine taxEngine, ProductSearchIndex productSearchIndex,
@@ -102,6 +104,10 @@ public class DependencyInjector {
         // Obsolete, left empty for compatibility if called explicitly elsewhere
     }
 
+    public ToastService getToastService() {
+        return toastService;
+    }
+
     private Object resolveDependency(Class<?> type) {
         // Application layer services
         if (type.equals(com.possum.application.products.ProductService.class)) {
@@ -138,6 +144,8 @@ public class DependencyInjector {
             return applicationModule.getUserService();
         } else if (type.equals(com.possum.application.people.CustomerService.class)) {
             return applicationModule.getCustomerService();
+        } else if (type.equals(ToastService.class)) {
+            return toastService;
         }
 
         // Repositories
