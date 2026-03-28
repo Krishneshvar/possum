@@ -60,11 +60,13 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
                 SELECT
                   po.*,
                   s.name AS supplier_name,
+                  pm.name AS payment_method_name,
                   u.name AS created_by_name,
                   (SELECT COUNT(*) FROM purchase_order_items WHERE purchase_order_id = po.id) AS item_count,
                   (SELECT SUM(quantity * unit_cost) FROM purchase_order_items WHERE purchase_order_id = po.id) AS total_cost
                 FROM purchase_orders po
                 LEFT JOIN suppliers s ON po.supplier_id = s.id
+                LEFT JOIN payment_methods pm ON po.payment_method_id = pm.id
                 LEFT JOIN users u ON po.created_by = u.id
                 %s
                 ORDER BY %s %s
@@ -83,10 +85,11 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
         return queryOne(
                 """
                 SELECT
-                  po.*, s.name AS supplier_name, u.name AS created_by_name,
+                  po.*, s.name AS supplier_name, pm.name AS payment_method_name, u.name AS created_by_name,
                   (SELECT COUNT(*) FROM purchase_order_items WHERE purchase_order_id = po.id) AS item_count
                 FROM purchase_orders po
                 LEFT JOIN suppliers s ON po.supplier_id = s.id
+                LEFT JOIN payment_methods pm ON po.payment_method_id = pm.id
                 LEFT JOIN users u ON po.created_by = u.id
                 WHERE po.id = ?
                 """,
@@ -112,14 +115,16 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
     }
 
     @Override
-    public long createPurchaseOrder(long supplierId, long createdBy, List<PurchaseOrderItem> items) {
+    public long createPurchaseOrder(long supplierId, String invoiceNumber, long paymentMethodId, long createdBy, List<PurchaseOrderItem> items) {
         boolean supplierExists = queryOne("SELECT id FROM suppliers WHERE id = ? AND deleted_at IS NULL", rs -> rs.getLong("id"), supplierId).isPresent();
         if (!supplierExists) {
             throw new IllegalStateException("Supplier not found: " + supplierId);
         }
         long poId = executeInsert(
-                "INSERT INTO purchase_orders (supplier_id, status, created_by) VALUES (?, 'pending', ?)",
+                "INSERT INTO purchase_orders (supplier_id, invoice_number, payment_method_id, status, created_by) VALUES (?, ?, ?, 'pending', ?)",
                 supplierId,
+                invoiceNumber,
+                paymentMethodId,
                 createdBy
         );
         for (PurchaseOrderItem item : items) {
@@ -139,7 +144,7 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
     }
 
     @Override
-    public boolean updatePurchaseOrder(long id, long supplierId, List<PurchaseOrderItem> items) {
+    public boolean updatePurchaseOrder(long id, long supplierId, long paymentMethodId, List<PurchaseOrderItem> items) {
         boolean pending = queryOne(
                 "SELECT id FROM purchase_orders WHERE id = ? AND status = 'pending'",
                 rs -> rs.getLong("id"),
@@ -148,7 +153,7 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
         if (!pending) {
             throw new IllegalStateException("Purchase order not pending: " + id);
         }
-        executeUpdate("UPDATE purchase_orders SET supplier_id = ? WHERE id = ?", supplierId, id);
+        executeUpdate("UPDATE purchase_orders SET supplier_id = ?, payment_method_id = ? WHERE id = ?", supplierId, paymentMethodId, id);
         executeUpdate("DELETE FROM purchase_order_items WHERE purchase_order_id = ?", id);
         for (PurchaseOrderItem item : items) {
             executeInsert(
@@ -180,8 +185,9 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
         StringJoiner joiner = new StringJoiner(" AND ");
         joiner.add("1=1");
         if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
-            joiner.add("(s.name LIKE ? OR po.id LIKE ?)");
+            joiner.add("(s.name LIKE ? OR po.id LIKE ? OR po.invoice_number LIKE ?)");
             String fuzzy = "%" + filter.searchTerm() + "%";
+            params.add(fuzzy);
             params.add(fuzzy);
             params.add(fuzzy);
         }

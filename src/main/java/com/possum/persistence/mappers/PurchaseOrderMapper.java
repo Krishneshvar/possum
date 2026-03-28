@@ -11,8 +11,11 @@ public final class PurchaseOrderMapper implements RowMapper<PurchaseOrder> {
     public PurchaseOrder map(ResultSet rs) throws SQLException {
         return new PurchaseOrder(
                 rs.getLong("id"),
+                getOptionalColumn(rs, "invoice_number"),
                 rs.getLong("supplier_id"),
                 getOptionalColumn(rs, "supplier_name"),
+                rs.getLong("payment_method_id"),
+                getOptionalColumn(rs, "payment_method_name"),
                 rs.getString("status"),
                 SqlMapperUtils.getLocalDateTime(rs, "order_date"),
                 SqlMapperUtils.getLocalDateTime(rs, "received_date"),

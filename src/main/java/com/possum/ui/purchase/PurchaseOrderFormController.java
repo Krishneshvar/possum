@@ -2,6 +2,8 @@ package com.possum.ui.purchase;
 
 import com.possum.application.auth.AuthContext;
 import com.possum.application.purchase.PurchaseService;
+import com.possum.application.sales.SalesService;
+import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.PurchaseOrder;
 import com.possum.domain.model.PurchaseOrderItem;
 import com.possum.domain.model.Supplier;
@@ -36,6 +38,7 @@ public class PurchaseOrderFormController implements Parameterizable {
 
     @FXML private Label titleLabel;
     @FXML private ComboBox<Supplier> supplierCombo;
+    @FXML private ComboBox<PaymentMethod> paymentMethodCombo;
     @FXML private TextField searchVariantField;
     @FXML private TableView<PurchaseItemRow> itemsTable;
     @FXML private Button saveButton;
@@ -48,6 +51,7 @@ public class PurchaseOrderFormController implements Parameterizable {
     private VariantRepository variantRepository;
     private WorkspaceManager workspaceManager;
     private ProductSearchIndex searchIndex;
+    private SalesService salesService;
 
     private Popup searchPopup = new Popup();
     private ListView<Variant> searchResultsView = new ListView<>();
@@ -60,12 +64,13 @@ public class PurchaseOrderFormController implements Parameterizable {
 
     public PurchaseOrderFormController(PurchaseService purchaseService, SupplierRepository supplierRepository,
                                        VariantRepository variantRepository, WorkspaceManager workspaceManager,
-                                       ProductSearchIndex searchIndex) {
+                                       ProductSearchIndex searchIndex, SalesService salesService) {
         this.purchaseService = purchaseService;
         this.supplierRepository = supplierRepository;
         this.variantRepository = variantRepository;
         this.workspaceManager = workspaceManager;
         this.searchIndex = searchIndex;
+        this.salesService = salesService;
     }
 
     @Override
@@ -442,11 +447,21 @@ public class PurchaseOrderFormController implements Parameterizable {
                 );
                 makeSupplierComboSearchable(suppliers.items());
                 
+                List<PaymentMethod> paymentMethods = salesService.getPaymentMethods();
+                makePaymentMethodComboSearchable(paymentMethods);
+
                 if (existingPo != null) {
                     Supplier existingSupplier = suppliers.items().stream()
                         .filter(s -> s.id().equals(existingPo.supplierId()))
                         .findFirst().orElse(null);
                     supplierCombo.setValue(existingSupplier);
+
+                    if (existingPo.paymentMethodId() != null) {
+                        PaymentMethod existingMethod = paymentMethods.stream()
+                            .filter(pm -> pm.id().equals(existingPo.paymentMethodId()))
+                            .findFirst().orElse(null);
+                        paymentMethodCombo.setValue(existingMethod);
+                    }
 
                     PurchaseService.PurchaseOrderDetail detail = purchaseService.getPurchaseOrderById(existingPo.id());
                     for (PurchaseOrderItem item : detail.items()) {
@@ -463,6 +478,23 @@ public class PurchaseOrderFormController implements Parameterizable {
                 NotificationService.error("Failed to load data for PO Form");
             }
         });
+    }
+
+    private void makePaymentMethodComboSearchable(List<PaymentMethod> allMethods) {
+        paymentMethodCombo.setItems(FXCollections.observableArrayList(allMethods));
+        paymentMethodCombo.setConverter(new javafx.util.StringConverter<PaymentMethod>() {
+            @Override
+            public String toString(PaymentMethod m) { return m == null ? "" : m.name(); }
+            @Override
+            public PaymentMethod fromString(String string) {
+                return allMethods.stream().filter(m -> m.name().equals(string)).findFirst().orElse(null);
+            }
+        });
+
+        // Select Cash by default if available and not existing PO
+        if (existingPo == null) {
+            allMethods.stream().filter(pm -> "Cash".equalsIgnoreCase(pm.name())).findFirst().ifPresent(paymentMethodCombo::setValue);
+        }
     }
 
     private void makeSupplierComboSearchable(List<Supplier> allSuppliers) {
@@ -562,10 +594,16 @@ public class PurchaseOrderFormController implements Parameterizable {
             
             long userId = AuthContext.getCurrentUser().id();
             
+            PaymentMethod paymentMethod = paymentMethodCombo.getValue();
+            if (paymentMethod == null) {
+                NotificationService.error("Select a payment method");
+                return;
+            }
+
             if (existingPo == null) {
-                purchaseService.createPurchaseOrder(supplier.id(), userId, items);
+                purchaseService.createPurchaseOrder(supplier.id(), paymentMethod.id(), userId, items);
             } else {
-                purchaseService.updatePurchaseOrder(existingPo.id(), supplier.id(), userId, items);
+                purchaseService.updatePurchaseOrder(existingPo.id(), supplier.id(), paymentMethod.id(), userId, items);
             }
             
             NotificationService.success("Purchase order saved");

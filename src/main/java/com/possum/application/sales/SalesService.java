@@ -309,8 +309,8 @@ public class SalesService {
     }
 
     /**
-     * Generates a new invoice number in the format: {PT}{YY}{MM}{DD}{SEQ:4d}
-     * e.g. CH2603260001 for Cash on 2026-03-26 (1st cash sale of all time).
+     * Generates a new invoice number in the format: S{YY}{MM}{DD}{PT}{SEQ:4d}
+     * e.g. S260326CH0001 for Cash on 2026-03-26 (1st cash sale of all time).
      *
      * @param primaryPaymentMethodId the ID of the first/primary payment method on the sale
      */
@@ -327,9 +327,9 @@ public class SalesService {
         String mm = String.format("%02d", today.getMonthValue());
         String dd = String.format("%02d", today.getDayOfMonth());
 
-        long seq = salesRepository.getNextSequenceForPaymentType(code);
+        long seq = salesRepository.getNextSequenceForPaymentType("S_" + code);
 
-        return String.format("%s%s%s%s%04d", code, yy, mm, dd, seq);
+        return String.format("S%s%s%s%s%04d", yy, mm, dd, code, seq);
     }
 
     private record TempItem(CreateSaleItemRequest item, BigDecimal pricePerUnit, BigDecimal netLineTotal) {}

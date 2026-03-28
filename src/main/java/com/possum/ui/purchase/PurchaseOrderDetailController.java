@@ -225,7 +225,8 @@ public class PurchaseOrderDetailController implements Parameterizable {
     private void handleReceive() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Receive Purchase Order");
-        confirm.setHeaderText("Receive PO-" + orderDetail.purchaseOrder().id() + "?");
+        String invNum = orderDetail.purchaseOrder().invoiceNumber();
+        confirm.setHeaderText("Receive " + (invNum != null ? invNum : ("PO-" + orderDetail.purchaseOrder().id())) + "?");
         confirm.setContentText("This will create inventory lots and update stock levels. This action cannot be undone.");
 
         confirm.showAndWait().ifPresent(response -> {
@@ -259,7 +260,8 @@ public class PurchaseOrderDetailController implements Parameterizable {
     private void handleCancel() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Cancel Purchase Order");
-        confirm.setHeaderText("Cancel PO-" + orderDetail.purchaseOrder().id() + "?");
+        String invNum = orderDetail.purchaseOrder().invoiceNumber();
+        confirm.setHeaderText("Cancel " + (invNum != null ? invNum : ("PO-" + orderDetail.purchaseOrder().id())) + "?");
         confirm.setContentText("This action cannot be undone and the order will not be fulfilled.");
 
         confirm.showAndWait().ifPresent(response -> {
