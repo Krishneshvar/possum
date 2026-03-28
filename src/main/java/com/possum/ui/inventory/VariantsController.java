@@ -55,8 +55,10 @@ public class VariantsController {
 
     private void setupFilters() {
         List<Category> categories = categoryService.getAllCategories();
-        filterBar.addMultiSelectFilter("status", "Status", List.of("active", "inactive", "draft"), String::toString);
-        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
+        filterBar.addMultiSelectFilter("status", "Status", List.of("active", "inactive", "draft"),
+            item -> item.substring(0, 1).toUpperCase() + item.substring(1));
+        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", List.of("in-stock", "low-stock", "out-of-stock"),
+            item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")));
 
         filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
 
@@ -137,7 +139,13 @@ public class VariantsController {
 
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
         statusCol.setId("status");
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setCellValueFactory(cellData -> {
+            String s = cellData.getValue().status();
+            if (s != null && !s.isEmpty()) {
+                return new SimpleStringProperty(s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase());
+            }
+            return new SimpleStringProperty("");
+        });
 
         variantsTable.getTableView().getColumns().addAll(nameCol, mrpCol, costCol, stockCol, statusCol);
 

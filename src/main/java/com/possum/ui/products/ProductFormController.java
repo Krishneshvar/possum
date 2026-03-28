@@ -153,6 +153,18 @@ public class ProductFormController implements Parameterizable {
         loadTaxCategories();
 
         statusCombo.setItems(FXCollections.observableArrayList("active", "inactive", "discontinued"));
+        statusCombo.setConverter(new javafx.util.StringConverter<String>() {
+            @Override
+            public String toString(String object) {
+                if (object == null || object.isEmpty()) return "";
+                return object.substring(0, 1).toUpperCase() + object.substring(1).toLowerCase();
+            }
+            @Override
+            public String fromString(String string) {
+                if (string == null || string.isEmpty()) return "";
+                return string.toLowerCase();
+            }
+        });
         statusCombo.setValue("active");
     }
 
@@ -161,7 +173,57 @@ public class ProductFormController implements Parameterizable {
         List<CategoryItem> items = categories.stream()
                 .map(c -> new CategoryItem(c.id(), c.name()))
                 .toList();
-        categoryCombo.setItems(FXCollections.observableArrayList(items));
+
+        javafx.collections.ObservableList<CategoryItem> observableItems = FXCollections.observableArrayList(items);
+        categoryCombo.setItems(observableItems);
+        categoryCombo.setEditable(true);
+
+        categoryCombo.setConverter(new javafx.util.StringConverter<CategoryItem>() {
+            @Override
+            public String toString(CategoryItem object) {
+                return object == null ? "" : object.name();
+            }
+
+            @Override
+            public CategoryItem fromString(String string) {
+                return categoryCombo.getItems().stream()
+                        .filter(item -> item.name().equals(string))
+                        .findFirst()
+                        .orElse(null);
+            }
+        });
+
+        categoryCombo.getEditor().setOnKeyReleased(event -> {
+            switch (event.getCode()) {
+                case UP:
+                case DOWN:
+                case RIGHT:
+                case LEFT:
+                case HOME:
+                case END:
+                case TAB:
+                case ENTER:
+                case ESCAPE:
+                    return;
+                default:
+                    break;
+            }
+
+            String newValue = categoryCombo.getEditor().getText();
+
+            if (newValue == null || newValue.isEmpty()) {
+                categoryCombo.setItems(observableItems);
+            } else {
+                List<CategoryItem> filtered = items.stream()
+                        .filter(item -> item.name().toLowerCase().contains(newValue.toLowerCase()))
+                        .toList();
+                categoryCombo.setItems(FXCollections.observableArrayList(filtered));
+            }
+
+            if (!categoryCombo.isShowing()) {
+                categoryCombo.show();
+            }
+        });
     }
 
     private void loadTaxCategories() {
@@ -397,6 +459,18 @@ public class ProductFormController implements Parameterizable {
             HBox row3 = new HBox(15);
             stockAlertField = createTextField("Stock Alert Cap", "10");
             variantStatusCombo = new ComboBox<>(FXCollections.observableArrayList("active", "inactive", "discontinued"));
+            variantStatusCombo.setConverter(new javafx.util.StringConverter<String>() {
+                @Override
+                public String toString(String object) {
+                    if (object == null || object.isEmpty()) return "";
+                    return object.substring(0, 1).toUpperCase() + object.substring(1).toLowerCase();
+                }
+                @Override
+                public String fromString(String string) {
+                    if (string == null || string.isEmpty()) return "";
+                    return string.toLowerCase();
+                }
+            });
             variantStatusCombo.setValue("active");
             variantStatusCombo.setMaxWidth(Double.MAX_VALUE);
             row3.getChildren().addAll(createFieldBox("Stock Alert", stockAlertField), createFieldBox("Status", variantStatusCombo));
@@ -445,6 +519,10 @@ public class ProductFormController implements Parameterizable {
 
             removeBtn.setVisible(false);
             removeBtn.setManaged(false);
+
+            if (isDefault()) {
+                view.setStyle("-fx-border-color: #3b82f6; -fx-border-width: 2; -fx-border-radius: 6; -fx-padding: 15; -fx-background-color: #eff6ff;");
+            }
         }
 
         private TextField createTextField(String prompt, String text) {
