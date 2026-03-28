@@ -51,8 +51,8 @@ public class InventoryService {
         return inventoryRepository.findAdjustmentsByVariantId(variantId, limit, offset);
     }
 
-    public List<com.possum.shared.dto.StockHistoryDto> getStockHistory(String search, List<String> reasons, int limit, int offset) {
-        return inventoryRepository.findStockHistory(search, reasons, limit, offset);
+    public List<com.possum.shared.dto.StockHistoryDto> getStockHistory(String search, List<String> reasons, String fromDate, String toDate, List<Long> userIds, int limit, int offset) {
+        return inventoryRepository.findStockHistory(search, reasons, fromDate, toDate, userIds, limit, offset);
     }
 
     public List<Variant> getLowStockAlerts() {

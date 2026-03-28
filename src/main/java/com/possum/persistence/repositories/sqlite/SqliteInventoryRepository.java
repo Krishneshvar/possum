@@ -95,7 +95,7 @@ public final class SqliteInventoryRepository extends BaseSqliteRepository implem
     }
 
     @Override
-    public List<com.possum.shared.dto.StockHistoryDto> findStockHistory(String search, List<String> reasons, int limit, int offset) {
+    public List<com.possum.shared.dto.StockHistoryDto> findStockHistory(String search, List<String> reasons, String fromDate, String toDate, List<Long> userIds, int limit, int offset) {
         StringBuilder sql = new StringBuilder("""
                 SELECT
                     ia.id,
@@ -130,6 +130,24 @@ public final class SqliteInventoryRepository extends BaseSqliteRepository implem
             sql.setLength(sql.length() - 1); // remove last comma
             sql.append(") ");
             params.addAll(reasons);
+        }
+
+        if (fromDate != null && !fromDate.trim().isEmpty()) {
+            sql.append(" AND ia.adjusted_at >= ? ");
+            params.add(fromDate);
+        }
+
+        if (toDate != null && !toDate.trim().isEmpty()) {
+            sql.append(" AND ia.adjusted_at <= ? ");
+            params.add(toDate);
+        }
+
+        if (userIds != null && !userIds.isEmpty()) {
+            sql.append(" AND ia.adjusted_by IN (");
+            sql.append("?,".repeat(userIds.size()));
+            sql.setLength(sql.length() - 1);
+            sql.append(") ");
+            params.addAll(userIds);
         }
 
         sql.append(" ORDER BY ia.adjusted_at DESC LIMIT ? OFFSET ? ");

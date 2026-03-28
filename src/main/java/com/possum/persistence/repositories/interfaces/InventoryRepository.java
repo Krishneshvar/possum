@@ -18,7 +18,7 @@ public interface InventoryRepository {
 
     List<InventoryAdjustment> findAdjustmentsByVariantId(long variantId, int limit, int offset);
 
-    List<com.possum.shared.dto.StockHistoryDto> findStockHistory(String search, java.util.List<String> reasons, int limit, int offset);
+    List<com.possum.shared.dto.StockHistoryDto> findStockHistory(String search, java.util.List<String> reasons, String fromDate, String toDate, java.util.List<Long> userIds, int limit, int offset);
 
     List<InventoryAdjustment> findAdjustmentsByReference(String referenceType, long referenceId);
 
