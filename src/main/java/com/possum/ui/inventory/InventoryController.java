@@ -35,6 +35,7 @@ public class InventoryController {
     private String currentSearch = "";
     private java.util.List<Long> currentCategoryFilters = java.util.Collections.emptyList();
     private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
+    private java.util.List<String> currentStatusFilters = java.util.Collections.emptyList();
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public InventoryController(InventoryService inventoryService, VariantRepository variantRepository, com.possum.application.categories.CategoryService categoryService) {
@@ -71,9 +72,9 @@ public class InventoryController {
         stockCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
             private final javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(5);
             private final javafx.scene.control.Label textLabel = new javafx.scene.control.Label();
-            private final javafx.scene.control.Button editBtn = new javafx.scene.control.Button("✏️");
+            private final javafx.scene.control.Button editBtn = new javafx.scene.control.Button("✎");
             {
-                editBtn.setStyle("-fx-background-color: transparent; -fx-padding: 0; -fx-cursor: hand;");
+                editBtn.setStyle("-fx-background-color: transparent; -fx-padding: 0 0 0 5px; -fx-cursor: hand; -fx-text-fill: #3b82f6; -fx-font-size: 14px; -fx-font-weight: bold;");
                 editBtn.setOnAction(e -> {
                     Variant variant = getTableView().getItems().get(getIndex());
                     if (variant != null) {
@@ -91,6 +92,21 @@ public class InventoryController {
                     setGraphic(null);
                 } else {
                     textLabel.setText(String.valueOf(item));
+
+                    Variant variant = getTableRow() != null ? getTableRow().getItem() : null;
+                    if (variant != null) {
+                        int alertCap = variant.stockAlertCap() != null ? variant.stockAlertCap() : 0;
+                        if (item <= 0) {
+                            textLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;"); // Red
+                        } else if (item <= alertCap) {
+                            textLabel.setStyle("-fx-text-fill: #f59e0b; -fx-font-weight: bold;"); // Yellow/Orange
+                        } else {
+                            textLabel.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold;"); // Green
+                        }
+                    } else {
+                        textLabel.setStyle("");
+                    }
+
                     setGraphic(box);
                 }
             }
@@ -110,18 +126,31 @@ public class InventoryController {
         });
         
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setSortable(false);
+        statusCol.setCellValueFactory(cellData -> {
+            String s = cellData.getValue().status();
+            if (s != null && !s.isEmpty()) {
+                return new SimpleStringProperty(s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase());
+            }
+            return new SimpleStringProperty("");
+        });
 
         inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, categoryCol, skuCol, stockCol, alertCol, priceCol, statusCol);
     }
 
     private void setupFilters() {
         java.util.List<com.possum.domain.model.Category> categories = categoryService.getAllCategories();
+        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"),
+            item -> item.substring(0, 1).toUpperCase() + item.substring(1), false);
         filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
         filterBar.addMultiSelectFilter("categories", "Categories", categories, com.possum.domain.model.Category::name);
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+
+            @SuppressWarnings("unchecked")
+            java.util.List<String> statusFilter = (java.util.List<String>) filters.get("status");
+            currentStatusFilters = statusFilter != null ? statusFilter : java.util.Collections.emptyList();
 
             @SuppressWarnings("unchecked")
             java.util.List<String> stockFilter = (java.util.List<String>) filters.get("stockStatus");
@@ -151,7 +180,7 @@ public class InventoryController {
                     null,
                     currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
                     currentStockFilters.isEmpty() ? null : currentStockFilters,
-                    null,
+                    currentStatusFilters.isEmpty() ? null : currentStatusFilters,
                     "stock",
                     "ASC",
                     paginationBar.getCurrentPage(),
@@ -170,7 +199,9 @@ public class InventoryController {
 
     private void handleAdjust(Variant variant) {
         FormDialog.show("Adjust Stock - " + variant.productName() + " (" + variant.name() + ")", dialog -> {
-            dialog.addTextField("quantity", "Quantity Change", "0");
+            var typeCombo = dialog.addComboBox("type", "Adjustment Type", "Add/Subtract");
+            typeCombo.getItems().addAll("Add/Subtract", "Set Exact");
+            dialog.addTextField("quantity", "Quantity / New Stock", "0");
             var reasonCombo = dialog.addComboBox("reason", "Reason", InventoryReason.CORRECTION);
             reasonCombo.getItems().addAll(
                 InventoryReason.CORRECTION,
@@ -180,7 +211,11 @@ public class InventoryController {
             );
         }, values -> {
             try {
-                int quantity = Integer.parseInt((String) values.get("quantity"));
+                int inputValue = Integer.parseInt((String) values.get("quantity"));
+                String type = (String) values.get("type");
+                int currentStock = variant.stock() != null ? variant.stock() : 0;
+                int quantity = "Set Exact".equals(type) ? (inputValue - currentStock) : inputValue;
+
                 InventoryReason reason = (InventoryReason) values.get("reason");
                 long userId = AuthContext.getCurrentUser().id();
                 
