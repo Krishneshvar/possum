@@ -12,6 +12,8 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Cursor;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.List;
 
 public class DataTableView<T> extends StackPane {
     private final TableView<T> tableView;
@@ -92,6 +94,35 @@ public class DataTableView<T> extends StackPane {
                     setGraphic(null);
                 } else {
                     setGraphic(button);
+                }
+            }
+        });
+        tableView.getColumns().add(column);
+    }
+
+    public void addMenuActionColumn(String title, Function<T, List<MenuItem>> menuBuilder) {
+        TableColumn<T, T> column = new TableColumn<>(title);
+        column.setSortable(false);
+        column.setCellValueFactory(features -> new ReadOnlyObjectWrapper<>(features.getValue()));
+        column.setCellFactory(col -> new TableCell<T, T>() {
+            private final MenuButton menuButton = new MenuButton(title);
+            {
+                menuButton.setCursor(Cursor.HAND);
+                menuButton.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 4 12; -fx-font-size: 13px;");
+                menuButton.setOnShowing(e -> {
+                    T item = getItem();
+                    if (item != null) {
+                        menuButton.getItems().setAll(menuBuilder.apply(item));
+                    }
+                });
+            }
+            @Override
+            protected void updateItem(T item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(menuButton);
                 }
             }
         });

@@ -18,6 +18,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -76,7 +79,7 @@ public class ProductsController {
         
         productsTable.getTableView().getColumns().addAll(nameCol, categoryCol, stockCol, statusCol);
         
-        productsTable.addActionColumn("Actions", this::showActions);
+        productsTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
     private void setupFilters() {
@@ -150,28 +153,22 @@ public class ProductsController {
         workspaceManager.openWindow("Add Product", "/fxml/products/product-form-view.fxml");
     }
 
-    private void showActions(Product product) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Product Actions");
-        alert.setHeaderText(product.name());
-        alert.setContentText("Choose action:");
+    private java.util.List<MenuItem> buildActionsMenu(Product product) {
+        java.util.List<MenuItem> items = new java.util.ArrayList<>();
         
-        ButtonType viewBtn = new ButtonType("View");
-        ButtonType editBtn = new ButtonType("Edit");
-        ButtonType deleteBtn = new ButtonType("Delete");
-        ButtonType cancelBtn = ButtonType.CANCEL;
+        MenuItem viewItem = new MenuItem("👁 View Details");
+        viewItem.setOnAction(e -> workspaceManager.openWindow("View Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view")));
         
-        alert.getButtonTypes().setAll(viewBtn, editBtn, deleteBtn, cancelBtn);
+        MenuItem editItem = new MenuItem("✏ Edit Product");
+        editItem.setOnAction(e -> workspaceManager.openWindow("Edit Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit")));
         
-        alert.showAndWait().ifPresent(type -> {
-            if (type == viewBtn) {
-                workspaceManager.openWindow("View Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view"));
-            } else if (type == editBtn) {
-                workspaceManager.openWindow("Edit Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit"));
-            } else if (type == deleteBtn) {
-                handleDelete(product);
-            }
-        });
+        MenuItem deleteItem = new MenuItem("❌ Delete Product");
+        deleteItem.setStyle("-fx-text-fill: red;");
+        deleteItem.setOnAction(e -> handleDelete(product));
+
+        items.addAll(java.util.Arrays.asList(viewItem, editItem, new SeparatorMenuItem(), deleteItem));
+
+        return items;
     }
 
     private void handleDelete(Product product) {
