@@ -166,6 +166,19 @@ public class ProductFormController implements Parameterizable {
             }
         });
         statusCombo.setValue("active");
+
+        statusCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            updateVariantStatusesBasedOnProductStatus(newVal);
+        });
+    }
+
+    private void updateVariantStatusesBasedOnProductStatus(String productStatus) {
+        if (productStatus == null) return;
+        boolean isActive = "active".equals(productStatus.toLowerCase());
+
+        for (VariantRow row : variantRows) {
+            row.updateAvailableStatuses(isActive);
+        }
     }
 
     private void loadCategories() {
@@ -241,6 +254,11 @@ public class ProductFormController implements Parameterizable {
 
     private void addVariantRow(boolean isDefault, String name) {
         VariantRow row = new VariantRow(isDefault, name);
+
+        String productStatus = statusCombo != null ? statusCombo.getValue() : "active";
+        boolean isActive = productStatus == null || "active".equals(productStatus.toLowerCase());
+        row.updateAvailableStatuses(isActive);
+
         variantRows.add(row);
         variantsContainer.getChildren().add(row.getView());
     }
@@ -412,6 +430,18 @@ public class ProductFormController implements Parameterizable {
         private Long variantId = null;
 
         private final Button removeBtn;
+
+        public void updateAvailableStatuses(boolean productIsActive) {
+            String currentStatus = variantStatusCombo.getValue();
+            if (productIsActive) {
+                variantStatusCombo.setItems(FXCollections.observableArrayList("active", "inactive", "discontinued"));
+            } else {
+                variantStatusCombo.setItems(FXCollections.observableArrayList("inactive", "discontinued"));
+                if ("active".equals(currentStatus)) {
+                    variantStatusCombo.setValue("inactive");
+                }
+            }
+        }
 
         public VariantRow(boolean isDefault, String initialName) {
             view = new VBox(10);

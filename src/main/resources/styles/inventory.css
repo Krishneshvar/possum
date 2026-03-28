@@ -198,6 +198,7 @@
     -fx-padding: 0 16;
     -fx-alignment: center-left;
     -fx-border-color: transparent #e2e8f0 transparent transparent;
+    -fx-border-width: 0 1 0 0;
 }
 
 /* Breadcrumbs / Back navigation */
