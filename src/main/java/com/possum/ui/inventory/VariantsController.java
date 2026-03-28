@@ -53,6 +53,11 @@ public class VariantsController {
         loadVariants();
     }
 
+    @FXML
+    private void handleRefresh() {
+        loadVariants();
+    }
+
     private void setupFilters() {
         List<Category> categories = categoryService.getAllCategories();
         filterBar.addMultiSelectFilter("status", "Status", List.of("active", "inactive", "draft"),
@@ -118,8 +123,9 @@ public class VariantsController {
     }
 
     private void setupTable() {
-        TableColumn<Variant, String> nameCol = new TableColumn<>("Name");
+        TableColumn<Variant, String> nameCol = new TableColumn<>("Product | Variant");
         nameCol.setId("name");
+        nameCol.setSortable(true);
         nameCol.setCellValueFactory(cellData -> {
             Variant v = cellData.getValue();
             return new SimpleStringProperty(v.productName() + " | " + v.name());
@@ -127,14 +133,42 @@ public class VariantsController {
 
         TableColumn<Variant, Integer> stockCol = new TableColumn<>("Stock");
         stockCol.setId("stock");
+        stockCol.setSortable(true);
         stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
+        stockCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            @Override
+            protected void updateItem(Integer stock, boolean empty) {
+                super.updateItem(stock, empty);
+                if (empty || stock == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(stock.toString());
+                    Variant variant = getTableRow() != null ? getTableRow().getItem() : null;
+                    if (variant != null) {
+                        int alertCap = variant.stockAlertCap() != null ? variant.stockAlertCap() : 0;
+                        if (stock <= 0) {
+                            setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;"); // Red
+                        } else if (stock <= alertCap) {
+                            setStyle("-fx-text-fill: #f59e0b; -fx-font-weight: bold;"); // Yellow/Orange
+                        } else {
+                            setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold;"); // Green
+                        }
+                    } else {
+                        setStyle("");
+                    }
+                }
+            }
+        });
 
         TableColumn<Variant, java.math.BigDecimal> mrpCol = new TableColumn<>("MRP");
         mrpCol.setId("price");
+        mrpCol.setSortable(true);
         mrpCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
 
         TableColumn<Variant, java.math.BigDecimal> costCol = new TableColumn<>("Cost");
         costCol.setId("cost_price");
+        costCol.setSortable(true);
         costCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().costPrice()));
 
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");

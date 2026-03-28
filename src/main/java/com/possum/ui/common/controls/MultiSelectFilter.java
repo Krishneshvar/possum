@@ -68,7 +68,9 @@ public class MultiSelectFilter<T> extends MenuButton {
 
         javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(vBox);
         scrollPane.setFitToWidth(true);
-        scrollPane.setPrefViewportHeight(250);
+        // Estimate height based on items (approx 24px per checkbox + 5px spacing) + padding
+        double estimatedHeight = items.size() * 29.0 + 10.0;
+        scrollPane.setPrefViewportHeight(Math.min(estimatedHeight, 300));
         scrollPane.setMaxHeight(300);
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: white;");
 

@@ -17,6 +17,12 @@
             <Label text="Variants" styleClass="view-title"/>
             <Label text="Manage all item variations" styleClass="view-subtitle"/>
         </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh variants table">
+            <tooltip>
+                <Tooltip text="Refresh the variant list"/>
+            </tooltip>
+        </Button>
     </HBox>
 
     <!-- Main Content -->
