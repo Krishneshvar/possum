@@ -7,23 +7,27 @@ import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class CategoriesController {
 
     @FXML private TreeView<String> categoryTreeView;
     @FXML private TableView<Category> categoryTableView;
+    @FXML private javafx.scene.control.TextField searchField;
     @FXML private javafx.scene.control.Button addButton;
-    @FXML private javafx.scene.control.Button editButton;
+    @FXML private javafx.scene.control.Button refreshButton;
     @FXML private TableColumn<Category, String> idCol;
     @FXML private TableColumn<Category, String> nameCol;
     @FXML private TableColumn<Category, String> parentCol;
+    @FXML private TableColumn<Category, Category> actionsCol;
 
     private final CategoryService categoryService;
     private final WorkspaceManager workspaceManager;
@@ -38,23 +42,46 @@ public class CategoriesController {
         if (addButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.CATEGORIES_MANAGE);
         }
-        if (editButton != null) {
-            com.possum.ui.common.UIPermissionUtil.requirePermission(editButton, com.possum.application.auth.Permissions.CATEGORIES_MANAGE);
-            editButton.setDisable(true);
-            categoryTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                editButton.setDisable(newVal == null);
-            });
-        }
+        
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().id())));
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
-
+        
+        setupActionsColumn();
+        
         Platform.runLater(this::loadData);
+    }
+
+    private void setupActionsColumn() {
+        actionsCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue()));
+        actionsCol.setCellFactory(col -> new TableCell<>() {
+            private final Button editBtn = new Button("Edit");
+            {
+                editBtn.getStyleClass().add("action-button");
+                editBtn.setCursor(javafx.scene.Cursor.HAND);
+                editBtn.setOnAction(e -> {
+                    Category category = getItem();
+                    if (category != null) {
+                        handleEdit(category);
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Category item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(editBtn);
+                }
+            }
+        });
     }
 
     public void loadData() {
         List<Category> allCategories = categoryService.getAllCategories();
 
-        java.util.Map<Long, String> categoryNameMap = new java.util.HashMap<>();
+        Map<Long, String> categoryNameMap = new HashMap<>();
         for (Category c : allCategories) {
             categoryNameMap.put(c.id(), c.name());
         }
@@ -68,7 +95,25 @@ public class CategoriesController {
             return new SimpleStringProperty(parentName != null ? parentName : String.valueOf(parentId));
         });
 
-        categoryTableView.setItems(FXCollections.observableArrayList(allCategories));
+        ObservableList<Category> masterData = FXCollections.observableArrayList(allCategories);
+        FilteredList<Category> filteredData = new FilteredList<>(masterData, p -> true);
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(category -> {
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+                String lowerCaseFilter = newValue.toLowerCase();
+                if (category.name().toLowerCase().contains(lowerCaseFilter)) {
+                    return true;
+                } else if (String.valueOf(category.id()).contains(lowerCaseFilter)) {
+                    return true;
+                }
+                return false;
+            });
+        });
+
+        categoryTableView.setItems(filteredData);
 
         List<CategoryTreeNode> treeNodes = categoryService.getCategoriesAsTree();
         TreeItem<String> rootItem = new TreeItem<>("All Categories");
@@ -96,13 +141,22 @@ public class CategoriesController {
     }
 
     @FXML
+    private void handleRefresh() {
+        loadData();
+    }
+
+    private void handleEdit(Category category) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("category", category);
+        workspaceManager.showDialog("Edit Category", "/fxml/categories/add-category-dialog.fxml", params);
+        loadData();
+    }
+
+    @FXML
     private void handleEditCategory() {
         Category selected = categoryTableView.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            java.util.Map<String, Object> params = new java.util.HashMap<>();
-            params.put("category", selected);
-            workspaceManager.showDialog("Edit Category", "/fxml/categories/add-category-dialog.fxml", params);
-            loadData();
+            handleEdit(selected);
         }
     }
 }

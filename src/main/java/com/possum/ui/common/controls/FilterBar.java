@@ -60,7 +60,11 @@ public class FilterBar extends VBox {
     }
 
     public <T> MultiSelectFilter<T> addMultiSelectFilter(String key, String prompt, java.util.List<T> items, Function<T, String> labelExtractor) {
-        MultiSelectFilter<T> multiSelect = new MultiSelectFilter<>(prompt, labelExtractor);
+        return addMultiSelectFilter(key, prompt, items, labelExtractor, true);
+    }
+
+    public <T> MultiSelectFilter<T> addMultiSelectFilter(String key, String prompt, java.util.List<T> items, Function<T, String> labelExtractor, boolean searchable) {
+        MultiSelectFilter<T> multiSelect = new MultiSelectFilter<>(prompt, labelExtractor, searchable);
         multiSelect.setPrefWidth(150);
         multiSelect.setItems(items);
         multiSelect.getSelectedItems().addListener((javafx.collections.ListChangeListener.Change<? extends T> c) -> notifyFilterChange());

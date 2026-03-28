@@ -74,7 +74,7 @@ public class ProductService {
                         variantCmd.stockAlertCap(),
                         variantCmd.isDefault(),
                         variantCmd.status(),
-                        null,
+                        variantCmd.stock(),
                         command.userId()
                 ));
             }
@@ -136,8 +136,8 @@ public class ProductService {
                                 variantCmd.stockAlertCap(),
                                 variantCmd.isDefault(),
                                 variantCmd.status(),
-                                null,
-                                null,
+                                variantCmd.stock(),
+                                variantCmd.stockAdjustmentReason(),
                                 command.userId()
                         ));
                     } else {
@@ -150,7 +150,7 @@ public class ProductService {
                                 variantCmd.stockAlertCap(),
                                 variantCmd.isDefault(),
                                 variantCmd.status(),
-                                null,
+                                variantCmd.stock(),
                                 command.userId()
                         ));
                     }
@@ -207,6 +207,33 @@ public class ProductService {
             }
 
             if (changes > 0) {
+                // Fetch and delete all variants, adjusting their stock to 0
+                productRepository.findProductWithVariants(id).ifPresent(dto -> {
+                    for (com.possum.domain.model.Variant variant : dto.variants()) {
+                        try {
+                            // Adjust stock to 0
+                            variantService.updateVariantWithoutTransaction(new VariantService.UpdateVariantCommand(
+                                    variant.id(),
+                                    variant.name(),
+                                    variant.sku(),
+                                    variant.price(),
+                                    variant.costPrice(),
+                                    variant.stockAlertCap(),
+                                    variant.defaultVariant(),
+                                    variant.status(),
+                                    0,
+                                    "product_deleted",
+                                    userId
+                            ));
+                            // Soft delete variant
+                            variantService.deleteVariant(variant.id(), userId);
+                        } catch (Exception e) {
+                            LoggingConfig.getLogger().error("Failed to delete variant {} while deleting product {}: {}", 
+                                variant.id(), id, e.getMessage());
+                        }
+                    }
+                });
+
                 auditRepository.insertAuditLog(createAuditLog(
                         userId,
                         "DELETE",
@@ -266,7 +293,9 @@ public class ProductService {
             java.math.BigDecimal costPrice,
             Integer stockAlertCap,
             Boolean isDefault,
-            String status
+            String status,
+            Integer stock,
+            String stockAdjustmentReason
     ) {}
 
     public record ProductWithVariantsDTO(

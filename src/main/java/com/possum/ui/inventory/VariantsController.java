@@ -39,7 +39,7 @@ public class VariantsController {
     private List<String> currentStatusFilters = Collections.emptyList();
     private List<String> currentStockFilters = Collections.emptyList();
     private List<Long> currentCategoryFilters = Collections.emptyList();
-    private String currentSortColumn = "name";
+    private String currentSortColumn = "product_name";
     private String currentSortDirection = "ASC";
 
     public VariantsController(VariantRepository variantRepository, CategoryService categoryService, WorkspaceManager workspaceManager) {
@@ -63,9 +63,9 @@ public class VariantsController {
     private void setupFilters() {
         List<Category> categories = categoryService.getAllCategories();
         filterBar.addMultiSelectFilter("status", "Status", List.of("active", "inactive", "draft"),
-            item -> item.substring(0, 1).toUpperCase() + item.substring(1));
+            item -> item.substring(0, 1).toUpperCase() + item.substring(1), false);
         filterBar.addMultiSelectFilter("stockStatus", "Stock Status", List.of("in-stock", "low-stock", "out-of-stock"),
-            item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")));
+            item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")), false);
 
         filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
 
@@ -125,13 +125,15 @@ public class VariantsController {
     }
 
     private void setupTable() {
-        TableColumn<Variant, String> nameCol = new TableColumn<>("Product | Variant");
-        nameCol.setId("name");
-        nameCol.setSortable(true);
-        nameCol.setCellValueFactory(cellData -> {
-            Variant v = cellData.getValue();
-            return new SimpleStringProperty(v.productName() + " | " + v.name());
-        });
+        TableColumn<Variant, String> productCol = new TableColumn<>("Product");
+        productCol.setId("product_name");
+        productCol.setSortable(true);
+        productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
+
+        TableColumn<Variant, String> variantCol = new TableColumn<>("Variant");
+        variantCol.setId("name");
+        variantCol.setSortable(true);
+        variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
 
         TableColumn<Variant, Integer> stockCol = new TableColumn<>("Stock");
         stockCol.setId("stock");
@@ -175,6 +177,7 @@ public class VariantsController {
 
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
         statusCol.setId("status");
+        statusCol.setSortable(false);
         statusCol.setCellValueFactory(cellData -> {
             String s = cellData.getValue().status();
             if (s != null && !s.isEmpty()) {
@@ -183,18 +186,25 @@ public class VariantsController {
             return new SimpleStringProperty("");
         });
 
-        variantsTable.getTableView().getColumns().addAll(nameCol, mrpCol, costCol, stockCol, statusCol);
+        variantsTable.getTableView().getColumns().addAll(productCol, variantCol, mrpCol, costCol, stockCol, statusCol);
 
-        variantsTable.getTableView().setOnSort(event -> {
-            if (!variantsTable.getTableView().getSortOrder().isEmpty()) {
-                TableColumn<Variant, ?> col = variantsTable.getTableView().getSortOrder().get(0);
-                currentSortColumn = col.getId() != null ? col.getId() : "name";
-                currentSortDirection = col.getSortType() == TableColumn.SortType.ASCENDING ? "ASC" : "DESC";
-            } else {
-                currentSortColumn = "name";
-                currentSortDirection = "ASC";
+        variantsTable.getTableView().setSortPolicy(tv -> {
+            // Ignore transient empty sort states; they can happen during table refresh
+            // and should not reset the user's chosen server-side sort.
+            if (tv.getSortOrder().isEmpty()) {
+                return true;
             }
-            loadVariants();
+
+            TableColumn<Variant, ?> col = tv.getSortOrder().get(0);
+            currentSortColumn = col.getId() != null ? col.getId() : "product_name";
+            currentSortDirection = col.getSortType() == TableColumn.SortType.ASCENDING ? "ASC" : "DESC";
+
+            if (paginationBar.getCurrentPage() == 0) {
+                loadVariants();
+            } else {
+                paginationBar.reset();
+            }
+            return true;
         });
 
         variantsTable.addMenuActionColumn("Actions", this::buildActionsMenu);

@@ -114,7 +114,7 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
     public PagedResult<Product> findProducts(ProductFilter filter) {
         List<Object> params = new ArrayList<>();
         String where = buildWhere(filter, params);
-        int page = Math.max(1, filter.currentPage());
+        int page = Math.max(1, filter.currentPage() + 1);
         int limit = Math.max(1, filter.itemsPerPage());
         int offset = (page - 1) * limit;
 

@@ -84,8 +84,8 @@ public class ProductsController {
 
     private void setupFilters() {
         java.util.List<Category> categories = categoryService.getAllCategories();
-        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"), item -> item.substring(0, 1).toUpperCase() + item.substring(1));
-        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")));
+        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"), item -> item.substring(0, 1).toUpperCase() + item.substring(1), false);
+        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")), false);
 
         com.possum.ui.common.controls.MultiSelectFilter<Category> categoryFilter =
             filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);

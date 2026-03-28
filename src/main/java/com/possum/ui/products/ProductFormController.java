@@ -16,14 +16,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.geometry.Insets;
-import javafx.application.Platform;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ProductFormController implements Parameterizable {
 
@@ -110,6 +106,7 @@ public class ProductFormController implements Parameterizable {
                     row.costPriceField.setText(v.costPrice() != null ? v.costPrice().toString() : "");
                     row.stockAlertField.setText(v.stockAlertCap() != null ? v.stockAlertCap().toString() : "");
                     row.variantStatusCombo.setValue(v.status() != null ? v.status() : "active");
+                    row.setInitialStock(v.stock() != null ? v.stock() : 0);
 
                     if (isView) {
                         row.setReadOnly();
@@ -292,7 +289,9 @@ public class ProductFormController implements Parameterizable {
                         new BigDecimal(row.getCostPrice()),
                         Integer.parseInt(row.getStockAlert()),
                         row.isDefault(),
-                        row.getStatus()
+                        row.getStatus(),
+                        row.getStock(),
+                        row.getAdjustmentReason()
                 );
             }).toList();
 
@@ -368,6 +367,14 @@ public class ProductFormController implements Parameterizable {
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Stock Alert must be a valid integer");
             }
+            if (row.stockField.getText() == null || row.stockField.getText().trim().isEmpty()) {
+                throw new IllegalArgumentException("Current Stock is required");
+            }
+            try {
+                Integer.parseInt(row.stockField.getText().trim());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Current Stock must be a valid integer");
+            }
             if (row.isDefault()) {
                 hasDefault = true;
             }
@@ -425,9 +432,13 @@ public class ProductFormController implements Parameterizable {
         private final TextField costPriceField;
         private final TextField marginField;
         private final TextField stockAlertField;
+        private final TextField stockField;
+        private final ComboBox<String> adjustmentReasonCombo;
+        private final VBox adjustmentReasonBox;
         private final ComboBox<String> variantStatusCombo;
         private final RadioButton defaultRadio;
         private Long variantId = null;
+        private Integer initialStock = 0;
 
         private final Button removeBtn;
 
@@ -503,10 +514,47 @@ public class ProductFormController implements Parameterizable {
             });
             variantStatusCombo.setValue("active");
             variantStatusCombo.setMaxWidth(Double.MAX_VALUE);
-            row3.getChildren().addAll(createFieldBox("Stock Alert", stockAlertField), createFieldBox("Status", variantStatusCombo));
+            
+            stockField = createTextField("Stock Level", "0");
+            stockField.textProperty().addListener((obs, oldV, newV) -> updateAdjustmentReasonVisibility());
 
-            view.getChildren().addAll(headerBox, row1, row2, row3);
+            adjustmentReasonCombo = new ComboBox<>(FXCollections.observableArrayList(
+                "Correction", "Damage", "Return", "Stocktake", "Expiry", "Theft", "Other"
+            ));
+            adjustmentReasonCombo.setValue("Correction");
+            adjustmentReasonCombo.setMaxWidth(Double.MAX_VALUE);
+            
+            adjustmentReasonBox = createFieldBox("Adjustment Reason *", adjustmentReasonCombo);
+            adjustmentReasonBox.setVisible(false);
+            adjustmentReasonBox.setManaged(false);
+
+            row3.getChildren().addAll(
+                createFieldBox("Stock Alert", stockAlertField), 
+                createFieldBox("Status", variantStatusCombo),
+                createFieldBox("Current Stock", stockField)
+            );
+
+            view.getChildren().addAll(headerBox, row1, row2, row3, adjustmentReasonBox);
             updateMargin();
+        }
+
+        private void updateAdjustmentReasonVisibility() {
+            if (variantId == null) return;
+            
+            try {
+                int currentStock = Integer.parseInt(stockField.getText().trim());
+                boolean changed = currentStock != initialStock;
+                adjustmentReasonBox.setVisible(changed);
+                adjustmentReasonBox.setManaged(changed);
+            } catch (NumberFormatException e) {
+                adjustmentReasonBox.setVisible(false);
+                adjustmentReasonBox.setManaged(false);
+            }
+        }
+
+        public void setInitialStock(Integer stock) {
+            this.initialStock = stock;
+            this.stockField.setText(stock.toString());
         }
 
         private void updateMargin() {
@@ -543,6 +591,11 @@ public class ProductFormController implements Parameterizable {
             replaceFieldWithLabel(marginField, marginField.getText());
             replaceFieldWithLabel(stockAlertField, stockAlertField.getText());
             replaceFieldWithLabel(variantStatusCombo, variantStatusCombo.getValue());
+            replaceFieldWithLabel(stockField, stockField.getText());
+            
+            if (adjustmentReasonBox.isVisible()) {
+                replaceFieldWithLabel(adjustmentReasonCombo, adjustmentReasonCombo.getValue());
+            }
             
             defaultRadio.setDisable(true);
             defaultRadio.setStyle("-fx-opacity: 1; -fx-text-fill: black;");
@@ -583,6 +636,16 @@ public class ProductFormController implements Parameterizable {
         public String getCostPrice() { return costPriceField.getText(); }
         public String getStockAlert() { return stockAlertField.getText(); }
         public String getStatus() { return variantStatusCombo.getValue(); }
+        public Integer getStock() {
+            try {
+                return Integer.parseInt(stockField.getText().trim());
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        public String getAdjustmentReason() {
+            return adjustmentReasonBox.isVisible() ? adjustmentReasonCombo.getValue().toLowerCase() : null;
+        }
         public boolean isDefault() { return defaultRadio.isSelected(); }
         public void setDefault(boolean isDefault) { defaultRadio.setSelected(isDefault); }
         public void setVariantId(Long id) { this.variantId = id; }

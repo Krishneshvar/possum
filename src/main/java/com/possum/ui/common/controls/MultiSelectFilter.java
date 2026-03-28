@@ -19,34 +19,45 @@ public class MultiSelectFilter<T> extends MenuButton {
     private final Function<T, String> labelExtractor;
     private final List<FilterableItem<T>> allItems = new ArrayList<>();
     private final TextField searchField = new TextField();
+    private final boolean searchable;
 
     public MultiSelectFilter(String title, Function<T, String> labelExtractor) {
+        this(title, labelExtractor, true);
+    }
+
+    public MultiSelectFilter(String title, Function<T, String> labelExtractor, boolean searchable) {
         super(title);
         this.labelExtractor = labelExtractor;
+        this.searchable = searchable;
 
-        searchField.setPromptText("Search...");
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> filterItems(newVal));
+        if (searchable) {
+            searchField.setPromptText("Search...");
+            searchField.textProperty().addListener((obs, oldVal, newVal) -> filterItems(newVal));
 
-        CustomMenuItem searchItem = new CustomMenuItem(searchField);
-        searchItem.setHideOnClick(false);
-        getItems().add(searchItem);
-        
-        // Ensure search field gets focus when menu opens
-        showingProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                javafx.application.Platform.runLater(searchField::requestFocus);
-            }
-        });
+            CustomMenuItem searchItem = new CustomMenuItem(searchField);
+            searchItem.setHideOnClick(false);
+            getItems().add(searchItem);
+            
+            // Ensure search field gets focus when menu opens
+            showingProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal) {
+                    javafx.application.Platform.runLater(searchField::requestFocus);
+                }
+            });
+        }
     }
 
     public void setItems(List<T> items) {
-        // Keep only the search item
-        MenuItem searchItem = getItems().get(0);
-        getItems().setAll(searchItem);
+        if (searchable) {
+            MenuItem searchItem = getItems().get(0);
+            getItems().setAll(searchItem);
+            searchField.clear();
+        } else {
+            getItems().clear();
+        }
         
         selectedItems.clear();
         allItems.clear();
-        searchField.clear();
 
         javafx.scene.layout.VBox vBox = new javafx.scene.layout.VBox(5);
         vBox.setPadding(new javafx.geometry.Insets(5));
@@ -80,8 +91,9 @@ public class MultiSelectFilter<T> extends MenuButton {
     }
 
     private void filterItems(String query) {
-        if (getItems().size() > 1) {
-            CustomMenuItem scrollItem = (CustomMenuItem) getItems().get(1);
+        int contentIndex = searchable ? 1 : 0;
+        if (getItems().size() > contentIndex) {
+            CustomMenuItem scrollItem = (CustomMenuItem) getItems().get(contentIndex);
             javafx.scene.control.ScrollPane scrollPane = (javafx.scene.control.ScrollPane) scrollItem.getContent();
             javafx.scene.layout.VBox vBox = (javafx.scene.layout.VBox) scrollPane.getContent();
 

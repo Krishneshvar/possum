@@ -90,7 +90,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                                              int currentPage,
                                              int itemsPerPage) {
         List<Object> params = new ArrayList<>();
-        String where = buildWhere(searchTerm, categoryId, categories, status, params);
+        String where = buildWhere(searchTerm, categoryId, categories, status, stockStatus, params);
 
         int total = queryOne(
                 """
@@ -104,7 +104,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                 params.toArray()
         ).orElse(0);
 
-        int page = Math.max(1, currentPage);
+        int page = Math.max(1, currentPage + 1);
         int limit = Math.max(1, itemsPerPage);
         int offset = (page - 1) * limit;
 
@@ -115,7 +115,8 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
             case "cost_price" -> "v.cost_price";
             case "stock" -> "stock";
             case "category_name" -> "c.name";
-            default -> "product_name";
+            case "product_name" -> "p.name";
+            default -> "p.name";
         };
         String order = "DESC".equalsIgnoreCase(sortOrder) ? "DESC" : "ASC";
 
@@ -167,7 +168,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
         ).orElse(Map.<String, Object>of("totalVariants", 0, "inactiveVariants", 0));
     }
 
-    private static String buildWhere(String searchTerm, Long categoryId, List<Long> categories, List<String> status, List<Object> params) {
+    private static String buildWhere(String searchTerm, Long categoryId, List<Long> categories, List<String> status, List<String> stockStatus, List<Object> params) {
         StringJoiner joiner = new StringJoiner(" AND ");
         joiner.add("v.deleted_at IS NULL");
         joiner.add("p.deleted_at IS NULL");
@@ -193,6 +194,26 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
             String placeholders = "?,".repeat(status.size()).replaceAll(",$", "");
             joiner.add("v.status IN (" + placeholders + ")");
             params.addAll(status);
+        }
+
+        if (stockStatus != null && !stockStatus.isEmpty()) {
+            List<String> conditions = new ArrayList<>();
+            String stockSub = """
+                (
+                  COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
+                  + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
+                )
+                """;
+            for (String s : stockStatus) {
+                switch (s) {
+                    case "out-of-stock" -> conditions.add(stockSub + " <= 0");
+                    case "low-stock" -> conditions.add(stockSub + " > 0 AND " + stockSub + " <= COALESCE(v.stock_alert_cap, 10)");
+                    case "in-stock" -> conditions.add(stockSub + " > COALESCE(v.stock_alert_cap, 10)");
+                }
+            }
+            if (!conditions.isEmpty()) {
+                joiner.add("(" + String.join(" OR ", conditions) + ")");
+            }
         }
 
         return "WHERE " + joiner;
