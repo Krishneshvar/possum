@@ -22,15 +22,28 @@
     
     <Separator/>
     
-    <!-- Supplier Section -->
-    <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);">
-        <Label text="Supplier Information" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
-        <Label text="Select the supplier for this purchase order" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
-        <HBox spacing="10" alignment="CENTER_LEFT">
-            <Label text="Supplier:" style="-fx-min-width: 80px;"/>
-            <ComboBox fx:id="supplierCombo" promptText="Choose a supplier" prefWidth="300"/>
-        </HBox>
-    </VBox>
+    <!-- Supplier & Payment Section -->
+    <HBox spacing="20">
+        <!-- Supplier Section -->
+        <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);">
+            <Label text="Supplier Information" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+            <Label text="Select the supplier for this purchase order" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Supplier:" style="-fx-min-width: 80px;"/>
+                <ComboBox fx:id="supplierCombo" promptText="Choose a supplier" prefWidth="250"/>
+            </HBox>
+        </VBox>
+
+        <!-- Payment Method Section -->
+        <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);">
+            <Label text="Payment Information" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+            <Label text="Select the payment method" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Payment Method:" style="-fx-min-width: 120px;"/>
+                <ComboBox fx:id="paymentMethodCombo" promptText="Choose payment method" prefWidth="200"/>
+            </HBox>
+        </VBox>
+    </HBox>
     
     <!-- Items Section -->
     <VBox spacing="10" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 1);">

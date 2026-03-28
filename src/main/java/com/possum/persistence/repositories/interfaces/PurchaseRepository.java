@@ -15,9 +15,9 @@ public interface PurchaseRepository {
 
     List<PurchaseOrderItem> getPurchaseOrderItems(long purchaseOrderId);
 
-    long createPurchaseOrder(long supplierId, long createdBy, List<PurchaseOrderItem> items);
+    long createPurchaseOrder(long supplierId, String invoiceNumber, long paymentMethodId, long createdBy, List<PurchaseOrderItem> items);
 
-    boolean updatePurchaseOrder(long id, long supplierId, List<PurchaseOrderItem> items);
+    boolean updatePurchaseOrder(long id, long supplierId, long paymentMethodId, List<PurchaseOrderItem> items);
 
     boolean receivePurchaseOrder(long purchaseOrderId, long userId);
 

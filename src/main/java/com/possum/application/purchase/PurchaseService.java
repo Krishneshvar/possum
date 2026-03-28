@@ -62,17 +62,19 @@ public class PurchaseService {
         return new PurchaseOrderDetail(po, items);
     }
 
-    public PurchaseOrderDetail createPurchaseOrder(long supplierId, long createdBy, List<PurchaseOrderItemRequest> items) {
+    public PurchaseOrderDetail createPurchaseOrder(long supplierId, long paymentMethodId, long createdBy, List<PurchaseOrderItemRequest> items) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PURCHASE_MANAGE);
         validateSupplier(supplierId);
         validateItems(items);
 
         return transactionManager.runInTransaction(() -> {
+            String invoiceNumber = generateInvoiceNumber(paymentMethodId);
+
             List<PurchaseOrderItem> itemsToCreate = items.stream()
                     .map(req -> new PurchaseOrderItem(null, null, req.variantId(), null, null, null, req.quantity(), req.unitCost()))
                     .toList();
 
-            long poId = purchaseRepository.createPurchaseOrder(supplierId, createdBy, itemsToCreate);
+            long poId = purchaseRepository.createPurchaseOrder(supplierId, invoiceNumber, paymentMethodId, createdBy, itemsToCreate);
 
             BigDecimal totalCost = items.stream()
                     .map(item -> item.unitCost().multiply(BigDecimal.valueOf(item.quantity())))
@@ -91,7 +93,7 @@ public class PurchaseService {
         });
     }
 
-    public PurchaseOrderDetail updatePurchaseOrder(long id, long supplierId, long updatedBy, List<PurchaseOrderItemRequest> items) {
+    public PurchaseOrderDetail updatePurchaseOrder(long id, long supplierId, long paymentMethodId, long updatedBy, List<PurchaseOrderItemRequest> items) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PURCHASE_MANAGE);
         PurchaseOrderDetail existingPo = getPurchaseOrderById(id);
         if (!PurchaseStatus.PENDING.dbValue().equals(existingPo.purchaseOrder().status())) {
@@ -106,7 +108,7 @@ public class PurchaseService {
                     .map(req -> new PurchaseOrderItem(null, null, req.variantId(), null, null, null, req.quantity(), req.unitCost()))
                     .toList();
 
-            purchaseRepository.updatePurchaseOrder(id, supplierId, itemsToUpdate);
+            purchaseRepository.updatePurchaseOrder(id, supplierId, paymentMethodId, itemsToUpdate);
 
             Map<String, Object> oldData = Map.of(
                     "supplier_id", existingPo.purchaseOrder().supplierId(),
@@ -165,7 +167,11 @@ public class PurchaseService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             if (totalCost.compareTo(BigDecimal.ZERO) > 0) {
-                insertPurchaseTransaction(id, totalCost.negate());
+                Long paymentMethodId = existingPo.purchaseOrder().paymentMethodId();
+                if (paymentMethodId == null || paymentMethodId <= 0) {
+                    paymentMethodId = 1L; // Fallback
+                }
+                insertPurchaseTransaction(id, totalCost.negate(), paymentMethodId);
             }
 
             Map<String, Object> oldData = Map.of(
@@ -240,13 +246,69 @@ public class PurchaseService {
         }
     }
 
-    private void insertPurchaseTransaction(long purchaseOrderId, BigDecimal amount) {
+    private String generateInvoiceNumber(long paymentMethodId) {
+        String code = "XX";
+        if (paymentMethodId > 0) {
+            Connection conn = connectionProvider.getConnection();
+            try (PreparedStatement stmt = conn.prepareStatement("SELECT code FROM payment_methods WHERE id = ?")) {
+                stmt.setLong(1, paymentMethodId);
+                try (var rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        String fetched = rs.getString("code");
+                        if (fetched != null && !fetched.isBlank()) {
+                            code = fetched;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        String yy = String.format("%02d", today.getYear() % 100);
+        String mm = String.format("%02d", today.getMonthValue());
+        String dd = String.format("%02d", today.getDayOfMonth());
+
+        long seq = getNextSequenceForPaymentType("P_" + code);
+
+        return String.format("P%s%s%s%s%04d", yy, mm, dd, code, seq);
+    }
+
+    private long getNextSequenceForPaymentType(String paymentTypeCode) {
+        Connection conn = connectionProvider.getConnection();
+        try {
+            try (PreparedStatement upsert = conn.prepareStatement(
+                    """
+                    INSERT INTO invoice_sequences (payment_type_code, last_sequence)
+                    VALUES (?, 1)
+                    ON CONFLICT(payment_type_code) DO UPDATE SET last_sequence = last_sequence + 1
+                    """)) {
+                upsert.setString(1, paymentTypeCode);
+                upsert.executeUpdate();
+            }
+            try (PreparedStatement select = conn.prepareStatement(
+                    "SELECT last_sequence FROM invoice_sequences WHERE payment_type_code = ?")) {
+                select.setString(1, paymentTypeCode);
+                try (var rs = select.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getLong("last_sequence");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to get next sequence for payment type: " + paymentTypeCode, e);
+        }
+        throw new IllegalStateException("No sequence row found for payment type: " + paymentTypeCode);
+    }
+
+    private void insertPurchaseTransaction(long purchaseOrderId, BigDecimal amount, long paymentMethodId) {
         Connection conn = connectionProvider.getConnection();
         try (PreparedStatement stmt = conn.prepareStatement(
-                     "INSERT INTO transactions (purchase_order_id, amount, type, payment_method_id, status) VALUES (?, ?, ?, 1, 'completed')")) {
+                     "INSERT INTO transactions (purchase_order_id, amount, type, payment_method_id, status) VALUES (?, ?, ?, ?, 'completed')")) {
             stmt.setLong(1, purchaseOrderId);
             stmt.setBigDecimal(2, amount);
             stmt.setString(3, TransactionType.PURCHASE.dbValue());
+            stmt.setLong(4, paymentMethodId);
             stmt.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Failed to insert purchase transaction", e);

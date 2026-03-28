@@ -210,7 +210,8 @@ public class DependencyInjector {
                 supplierRepository,
                 variantRepository,
                 workspaceManager,
-                productSearchIndex
+                productSearchIndex,
+                salesService
             );
         } else if (type.equals(com.possum.ui.purchase.PurchaseController.class)) {
             return new com.possum.ui.purchase.PurchaseController(

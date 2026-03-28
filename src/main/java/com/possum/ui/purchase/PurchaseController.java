@@ -55,7 +55,7 @@ public class PurchaseController {
 
     private void setupTable() {
         TableColumn<PurchaseOrder, String> idCol = new TableColumn<>("PO Number");
-        idCol.setCellValueFactory(cellData -> new SimpleStringProperty("#" + cellData.getValue().id()));
+        idCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber() != null ? cellData.getValue().invoiceNumber() : ("#" + cellData.getValue().id())));
         idCol.setPrefWidth(100);
         idCol.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -240,13 +240,13 @@ public class PurchaseController {
         Map<String, Object> params = new HashMap<>();
         params.put("orderId", po.id());
         params.put("onAction", (Runnable) this::loadPurchaseOrders);
-        workspaceManager.openWindow("Purchase Order PO-" + po.id(), "/fxml/purchase/purchase-order-detail-view.fxml", params);
+        workspaceManager.openWindow("Purchase Order " + (po.invoiceNumber() != null ? po.invoiceNumber() : ("PO-" + po.id())), "/fxml/purchase/purchase-order-detail-view.fxml", params);
     }
     
     private void handleCancelOrder(PurchaseOrder po) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Cancel Purchase Order");
-        confirm.setHeaderText("Cancel PO #" + po.id() + "?");
+        confirm.setHeaderText("Cancel PO " + (po.invoiceNumber() != null ? po.invoiceNumber() : ("#" + po.id())) + "?");
         confirm.setContentText("This action cannot be undone.");
         
         confirm.showAndWait().ifPresent(response -> {
@@ -282,7 +282,7 @@ public class PurchaseController {
         
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Receive Purchase Order");
-        confirm.setHeaderText("Receive PO #" + po.id() + "?");
+        confirm.setHeaderText("Receive PO " + (po.invoiceNumber() != null ? po.invoiceNumber() : ("#" + po.id())) + "?");
         confirm.setContentText("This will create inventory lots and update stock levels.");
         
         confirm.showAndWait().ifPresent(response -> {
