@@ -16,6 +16,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -195,27 +197,20 @@ public class VariantsController {
             loadVariants();
         });
 
-        variantsTable.addActionColumn("Actions", this::showActions);
+        variantsTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
-    private void showActions(Variant variant) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Variant Actions");
-        alert.setHeaderText(variant.productName() + " | " + variant.name());
-        alert.setContentText("Choose action:");
+    private java.util.List<MenuItem> buildActionsMenu(Variant variant) {
+        java.util.List<MenuItem> items = new java.util.ArrayList<>();
 
-        ButtonType viewProductBtn = new ButtonType("View Product");
-        ButtonType editProductBtn = new ButtonType("Edit Product");
-        ButtonType cancelBtn = ButtonType.CANCEL;
+        MenuItem viewProductItem = new MenuItem("👁 View Product");
+        viewProductItem.setOnAction(e -> workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "view")));
 
-        alert.getButtonTypes().setAll(viewProductBtn, editProductBtn, cancelBtn);
+        MenuItem editProductItem = new MenuItem("✏ Edit Product");
+        editProductItem.setOnAction(e -> workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "edit")));
 
-        alert.showAndWait().ifPresent(type -> {
-            if (type == viewProductBtn) {
-                workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "view"));
-            } else if (type == editProductBtn) {
-                workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "edit"));
-            }
-        });
+        items.addAll(java.util.Arrays.asList(viewProductItem, editProductItem));
+
+        return items;
     }
 }

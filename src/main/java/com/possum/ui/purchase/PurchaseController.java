@@ -146,7 +146,7 @@ public class PurchaseController {
         });
         
         purchaseTable.getTableView().getColumns().addAll(idCol, supplierCol, dateCol, itemsCol, statusCol);
-        purchaseTable.addActionColumn("Actions", this::showActions);
+        purchaseTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
     private void setupFilters() {
@@ -207,12 +207,12 @@ public class PurchaseController {
         workspaceManager.openWindow("Create Purchase Order", "/fxml/purchase/purchase-order-form-view.fxml", params);
     }
 
-    private void showActions(PurchaseOrder po) {
-        ContextMenu menu = new ContextMenu();
+    private java.util.List<MenuItem> buildActionsMenu(PurchaseOrder po) {
+        java.util.List<MenuItem> items = new java.util.ArrayList<>();
         
         MenuItem viewItem = new MenuItem("👁 View Details");
         viewItem.setOnAction(e -> handleView(po));
-        menu.getItems().add(viewItem);
+        items.add(viewItem);
         
         if ("pending".equals(po.status())) {
             MenuItem editItem = new MenuItem("✏ Edit Order");
@@ -226,14 +226,14 @@ public class PurchaseController {
             cancelItem.setStyle("-fx-text-fill: red;");
             cancelItem.setOnAction(e -> handleCancelOrder(po));
             
-            menu.getItems().addAll(new SeparatorMenuItem(), editItem, receiveItem, new SeparatorMenuItem(), cancelItem);
+            items.addAll(java.util.Arrays.asList(new SeparatorMenuItem(), editItem, receiveItem, new SeparatorMenuItem(), cancelItem));
         }
         
         MenuItem refreshItem = new MenuItem("⟳ Refresh List");
         refreshItem.setOnAction(e -> loadPurchaseOrders());
-        menu.getItems().addAll(new SeparatorMenuItem(), refreshItem);
+        items.addAll(java.util.Arrays.asList(new SeparatorMenuItem(), refreshItem));
         
-        menu.show(purchaseTable.getTableView().getScene().getWindow());
+        return items;
     }
 
     private void handleView(PurchaseOrder po) {
