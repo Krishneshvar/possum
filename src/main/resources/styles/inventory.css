@@ -197,7 +197,7 @@
     -fx-font-size: 14px;
     -fx-padding: 0 16;
     -fx-alignment: center-left;
-    -fx-border-color: transparent;
+    -fx-border-color: transparent #e2e8f0 transparent transparent;
 }
 
 /* Breadcrumbs / Back navigation */

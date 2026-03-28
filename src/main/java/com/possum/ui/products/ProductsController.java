@@ -65,7 +65,14 @@ public class ProductsController {
         stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
         
         TableColumn<Product, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setSortable(false);
+        statusCol.setCellValueFactory(cellData -> {
+            String s = cellData.getValue().status();
+            if (s != null && !s.isEmpty()) {
+                return new SimpleStringProperty(s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase());
+            }
+            return new SimpleStringProperty("");
+        });
         
         productsTable.getTableView().getColumns().addAll(nameCol, categoryCol, stockCol, statusCol);
         
@@ -74,8 +81,8 @@ public class ProductsController {
 
     private void setupFilters() {
         java.util.List<Category> categories = categoryService.getAllCategories();
-        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"), String::toString);
-        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
+        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"), item -> item.substring(0, 1).toUpperCase() + item.substring(1));
+        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")));
 
         com.possum.ui.common.controls.MultiSelectFilter<Category> categoryFilter =
             filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
@@ -131,6 +138,11 @@ public class ProductsController {
                 NotificationService.error("Failed to load products");
             }
         });
+    }
+
+    @FXML
+    private void handleRefresh() {
+        loadProducts();
     }
 
     @FXML

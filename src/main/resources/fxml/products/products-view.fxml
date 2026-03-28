@@ -18,6 +18,11 @@
             <Label text="Manage inventory items, pricing, and variants" styleClass="view-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh products table">
+            <tooltip>
+                <Tooltip text="Refresh the product list"/>
+            </tooltip>
+        </Button>
         <Button fx:id="addButton" text="+ Add Product" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new product">
             <tooltip>
                 <Tooltip text="Create a new product record"/>

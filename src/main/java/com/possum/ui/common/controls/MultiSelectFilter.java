@@ -48,6 +48,9 @@ public class MultiSelectFilter<T> extends MenuButton {
         allItems.clear();
         searchField.clear();
 
+        javafx.scene.layout.VBox vBox = new javafx.scene.layout.VBox(5);
+        vBox.setPadding(new javafx.geometry.Insets(5));
+
         for (T item : items) {
             CheckBox checkBox = new CheckBox(labelExtractor.apply(item));
 
@@ -58,33 +61,43 @@ public class MultiSelectFilter<T> extends MenuButton {
                     selectedItems.remove(item);
                 }
             });
-
-            CustomMenuItem customMenuItem = new CustomMenuItem(checkBox);
-            customMenuItem.setHideOnClick(false);
             
-            allItems.add(new FilterableItem<>(item, customMenuItem, labelExtractor.apply(item)));
-            getItems().add(customMenuItem);
+            allItems.add(new FilterableItem<>(item, checkBox, labelExtractor.apply(item)));
+            vBox.getChildren().add(checkBox);
         }
+
+        javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(vBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefViewportHeight(250);
+        scrollPane.setMaxHeight(300);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: white;");
+
+        CustomMenuItem scrollItem = new CustomMenuItem(scrollPane);
+        scrollItem.setHideOnClick(false);
+        getItems().add(scrollItem);
     }
 
     private void filterItems(String query) {
-        MenuItem searchItem = getItems().get(0);
-        List<MenuItem> filteredItems = new ArrayList<>();
-        filteredItems.add(searchItem);
+        if (getItems().size() > 1) {
+            CustomMenuItem scrollItem = (CustomMenuItem) getItems().get(1);
+            javafx.scene.control.ScrollPane scrollPane = (javafx.scene.control.ScrollPane) scrollItem.getContent();
+            javafx.scene.layout.VBox vBox = (javafx.scene.layout.VBox) scrollPane.getContent();
 
-        if (query == null || query.isEmpty()) {
-            for (FilterableItem<T> item : allItems) {
-                filteredItems.add(item.menuItem());
-            }
-        } else {
-            String lowerQuery = query.toLowerCase();
-            for (FilterableItem<T> item : allItems) {
-                if (item.label().toLowerCase().contains(lowerQuery)) {
-                    filteredItems.add(item.menuItem());
+            vBox.getChildren().clear();
+
+            if (query == null || query.isEmpty()) {
+                for (FilterableItem<T> item : allItems) {
+                    vBox.getChildren().add(item.checkBox());
+                }
+            } else {
+                String lowerQuery = query.toLowerCase();
+                for (FilterableItem<T> item : allItems) {
+                    if (item.label().toLowerCase().contains(lowerQuery)) {
+                        vBox.getChildren().add(item.checkBox());
+                    }
                 }
             }
         }
-        getItems().setAll(filteredItems);
     }
 
     public ObservableList<T> getSelectedItems() {
@@ -93,12 +106,10 @@ public class MultiSelectFilter<T> extends MenuButton {
 
     public void clearSelection() {
         for (FilterableItem<T> item : allItems) {
-            if (item.menuItem().getContent() instanceof CheckBox cb) {
-                cb.setSelected(false);
-            }
+            item.checkBox().setSelected(false);
         }
         selectedItems.clear();
     }
 
-    private record FilterableItem<T>(T item, CustomMenuItem menuItem, String label) {}
+    private record FilterableItem<T>(T item, CheckBox checkBox, String label) {}
 }
