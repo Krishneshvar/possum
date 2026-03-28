@@ -14,6 +14,7 @@ import com.possum.persistence.repositories.interfaces.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import com.possum.shared.util.TimeUtil;
 import java.util.*;
 
 public class SalesService {
@@ -180,7 +181,7 @@ public class SalesService {
             Sale sale = new Sale(
                     null,
                     invoiceNumber,
-                    LocalDateTime.now(),
+                    TimeUtil.nowUTC(),
                     totalAmount,
                     paidAmount,
                     discount,
@@ -253,7 +254,7 @@ public class SalesService {
                         payment.paymentMethodId(),
                         null,
                         "completed",
-                        LocalDateTime.now(),
+                        TimeUtil.nowUTC(),
                         null, null, null
                 );
                 long txId = salesRepository.insertTransaction(transaction);
@@ -266,7 +267,7 @@ public class SalesService {
                         payment.paymentMethodId(),
                         null,
                         "completed",
-                        LocalDateTime.now(),
+                        TimeUtil.nowUTC(),
                         null, null, null
                 ));
             }
@@ -278,7 +279,7 @@ public class SalesService {
             );
             AuditLog auditLog = new AuditLog(
                     null, userId, "CREATE", "sales", saleId,
-                    null, jsonService.toJson(auditData), null, null, LocalDateTime.now()
+                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC()
             );
             auditRepository.insertAuditLog(auditLog);
 
@@ -396,7 +397,7 @@ public class SalesService {
                     null, userId, "UPDATE", "sales", saleId,
                     jsonService.toJson(oldData), jsonService.toJson(newData),
                     jsonService.toJson(Map.of("reason", "Cancellation")),
-                    null, LocalDateTime.now()
+                    null, TimeUtil.nowUTC()
             );
             auditRepository.insertAuditLog(auditLog);
 
@@ -424,7 +425,7 @@ public class SalesService {
             AuditLog auditLog = new AuditLog(
                     null, userId, "UPDATE", "sales", saleId,
                     jsonService.toJson(oldData), jsonService.toJson(newData),
-                    null, null, LocalDateTime.now()
+                    null, null, TimeUtil.nowUTC()
             );
             auditRepository.insertAuditLog(auditLog);
 

@@ -32,6 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 
 public class SalesHistoryController {
@@ -91,8 +94,15 @@ public class SalesHistoryController {
         invoiceCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
         customerCol.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().customerName() != null ? cellData.getValue().customerName() : "Walk-in Customer"));
-        dateCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().saleDate() != null ? cellData.getValue().saleDate().format(DATE_FORMATTER) : ""));
+        dateCol.setCellValueFactory(cellData -> {
+            LocalDateTime saleDate = cellData.getValue().saleDate();
+            if (saleDate == null) return new SimpleStringProperty("");
+            
+            // Convert from UTC to local time
+            ZonedDateTime utcZoned = saleDate.atZone(ZoneId.of("UTC"));
+            ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
+            return new SimpleStringProperty(localZoned.format(DATE_FORMATTER));
+        });
         amountCol.setCellValueFactory(cellData -> new SimpleStringProperty(CURRENCY_FORMAT.format(cellData.getValue().totalAmount())));
         paidAmountCol.setCellValueFactory(cellData -> new SimpleStringProperty(CURRENCY_FORMAT.format(cellData.getValue().paidAmount())));
 

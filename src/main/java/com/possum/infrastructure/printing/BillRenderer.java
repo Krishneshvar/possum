@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import com.possum.shared.util.TimeUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -155,7 +156,7 @@ public class BillRenderer {
         StringBuilder html = new StringBuilder();
         html.append("<div class=\"").append(commonClasses).append("\">")
             .append("<div><span class=\"bold\">Bill No:</span> ").append(escapeHtml(sale.invoiceNumber())).append("</div>")
-            .append("<div><span class=\"bold\">Date:</span> ").append(formatDate(sale.saleDate(), billSettings)).append("</div>");
+            .append("<div><span class=\"bold\">Date:</span> ").append(formatDate(TimeUtil.toLocal(sale.saleDate()), billSettings)).append("</div>");
 
         if (sale.billerName() != null) {
             html.append("<div><span class=\"bold\">Cashier:</span> ").append(escapeHtml(sale.billerName())).append("</div>");

@@ -15,6 +15,7 @@ import com.possum.shared.dto.AvailableLot;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.possum.shared.util.TimeUtil;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -71,12 +72,12 @@ public class InventoryService {
                                                    LocalDateTime expiryDate, Long purchaseOrderItemId, long userId) {
         return transactionManager.runInTransaction(() -> {
             InventoryLot lot = new InventoryLot(null, variantId, batchNumber, manufacturedDate, expiryDate,
-                    quantity, unitCost, purchaseOrderItemId, LocalDateTime.now());
+                    quantity, unitCost, purchaseOrderItemId, TimeUtil.nowUTC());
             long lotId = inventoryRepository.insertInventoryLot(lot);
 
             InventoryAdjustment adjustment = new InventoryAdjustment(null, variantId, lotId, quantity,
                     InventoryReason.CONFIRM_RECEIVE.getValue(), "purchase_order_item", purchaseOrderItemId,
-                    userId, null, LocalDateTime.now());
+                    userId, null, TimeUtil.nowUTC());
             inventoryRepository.insertInventoryAdjustment(adjustment);
 
             int newStock = inventoryRepository.getStockByVariantId(variantId);
@@ -92,7 +93,7 @@ public class InventoryService {
                     "new_stock", newStock
             );
             AuditLog auditLog = new AuditLog(null, userId, "CREATE", "inventory_lots", lotId,
-                    null, jsonService.toJson(auditData), null, null, LocalDateTime.now());
+                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC());
             auditRepository.insertAuditLog(auditLog);
 
             return new ReceiveInventoryResult(lotId, variantId, quantity, newStock);
@@ -138,7 +139,7 @@ public class InventoryService {
 
                 InventoryAdjustment restoreAdj = new InventoryAdjustment(null, variantId, adj.lotId(),
                         restoreToThisLot, reason.getValue(), newReferenceType, newReferenceId,
-                        userId, null, LocalDateTime.now());
+                        userId, null, TimeUtil.nowUTC());
                 inventoryRepository.insertInventoryAdjustment(restoreAdj);
 
                 remainingToRestore -= restoreToThisLot;
@@ -147,7 +148,7 @@ public class InventoryService {
             if (remainingToRestore > 0) {
                 InventoryAdjustment headlessAdj = new InventoryAdjustment(null, variantId, null,
                         remainingToRestore, reason.getValue(), newReferenceType, newReferenceId,
-                        userId, null, LocalDateTime.now());
+                        userId, null, TimeUtil.nowUTC());
                 inventoryRepository.insertInventoryAdjustment(headlessAdj);
             }
 
@@ -177,7 +178,7 @@ public class InventoryService {
             }
 
             InventoryAdjustment adjustment = new InventoryAdjustment(null, variantId, lotId, quantityChange,
-                    reason.getValue(), referenceType, referenceId, userId, null, LocalDateTime.now());
+                    reason.getValue(), referenceType, referenceId, userId, null, TimeUtil.nowUTC());
             long adjustmentId = inventoryRepository.insertInventoryAdjustment(adjustment);
 
             int newStock = inventoryRepository.getStockByVariantId(variantId);
@@ -198,7 +199,7 @@ public class InventoryService {
                     "new_stock", newStock
             );
             AuditLog auditLog = new AuditLog(null, userId, "CREATE", "inventory_adjustments", adjustmentId,
-                    null, jsonService.toJson(auditData), null, null, LocalDateTime.now());
+                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC());
             auditRepository.insertAuditLog(auditLog);
 
             return new AdjustInventoryResult(adjustmentId, variantId, quantityChange, reason, newStock);
@@ -217,7 +218,7 @@ public class InventoryService {
 
             InventoryAdjustment adjustment = new InventoryAdjustment(null, variantId, lot.id(),
                     -deductionFromThisLot, reason.getValue(), referenceType, referenceId,
-                    userId, null, LocalDateTime.now());
+                    userId, null, TimeUtil.nowUTC());
             inventoryRepository.insertInventoryAdjustment(adjustment);
 
             remainingToDeduct -= deductionFromThisLot;
@@ -226,7 +227,7 @@ public class InventoryService {
         if (remainingToDeduct > 0) {
             InventoryAdjustment headlessAdj = new InventoryAdjustment(null, variantId, null,
                     -remainingToDeduct, reason.getValue(), referenceType, referenceId,
-                    userId, null, LocalDateTime.now());
+                    userId, null, TimeUtil.nowUTC());
             inventoryRepository.insertInventoryAdjustment(headlessAdj);
         }
 

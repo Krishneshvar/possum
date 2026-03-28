@@ -20,6 +20,7 @@ import javafx.scene.shape.Circle;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import com.possum.shared.util.TimeUtil;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -86,17 +87,16 @@ public class PurchaseController {
         });
         
         TableColumn<PurchaseOrder, LocalDateTime> dateCol = new TableColumn<>("Order Date");
-        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().orderDate()));
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(TimeUtil.toLocal(cellData.getValue().orderDate())));
         dateCol.setPrefWidth(150);
         dateCol.setCellFactory(col -> new TableCell<>() {
-            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(formatter.format(item));
+                    setText(TimeUtil.formatStandard(item));
                     setStyle("-fx-text-fill: gray;");
                 }
             }

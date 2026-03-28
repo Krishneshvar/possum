@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
+import com.possum.shared.util.TimeUtil;
 import java.util.*;
 
 public class PurchaseService {
@@ -83,7 +84,7 @@ public class PurchaseService {
                     "total_cost", totalCost
             );
             AuditLog auditLog = new AuditLog(null, createdBy, "CREATE", "purchase_orders", poId,
-                    null, jsonService.toJson(auditData), null, null, LocalDateTime.now());
+                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC());
             auditRepository.insertAuditLog(auditLog);
 
             return getPurchaseOrderById(poId);
@@ -116,7 +117,7 @@ public class PurchaseService {
                     "item_count", items.size()
             );
             AuditLog auditLog = new AuditLog(null, updatedBy, "UPDATE", "purchase_orders", id,
-                    jsonService.toJson(oldData), jsonService.toJson(newData), null, null, LocalDateTime.now());
+                    jsonService.toJson(oldData), jsonService.toJson(newData), null, null, TimeUtil.nowUTC());
             auditRepository.insertAuditLog(auditLog);
 
             return getPurchaseOrderById(id);
@@ -146,16 +147,16 @@ public class PurchaseService {
                 }
 
                 InventoryLot lot = new InventoryLot(null, item.variantId(), null, null, null,
-                        item.quantity(), item.unitCost(), item.id(), LocalDateTime.now());
+                        item.quantity(), item.unitCost(), item.id(), TimeUtil.nowUTC());
                 long lotId = inventoryRepository.insertInventoryLot(lot);
 
                 InventoryAdjustment adjustment = new InventoryAdjustment(null, item.variantId(), lotId,
                         item.quantity(), "confirm_receive", "purchase_order_item", item.id(),
-                        userId, null, LocalDateTime.now());
+                        userId, null, TimeUtil.nowUTC());
                 inventoryRepository.insertInventoryAdjustment(adjustment);
 
                 ProductFlow flow = new ProductFlow(null, item.variantId(), FlowEventType.PURCHASE.getValue(),
-                        item.quantity(), "purchase_order_item", item.id(), null, null, null, LocalDateTime.now());
+                        item.quantity(), "purchase_order_item", item.id(), null, null, null, TimeUtil.nowUTC());
                 productFlowRepository.insertProductFlow(flow);
             }
 
@@ -177,7 +178,7 @@ public class PurchaseService {
                     "received_date", updatedPo.purchaseOrder().receivedDate() != null ? updatedPo.purchaseOrder().receivedDate() : ""
             );
             AuditLog auditLog = new AuditLog(null, userId, "UPDATE", "purchase_orders", id,
-                    jsonService.toJson(oldData), jsonService.toJson(newData), null, null, LocalDateTime.now());
+                    jsonService.toJson(oldData), jsonService.toJson(newData), null, null, TimeUtil.nowUTC());
             auditRepository.insertAuditLog(auditLog);
 
             return updatedPo;
@@ -201,7 +202,7 @@ public class PurchaseService {
         Map<String, Object> oldData = Map.of("status", existingPo.purchaseOrder().status());
         Map<String, Object> newData = Map.of("status", updatedPo.purchaseOrder().status());
         AuditLog auditLog = new AuditLog(null, userId, "UPDATE", "purchase_orders", id,
-                jsonService.toJson(oldData), jsonService.toJson(newData), null, null, LocalDateTime.now());
+                jsonService.toJson(oldData), jsonService.toJson(newData), null, null, TimeUtil.nowUTC());
         auditRepository.insertAuditLog(auditLog);
 
         return updatedPo;

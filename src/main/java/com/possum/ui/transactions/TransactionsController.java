@@ -23,6 +23,9 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -54,7 +57,11 @@ this.transactionService = transactionService;
 
     private void setupTable() {
         TableColumn<Transaction, String> typeCol = new TableColumn<>("Type");
-        typeCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().type()));
+        typeCol.setCellValueFactory(cellData -> {
+            String type = cellData.getValue().type();
+            if ("payment".equals(type)) return new SimpleStringProperty("Sale");
+            return new SimpleStringProperty(toTitleCase(type));
+        });
         
         TableColumn<Transaction, BigDecimal> amountCol = new TableColumn<>("Amount");
         amountCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().amount()));
@@ -75,10 +82,25 @@ this.transactionService = transactionService;
         paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentMethodName()));
         
         TableColumn<Transaction, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(toTitleCase(cellData.getValue().status())));
         
         TableColumn<Transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().transactionDate()));
+        dateCol.setCellFactory(col -> new TableCell<>() {
+            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    // Convert from UTC to the system's local timezone for accurate local display
+                    ZonedDateTime utcZoned = item.atZone(ZoneId.of("UTC"));
+                    ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
+                    setText(localZoned.format(formatter));
+                }
+            }
+        });
         
         TableColumn<Transaction, String> refCol = new TableColumn<>("Reference");
         refCol.setCellFactory(col -> new TableCell<>() {
@@ -90,7 +112,7 @@ this.transactionService = transactionService;
                 } else {
                     Transaction tx = getTableView().getItems().get(getIndex());
                     if (tx.saleId() != null) {
-                        setText("Sale #" + tx.saleId() + (tx.invoiceNumber() != null ? " (" + tx.invoiceNumber() + ")" : ""));
+                        setText(tx.invoiceNumber() != null ? tx.invoiceNumber() : "Sale #" + tx.saleId());
                     } else if (tx.purchaseOrderId() != null) {
                         setText("PO #" + tx.purchaseOrderId());
                     } else {
@@ -105,7 +127,7 @@ this.transactionService = transactionService;
 
     private void setupFilters() {
         ComboBox<String> typeFilter = filterBar.addFilter("type", "Type");
-        typeFilter.getItems().addAll("All", "payment", "refund", "purchase");
+        typeFilter.getItems().addAll("All", "Sale", "Refund", "Purchase");
         typeFilter.setValue("All");
         
         ComboBox<String> dateFilter = filterBar.addFilter("dateRange", "Date Range");
@@ -116,7 +138,13 @@ this.transactionService = transactionService;
             currentSearch = (String) filters.get("search");
             
             String type = (String) filters.get("type");
-            currentType = "All".equals(type) ? null : type;
+            if ("All".equals(type)) {
+                currentType = null;
+            } else if ("Sale".equals(type)) {
+                currentType = "payment";
+            } else {
+                currentType = type.toLowerCase();
+            }
             
             String range = (String) filters.get("dateRange");
             updateDateRange(range);
@@ -177,5 +205,17 @@ this.transactionService = transactionService;
                 NotificationService.error("Failed to load transactions");
             }
         });
+    }
+    private String toTitleCase(String input) {
+        if (input == null || input.isEmpty()) return "";
+        String[] words = input.toLowerCase().split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (word.isEmpty()) continue;
+            sb.append(Character.toUpperCase(word.charAt(0)))
+              .append(word.substring(1))
+              .append(" ");
+        }
+        return sb.toString().trim();
     }
 }

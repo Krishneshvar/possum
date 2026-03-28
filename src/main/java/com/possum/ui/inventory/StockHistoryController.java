@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 import java.time.format.DateTimeFormatter;
+import com.possum.shared.util.TimeUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -65,7 +66,7 @@ public class StockHistoryController {
         reasonCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().reason()));
         adjustedByCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().adjustedByName()));
         dateCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().adjustedAt() != null ? cellData.getValue().adjustedAt().format(DATE_FORMATTER) : ""));
+                cellData.getValue().adjustedAt() != null ? TimeUtil.formatStandard(TimeUtil.toLocal(cellData.getValue().adjustedAt())) : ""));
     }
 
     private void setupFilters() {

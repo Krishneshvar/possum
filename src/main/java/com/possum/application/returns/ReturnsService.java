@@ -14,6 +14,7 @@ import com.possum.shared.dto.ReturnFilter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.possum.shared.util.TimeUtil;
 import java.util.*;
 
 public class ReturnsService {
@@ -70,7 +71,7 @@ public class ReturnsService {
                     request.saleId(),
                     request.userId(),
                     request.reason().trim(),
-                    LocalDateTime.now(),
+                    TimeUtil.nowUTC(),
                     null, null, null
             );
             long returnId = returnsRepository.insertReturn(returnRecord);
@@ -116,7 +117,7 @@ public class ReturnsService {
             );
             AuditLog auditLog = new AuditLog(
                     null, request.userId(), "CREATE", "returns", returnId,
-                    null, jsonService.toJson(auditData), null, null, LocalDateTime.now()
+                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC()
             );
             auditRepository.insertAuditLog(auditLog);
 
@@ -233,7 +234,7 @@ public class ReturnsService {
                 paymentMethodId,
                 null,
                 "completed",
-                LocalDateTime.now(),
+                TimeUtil.nowUTC(),
                 null, null, null
         );
         salesRepository.insertTransaction(refundTransaction);

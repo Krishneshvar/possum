@@ -5,6 +5,7 @@ import com.possum.domain.model.ProductFlow;
 import com.possum.persistence.repositories.interfaces.ProductFlowRepository;
 
 import java.time.LocalDateTime;
+import com.possum.shared.util.TimeUtil;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class ProductFlowService {
                 null,
                 null,
                 null,
-                LocalDateTime.now()
+                TimeUtil.nowUTC()
         );
         productFlowRepository.insertProductFlow(flow);
     }

@@ -13,6 +13,8 @@ import com.possum.shared.dto.UserFilter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import com.possum.shared.util.TimeUtil;
+import java.time.LocalDateTime;
 
 public class AuthService {
 
@@ -79,7 +81,7 @@ public class AuthService {
             List<Long> currentRoleIds = userRepository.getUserRoles(existing.id()).stream().map(Role::id).toList();
             User updated = new User(existing.id(), existing.name(), existing.username(), 
                 passwordHasher.hashPassword(newPassword), existing.active(), existing.createdAt(), 
-                java.time.LocalDateTime.now(), existing.deletedAt());
+                TimeUtil.nowUTC(), existing.deletedAt());
             userRepository.updateUserWithRolesById(existing.id(), updated, currentRoleIds);
         }
     }
@@ -166,7 +168,7 @@ public class AuthService {
         }
 
         String passwordHash = passwordHasher.hashPassword(password);
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        LocalDateTime now = TimeUtil.nowUTC();
         User user = new User(0L, trimmedName, trimmedUsername, passwordHash, true, now, now, null);
         User createdUser = userRepository.insertUserWithRoles(user, Collections.singletonList(adminRole.get().id()));
 

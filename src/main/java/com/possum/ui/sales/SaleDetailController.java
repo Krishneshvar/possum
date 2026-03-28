@@ -24,6 +24,7 @@ import java.util.List;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
+import com.possum.shared.util.TimeUtil;
 import java.util.Locale;
 import java.util.Map;
 
@@ -197,7 +198,7 @@ public class SaleDetailController implements Parameterizable {
             statusBadge.setText(currentSale.status().toUpperCase());
             applyStatusStyle(currentSale.status());
             
-            dateLabel.setText("Processed on " + currentSale.saleDate().format(dateTimeFormatter));
+            dateLabel.setText("Processed on " + TimeUtil.format(TimeUtil.toLocal(currentSale.saleDate()), "MMMM dd, yyyy 'at' hh:mm a"));
             customerNameLabel.setText(currentSale.customerName() != null ? currentSale.customerName() : "Walk-in Customer");
             customerContactLabel.setText(currentSale.customerPhone() != null ? currentSale.customerPhone() : "No contact info");
             

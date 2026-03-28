@@ -10,6 +10,7 @@ import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.UserFilter;
 
 import java.time.LocalDateTime;
+import com.possum.shared.util.TimeUtil;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +34,7 @@ public class UserService {
     public User createUser(String name, String username, String password, boolean active, List<Long> roleIds) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         String hashedPassword = passwordHasher.hashPassword(password);
-        User newUser = new User(null, name, username, hashedPassword, active, LocalDateTime.now(), LocalDateTime.now(), null);
+        User newUser = new User(null, name, username, hashedPassword, active, TimeUtil.nowUTC(), TimeUtil.nowUTC(), null);
         return userRepository.insertUserWithRoles(newUser, roleIds);
     }
 
@@ -47,7 +48,7 @@ public class UserService {
             hashedPassword = passwordHasher.hashPassword(password);
         }
 
-        User updatedUser = new User(existingUser.id(), name, username, hashedPassword, active, existingUser.createdAt(), LocalDateTime.now(), existingUser.deletedAt());
+        User updatedUser = new User(existingUser.id(), name, username, hashedPassword, active, existingUser.createdAt(), TimeUtil.nowUTC(), existingUser.deletedAt());
         return userRepository.updateUserWithRolesById(id, updatedUser, roleIds);
     }
 

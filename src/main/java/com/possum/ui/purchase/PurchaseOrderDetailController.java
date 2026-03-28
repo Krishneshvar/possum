@@ -22,6 +22,7 @@ import javafx.scene.text.FontWeight;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
+import com.possum.shared.util.TimeUtil;
 import java.util.Map;
 
 public class PurchaseOrderDetailController implements Parameterizable {
@@ -160,10 +161,8 @@ public class PurchaseOrderDetailController implements Parameterizable {
     private void displayOrderDetails() {
         if (orderDetail == null) return;
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
-
         poNumberLabel.setText("PO-" + orderDetail.purchaseOrder().id());
-        orderDateLabel.setText(orderDetail.purchaseOrder().orderDate().format(formatter));
+        orderDateLabel.setText(TimeUtil.formatStandard(TimeUtil.toLocal(orderDetail.purchaseOrder().orderDate())));
         supplierNameLabel.setText(orderDetail.purchaseOrder().supplierName());
         createdByLabel.setText(orderDetail.purchaseOrder().createdByName());
 
@@ -193,7 +192,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
         statusLabel.setGraphic(statusBox);
 
         if (orderDetail.purchaseOrder().receivedDate() != null) {
-            receivedDateLabel.setText(orderDetail.purchaseOrder().receivedDate().format(formatter));
+            receivedDateLabel.setText(TimeUtil.formatStandard(TimeUtil.toLocal(orderDetail.purchaseOrder().receivedDate())));
             receivedDateLabel.setVisible(true);
         } else {
             receivedDateLabel.setVisible(false);
