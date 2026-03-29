@@ -21,61 +21,144 @@
         <center>
             <HBox spacing="20">
                 <!-- Left Side: Cart and Search -->
-                <VBox fx:id="leftVBox" spacing="0" HBox.hgrow="ALWAYS" styleClass="pos-card">
+                <!-- Left Side Container -->
+                <VBox fx:id="leftVBox" spacing="20" HBox.hgrow="ALWAYS">
+                    <!-- Cart Card -->
+                    <VBox fx:id="cartCardVBox" spacing="0" VBox.vgrow="ALWAYS" styleClass="pos-card">
                     <HBox alignment="CENTER_LEFT" styleClass="pos-card-header">
                         <Label text="Cart Items" styleClass="pos-card-title"/>
                     </HBox>
                     
-                    <TableView fx:id="cartTable" VBox.vgrow="ALWAYS" styleClass="pos-table" editable="true">
-                        <columns>
-                            <TableColumn fx:id="colSno" text="#" prefWidth="50" minWidth="50" maxWidth="50" style="-fx-alignment: CENTER;" editable="false" resizable="false"/>
-                            <TableColumn fx:id="colSku" text="SKU" prefWidth="100" minWidth="80" style="-fx-alignment: CENTER-LEFT;" editable="false"/>
-                            <TableColumn fx:id="colProduct" text="Product" prefWidth="200" minWidth="150" editable="false"/>
-                            <TableColumn fx:id="colQty" text="Qty" prefWidth="80" minWidth="80" maxWidth="100" style="-fx-alignment: CENTER;" editable="true"/>
-                            <TableColumn fx:id="colPrice" text="Price" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
-                            <TableColumn fx:id="colMrp" text="MRP" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
-                            <TableColumn fx:id="colDiscount" text="Discount" prefWidth="180" minWidth="160" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
-                            <TableColumn fx:id="colTotal" text="Total" prefWidth="120" minWidth="100" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
-                        </columns>
-                    </TableView>
-
-                    <!-- Search Row visually appended after the table content -->
-                    <HBox alignment="CENTER" spacing="10" styleClass="search-row" style="-fx-padding: 8 20; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;">
-                        <Label text="+" style="-fx-font-size: 20px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
-                        <TextField fx:id="searchField" promptText="Search product, variant, or SKU... (Ctrl+K)" HBox.hgrow="ALWAYS" styleClass="search-field-pos"/>
-                    </HBox>
-
-                    <!-- Expanding region to push totals to the bottom if table is small -->
-                    <Region VBox.vgrow="ALWAYS" />
-
-                    <!-- Sticky-style Totals Bar at the bottom of the card -->
-                    <HBox alignment="CENTER_RIGHT" spacing="30" style="-fx-padding: 15 20; -fx-background-color: #f8fafc; -fx-background-radius: 0 0 12 12; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;">
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="TOTAL QUANTITY" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                            <Label fx:id="totalQtyLabel" text="0" style="-fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-font-size: 14px;"/>
+                        <!-- Search Row moved to the top, just below card title -->
+                        <HBox alignment="CENTER" spacing="10" styleClass="search-row" style="-fx-padding: 8 20; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
+                            <Label text="+" style="-fx-font-size: 20px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
+                            <TextField fx:id="searchField" promptText="Search product, variant, or SKU... (Ctrl+K)" HBox.hgrow="ALWAYS" styleClass="search-field-pos"/>
                         </HBox>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <HBox spacing="12" alignment="CENTER_LEFT">
-                            <Label text="TOTAL" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                            <Label fx:id="bottomTotalLabel" text="\$0.00" style="-fx-font-weight: 800; -fx-text-fill: #2563eb; -fx-font-size: 18px;"/>
+
+                        <TableView fx:id="cartTable" styleClass="pos-table" editable="true" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colSno" text="#" prefWidth="50" minWidth="50" maxWidth="50" style="-fx-alignment: CENTER;" editable="false" resizable="false"/>
+                                <TableColumn fx:id="colSku" text="SKU" prefWidth="100" minWidth="80" style="-fx-alignment: CENTER-LEFT;" editable="false"/>
+                                <TableColumn fx:id="colProduct" text="Product" prefWidth="200" minWidth="150" editable="false"/>
+                                <TableColumn fx:id="colQty" text="Qty" prefWidth="80" minWidth="80" maxWidth="100" style="-fx-alignment: CENTER;" editable="true"/>
+                                <TableColumn fx:id="colPrice" text="Price" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
+                                <TableColumn fx:id="colMrp" text="MRP" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
+                                <TableColumn fx:id="colDiscountPct" text="Disc %" prefWidth="90" minWidth="80" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
+                                <TableColumn fx:id="colDiscountAmt" text="Disc Amt" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
+                                <TableColumn fx:id="colTotal" text="Total" prefWidth="120" minWidth="100" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
+                            </columns>
+                        </TableView>
+
+                        <!-- Sticky-style Totals Bar at the bottom of the cart card -->
+                        <HBox alignment="CENTER_RIGHT" spacing="30" style="-fx-padding: 15 20; -fx-background-color: #f1f5f9; -fx-background-radius: 0 0 12 12; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;">
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Label text="TOTAL QUANTITY" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                <Label fx:id="totalQtyLabel" text="0" style="-fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-font-size: 14px;"/>
+                            </HBox>
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Label text="MRP TOTAL" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                <Label fx:id="bottomMrpLabel" text="\$0.00" style="-fx-font-weight: 800; -fx-text-fill: #64748b; -fx-font-size: 14px;"/>
+                            </HBox>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <Label text="TOTAL" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                <Label fx:id="bottomTotalLabel" text="\$0.00" style="-fx-font-weight: 800; -fx-text-fill: #2563eb; -fx-font-size: 18px;"/>
+                            </HBox>
                         </HBox>
+                    </VBox>
+                    <HBox spacing="20">
+                        <!-- CUSTOMER CARD SECTION -->
+                        <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 20;" HBox.hgrow="ALWAYS">
+                            <VBox spacing="12">
+                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                    <Label text="👤" style="-fx-font-size: 16px;"/>
+                                    <Label text="Customer Details" style="-fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-font-size: 13px;"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button fx:id="btnResetCustomer" text="Clear" onAction="#handleResetCustomer" style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 5 10; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-cursor: hand;"/>
+                                </HBox>
+                                
+                                <GridPane hgap="15" vgap="10">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="50"/>
+                                        <ColumnConstraints percentWidth="50"/>
+                                    </columnConstraints>
+                                    
+                                    <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                        <Label text="SEARCH / SELECT" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <ComboBox fx:id="customerCombo" promptText="Walk-in Customer" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6;"/>
+                                    </VBox>
+                                    
+                                    <VBox spacing="4" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                        <Label text="FULL NAME" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="customerNameField" promptText="Name" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                    
+                                    <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                        <Label text="PHONE NUMBER" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="customerPhoneField" promptText="Phone" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                    
+                                    <VBox spacing="4" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                        <Label text="EMAIL ADDRESS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="customerEmailField" promptText="Email" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                    
+                                    <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
+                                        <Label text="PHYSICAL ADDRESS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="customerAddressField" promptText="Address" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                </GridPane>
+                            </VBox>
+                        </VBox>
+
+                        <!-- QUICK ADD PRODUCT SECTION -->
+                        <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 20; -fx-background-color: #f8fafc;" prefWidth="400">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="⚡" style="-fx-font-size: 16px;"/>
+                                <Label text="Quick Add Product" style="-fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-font-size: 13px;"/>
+                            </HBox>
+                            
+                            <VBox spacing="10">
+                                <VBox spacing="4">
+                                    <Label text="PRODUCT NAME" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                    <TextField fx:id="quickProductName" promptText="Search or type new product name..." styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                </VBox>
+                                
+                                <HBox spacing="10">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="VARIANT NAME" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="quickVariantName" promptText="Standard, 1kg, Red" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="STOCK" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="quickStock" promptText="0" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                </HBox>
+
+                                <HBox spacing="10">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="PRICE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="quickPrice" promptText="0.00" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="CATEGORY" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
+                                        <TextField fx:id="quickCategorySearch" promptText="Search category..." styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    </VBox>
+                                </HBox>
+                                
+                                <Button text="⚡ Add &amp; Add to Cart" onAction="#handleQuickAddProduct" maxWidth="Infinity" 
+                                        style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 800; -fx-padding: 10; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 12px;"/>
+                                
+                                <Label text="Creates or updates a product and adds the variant instantly." wrapText="true" style="-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-style: italic;"/>
+                            </VBox>
+                        </VBox>
                     </HBox>
                 </VBox>
 
                 <!-- Right Side: Billing Section -->
-                <VBox spacing="20" prefWidth="400">
-                    <!-- Customer & Payment Setup -->
+                <VBox spacing="20" prefWidth="400" VBox.vgrow="ALWAYS">
+                    <!-- Payment Setup -->
                     <VBox spacing="20" styleClass="pos-card" style="-fx-padding: 24;">
-                        <VBox spacing="10">
-                            <HBox alignment="CENTER_LEFT" spacing="8">
-                                <Label text="👤" /> <!-- Lucide icons equivalent -->
-                                <Label text="Customer" styleClass="billing-label"/>
-                            </HBox>
-                            <ComboBox fx:id="customerCombo" promptText="Walk-in Customer" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 4;"/>
-                        </VBox>
-
-                        <Separator/>
-
                         <VBox spacing="15">
                             <HBox alignment="CENTER_LEFT" spacing="8">
                                 <Label text="💳" />
@@ -148,9 +231,9 @@
                             <Region HBox.hgrow="ALWAYS"/>
                             <Label text="Ctrl+1-9" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: 600;"/>
                         </HBox>
-                        <FlowPane fx:id="billsFlowPane" hgap="10" vgap="10">
+                        <HBox fx:id="billsFlowPane" spacing="5">
                             <!-- Add ToggleButtons inside Controller -->
-                        </FlowPane>
+                        </HBox>
                         <Button text="Clear Current Cart" maxWidth="Infinity" onAction="#handleClearCart" 
                                 style="-fx-background-color: #fff1f2; -fx-text-fill: #e11d48; -fx-border-color: #fda4af; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10; -fx-font-weight: 700; -fx-font-size: 13px; -fx-cursor: hand;"/>
                     </VBox>

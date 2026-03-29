@@ -1,7 +1,6 @@
 package com.possum.ui.common.controls;
 
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.CustomMenuItem;
