@@ -19,6 +19,8 @@ public class FilterBar extends VBox {
     private final Map<String, ComboBox<?>> filters = new HashMap<>();
     private final Map<String, MultiSelectFilter<?>> multiSelectFilters = new HashMap<>();
     private final Map<String, DatePicker> dateFilters = new HashMap<>();
+    private final Map<String, TextField> textFilters = new HashMap<>();
+    private final Map<String, Object> defaultValues = new HashMap<>();
     private Consumer<Map<String, Object>> onFilterChange;
 
     private final HBox topRow;
@@ -86,6 +88,17 @@ public class FilterBar extends VBox {
         return picker;
     }
 
+    public TextField addTextFilter(String key, String prompt) {
+        TextField field = new TextField();
+        field.setPromptText(prompt);
+        field.setPrefWidth(120);
+        field.textProperty().addListener((obs, old, val) -> notifyFilterChange());
+
+        textFilters.put(key, field);
+        bottomRow.getChildren().add(field);
+        return field;
+    }
+
     public void setOnFilterChange(Consumer<Map<String, Object>> handler) {
         this.onFilterChange = handler;
     }
@@ -97,6 +110,7 @@ public class FilterBar extends VBox {
             filters.forEach((key, combo) -> values.put(key, combo.getValue()));
             multiSelectFilters.forEach((key, multiSelect) -> values.put(key, multiSelect.getSelectedItems()));
             dateFilters.forEach((key, picker) -> values.put(key, picker.getValue()));
+            textFilters.forEach((key, field) -> values.put(key, field.getText()));
             onFilterChange.accept(values);
         }
     }
@@ -105,13 +119,28 @@ public class FilterBar extends VBox {
         isResetting = true;
         try {
             searchField.clear();
-            filters.values().forEach(combo -> combo.setValue(null));
+            filters.forEach((key, combo) -> {
+                Object def = defaultValues.get(key);
+                if (def != null) {
+                    ((ComboBox) combo).setValue(def);
+                } else {
+                    combo.setValue(null);
+                }
+            });
             multiSelectFilters.values().forEach(MultiSelectFilter::clearSelection);
             dateFilters.values().forEach(picker -> picker.setValue(null));
+            textFilters.forEach((key, field) -> {
+                Object def = defaultValues.get(key);
+                field.setText(def != null ? def.toString() : "");
+            });
         } finally {
             isResetting = false;
             notifyFilterChange();
         }
+    }
+
+    public void setDefaultValue(String key, Object value) {
+        defaultValues.put(key, value);
     }
 
     public String getSearchText() {

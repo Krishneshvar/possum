@@ -69,22 +69,7 @@
 
     <!-- Table Section -->
     <VBox spacing="15" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-padding: 0;">
-        <TableView fx:id="salesTable" VBox.vgrow="ALWAYS" style="-fx-background-radius: 12 12 0 0; -fx-border-width: 0;">
-            <columns>
-                <TableColumn fx:id="invoiceCol" text="Invoice #" prefWidth="120"/>
-                <TableColumn fx:id="customerCol" text="Customer" prefWidth="250"/>
-                <TableColumn fx:id="dateCol" text="Date &amp; Time" prefWidth="180"/>
-                <TableColumn fx:id="amountCol" text="Total Amount" prefWidth="150" style="-fx-alignment: CENTER-RIGHT;"/>
-                <TableColumn fx:id="paidAmountCol" text="Paid Amount" prefWidth="150" style="-fx-alignment: CENTER-RIGHT;"/>
-                <TableColumn fx:id="statusCol" text="Status" prefWidth="120" style="-fx-alignment: CENTER;"/>
-                <TableColumn fx:id="actionsCol" text="Actions" prefWidth="150" style="-fx-alignment: CENTER;"/>
-            </columns>
-            <placeholder>
-                <VBox alignment="CENTER" spacing="10">
-                    <Label text="No bills found" style="-fx-font-size: 16px; -fx-text-fill: #64748b;"/>
-                </VBox>
-            </placeholder>
-        </TableView>
+        <com.possum.ui.common.controls.DataTableView fx:id="salesTable" VBox.vgrow="ALWAYS" />
         
         <PaginationBar fx:id="paginationBar" style="-fx-padding: 10 20; -fx-background-color: #f8fafc; -fx-background-radius: 0 0 12 12;"/>
     </VBox>

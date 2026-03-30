@@ -11,18 +11,16 @@ import com.possum.ui.common.controls.PaginationBar;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrinterService;
-import com.possum.ui.common.dialogs.BillPreviewDialog;
 import com.possum.ui.common.controls.*;
 import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.util.Callback;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -45,14 +43,7 @@ public class SalesHistoryController {
     @FXML private Label partialLabel;
     @FXML private Label cancelledLabel;
 
-    @FXML private TableView<Sale> salesTable;
-    @FXML private TableColumn<Sale, String> invoiceCol;
-    @FXML private TableColumn<Sale, String> customerCol;
-    @FXML private TableColumn<Sale, String> dateCol;
-    @FXML private TableColumn<Sale, String> amountCol;
-    @FXML private TableColumn<Sale, String> paidAmountCol;
-    @FXML private TableColumn<Sale, String> statusCol;
-    @FXML private TableColumn<Sale, Void> actionsCol;
+    @FXML private DataTableView<Sale> salesTable;
 
     @FXML private PaginationBar paginationBar;
 
@@ -69,6 +60,10 @@ public class SalesHistoryController {
     private int pageSize = 15;
     private String currentSearch = "";
     private List<String> currentStatus = null;
+    private java.time.LocalDate currentFromDate = null;
+    private java.time.LocalDate currentToDate = null;
+    private BigDecimal currentMinAmount = null;
+    private BigDecimal currentMaxAmount = null;
 
     public SalesHistoryController(SalesService salesService, 
                                   SettingsStore settingsStore, 
@@ -89,23 +84,36 @@ public class SalesHistoryController {
     }
 
     private void setupTable() {
-        salesTable.setItems(salesList);
+        salesTable.getTableView().setItems(salesList);
 
-        invoiceCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
-        customerCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+        salesTable.addColumn("Invoice #", cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
+        
+        salesTable.addColumn("Customer", cellData -> new SimpleStringProperty(
                 cellData.getValue().customerName() != null ? cellData.getValue().customerName() : "Walk-in Customer"));
-        dateCol.setCellValueFactory(cellData -> {
+        
+        salesTable.addColumn("Date & Time", cellData -> {
             LocalDateTime saleDate = cellData.getValue().saleDate();
             if (saleDate == null) return new SimpleStringProperty("");
-            
-            // Convert from UTC to local time
             ZonedDateTime utcZoned = saleDate.atZone(ZoneId.of("UTC"));
             ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
             return new SimpleStringProperty(localZoned.format(DATE_FORMATTER));
         });
-        amountCol.setCellValueFactory(cellData -> new SimpleStringProperty(CURRENCY_FORMAT.format(cellData.getValue().totalAmount())));
-        paidAmountCol.setCellValueFactory(cellData -> new SimpleStringProperty(CURRENCY_FORMAT.format(cellData.getValue().paidAmount())));
 
+        TableColumn<Sale, BigDecimal> amountCol = (TableColumn<Sale, BigDecimal>) salesTable.addColumn("Bill Total", cellData -> new SimpleObjectProperty<>(cellData.getValue().totalAmount()));
+        amountCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(CURRENCY_FORMAT.format(item));
+                }
+            }
+        });
+        amountCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+
+        TableColumn<Sale, String> statusCol = (TableColumn<Sale, String>) salesTable.addColumn("Status", cellData -> new SimpleStringProperty(cellData.getValue().status()));
         statusCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -113,69 +121,49 @@ public class SalesHistoryController {
                 if (empty || getTableRow() == null || getTableRow().getItem() == null) {
                     setText(null);
                     setGraphic(null);
+                    setStyle(null);
                 } else {
                     Sale sale = getTableRow().getItem();
                     String status = sale.status();
                     setText(status.toUpperCase());
-                    
-                    String color;
-                    switch (status.toLowerCase()) {
-                        case "paid" -> color = "#10b981";
-                        case "partially_paid" -> color = "#f59e0b";
-                        case "cancelled", "refunded" -> color = "#ef4444";
-                        default -> color = "#64748b";
-                    }
+                    String color = switch (status.toLowerCase()) {
+                        case "paid" -> "#10b981";
+                        case "partially_paid" -> "#f59e0b";
+                        case "cancelled", "refunded" -> "#ef4444";
+                        default -> "#64748b";
+                    };
                     setStyle("-fx-text-fill: white; -fx-background-color: " + color + "; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-weight: bold; -fx-font-size: 10px;");
                 }
             }
         });
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setStyle("-fx-alignment: CENTER;");
+        statusCol.setSortable(false);
 
-        setupActions();
+        salesTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
-    private void setupActions() {
-        actionsCol.setCellFactory(new Callback<>() {
-            @Override
-            public TableCell<Sale, Void> call(TableColumn<Sale, Void> param) {
-                return new TableCell<>() {
-                    private final Button btnView = new Button("👁");
-                    private final Button btnPrint = new Button("🖨");
-                    private final Button btnCancel = new Button("❌");
-                    private final HBox pane = new HBox(5, btnView, btnPrint, btnCancel);
+    private java.util.List<MenuItem> buildActionsMenu(Sale sale) {
+        java.util.List<MenuItem> items = new java.util.ArrayList<>();
 
-                    {
-                        btnView.getStyleClass().add("action-btn");
-                        btnPrint.getStyleClass().add("action-btn");
-                        btnCancel.getStyleClass().add("action-btn-destructive");
-                        
-                        btnView.setTooltip(new Tooltip("View Details"));
-                        btnPrint.setTooltip(new Tooltip("Print Invoice"));
-                        btnCancel.setTooltip(new Tooltip("Cancel Sale"));
+        MenuItem viewItem = new MenuItem("👁 View Details");
+        viewItem.setOnAction(e -> handleView(sale));
+        items.add(viewItem);
 
-                        btnView.setOnAction(e -> handleView(getTableRow().getItem()));
-                        btnPrint.setOnAction(e -> handlePrint(getTableRow().getItem()));
-                        btnCancel.setOnAction(e -> handleCancel(getTableRow().getItem()));
+        MenuItem printItem = new MenuItem("🖨 Print Invoice");
+        printItem.setOnAction(e -> handlePrint(sale));
+        items.add(printItem);
 
-                        com.possum.ui.common.UIPermissionUtil.requirePermission(btnCancel, com.possum.application.auth.Permissions.SALES_MANAGE);
-                    }
-
-                    @Override
-                    protected void updateItem(Void item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || getTableRow() == null || getTableRow().getItem() == null) {
-                            setGraphic(null);
-                        } else {
-                            Sale sale = getTableRow().getItem();
-                            if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.SALES_MANAGE)) {
-                                btnCancel.setVisible(!"cancelled".equals(sale.status()) && !"refunded".equals(sale.status()));
-                            }
-                            setGraphic(pane);
-                        }
-                    }
-                };
+        if (!"cancelled".equals(sale.status()) && !"refunded".equals(sale.status())) {
+            if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.SALES_MANAGE)) {
+                MenuItem cancelItem = new MenuItem("❌ Cancel Sale");
+                cancelItem.setStyle("-fx-text-fill: red;");
+                cancelItem.setOnAction(e -> handleCancel(sale));
+                items.add(new SeparatorMenuItem());
+                items.add(cancelItem);
             }
-        });
+        }
+
+        return items;
     }
 
     private void setupFilters() {
@@ -185,10 +173,25 @@ public class SalesHistoryController {
         statusCombo.setItems(FXCollections.observableArrayList(
                 "All Statuses", "Paid", "Partially Paid", "Draft", "Cancelled", "Refunded"
         ));
+        filterBar.setDefaultValue("status", "All Statuses");
         statusCombo.getSelectionModel().selectFirst();
+
+        filterBar.addDateFilter("fromDate", "From Date");
+        filterBar.addDateFilter("toDate", "To Date");
+        filterBar.addTextFilter("minAmount", "Min Total");
+        filterBar.addTextFilter("maxAmount", "Max Total");
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+            currentFromDate = (java.time.LocalDate) filters.get("fromDate");
+            currentToDate = (java.time.LocalDate) filters.get("toDate");
+
+            Object min = filters.get("minAmount");
+            currentMinAmount = parseBigDecimal(min);
+
+            Object max = filters.get("maxAmount");
+            currentMaxAmount = parseBigDecimal(max);
+            
             String status = (String) filters.get("status");
             if (status == null || "All Statuses".equals(status)) {
                 currentStatus = null;
@@ -216,8 +219,10 @@ public class SalesHistoryController {
                 currentStatus,
                 null, // customerId
                 null, // userId
-                null, // startDate
-                null, // endDate
+                currentFromDate != null ? currentFromDate.atStartOfDay().toString() : null,
+                currentToDate != null ? currentToDate.atTime(23, 59, 59).toString() : null,
+                currentMinAmount,
+                currentMaxAmount,
                 currentSearch,
                 currentPage,
                 pageSize,
@@ -226,6 +231,7 @@ public class SalesHistoryController {
                 null // fulfillmentStatus
         );
 
+        salesTable.setLoading(true);
         CompletableFuture.runAsync(() -> {
             PagedResult<Sale> results = salesService.findSales(filter);
             SaleStats stats = salesService.getSaleStats(filter);
@@ -238,11 +244,25 @@ public class SalesHistoryController {
                 paidLabel.setText(String.valueOf(stats.paidCount()));
                 partialLabel.setText(String.valueOf(stats.partialOrDraftCount()));
                 cancelledLabel.setText(String.valueOf(stats.cancelledOrRefundedCount()));
+                salesTable.setLoading(false);
             });
         }).exceptionally(ex -> {
             ex.printStackTrace();
+            Platform.runLater(() -> salesTable.setLoading(false));
             return null;
         });
+    }
+
+    private BigDecimal parseBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof BigDecimal) return (BigDecimal) value;
+        try {
+            String s = value.toString().trim();
+            if (s.isEmpty()) return null;
+            return new BigDecimal(s);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private void handleView(Sale sale) {

@@ -353,6 +353,14 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
             params.add(fuzzy);
             params.add(fuzzy);
         }
+        if (filter.minAmount() != null) {
+            joiner.add("s.total_amount >= ?");
+            params.add(filter.minAmount());
+        }
+        if (filter.maxAmount() != null) {
+            joiner.add("s.total_amount <= ?");
+            params.add(filter.maxAmount());
+        }
         if (joiner.length() == 0) {
             return "";
         }
