@@ -37,13 +37,17 @@ public class ProductsController {
     private final CategoryService categoryService;
     private final WorkspaceManager workspaceManager;
     private String currentSearch = "";
+    private java.util.List<Long> currentTaxCategoryFilters = java.util.Collections.emptyList();
     private java.util.List<String> currentStatusFilters = java.util.Collections.emptyList();
-    private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
     private java.util.List<Long> currentCategoryFilters = java.util.Collections.emptyList();
+    private final com.possum.persistence.repositories.interfaces.TaxRepository taxRepository;
 
-    public ProductsController(ProductService productService, CategoryService categoryService, WorkspaceManager workspaceManager) {
+    public ProductsController(ProductService productService, CategoryService categoryService, 
+                              com.possum.persistence.repositories.interfaces.TaxRepository taxRepository,
+                              WorkspaceManager workspaceManager) {
         this.productService = productService;
         this.categoryService = categoryService;
+        this.taxRepository = taxRepository;
         this.workspaceManager = workspaceManager;
     }
 
@@ -64,8 +68,8 @@ public class ProductsController {
         TableColumn<Product, String> categoryCol = new TableColumn<>("Category");
         categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().categoryName()));
         
-        TableColumn<Product, Integer> stockCol = new TableColumn<>("Stock");
-        stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
+        TableColumn<Product, String> taxCol = new TableColumn<>("Tax Category");
+        taxCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().taxCategoryName() != null ? cellData.getValue().taxCategoryName() : "-"));
         
         TableColumn<Product, String> statusCol = new TableColumn<>("Status");
         statusCol.setSortable(false);
@@ -77,15 +81,17 @@ public class ProductsController {
             return new SimpleStringProperty("");
         });
         
-        productsTable.getTableView().getColumns().addAll(nameCol, categoryCol, stockCol, statusCol);
+        productsTable.getTableView().getColumns().addAll(nameCol, categoryCol, taxCol, statusCol);
         
         productsTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
     private void setupFilters() {
         java.util.List<Category> categories = categoryService.getAllCategories();
-        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"), item -> item.substring(0, 1).toUpperCase() + item.substring(1), false);
-        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")), false);
+        java.util.List<com.possum.domain.model.TaxCategory> taxCategories = taxRepository.getAllTaxCategories();
+        
+        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "discontinued"), item -> item.substring(0, 1).toUpperCase() + item.substring(1), false);
+        filterBar.addMultiSelectFilter("taxCategory", "Tax Category", taxCategories, com.possum.domain.model.TaxCategory::name);
 
         com.possum.ui.common.controls.MultiSelectFilter<Category> categoryFilter =
             filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
@@ -98,8 +104,12 @@ public class ProductsController {
             currentStatusFilters = statusFilter != null ? statusFilter : java.util.Collections.emptyList();
 
             @SuppressWarnings("unchecked")
-            java.util.List<String> stockFilter = (java.util.List<String>) filters.get("stockStatus");
-            currentStockFilters = stockFilter != null ? stockFilter : java.util.Collections.emptyList();
+            java.util.List<com.possum.domain.model.TaxCategory> taxFilter = (java.util.List<com.possum.domain.model.TaxCategory>) filters.get("taxCategory");
+            if (taxFilter != null) {
+                currentTaxCategoryFilters = taxFilter.stream().map(com.possum.domain.model.TaxCategory::id).toList();
+            } else {
+                currentTaxCategoryFilters = java.util.Collections.emptyList();
+            }
 
             @SuppressWarnings("unchecked")
             java.util.List<Category> cats = (java.util.List<Category>) filters.get("categories");
@@ -122,7 +132,7 @@ public class ProductsController {
             try {
                 ProductFilter filter = new ProductFilter(
                     currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
-                    currentStockFilters.isEmpty() ? null : currentStockFilters,
+                    currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
                     currentStatusFilters.isEmpty() ? null : currentStatusFilters,
                     currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
                     paginationBar.getCurrentPage(),

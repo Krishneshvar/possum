@@ -44,10 +44,13 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                 """
                 SELECT
                   v.id, v.product_id, p.name AS product_name, v.name, v.sku, v.mrp AS price, v.cost_price,
-                  v.stock_alert_cap, v.is_default, v.status, p.image_path, 0 AS stock, c.name AS category_name, v.created_at, v.updated_at, v.deleted_at
+                  v.stock_alert_cap, v.is_default, v.status, p.image_path, 0 AS stock, c.name AS category_name,
+                  tc.name AS tax_category_name,
+                  v.created_at, v.updated_at, v.deleted_at
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
                 LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN tax_categories tc ON p.tax_category_id = tc.id
                 WHERE v.id = ? AND v.deleted_at IS NULL
                 """,
                 mapper,
@@ -83,6 +86,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
     public PagedResult<Variant> findVariants(String searchTerm,
                                              Long categoryId,
                                              List<Long> categories,
+                                             List<Long> taxCategories,
                                              List<String> stockStatus,
                                              List<String> status,
                                              String sortBy,
@@ -90,7 +94,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                                              int currentPage,
                                              int itemsPerPage) {
         List<Object> params = new ArrayList<>();
-        String where = buildWhere(searchTerm, categoryId, categories, status, stockStatus, params);
+        String where = buildWhere(searchTerm, categoryId, categories, taxCategories, status, stockStatus, params);
 
         int total = queryOne(
                 """
@@ -98,6 +102,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
                 LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN tax_categories tc ON p.tax_category_id = tc.id
                 %s
                 """.formatted(where),
                 rs -> rs.getInt("total"),
@@ -115,6 +120,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
             case "cost_price" -> "v.cost_price";
             case "stock" -> "stock";
             case "category_name" -> "c.name";
+            case "tax_category_name" -> "tc.name";
             case "product_name" -> "p.name";
             default -> "p.name";
         };
@@ -131,11 +137,12 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                   (
                     COALESCE((SELECT SUM(quantity) FROM inventory_lots WHERE variant_id = v.id), 0)
                     + COALESCE((SELECT SUM(quantity_change) FROM inventory_adjustments WHERE variant_id = v.id AND (reason != 'confirm_receive' OR lot_id IS NULL)), 0)
-                  ) AS stock, c.name AS category_name,
+                  ) AS stock, c.name AS category_name, tc.name AS tax_category_name,
                   v.created_at, v.updated_at, v.deleted_at
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
                 LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN tax_categories tc ON p.tax_category_id = tc.id
                 %s
                 ORDER BY %s %s
                 LIMIT ? OFFSET ?
@@ -168,7 +175,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
         ).orElse(Map.<String, Object>of("totalVariants", 0, "inactiveVariants", 0));
     }
 
-    private static String buildWhere(String searchTerm, Long categoryId, List<Long> categories, List<String> status, List<String> stockStatus, List<Object> params) {
+    private static String buildWhere(String searchTerm, Long categoryId, List<Long> categories, List<Long> taxCategories, List<String> status, List<String> stockStatus, List<Object> params) {
         StringJoiner joiner = new StringJoiner(" AND ");
         joiner.add("v.deleted_at IS NULL");
         joiner.add("p.deleted_at IS NULL");
@@ -188,6 +195,12 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
         } else if (categoryId != null) {
             joiner.add("p.category_id = ?");
             params.add(categoryId);
+        }
+
+        if (taxCategories != null && !taxCategories.isEmpty()) {
+            String placeholders = "?,".repeat(taxCategories.size()).replaceAll(",$", "");
+            joiner.add("p.tax_category_id IN (" + placeholders + ")");
+            params.addAll(taxCategories);
         }
 
         if (status != null && !status.isEmpty()) {

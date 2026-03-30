@@ -11,11 +11,12 @@ import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.FormDialog;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.PaginationBar;
+import com.possum.domain.model.TaxCategory;
+import com.possum.persistence.repositories.interfaces.TaxRepository;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -32,16 +33,19 @@ public class InventoryController {
     private InventoryService inventoryService;
     private VariantRepository variantRepository;
     private com.possum.application.categories.CategoryService categoryService;
+    private TaxRepository taxRepository;
     private String currentSearch = "";
     private java.util.List<Long> currentCategoryFilters = java.util.Collections.emptyList();
+    private java.util.List<Long> currentTaxCategoryFilters = java.util.Collections.emptyList();
     private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
     private java.util.List<String> currentStatusFilters = java.util.Collections.emptyList();
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public InventoryController(InventoryService inventoryService, VariantRepository variantRepository, com.possum.application.categories.CategoryService categoryService) {
+    public InventoryController(InventoryService inventoryService, VariantRepository variantRepository, com.possum.application.categories.CategoryService categoryService, TaxRepository taxRepository) {
         this.inventoryService = inventoryService;
         this.variantRepository = variantRepository;
         this.categoryService = categoryService;
+        this.taxRepository = taxRepository;
     }
 
     @FXML
@@ -112,8 +116,10 @@ public class InventoryController {
             }
         });
         
-        TableColumn<Variant, Integer> alertCol = new TableColumn<>("Alert Level");
-        alertCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stockAlertCap()));
+        TableColumn<Variant, String> taxCategoryCol = new TableColumn<>("Tax Category");
+        taxCategoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().taxCategoryName() != null ? cellData.getValue().taxCategoryName() : "N/A"
+        ));
         
         TableColumn<Variant, BigDecimal> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
@@ -135,15 +141,25 @@ public class InventoryController {
             return new SimpleStringProperty("");
         });
 
-        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, categoryCol, skuCol, stockCol, alertCol, priceCol, statusCol);
+        productCol.setId("product_name");
+        variantCol.setId("name");
+        categoryCol.setId("category_name");
+        taxCategoryCol.setId("tax_category_name");
+        skuCol.setId("sku");
+        stockCol.setId("stock");
+        priceCol.setId("price");
+
+        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, categoryCol, taxCategoryCol, skuCol, stockCol, priceCol, statusCol);
     }
 
     private void setupFilters() {
         java.util.List<com.possum.domain.model.Category> categories = categoryService.getAllCategories();
-        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "draft"),
-            item -> item.substring(0, 1).toUpperCase() + item.substring(1), false);
+        java.util.List<TaxCategory> taxCategories = taxRepository.getAllTaxCategories();
+        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "discontinued"),
+            item -> item.substring(0, 1).toUpperCase() + item.substring(1).toLowerCase(), false);
         filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
         filterBar.addMultiSelectFilter("categories", "Categories", categories, com.possum.domain.model.Category::name);
+        filterBar.addMultiSelectFilter("taxCategories", "Tax Categories", taxCategories, TaxCategory::name);
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -164,6 +180,14 @@ public class InventoryController {
                 currentCategoryFilters = java.util.Collections.emptyList();
             }
 
+            @SuppressWarnings("unchecked")
+            java.util.List<TaxCategory> tcs = (java.util.List<TaxCategory>) filters.get("taxCategories");
+            if (tcs != null) {
+                currentTaxCategoryFilters = tcs.stream().map(TaxCategory::id).toList();
+            } else {
+                currentTaxCategoryFilters = java.util.Collections.emptyList();
+            }
+
             loadInventory();
         });
         
@@ -179,6 +203,7 @@ public class InventoryController {
                     currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
                     null,
                     currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
+                    currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
                     currentStockFilters.isEmpty() ? null : currentStockFilters,
                     currentStatusFilters.isEmpty() ? null : currentStatusFilters,
                     "stock",

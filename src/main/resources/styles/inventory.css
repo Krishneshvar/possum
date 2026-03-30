@@ -59,25 +59,48 @@
     -fx-text-fill: #475569;
 }
 
-.text-field, .combo-box, .text-area, .date-picker {
+.text-field, .text-area, .date-picker, .combo-box {
     -fx-background-color: #ffffff;
     -fx-border-color: #cbd5e1;
     -fx-border-radius: 6;
     -fx-background-radius: 6;
-    -fx-padding: 8 12;
     -fx-font-size: 14px;
     -fx-text-fill: #0f172a;
 }
 
-.text-field:focused, .combo-box:focused, .text-area:focused, .date-picker:focused {
+.text-field, .text-area {
+    -fx-padding: 8 12;
+}
+
+.date-picker > .text-field, .combo-box > .list-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 8 12;
+    -fx-text-fill: #0f172a;
+}
+
+.date-picker > .arrow-button, .combo-box > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 8 0 0;
+}
+
+.date-picker > .arrow-button > .arrow, .combo-box > .arrow-button > .arrow {
+    -fx-background-color: #64748b;
+}
+
+.text-field:focused, .text-area:focused, .date-picker:focused, .combo-box:focused {
     -fx-border-color: #3b82f6;
     -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.2), 4, 0, 0, 0);
 }
 
-.text-field:disabled, .combo-box:disabled, .text-area:disabled, .date-picker:disabled {
+.text-field:disabled, .text-area:disabled, .date-picker:disabled, .combo-box:disabled {
     -fx-background-color: #f8fafc;
     -fx-text-fill: #94a3b8;
     -fx-opacity: 0.8;
+}
+
+.date-picker:hover, .combo-box:hover {
+    -fx-border-color: #94a3b8;
 }
 
 /* Checkboxes */

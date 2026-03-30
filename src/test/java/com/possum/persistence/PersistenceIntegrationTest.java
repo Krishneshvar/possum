@@ -140,6 +140,7 @@ class PersistenceIntegrationTest {
                 null,
                 null,
                 null,
+                null,
                 "active",
                 null,
                 null,
@@ -149,17 +150,17 @@ class PersistenceIntegrationTest {
         ));
 
         assertEquals(0, productRepository.updateProductById(productId, new Product(
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, null
         )));
 
         var filtered = productRepository.findProducts(new ProductFilter(
                 null,
-                List.of("out-of-stock"),
+                null,
                 null,
                 null,
                 1,
                 25,
-                "stock",
+                "name",
                 "ASC"
         ));
         assertNotNull(filtered.items());

@@ -16,7 +16,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
-import java.time.format.DateTimeFormatter;
+
 import com.possum.shared.util.TimeUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +39,6 @@ public class StockHistoryController {
     private final InventoryService inventoryService;
     private final UserService userService;
     private final ObservableList<StockHistoryDto> historyList = FXCollections.observableArrayList();
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private int currentPage = 1;
     private int pageSize = 20;
@@ -112,6 +111,7 @@ public class StockHistoryController {
 
     private void setupFilters() {
         filterBar = new FilterBar();
+        filterBar.setStyle("-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-border-width: 1;");
 
         List<String> reasons = new ArrayList<>();
         reasons.add("All Reasons");
@@ -194,7 +194,7 @@ public class StockHistoryController {
 
     private void setupPagination() {
         paginationBar.setOnPageChange((page, size) -> {
-            currentPage = page;
+            currentPage = page + 1;
             pageSize = size;
             loadHistory();
         });

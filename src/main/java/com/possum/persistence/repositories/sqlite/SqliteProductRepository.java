@@ -51,9 +51,11 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
                 """
                 SELECT
                   p.id, p.name, p.description, p.category_id, c.name AS category_name, p.tax_category_id,
+                  tc.name AS tax_category_name,
                   p.status, p.image_path, p.created_at, p.updated_at, p.deleted_at
                 FROM products p
                 LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN tax_categories tc ON p.tax_category_id = tc.id
                 WHERE p.id = ? AND p.deleted_at IS NULL
                 """,
                 productMapper,
@@ -123,13 +125,7 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
                 SELECT COUNT(DISTINCT p.id) AS count
                 FROM products p
                 LEFT JOIN categories c ON p.category_id = c.id
-                LEFT JOIN variants v ON v.id = (
-                  SELECT v2.id
-                  FROM variants v2
-                  WHERE v2.product_id = p.id AND v2.deleted_at IS NULL
-                  ORDER BY v2.is_default DESC, v2.id ASC
-                  LIMIT 1
-                )
+                LEFT JOIN tax_categories tc ON p.tax_category_id = tc.id
                 %s
                 """.formatted(where),
                 rs -> rs.getInt("count"),
@@ -149,6 +145,7 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
                 """
                 SELECT
                   p.id, p.name, p.description, p.category_id, c.name AS category_name, p.tax_category_id,
+                  tc.name AS tax_category_name,
                   p.status, p.image_path,
                   v.id AS variant_id,
                   (
@@ -162,6 +159,7 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
                   p.created_at, p.updated_at, p.deleted_at
                 FROM products p
                 LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN tax_categories tc ON p.tax_category_id = tc.id
                 LEFT JOIN variants v ON v.id = (
                   SELECT v2.id
                   FROM variants v2
@@ -192,9 +190,12 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
                 """
                 SELECT
                   v.id, v.product_id, p.name AS product_name, v.name, v.sku, v.mrp AS price, v.cost_price, v.stock_alert_cap,
-                  v.is_default, v.status, p.image_path, 0 AS stock, v.created_at, v.updated_at, v.deleted_at
+                  v.is_default, v.status, p.image_path, 0 AS stock, c.name AS category_name, tc.name AS tax_category_name,
+                  v.created_at, v.updated_at, v.deleted_at
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
+                LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN tax_categories tc ON p.tax_category_id = tc.id
                 WHERE v.product_id = ? AND v.deleted_at IS NULL
                 ORDER BY v.is_default DESC, v.name ASC
                 """,
@@ -217,6 +218,7 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
                     variant.imagePath(),
                     inventoryRepository.getStockByVariantId(variant.id()),
                     variant.categoryName(),
+                    variant.taxCategoryName(),
                     variant.createdAt(),
                     variant.updatedAt(),
                     variant.deletedAt()
@@ -311,12 +313,6 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
     private static String buildWhere(ProductFilter filter, List<Object> params) {
         StringJoiner joiner = new StringJoiner(" AND ");
         joiner.add("p.deleted_at IS NULL");
-        String stockSubquery = """
-                (
-                  COALESCE((SELECT SUM(il.quantity) FROM inventory_lots il WHERE il.variant_id = v.id), 0)
-                  + COALESCE((SELECT SUM(ia.quantity_change) FROM inventory_adjustments ia WHERE ia.variant_id = v.id AND ia.reason != 'confirm_receive'), 0)
-                )
-                """;
 
         if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
             joiner.add("p.name LIKE ?");
@@ -332,20 +328,10 @@ public final class SqliteProductRepository extends BaseSqliteRepository implemen
             joiner.add("p.status IN (" + placeholders + ")");
             params.addAll(filter.status());
         }
-        if (filter.stockStatus() != null && !filter.stockStatus().isEmpty()) {
-            List<String> stockConditions = new ArrayList<>();
-            for (String stock : filter.stockStatus()) {
-                if ("out-of-stock".equals(stock)) {
-                    stockConditions.add(stockSubquery + " = 0");
-                } else if ("low-stock".equals(stock)) {
-                    stockConditions.add(stockSubquery + " > 0 AND " + stockSubquery + " <= COALESCE(v.stock_alert_cap, 10)");
-                } else if ("in-stock".equals(stock)) {
-                    stockConditions.add(stockSubquery + " > COALESCE(v.stock_alert_cap, 10)");
-                }
-            }
-            if (!stockConditions.isEmpty()) {
-                joiner.add("(" + String.join(" OR ", stockConditions) + ")");
-            }
+        if (filter.taxCategories() != null && !filter.taxCategories().isEmpty()) {
+            String placeholders = "?,".repeat(filter.taxCategories().size()).replaceAll(",$", "");
+            joiner.add("p.tax_category_id IN (" + placeholders + ")");
+            params.addAll(filter.taxCategories());
         }
         return "WHERE " + joiner;
     }

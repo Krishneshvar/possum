@@ -4,7 +4,7 @@ import java.util.List;
 
 public record ProductFilter(
         String searchTerm,
-        List<String> stockStatus,
+        List<Long> taxCategories,
         List<String> status,
         List<Long> categories,
         int currentPage,

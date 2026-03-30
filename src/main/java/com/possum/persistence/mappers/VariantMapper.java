@@ -23,6 +23,7 @@ public final class VariantMapper implements RowMapper<Variant> {
                 getOptionalColumn(rs, "image_path"),
                 getNullableInt(rs, "stock"),
                 getOptionalColumn(rs, "category_name"),
+                getOptionalColumn(rs, "tax_category_name"),
                 SqlMapperUtils.getLocalDateTime(rs, "created_at"),
                 SqlMapperUtils.getLocalDateTime(rs, "updated_at"),
                 SqlMapperUtils.getLocalDateTime(rs, "deleted_at")

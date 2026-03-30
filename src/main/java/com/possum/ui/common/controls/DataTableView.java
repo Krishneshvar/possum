@@ -149,4 +149,3 @@ public class DataTableView<T> extends StackPane {
         ((Label) emptyState.getChildren().get(0)).setText(message);
     }
 }
-

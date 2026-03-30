@@ -16,6 +16,7 @@ public final class ProductMapper implements RowMapper<Product> {
                 getNullableLong(rs, "category_id"),
                 getOptionalColumn(rs, "category_name"),
                 getNullableLong(rs, "tax_category_id"),
+                getOptionalColumn(rs, "tax_category_name"),
                 rs.getString("status"),
                 getOptionalColumn(rs, "image_path"),
                 getNullableInt(rs, "stock"),

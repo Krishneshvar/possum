@@ -21,7 +21,7 @@ public class ProductSearchIndex {
 
     private void buildIndex() {
         PagedResult<Variant> result = variantRepository.findVariants(
-            null, null, null, null, List.of("active"), "name", "ASC", 0, 10000
+            null, null, null, null, null, List.of("active"), "name", "ASC", 0, 10000
         );
         
         allVariants.addAll(result.items());

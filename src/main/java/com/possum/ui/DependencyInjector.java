@@ -191,6 +191,13 @@ public class DependencyInjector {
                 taxRepository,
                 workspaceManager
             );
+        } else if (type.equals(com.possum.ui.inventory.VariantsController.class)) {
+            return new com.possum.ui.inventory.VariantsController(
+                variantRepository,
+                applicationModule.getCategoryService(),
+                taxRepository,
+                workspaceManager
+            );
         } else if (type.equals(com.possum.ui.returns.CreateReturnDialogController.class)) {
             return new com.possum.ui.returns.CreateReturnDialogController(
                 salesService,

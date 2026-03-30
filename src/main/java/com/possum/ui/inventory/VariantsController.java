@@ -4,7 +4,6 @@ import com.possum.application.categories.CategoryService;
 import com.possum.domain.model.Category;
 import com.possum.domain.model.Variant;
 import com.possum.persistence.repositories.interfaces.VariantRepository;
-import com.possum.shared.dto.PagedResult;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.NotificationService;
@@ -13,10 +12,7 @@ import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -36,15 +32,18 @@ public class VariantsController {
     private final CategoryService categoryService;
     private final WorkspaceManager workspaceManager;
     private String currentSearch = "";
+    private List<Long> currentTaxCategoryFilters = Collections.emptyList();
     private List<String> currentStatusFilters = Collections.emptyList();
     private List<String> currentStockFilters = Collections.emptyList();
     private List<Long> currentCategoryFilters = Collections.emptyList();
-    private String currentSortColumn = "product_name";
-    private String currentSortDirection = "ASC";
+    private final com.possum.persistence.repositories.interfaces.TaxRepository taxRepository;
 
-    public VariantsController(VariantRepository variantRepository, CategoryService categoryService, WorkspaceManager workspaceManager) {
+    public VariantsController(VariantRepository variantRepository, CategoryService categoryService, 
+                              com.possum.persistence.repositories.interfaces.TaxRepository taxRepository,
+                              WorkspaceManager workspaceManager) {
         this.variantRepository = variantRepository;
         this.categoryService = categoryService;
+        this.taxRepository = taxRepository;
         this.workspaceManager = workspaceManager;
     }
 
@@ -62,11 +61,13 @@ public class VariantsController {
 
     private void setupFilters() {
         List<Category> categories = categoryService.getAllCategories();
-        filterBar.addMultiSelectFilter("status", "Status", List.of("active", "inactive", "draft"),
+        List<com.possum.domain.model.TaxCategory> taxCategories = taxRepository.getAllTaxCategories();
+        
+        filterBar.addMultiSelectFilter("status", "Status", List.of("active", "inactive", "discontinued"),
             item -> item.substring(0, 1).toUpperCase() + item.substring(1), false);
         filterBar.addMultiSelectFilter("stockStatus", "Stock Status", List.of("in-stock", "low-stock", "out-of-stock"),
             item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")), false);
-
+        filterBar.addMultiSelectFilter("taxCategory", "Tax Category", taxCategories, com.possum.domain.model.TaxCategory::name);
         filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
 
         filterBar.setOnFilterChange(filters -> {
@@ -79,6 +80,14 @@ public class VariantsController {
             @SuppressWarnings("unchecked")
             List<String> stockFilter = (List<String>) filters.get("stockStatus");
             currentStockFilters = stockFilter != null ? stockFilter : Collections.emptyList();
+
+            @SuppressWarnings("unchecked")
+            List<com.possum.domain.model.TaxCategory> taxFilterList = (List<com.possum.domain.model.TaxCategory>) filters.get("taxCategory");
+            if (taxFilterList != null) {
+                currentTaxCategoryFilters = taxFilterList.stream().map(com.possum.domain.model.TaxCategory::id).toList();
+            } else {
+                currentTaxCategoryFilters = Collections.emptyList();
+            }
 
             @SuppressWarnings("unchecked")
             List<Category> cats = (List<Category>) filters.get("categories");
@@ -102,10 +111,11 @@ public class VariantsController {
                 currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
                 null,
                 currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
+                currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
                 currentStockFilters.isEmpty() ? null : currentStockFilters,
                 currentStatusFilters.isEmpty() ? null : currentStatusFilters,
-                currentSortColumn,
-                currentSortDirection,
+                "product_name",
+                "ASC",
                 paginationBar.getCurrentPage(),
                 paginationBar.getPageSize()
             );
@@ -170,10 +180,20 @@ public class VariantsController {
         mrpCol.setSortable(true);
         mrpCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
 
-        TableColumn<Variant, java.math.BigDecimal> costCol = new TableColumn<>("Cost");
-        costCol.setId("cost_price");
-        costCol.setSortable(true);
-        costCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().costPrice()));
+        TableColumn<Variant, String> taxCol = new TableColumn<>("Tax Category");
+        taxCol.setId("tax_category_name");
+        taxCol.setSortable(true);
+        taxCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().taxCategoryName() != null ? cellData.getValue().taxCategoryName() : "-"));
+
+        TableColumn<Variant, String> skuCol = new TableColumn<>("SKU");
+        skuCol.setId("sku");
+        skuCol.setSortable(true);
+        skuCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().sku()));
+
+        TableColumn<Variant, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setId("category_name");
+        categoryCol.setSortable(true);
+        categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().categoryName() != null ? cellData.getValue().categoryName() : ""));
 
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
         statusCol.setId("status");
@@ -186,26 +206,7 @@ public class VariantsController {
             return new SimpleStringProperty("");
         });
 
-        variantsTable.getTableView().getColumns().addAll(productCol, variantCol, mrpCol, costCol, stockCol, statusCol);
-
-        variantsTable.getTableView().setSortPolicy(tv -> {
-            // Ignore transient empty sort states; they can happen during table refresh
-            // and should not reset the user's chosen server-side sort.
-            if (tv.getSortOrder().isEmpty()) {
-                return true;
-            }
-
-            TableColumn<Variant, ?> col = tv.getSortOrder().get(0);
-            currentSortColumn = col.getId() != null ? col.getId() : "product_name";
-            currentSortDirection = col.getSortType() == TableColumn.SortType.ASCENDING ? "ASC" : "DESC";
-
-            if (paginationBar.getCurrentPage() == 0) {
-                loadVariants();
-            } else {
-                paginationBar.reset();
-            }
-            return true;
-        });
+        variantsTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, mrpCol, taxCol, stockCol, statusCol);
 
         variantsTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }

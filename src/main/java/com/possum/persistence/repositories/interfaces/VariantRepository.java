@@ -18,6 +18,7 @@ public interface VariantRepository {
     PagedResult<Variant> findVariants(String searchTerm,
                                       Long categoryId,
                                       java.util.List<Long> categories,
+                                      java.util.List<Long> taxCategories,
                                       java.util.List<String> stockStatus,
                                       java.util.List<String> status,
                                       String sortBy,

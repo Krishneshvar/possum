@@ -89,6 +89,10 @@ public class PaginationBar extends HBox {
     }
 
     public void reset() {
-        pagination.setCurrentPageIndex(0);
+        if (pagination.getCurrentPageIndex() == 0) {
+            notifyPageChange();
+        } else {
+            pagination.setCurrentPageIndex(0);
+        }
     }
 }

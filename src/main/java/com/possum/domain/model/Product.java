@@ -9,6 +9,7 @@ public record Product(
         Long categoryId,
         String categoryName,
         Long taxCategoryId,
+        String taxCategoryName,
         String status,
         String imagePath,
         Integer stock,

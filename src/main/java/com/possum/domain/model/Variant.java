@@ -17,6 +17,7 @@ public record Variant(
         String imagePath,
         Integer stock,
         String categoryName,
+        String taxCategoryName,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt
