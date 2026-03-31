@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import com.possum.shared.util.TimeUtil;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PurchaseController {
@@ -32,14 +33,19 @@ public class PurchaseController {
     @FXML private javafx.scene.control.Button createButton;
     
     private PurchaseService purchaseService;
+    private com.possum.application.sales.SalesService salesService;
     private WorkspaceManager workspaceManager;
     private String currentSearch = "";
-    private String currentStatus = null;
+    private List<String> currentStatuses = null;
+    private List<Long> currentPaymentMethodIds = null;
     private java.time.LocalDate currentFromDate = null;
     private java.time.LocalDate currentToDate = null;
 
-    public PurchaseController(PurchaseService purchaseService, WorkspaceManager workspaceManager) {
+    public PurchaseController(PurchaseService purchaseService, 
+                              com.possum.application.sales.SalesService salesService,
+                              WorkspaceManager workspaceManager) {
         this.purchaseService = purchaseService;
+        this.salesService = salesService;
         this.workspaceManager = workspaceManager;
     }
 
@@ -54,7 +60,8 @@ public class PurchaseController {
     }
 
     private void setupTable() {
-        TableColumn<PurchaseOrder, String> idCol = new TableColumn<>("PO Number");
+        TableColumn<PurchaseOrder, String> idCol = new TableColumn<>("PO Invoice #");
+        idCol.setSortable(false);
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber() != null ? cellData.getValue().invoiceNumber() : ("#" + cellData.getValue().id())));
         idCol.setPrefWidth(100);
         idCol.setCellFactory(col -> new TableCell<>() {
@@ -87,19 +94,24 @@ public class PurchaseController {
         });
         
         TableColumn<PurchaseOrder, LocalDateTime> dateCol = new TableColumn<>("Order Date");
-        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(TimeUtil.toLocal(cellData.getValue().orderDate())));
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().orderDate()));
         dateCol.setPrefWidth(150);
-        dateCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(LocalDateTime item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(TimeUtil.formatStandard(item));
-                    setStyle("-fx-text-fill: gray;");
+        dateCol.setCellFactory(col -> {
+            return new TableCell<>() {
+                private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
+                @Override
+                protected void updateItem(LocalDateTime item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        java.time.ZonedDateTime utcZoned = item.atZone(java.time.ZoneId.of("UTC"));
+                        java.time.ZonedDateTime localZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.systemDefault());
+                        setText(localZoned.format(formatter));
+                        setStyle("-fx-text-fill: gray;");
+                    }
                 }
-            }
+            };
         });
         
         TableColumn<PurchaseOrder, Integer> itemsCol = new TableColumn<>("Items");
@@ -108,6 +120,7 @@ public class PurchaseController {
         itemsCol.setStyle("-fx-alignment: CENTER;");
         
         TableColumn<PurchaseOrder, String> statusCol = new TableColumn<>("Status");
+        statusCol.setSortable(false);
         statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
         statusCol.setPrefWidth(120);
         statusCol.setCellFactory(col -> new TableCell<>() {
@@ -144,21 +157,50 @@ public class PurchaseController {
                 }
             }
         });
+
+        TableColumn<PurchaseOrder, String> paymentCol = new TableColumn<>("Payment Method");
+        paymentCol.setSortable(false);
+        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().paymentMethodName() != null ? cellData.getValue().paymentMethodName() : "-"));
         
-        purchaseTable.getTableView().getColumns().addAll(idCol, supplierCol, dateCol, itemsCol, statusCol);
+        purchaseTable.getTableView().getColumns().addAll(idCol, supplierCol, dateCol, itemsCol, statusCol, paymentCol);
         purchaseTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
     private void setupFilters() {
-        ComboBox<String> statusFilter = filterBar.addFilter("status", "Filter by Status");
-        statusFilter.setItems(FXCollections.observableArrayList("pending", "received", "cancelled"));
+        filterBar.addMultiSelectFilter("status", "All Statuses", 
+                java.util.List.of("Pending", "Received", "Cancelled"),
+                s -> s,
+                false
+        );
+
+        java.util.List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
+        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
+                com.possum.domain.model.PaymentMethod::name,
+                false);
         
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
-            currentStatus = (String) filters.get("status");
+            
+            java.util.List<String> statuses = (java.util.List<String>) filters.get("status");
+            if (statuses == null || statuses.isEmpty()) {
+                currentStatuses = null;
+            } else {
+                currentStatuses = statuses.stream().map(String::toLowerCase).toList();
+            }
+
+            java.util.List<com.possum.domain.model.PaymentMethod> selectedPms = (java.util.List<com.possum.domain.model.PaymentMethod>) filters.get("paymentMethod");
+            if (selectedPms == null || selectedPms.isEmpty()) {
+                currentPaymentMethodIds = null;
+            } else {
+                currentPaymentMethodIds = selectedPms.stream()
+                        .map(com.possum.domain.model.PaymentMethod::id)
+                        .toList();
+            }
+
             currentFromDate = (java.time.LocalDate) filters.get("fromDate");
             currentToDate = (java.time.LocalDate) filters.get("toDate");
             loadPurchaseOrders();
@@ -176,11 +218,12 @@ public class PurchaseController {
                     paginationBar.getCurrentPage(),
                     paginationBar.getPageSize(),
                     currentSearch.isEmpty() ? null : currentSearch,
-                    currentStatus,
+                    currentStatuses,
                     currentFromDate != null ? currentFromDate.atStartOfDay().toString() : null,
                     currentToDate != null ? currentToDate.atTime(23, 59, 59).toString() : null,
                     "order_date",
-                    "DESC"
+                    "DESC",
+                    currentPaymentMethodIds
                 );
                 
                 PagedResult<PurchaseOrder> result = purchaseService.getAllPurchaseOrders(filter);

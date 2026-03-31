@@ -1,13 +1,16 @@
 package com.possum.shared.dto;
 
+import java.util.List;
+
 public record PurchaseOrderFilter(
         int page,
         int limit,
         String searchTerm,
-        String status,
+        List<String> statuses,
         String fromDate,
         String toDate,
         String sortBy,
-        String sortOrder
+        String sortOrder,
+        List<Long> paymentMethodIds
 ) {
 }

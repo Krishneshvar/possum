@@ -191,17 +191,23 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
             params.add(fuzzy);
             params.add(fuzzy);
         }
-        if (filter.status() != null && !filter.status().isBlank() && !"all".equalsIgnoreCase(filter.status())) {
-            joiner.add("po.status = ?");
-            params.add(filter.status());
+        if (filter.statuses() != null && !filter.statuses().isEmpty()) {
+            joiner.add("po.status IN (" + "?,".repeat(filter.statuses().size()).replaceAll(",$", "") + ")");
+            params.addAll(filter.statuses());
+        }
+        if (filter.paymentMethodIds() != null && !filter.paymentMethodIds().isEmpty()) {
+            joiner.add("po.payment_method_id IN (" + "?,".repeat(filter.paymentMethodIds().size()).replaceAll(",$", "") + ")");
+            params.addAll(filter.paymentMethodIds());
         }
         if (filter.fromDate() != null && !filter.fromDate().isBlank()) {
+            String date = filter.fromDate().substring(0, Math.min(10, filter.fromDate().length()));
             joiner.add("po.order_date >= ?");
-            params.add(filter.fromDate());
+            params.add(date + " 00:00:00");
         }
         if (filter.toDate() != null && !filter.toDate().isBlank()) {
+            String date = filter.toDate().substring(0, Math.min(10, filter.toDate().length()));
             joiner.add("po.order_date <= ?");
-            params.add(filter.toDate() + " 23:59:59");
+            params.add(date + " 23:59:59");
         }
         return "WHERE " + joiner;
     }

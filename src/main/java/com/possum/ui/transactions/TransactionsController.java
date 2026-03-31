@@ -166,12 +166,14 @@ public class TransactionsController {
     private void setupFilters() {
         filterBar.addMultiSelectFilter("type", "All Types", 
                 List.of("Sale", "Refund", "Purchase"),
-                s -> s
+                s -> s,
+                false
         );
 
         List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
         filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
-                com.possum.domain.model.PaymentMethod::name);
+                com.possum.domain.model.PaymentMethod::name,
+                false);
 
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");

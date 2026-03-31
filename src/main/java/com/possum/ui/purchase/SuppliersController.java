@@ -18,6 +18,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class SuppliersController {
     private SupplierRepository supplierRepository;
     private WorkspaceManager workspaceManager;
     private String currentSearch = "";
-    private Long currentPolicyId = null;
+    private List<Long> currentPolicyIds = null;
 
     public SuppliersController(SupplierRepository supplierRepository, WorkspaceManager workspaceManager) {
         this.supplierRepository = supplierRepository;
@@ -69,15 +70,21 @@ public class SuppliersController {
     }
 
     private void setupFilters() {
-        javafx.scene.control.ComboBox<PaymentPolicy> policyFilter = filterBar.addFilter("policy", "Filter by Policy");
         try {
-            policyFilter.setItems(FXCollections.observableArrayList(supplierRepository.getPaymentPolicies()));
+            List<PaymentPolicy> policies = supplierRepository.getPaymentPolicies();
+            filterBar.addMultiSelectFilter("policy", "All Policies", policies, PaymentPolicy::name, false);
         } catch(Exception e) {}
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
-            PaymentPolicy policy = (PaymentPolicy) filters.get("policy");
-            currentPolicyId = policy != null ? policy.id() : null;
+            List<PaymentPolicy> selectedPolicies = (List<PaymentPolicy>) filters.get("policy");
+            if (selectedPolicies == null || selectedPolicies.isEmpty()) {
+                currentPolicyIds = null;
+            } else {
+                currentPolicyIds = selectedPolicies.stream()
+                        .map(PaymentPolicy::id)
+                        .toList();
+            }
             loadSuppliers();
         });
         
@@ -92,7 +99,7 @@ public class SuppliersController {
                     paginationBar.getCurrentPage(),
                     paginationBar.getPageSize(),
                     currentSearch.isEmpty() ? null : currentSearch,
-                    currentPolicyId,
+                    currentPolicyIds,
                     "name",
                     "ASC"
                 );

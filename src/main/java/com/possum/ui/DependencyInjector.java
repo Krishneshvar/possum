@@ -223,6 +223,7 @@ public class DependencyInjector {
         } else if (type.equals(com.possum.ui.purchase.PurchaseController.class)) {
             return new com.possum.ui.purchase.PurchaseController(
                 purchaseService,
+                salesService,
                 workspaceManager
             );
         }

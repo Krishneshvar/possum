@@ -182,9 +182,9 @@ public final class SqliteSupplierRepository extends BaseSqliteRepository impleme
             params.add(fuzzy);
             params.add(fuzzy);
         }
-        if (filter.paymentPolicyId() != null) {
-            joiner.add("s.payment_policy_id = ?");
-            params.add(filter.paymentPolicyId());
+        if (filter.paymentPolicyIds() != null && !filter.paymentPolicyIds().isEmpty()) {
+            joiner.add("s.payment_policy_id IN (" + "?,".repeat(filter.paymentPolicyIds().size()).replaceAll(",$", "") + ")");
+            params.addAll(filter.paymentPolicyIds());
         }
         return "WHERE " + joiner;
     }

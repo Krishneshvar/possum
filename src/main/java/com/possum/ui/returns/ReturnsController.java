@@ -106,7 +106,8 @@ public class ReturnsController {
         
         List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
         filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
-                com.possum.domain.model.PaymentMethod::name);
+                com.possum.domain.model.PaymentMethod::name,
+                false);
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");

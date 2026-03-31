@@ -189,7 +189,8 @@ public class SalesHistoryController {
         
         filterBar.addMultiSelectFilter("status", "All Statuses", 
                 List.of("Paid", "Partially Paid", "Draft", "Cancelled", "Refunded", "Partially Refunded"),
-                s -> s
+                s -> s,
+                false
         );
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");
@@ -198,7 +199,8 @@ public class SalesHistoryController {
         
         List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
         filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
-                com.possum.domain.model.PaymentMethod::name);
+                com.possum.domain.model.PaymentMethod::name,
+                false);
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
