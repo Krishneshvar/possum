@@ -52,11 +52,16 @@ public final class SqliteReturnsRepository extends BaseSqliteRepository implemen
                   r.*,
                   s.invoice_number,
                   u.name AS processed_by_name,
-                  COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) AS total_refund
+                  COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) AS total_refund,
+                  t.payment_method_id,
+                  pm.name AS payment_method_name
                 FROM returns r
                 JOIN sales s ON r.sale_id = s.id
                 JOIN users u ON r.user_id = u.id
+                LEFT JOIN transactions t ON t.sale_id = r.sale_id AND t.type = 'refund'
+                LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 WHERE r.id = ?
+                GROUP BY r.id
                 """,
                 returnMapper,
                 id
@@ -71,11 +76,16 @@ public final class SqliteReturnsRepository extends BaseSqliteRepository implemen
                   r.*,
                   s.invoice_number,
                   u.name AS processed_by_name,
-                  COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) AS total_refund
+                  COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) AS total_refund,
+                  t.payment_method_id,
+                  pm.name AS payment_method_name
                 FROM returns r
                 JOIN sales s ON r.sale_id = s.id
                 JOIN users u ON r.user_id = u.id
+                LEFT JOIN transactions t ON t.sale_id = r.sale_id AND t.type = 'refund'
+                LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 WHERE r.sale_id = ?
+                GROUP BY r.id
                 ORDER BY r.created_at DESC
                 """,
                 returnMapper,
@@ -137,11 +147,16 @@ public final class SqliteReturnsRepository extends BaseSqliteRepository implemen
                   r.*,
                   s.invoice_number,
                   u.name AS processed_by_name,
-                  COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) AS total_refund
+                  COALESCE((SELECT SUM(refund_amount) FROM return_items WHERE return_id = r.id), 0) AS total_refund,
+                  t.payment_method_id,
+                  pm.name AS payment_method_name
                 FROM returns r
                 JOIN sales s ON r.sale_id = s.id
                 JOIN users u ON r.user_id = u.id
+                LEFT JOIN transactions t ON t.sale_id = r.sale_id AND t.type = 'refund'
+                LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 %s
+                GROUP BY r.id
                 ORDER BY %s %s
                 LIMIT ? OFFSET ?
                 """.formatted(where, sortBy, sortOrder),
@@ -199,6 +214,12 @@ public final class SqliteReturnsRepository extends BaseSqliteRepository implemen
         if (filter.maxAmount() != null) {
             joiner.add(refundSub + " <= ?");
             params.add(filter.maxAmount().doubleValue());
+        }
+
+        if (filter.paymentMethodIds() != null && !filter.paymentMethodIds().isEmpty()) {
+            joiner.add("EXISTS (SELECT 1 FROM transactions tx WHERE tx.sale_id = r.sale_id AND tx.type = 'refund' AND tx.payment_method_id IN (" 
+                    + "?,".repeat(filter.paymentMethodIds().size()).replaceAll(",$", "") + "))");
+            params.addAll(filter.paymentMethodIds());
         }
 
         if (joiner.length() == 0) {

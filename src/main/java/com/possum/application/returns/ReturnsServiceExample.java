@@ -91,6 +91,7 @@ public class ReturnsServiceExample {
                 null,  // endDate
                 null,  // minAmount
                 null,  // maxAmount
+                null,  // paymentMethodIds
                 null,  // searchTerm
                 1,     // currentPage
                 20,    // itemsPerPage

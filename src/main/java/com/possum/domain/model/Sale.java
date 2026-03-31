@@ -18,6 +18,8 @@ public record Sale(
         String customerName,
         String customerPhone,
         String customerEmail,
-        String billerName
+        String billerName,
+        Long paymentMethodId,
+        String paymentMethodName
 ) {
 }

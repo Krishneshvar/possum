@@ -2,6 +2,7 @@ package com.possum.ui.workspace;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.navigation.Parameterizable;
 
 import java.util.Map;
@@ -43,7 +44,10 @@ public class WorkspaceManager {
     }
 
     public void openWindow(String title, String fxmlPath, Map<String, Object> params) {
-        if (desktop.getWindows().size() >= 10) return;
+        if (desktop.getWindows().size() >= 10) {
+            NotificationService.warning("Only 10 active tabs are allowed. Please close some tabs.");
+            return;
+        }
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));

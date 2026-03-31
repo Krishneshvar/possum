@@ -189,7 +189,7 @@ public class SalesService {
                     fulfillmentStatus,
                     request.customerId(),
                     userId,
-                    null, null, null, null
+                    null, null, null, null, null, null
             );
 
             long saleId = salesRepository.insertSale(sale);

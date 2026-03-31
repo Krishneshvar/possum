@@ -1,5 +1,7 @@
 package com.possum.shared.dto;
 
+import java.util.List;
+
 public record ReturnFilter(
         Long saleId,
         Long userId,
@@ -7,6 +9,7 @@ public record ReturnFilter(
         String endDate,
         java.math.BigDecimal minAmount,
         java.math.BigDecimal maxAmount,
+        List<Long> paymentMethodIds,
         String searchTerm,
         int currentPage,
         int itemsPerPage,

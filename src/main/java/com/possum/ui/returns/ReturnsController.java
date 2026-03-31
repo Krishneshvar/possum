@@ -35,6 +35,7 @@ public class ReturnsController {
     private java.time.LocalDate toDate = null;
     private BigDecimal currentMinAmount = null;
     private BigDecimal currentMaxAmount = null;
+    private List<Long> currentPaymentMethodIds = null;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public ReturnsController(ReturnsService returnsService, SalesService salesService, com.possum.ui.workspace.WorkspaceManager workspaceManager) {
@@ -59,6 +60,16 @@ public class ReturnsController {
         invoiceCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
         invoiceCol.setSortable(false);
         
+        TableColumn<Return, BigDecimal> refundCol = new TableColumn<>("Refund");
+        refundCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalRefund()));
+        refundCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : currencyFormat.format(item));
+            }
+        });
+        
         TableColumn<Return, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
         dateCol.setCellFactory(col -> new TableCell<>() {
@@ -76,20 +87,13 @@ public class ReturnsController {
             }
         });
         
-        TableColumn<Return, BigDecimal> refundCol = new TableColumn<>("Refund");
-        refundCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalRefund()));
-        refundCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(BigDecimal item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : currencyFormat.format(item));
-            }
-        });
+        TableColumn<Return, String> paymentCol = new TableColumn<>("Payment Method");
+        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentMethodName()));
         
         TableColumn<Return, String> reasonCol = new TableColumn<>("Reason");
         reasonCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().reason()));
         
-        returnsTable.getTableView().getColumns().addAll(invoiceCol, dateCol, refundCol, reasonCol);
+        returnsTable.getTableView().getColumns().addAll(invoiceCol, refundCol, dateCol, paymentCol, reasonCol);
         
         returnsTable.addActionColumn("View", this::handleViewDetails);
     }
@@ -99,6 +103,10 @@ public class ReturnsController {
         filterBar.addDateFilter("toDate", "To Date");
         filterBar.addTextFilter("minAmount", "Min Refund");
         filterBar.addTextFilter("maxAmount", "Max Refund");
+        
+        List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
+        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
+                com.possum.domain.model.PaymentMethod::name);
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -106,6 +114,16 @@ public class ReturnsController {
             toDate = (java.time.LocalDate) filters.get("toDate");
             currentMinAmount = parseBigDecimal(filters.get("minAmount"));
             currentMaxAmount = parseBigDecimal(filters.get("maxAmount"));
+            
+            List<com.possum.domain.model.PaymentMethod> selectedPms = (List<com.possum.domain.model.PaymentMethod>) filters.get("paymentMethod");
+            if (selectedPms == null || selectedPms.isEmpty()) {
+                currentPaymentMethodIds = null;
+            } else {
+                currentPaymentMethodIds = selectedPms.stream()
+                        .map(com.possum.domain.model.PaymentMethod::id)
+                        .toList();
+            }
+            
             loadReturns();
         });
         
@@ -124,6 +142,7 @@ public class ReturnsController {
                     toDate != null ? toDate.atTime(23, 59, 59).toString() : null,
                     currentMinAmount,
                     currentMaxAmount,
+                    currentPaymentMethodIds,
                     currentSearch.isEmpty() ? null : currentSearch,
                     paginationBar.getCurrentPage() + 1,
                     paginationBar.getPageSize(),

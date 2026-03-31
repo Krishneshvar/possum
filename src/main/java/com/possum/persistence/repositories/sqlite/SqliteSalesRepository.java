@@ -87,11 +87,16 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         return queryOne(
                 """
                 SELECT
-                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name
+                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name,
+                  t.payment_method_id,
+                  pm.name AS payment_method_name
                 FROM sales s
                 LEFT JOIN customers c ON s.customer_id = c.id
                 LEFT JOIN users u ON s.user_id = u.id
+                LEFT JOIN transactions t ON t.sale_id = s.id AND t.type = 'payment'
+                LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 WHERE s.id = ?
+                GROUP BY s.id
                 """,
                 saleMapper,
                 id
@@ -103,11 +108,16 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         return queryOne(
                 """
                 SELECT
-                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name
+                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name,
+                  t.payment_method_id,
+                  pm.name AS payment_method_name
                 FROM sales s
                 LEFT JOIN customers c ON s.customer_id = c.id
                 LEFT JOIN users u ON s.user_id = u.id
+                LEFT JOIN transactions t ON t.sale_id = s.id AND t.type = 'payment'
+                LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 WHERE s.invoice_number = ?
+                GROUP BY s.id
                 """,
                 saleMapper,
                 invoiceNumber
@@ -176,11 +186,14 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         List<Sale> sales = queryList(
                 """
                 SELECT
-                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name
+                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name,
+                  (SELECT GROUP_CONCAT(DISTINCT pm.name) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND t.status = 'completed') AS payment_method_name,
+                  (SELECT t.payment_method_id FROM transactions t WHERE t.sale_id = s.id AND t.status = 'completed' LIMIT 1) AS payment_method_id
                 FROM sales s
                 LEFT JOIN customers c ON s.customer_id = c.id
                 LEFT JOIN users u ON s.user_id = u.id
                 %s
+                GROUP BY s.id
                 ORDER BY %s %s
                 LIMIT ? OFFSET ?
                 """.formatted(whereClause, sortExpr, sortOrder),
@@ -360,6 +373,11 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         if (filter.maxAmount() != null) {
             joiner.add("s.total_amount <= ?");
             params.add(filter.maxAmount());
+        }
+        if (filter.paymentMethodIds() != null && !filter.paymentMethodIds().isEmpty()) {
+            joiner.add("EXISTS (SELECT 1 FROM transactions tx WHERE tx.sale_id = s.id AND tx.payment_method_id IN (" 
+                    + "?,".repeat(filter.paymentMethodIds().size()).replaceAll(",$", "") + "))");
+            params.addAll(filter.paymentMethodIds());
         }
         if (joiner.length() == 0) {
             return "";

@@ -188,6 +188,8 @@ class PersistenceIntegrationTest {
                         null,
                         null,
                         null,
+                        null,
+                        null,
                         null
                 )
         );

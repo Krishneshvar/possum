@@ -71,7 +71,7 @@ public class ReturnsService {
                     request.userId(),
                     request.reason().trim(),
                     TimeUtil.nowUTC(),
-                    null, null, null
+                    null, null, null, null, null
             );
             long returnId = returnsRepository.insertReturn(returnRecord);
 

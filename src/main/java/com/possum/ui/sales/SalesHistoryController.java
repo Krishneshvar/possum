@@ -63,6 +63,7 @@ public class SalesHistoryController {
     private java.time.LocalDate currentToDate = null;
     private BigDecimal currentMinAmount = null;
     private BigDecimal currentMaxAmount = null;
+    private List<Long> currentPaymentMethodIds = null;
 
     public SalesHistoryController(SalesService salesService, 
                                   SettingsStore settingsStore, 
@@ -139,6 +140,9 @@ public class SalesHistoryController {
         statusCol.setStyle("-fx-alignment: CENTER;");
         statusCol.setSortable(false);
 
+        salesTable.addColumn("Payment", cellData -> new SimpleStringProperty(
+                cellData.getValue().paymentMethodName() != null ? cellData.getValue().paymentMethodName() : "-"));
+
         salesTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
@@ -191,6 +195,10 @@ public class SalesHistoryController {
         filterBar.addDateFilter("toDate", "To Date");
         filterBar.addTextFilter("minAmount", "Min Total");
         filterBar.addTextFilter("maxAmount", "Max Total");
+        
+        List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
+        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
+                com.possum.domain.model.PaymentMethod::name);
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -211,6 +219,16 @@ public class SalesHistoryController {
                         .map(s -> s.toLowerCase().replace(" ", "_"))
                         .toList();
             }
+
+            List<com.possum.domain.model.PaymentMethod> selectedPms = (List<com.possum.domain.model.PaymentMethod>) filters.get("paymentMethod");
+            if (selectedPms == null || selectedPms.isEmpty()) {
+                currentPaymentMethodIds = null;
+            } else {
+                currentPaymentMethodIds = selectedPms.stream()
+                        .map(com.possum.domain.model.PaymentMethod::id)
+                        .toList();
+            }
+
             paginationBar.reset();
             loadHistory();
         });
@@ -241,7 +259,8 @@ public class SalesHistoryController {
                 pageSize,
                 "sale_date",
                 "DESC",
-                null // fulfillmentStatus
+                null, // fulfillmentStatus
+                currentPaymentMethodIds
         );
 
         salesTable.setLoading(true);

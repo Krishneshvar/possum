@@ -24,7 +24,9 @@ public final class SaleMapper implements RowMapper<Sale> {
                 getOptionalColumn(rs, "customer_name"),
                 getOptionalColumn(rs, "customer_phone"),
                 getOptionalColumn(rs, "customer_email"),
-                getOptionalColumn(rs, "biller_name")
+                getOptionalColumn(rs, "biller_name"),
+                getNullableLong(rs, "payment_method_id"),
+                getOptionalColumn(rs, "payment_method_name")
         );
     }
 

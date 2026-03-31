@@ -11,6 +11,8 @@ public record Return(
         LocalDateTime createdAt,
         String invoiceNumber,
         String processedByName,
-        BigDecimal totalRefund
+        BigDecimal totalRefund,
+        Long paymentMethodId,
+        String paymentMethodName
 ) {
 }

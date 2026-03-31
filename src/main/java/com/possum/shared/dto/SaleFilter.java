@@ -16,6 +16,7 @@ public record SaleFilter(
         int itemsPerPage,
         String sortBy,
         String sortOrder,
-        List<String> fulfillmentStatus
+        List<String> fulfillmentStatus,
+        List<Long> paymentMethodIds
 ) {
 }
