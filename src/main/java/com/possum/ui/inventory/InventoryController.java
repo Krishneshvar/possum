@@ -211,6 +211,8 @@ public class InventoryController {
                     currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
                     currentStockFilters.isEmpty() ? null : currentStockFilters,
                     currentStatusFilters.isEmpty() ? null : currentStatusFilters,
+                    null,
+                    null,
                     "stock",
                     "ASC",
                     paginationBar.getCurrentPage(),

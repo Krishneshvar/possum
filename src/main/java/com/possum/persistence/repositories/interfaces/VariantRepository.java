@@ -21,6 +21,8 @@ public interface VariantRepository {
                                       java.util.List<Long> taxCategories,
                                       java.util.List<String> stockStatus,
                                       java.util.List<String> status,
+                                      java.math.BigDecimal minPrice,
+                                      java.math.BigDecimal maxPrice,
                                       String sortBy,
                                       String sortOrder,
                                       int currentPage,

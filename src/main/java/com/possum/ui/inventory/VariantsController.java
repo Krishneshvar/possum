@@ -36,6 +36,8 @@ public class VariantsController {
     private List<String> currentStatusFilters = Collections.emptyList();
     private List<String> currentStockFilters = Collections.emptyList();
     private List<Long> currentCategoryFilters = Collections.emptyList();
+    private java.math.BigDecimal currentMinPrice = null;
+    private java.math.BigDecimal currentMaxPrice = null;
     private final com.possum.persistence.repositories.interfaces.TaxRepository taxRepository;
 
     public VariantsController(VariantRepository variantRepository, CategoryService categoryService, 
@@ -69,6 +71,8 @@ public class VariantsController {
             item -> java.util.Arrays.stream(item.split("-")).map(word -> word.substring(0, 1).toUpperCase() + word.substring(1)).collect(java.util.stream.Collectors.joining(" ")), false);
         filterBar.addMultiSelectFilter("taxCategory", "Tax Category", taxCategories, com.possum.domain.model.TaxCategory::name);
         filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
+        filterBar.addTextFilter("minPrice", "Min MRP");
+        filterBar.addTextFilter("maxPrice", "Max MRP");
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -97,6 +101,9 @@ public class VariantsController {
                 currentCategoryFilters = Collections.emptyList();
             }
 
+            currentMinPrice = parseBigDecimal(filters.get("minPrice"));
+            currentMaxPrice = parseBigDecimal(filters.get("maxPrice"));
+
             loadVariants();
         });
 
@@ -114,6 +121,8 @@ public class VariantsController {
                 currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
                 currentStockFilters.isEmpty() ? null : currentStockFilters,
                 currentStatusFilters.isEmpty() ? null : currentStatusFilters,
+                currentMinPrice,
+                currentMaxPrice,
                 "product_name",
                 "ASC",
                 paginationBar.getCurrentPage(),
@@ -223,5 +232,16 @@ public class VariantsController {
         items.addAll(java.util.Arrays.asList(viewProductItem, editProductItem));
 
         return items;
+    }
+
+    private java.math.BigDecimal parseBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.math.BigDecimal) return (java.math.BigDecimal) value;
+        try {
+            String s = value.toString().replaceAll("[^0-9.\\-]", "");
+            return s.isEmpty() ? null : new java.math.BigDecimal(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

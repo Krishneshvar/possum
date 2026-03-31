@@ -89,12 +89,14 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                                              List<Long> taxCategories,
                                              List<String> stockStatus,
                                              List<String> status,
+                                             java.math.BigDecimal minPrice,
+                                             java.math.BigDecimal maxPrice,
                                              String sortBy,
                                              String sortOrder,
                                              int currentPage,
                                              int itemsPerPage) {
         List<Object> params = new ArrayList<>();
-        String where = buildWhere(searchTerm, categoryId, categories, taxCategories, status, stockStatus, params);
+        String where = buildWhere(searchTerm, categoryId, categories, taxCategories, status, stockStatus, minPrice, maxPrice, params);
 
         int total = queryOne(
                 """
@@ -175,7 +177,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
         ).orElse(Map.<String, Object>of("totalVariants", 0, "inactiveVariants", 0));
     }
 
-    private static String buildWhere(String searchTerm, Long categoryId, List<Long> categories, List<Long> taxCategories, List<String> status, List<String> stockStatus, List<Object> params) {
+    private static String buildWhere(String searchTerm, Long categoryId, List<Long> categories, List<Long> taxCategories, List<String> status, List<String> stockStatus, java.math.BigDecimal minPrice, java.math.BigDecimal maxPrice, List<Object> params) {
         StringJoiner joiner = new StringJoiner(" AND ");
         joiner.add("v.deleted_at IS NULL");
         joiner.add("p.deleted_at IS NULL");
@@ -227,6 +229,16 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
             if (!conditions.isEmpty()) {
                 joiner.add("(" + String.join(" OR ", conditions) + ")");
             }
+        }
+
+        if (minPrice != null) {
+            joiner.add("v.mrp >= ?");
+            params.add(minPrice);
+        }
+
+        if (maxPrice != null) {
+            joiner.add("v.mrp <= ?");
+            params.add(maxPrice);
         }
 
         return "WHERE " + joiner;

@@ -104,7 +104,7 @@ public class ProductFlowController {
             itemSelector.setItems(FXCollections.observableArrayList(products));
         } else {
             List<Variant> variants = variantService.getVariants(new com.possum.application.variants.VariantService.VariantFilterCriteria(
-                "", null, null, null, null, null, "v.name", "ASC", 1, 1000
+                "", null, null, null, null, null, null, null, "v.name", "ASC", 1, 1000
             )).items();
             itemSelector.setItems(FXCollections.observableArrayList(variants));
         }
