@@ -62,6 +62,7 @@ public class ProductFlowController {
 
     @FXML
     public void initialize() {
+        flowTable.setPlaceholder(new javafx.scene.control.Label("No data found for the current selection and date range."));
         setupSelectionType();
         setupItemSelector();
         setupDateFilters();

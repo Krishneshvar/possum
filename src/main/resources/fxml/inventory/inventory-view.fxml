@@ -11,18 +11,20 @@
       styleClass="workspace-view"
       stylesheets="@../../styles/inventory.css">
 
-    <!-- Header -->
-    <HBox styleClass="view-header" alignment="CENTER_LEFT">
-        <VBox>
-            <Label text="Inventory" styleClass="view-title"/>
-            <Label text="Monitor stock levels and statuses across all products" styleClass="view-subtitle"/>
+    <!-- Header Area -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="20">
+        <VBox spacing="4">
+            <Label text="Live Inventory Status" styleClass="view-title" accessibleRole="TEXT"/>
+            <Label text="Monitor real-time stock levels, check availability statuses, and perform quick adjustments." styleClass="view-subtitle" accessibleRole="TEXT"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button">
-            <tooltip>
-                <Tooltip text="Refresh the inventory list"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button fx:id="refreshButton" text="↺ Sync Inventory Data" onAction="#handleRefresh" styleClass="action-button, primary-button" accessibleText="Refresh inventory list" accessibleRole="BUTTON" defaultButton="true">
+                <tooltip>
+                    <Tooltip text="Fetch the latest stock levels from the database"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
     
     <!-- Main Content -->

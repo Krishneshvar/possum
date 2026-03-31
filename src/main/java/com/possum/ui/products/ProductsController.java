@@ -56,6 +56,7 @@ public class ProductsController {
         if (addButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
         }
+        productsTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No products found. Adjust filters or click + Add Product to create one."));
         setupTable();
         setupFilters();
         loadProducts();

@@ -51,6 +51,7 @@ public class VariantsController {
 
     @FXML
     public void initialize() {
+        variantsTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No variants found. Try adjusting filters or search terms."));
         setupTable();
         setupFilters();
         loadVariants();

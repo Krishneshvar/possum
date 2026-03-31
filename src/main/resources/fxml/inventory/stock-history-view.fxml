@@ -11,23 +11,25 @@
       styleClass="workspace-view"
       stylesheets="@../../styles/inventory.css">
 
-    <!-- Header -->
-    <HBox styleClass="view-header" alignment="CENTER_LEFT">
-        <VBox>
-            <Label text="Stock History" styleClass="view-title"/>
-            <Label text="View inventory adjustments and stock flow history" styleClass="view-subtitle"/>
+    <!-- Header Area -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="20">
+        <VBox spacing="4">
+            <Label text="Stock Activity Log" styleClass="view-title" accessibleRole="TEXT"/>
+            <Label text="Review a comprehensive audit trail of all manual adjustments and stock movements." styleClass="view-subtitle" accessibleRole="TEXT"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button">
-            <tooltip>
-                <Tooltip text="Refresh the history list"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button fx:id="refreshButton" text="↺ Refresh Activity" onAction="#handleRefresh" styleClass="action-button, primary-button" accessibleText="Refresh stock history list" accessibleRole="BUTTON" defaultButton="true">
+                <tooltip>
+                    <Tooltip text="Fetch the latest historical records from the database"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
 
     <!-- Data Table -->
     <VBox styleClass="card" VBox.vgrow="ALWAYS">
-        <TableView fx:id="historyTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+        <TableView fx:id="historyTable" VBox.vgrow="ALWAYS" styleClass="data-table" accessibleRole="TABLE_VIEW" accessibleText="Stock History Table">
             <columns>
                 <TableColumn fx:id="productCol" text="Product" prefWidth="150"/>
                 <TableColumn fx:id="variantCol" text="Variant" prefWidth="150"/>
