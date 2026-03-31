@@ -7,47 +7,55 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.settings.tax.TaxSimulatorController"
-      spacing="15">
-    
-    <padding>
-        <Insets top="15" right="15" bottom="15" left="15"/>
-    </padding>
+      spacing="20"
+      style="-fx-padding: 20 0 0 0;"
+      stylesheets="@../../styles/inventory.css">
 
-    <Label text="Tax Engine Simulator" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-    <Label text="Test tax calculations with sample data" style="-fx-text-fill: gray;"/>
-    
-    <Separator/>
-    
-    <VBox spacing="10" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-padding: 15; -fx-background-color: #f9f9f9;">
-        <Label text="Simulation Parameters" style="-fx-font-weight: bold;"/>
-        
-        <GridPane hgap="10" vgap="10">
-            <columnConstraints>
-                <ColumnConstraints minWidth="120" prefWidth="120"/>
-                <ColumnConstraints hgrow="ALWAYS"/>
-            </columnConstraints>
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <!-- Left Side: Simulator Configuration -->
+        <VBox spacing="15" styleClass="card" style="-fx-min-width: 400; -fx-max-width: 400;">
+            <VBox spacing="5">
+                <Label text="Tax Simulator Engine" styleClass="card-title"/>
+                <Label text="Test tax rules by simulating an invoice item" style="-fx-text-fill: #64748b;"/>
+            </VBox>
             
-            <Label text="Unit Price:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-            <TextField fx:id="amountField" GridPane.columnIndex="1" GridPane.rowIndex="0" promptText="Enter amount"/>
+            <Separator/>
             
-            <Label text="Quantity:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-            <TextField fx:id="quantityField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="Enter quantity"/>
+            <VBox spacing="20" VBox.vgrow="ALWAYS">
+                <VBox styleClass="form-group">
+                    <Label text="Unit Price *" styleClass="form-label"/>
+                    <TextField fx:id="amountField" promptText="e.g. 100.00" styleClass="text-field" accessibleText="Unit Price Amount"/>
+                </VBox>
+
+                <VBox styleClass="form-group">
+                    <Label text="Quantity *" styleClass="form-label"/>
+                    <TextField fx:id="quantityField" promptText="e.g. 1" styleClass="text-field" accessibleText="Item Quantity"/>
+                </VBox>
+
+                <VBox styleClass="form-group">
+                    <Label text="Target Tax Category *" styleClass="form-label"/>
+                    <ComboBox fx:id="categoryCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Select Target Tax Category"/>
+                </VBox>
+            </VBox>
             
-            <Label text="Tax Category:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-            <ComboBox fx:id="categoryCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" maxWidth="Infinity"/>
-        </GridPane>
-        
-        <HBox spacing="10">
-            <Button fx:id="calculateButton" text="Calculate Tax" onAction="#handleCalculate" 
-                    style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 10 20;"/>
-            <Button text="Clear" onAction="#handleClear" style="-fx-padding: 10 20;"/>
-        </HBox>
-    </VBox>
-    
-    <Label text="Calculation Result" style="-fx-font-weight: bold;"/>
-    
-    <TextArea fx:id="resultArea" VBox.vgrow="ALWAYS" editable="false" 
-              style="-fx-font-family: 'Courier New'; -fx-font-size: 12px;"
-              promptText="Results will appear here after calculation..."/>
+            <Separator/>
+
+            <HBox spacing="10" alignment="CENTER_RIGHT">
+                <Button text="Reset Form" onAction="#handleClear" styleClass="action-button" accessibleText="Reset Simulator Form" cancelButton="true"/>
+                <Button fx:id="calculateButton" text="Run Calculation" onAction="#handleCalculate" styleClass="primary-button"
+                        defaultButton="true" accessibleText="Calculate Tax Results"/>
+            </HBox>
+        </VBox>
+
+        <!-- Right Side: Simulation Results -->
+        <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" styleClass="card">
+            <Label text="Execution Results" styleClass="card-title"/>
+
+            <TextArea fx:id="resultArea" VBox.vgrow="ALWAYS" editable="false"
+                      styleClass="text-area"
+                      style="-fx-font-family: 'Courier New', monospace; -fx-font-size: 13px; -fx-background-color: #f8fafc;"
+                      promptText="Ready. Set parameters and click 'Run Calculation' to view the generated tax breakdown..."/>
+        </VBox>
+    </HBox>
 
 </VBox>

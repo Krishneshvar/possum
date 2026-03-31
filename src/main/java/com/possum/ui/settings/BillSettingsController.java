@@ -100,12 +100,15 @@ public class BillSettingsController {
 
     private VBox createSectionEditor(BillSection section, int index, boolean isFirst, boolean isLast) {
         VBox container = new VBox(10);
-        container.setStyle("-fx-border-color: #ccc; -fx-border-radius: 5; -fx-background-color: white; -fx-padding: 15;");
+        container.getStyleClass().add("card");
+        container.setStyle("-fx-padding: 15; -fx-border-color: #e2e8f0; -fx-background-color: #ffffff; -fx-border-radius: 6;");
 
         HBox header = new HBox(10);
         header.setStyle("-fx-alignment: center-left;");
 
         CheckBox visibleCheck = new CheckBox(formatSectionName(section.getId()));
+        visibleCheck.getStyleClass().add("check-box");
+        visibleCheck.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
         visibleCheck.setSelected(section.isVisible());
         visibleCheck.setOnAction(e -> {
             section.setVisible(visibleCheck.isSelected());
@@ -114,11 +117,17 @@ public class BillSettingsController {
 
         HBox.setHgrow(visibleCheck, Priority.ALWAYS);
 
-        Button upButton = new Button("↑");
+        Button upButton = new Button("▲");
+        upButton.getStyleClass().add("icon-button");
+        upButton.setTooltip(new Tooltip("Move Up"));
+        upButton.setAccessibleText("Move section up");
         upButton.setDisable(isFirst);
         upButton.setOnAction(e -> moveSection(index, -1));
 
-        Button downButton = new Button("↓");
+        Button downButton = new Button("▼");
+        downButton.getStyleClass().add("icon-button");
+        downButton.setTooltip(new Tooltip("Move Down"));
+        downButton.setAccessibleText("Move section down");
         downButton.setDisable(isLast);
         downButton.setOnAction(e -> moveSection(index, 1));
 
@@ -134,15 +143,18 @@ public class BillSettingsController {
     }
 
     private VBox createSectionOptions(BillSection section) {
-        VBox options = new VBox(10);
-        options.setPadding(new Insets(10, 0, 0, 20));
+        VBox options = new VBox(15);
+        options.setPadding(new Insets(15, 0, 0, 20));
 
         if (section.getOptions().containsKey("alignment")) {
             HBox alignBox = new HBox(10);
+            alignBox.getStyleClass().add("form-group");
             alignBox.setStyle("-fx-alignment: center-left;");
             Label alignLabel = new Label("Alignment:");
+            alignLabel.getStyleClass().add("form-label");
             alignLabel.setPrefWidth(100);
             ComboBox<String> alignCombo = new ComboBox<>();
+            alignCombo.getStyleClass().add("combo-box");
             alignCombo.getItems().addAll("left", "center", "right");
             alignCombo.setValue(section.getOptionAsString("alignment", "left"));
             alignCombo.setOnAction(e -> {
@@ -155,10 +167,13 @@ public class BillSettingsController {
 
         if (section.getOptions().containsKey("fontSize")) {
             HBox sizeBox = new HBox(10);
+            sizeBox.getStyleClass().add("form-group");
             sizeBox.setStyle("-fx-alignment: center-left;");
             Label sizeLabel = new Label("Font Size:");
+            sizeLabel.getStyleClass().add("form-label");
             sizeLabel.setPrefWidth(100);
             ComboBox<String> sizeCombo = new ComboBox<>();
+            sizeCombo.getStyleClass().add("combo-box");
             sizeCombo.getItems().addAll("small", "medium", "large");
             sizeCombo.setValue(section.getOptionAsString("fontSize", "medium"));
             sizeCombo.setOnAction(e -> {
@@ -178,6 +193,7 @@ public class BillSettingsController {
             );
 
             CheckBox logoCheck = new CheckBox("Show Logo");
+            logoCheck.getStyleClass().add("check-box");
             logoCheck.setSelected(section.getOptionAsBoolean("showLogo", false));
             logoCheck.setOnAction(e -> {
                 section.setOption("showLogo", logoCheck.isSelected());
@@ -197,12 +213,13 @@ public class BillSettingsController {
         return options;
     }
 
-    private HBox createTextField(String label, String key, BillSection section) {
-        HBox box = new HBox(10);
-        box.setStyle("-fx-alignment: center-left;");
+    private VBox createTextField(String label, String key, BillSection section) {
+        VBox box = new VBox(5);
+        box.getStyleClass().add("form-group");
         Label lbl = new Label(label);
-        lbl.setPrefWidth(100);
+        lbl.getStyleClass().add("form-label");
         TextField field = new TextField(section.getOptionAsString(key, ""));
+        field.getStyleClass().add("text-field");
         field.setPrefWidth(300);
         field.textProperty().addListener((obs, old, val) -> {
             section.setOption(key, val);
@@ -214,8 +231,11 @@ public class BillSettingsController {
 
     private VBox createTextArea(String label, String key, BillSection section) {
         VBox box = new VBox(5);
+        box.getStyleClass().add("form-group");
         Label lbl = new Label(label);
+        lbl.getStyleClass().add("form-label");
         TextArea area = new TextArea(section.getOptionAsString(key, ""));
+        area.getStyleClass().add("text-area");
         area.setPrefRowCount(3);
         area.setPrefWidth(300);
         area.textProperty().addListener((obs, old, val) -> {
