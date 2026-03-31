@@ -28,6 +28,7 @@ public class SettingsController {
     @FXML private ComboBox<String> printerCombo;
     @FXML private AnchorPane taxSettingsTabContent;
     @FXML private AnchorPane billSettingsTabContent;
+    @FXML private Button testPrintBtn;
     
     private SettingsStore settingsStore;
     private PrinterService printerService;
@@ -72,6 +73,10 @@ public class SettingsController {
         if (!printers.isEmpty()) {
             printerCombo.setValue(printers.get(0));
             selectedPrinter = printers.get(0);
+            testPrintBtn.setDisable(false);
+        } else {
+            testPrintBtn.setDisable(true);
+            printerCombo.setPromptText("No printers found");
         }
     }
 
@@ -93,22 +98,32 @@ public class SettingsController {
     private void handleTestPrint() {
         String printer = printerCombo.getValue();
         if (printer == null) {
-            NotificationService.warning("Select a printer");
+            NotificationService.warning("Select a printer before testing.");
             return;
         }
         
         String testHtml = "<html><body><h2>Test Print</h2><p>This is a test receipt from POSSUM POS</p></body></html>";
-        
+        testPrintBtn.setDisable(true);
+        testPrintBtn.setText("Printing...");
+
         printerService.printInvoice(testHtml, printer)
             .thenAccept(success -> {
-                if (success) {
-                    NotificationService.success("Test print sent");
-                } else {
-                    NotificationService.error("Print failed");
-                }
+                javafx.application.Platform.runLater(() -> {
+                    testPrintBtn.setDisable(false);
+                    testPrintBtn.setText("Test Print");
+                    if (success) {
+                        NotificationService.success("Test print sent successfully to " + printer);
+                    } else {
+                        NotificationService.error("Print failed to reach the printer.");
+                    }
+                });
             })
             .exceptionally(ex -> {
-                NotificationService.error("Print error: " + ex.getMessage());
+                javafx.application.Platform.runLater(() -> {
+                    testPrintBtn.setDisable(false);
+                    testPrintBtn.setText("Test Print");
+                    NotificationService.error("Print error: " + ex.getMessage());
+                });
                 return null;
             });
     }

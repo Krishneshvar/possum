@@ -7,102 +7,130 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.settings.tax.TaxRulesController"
-      spacing="15">
-    
-    <padding>
-        <Insets top="15" right="15" bottom="15" left="15"/>
-    </padding>
+      spacing="20"
+      style="-fx-padding: 20 0 0 0;"
+      stylesheets="@../../styles/inventory.css">
 
-    <HBox spacing="10" alignment="CENTER_LEFT">
-        <Label text="Select Profile:" style="-fx-font-weight: bold;"/>
-        <ComboBox fx:id="profileCombo" prefWidth="250"/>
+    <!-- Top Selection Area -->
+    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="card">
+        <Label text="Select Tax Profile" styleClass="form-label" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="profileCombo" prefWidth="300" styleClass="combo-box" accessibleText="Select Tax Profile"/>
+        <Label text="Tax rules belong to a specific profile." style="-fx-text-fill: #94a3b8;"/>
     </HBox>
-    
-    <Separator/>
-    
-    <Label text="Tax Rules" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-    
-    <TableView fx:id="rulesTable" VBox.vgrow="ALWAYS" prefHeight="200">
-        <columns>
-            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="150"/>
-            <TableColumn fx:id="rateColumn" text="Rate %" prefWidth="80"/>
-            <TableColumn fx:id="typeColumn" text="Type" prefWidth="100"/>
-            <TableColumn fx:id="priorityColumn" text="Priority" prefWidth="80"/>
-        </columns>
-    </TableView>
-    
-    <Separator/>
-    
-    <Label text="Rule Details" style="-fx-font-weight: bold;"/>
-    
-    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
-        <VBox spacing="10">
-            <padding>
-                <Insets top="5" right="5" bottom="5" left="5"/>
-            </padding>
-            
-            <GridPane hgap="10" vgap="10">
-                <columnConstraints>
-                    <ColumnConstraints minWidth="120" prefWidth="120"/>
-                    <ColumnConstraints hgrow="ALWAYS"/>
-                    <ColumnConstraints minWidth="120" prefWidth="120"/>
-                    <ColumnConstraints hgrow="ALWAYS"/>
-                </columnConstraints>
-                
-                <Label text="Category:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                <ComboBox fx:id="categoryCombo" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="Infinity"/>
-                
-                <Label text="Scope:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-                <ComboBox fx:id="scopeCombo" GridPane.columnIndex="3" GridPane.rowIndex="0" maxWidth="Infinity"/>
-                
-                <Label text="Rate (%):" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                <TextField fx:id="rateField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="e.g., 18"/>
-                
-                <Label text="Priority:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-                <TextField fx:id="priorityField" GridPane.columnIndex="3" GridPane.rowIndex="1" promptText="0"/>
-                
-                <CheckBox fx:id="compoundCheckBox" text="Compound Tax" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-            </GridPane>
-            
-            <Label text="Constraints (Optional)" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
-            
-            <GridPane hgap="10" vgap="10">
-                <columnConstraints>
-                    <ColumnConstraints minWidth="120" prefWidth="120"/>
-                    <ColumnConstraints hgrow="ALWAYS"/>
-                    <ColumnConstraints minWidth="120" prefWidth="120"/>
-                    <ColumnConstraints hgrow="ALWAYS"/>
-                </columnConstraints>
-                
-                <Label text="Min Price:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                <TextField fx:id="minPriceField" GridPane.columnIndex="1" GridPane.rowIndex="0" promptText="Optional"/>
-                
-                <Label text="Max Price:" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-                <TextField fx:id="maxPriceField" GridPane.columnIndex="3" GridPane.rowIndex="0" promptText="Optional"/>
-                
-                <Label text="Min Invoice:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                <TextField fx:id="minInvoiceField" GridPane.columnIndex="1" GridPane.rowIndex="1" promptText="Optional"/>
-                
-                <Label text="Max Invoice:" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-                <TextField fx:id="maxInvoiceField" GridPane.columnIndex="3" GridPane.rowIndex="1" promptText="Optional"/>
-                
-                <Label text="Customer Type:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                <TextField fx:id="customerTypeField" GridPane.columnIndex="1" GridPane.rowIndex="2" promptText="Optional"/>
-                
-                <Label text="Valid From:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-                <DatePicker fx:id="validFromPicker" GridPane.columnIndex="1" GridPane.rowIndex="3" maxWidth="Infinity"/>
-                
-                <Label text="Valid To:" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
-                <DatePicker fx:id="validToPicker" GridPane.columnIndex="3" GridPane.rowIndex="3" maxWidth="Infinity"/>
-            </GridPane>
+
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <!-- Left Side: Table of Rules -->
+        <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" styleClass="card" style="-fx-min-width: 400;">
+            <Label text="Tax Rules List" styleClass="card-title"/>
+            <TableView fx:id="rulesTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+                <placeholder>
+                    <Label text="No tax rules found for this profile. Add a new rule." style="-fx-text-fill: #94a3b8;"/>
+                </placeholder>
+                <columns>
+                    <TableColumn fx:id="categoryColumn" text="Category" prefWidth="150"/>
+                    <TableColumn fx:id="rateColumn" text="Rate (%)" prefWidth="100"/>
+                    <TableColumn fx:id="typeColumn" text="Scope" prefWidth="120"/>
+                    <TableColumn fx:id="priorityColumn" text="Priority" prefWidth="100"/>
+                </columns>
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                </columnResizePolicy>
+            </TableView>
         </VBox>
-    </ScrollPane>
-    
-    <HBox spacing="10">
-        <Button text="Add" onAction="#handleAdd" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
-        <Button text="Update" onAction="#handleUpdate" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
-        <Button text="Delete" onAction="#handleDelete" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
-        <Button text="Clear" onAction="#handleClear"/>
+
+        <!-- Right Side: Rule Details Form -->
+        <VBox spacing="15" styleClass="card" style="-fx-min-width: 450; -fx-max-width: 500;">
+            <Label text="Rule Configuration" styleClass="card-title"/>
+            
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-padding: 0;">
+                <VBox spacing="20" style="-fx-padding: 0 5 0 0;">
+
+                    <!-- Basic Config -->
+                    <VBox spacing="15">
+                        <Label text="Basic Details" styleClass="form-label" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                        <HBox spacing="10">
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Tax Category *" styleClass="form-label"/>
+                                <ComboBox fx:id="categoryCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Tax Category"/>
+                            </VBox>
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Tax Scope *" styleClass="form-label"/>
+                                <ComboBox fx:id="scopeCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Tax Scope"/>
+                            </VBox>
+                        </HBox>
+
+                        <HBox spacing="10">
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Rate (%) *" styleClass="form-label"/>
+                                <TextField fx:id="rateField" promptText="e.g., 18" styleClass="text-field" accessibleText="Tax Rate Percentage"/>
+                            </VBox>
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Priority Level" styleClass="form-label"/>
+                                <TextField fx:id="priorityField" promptText="0" styleClass="text-field" accessibleText="Execution Priority"/>
+                            </VBox>
+                        </HBox>
+
+                        <CheckBox fx:id="compoundCheckBox" text="Compound Tax (Calculated on top of previous taxes)" styleClass="check-box" accessibleText="Is Compound Tax"/>
+                    </VBox>
+
+                    <Separator/>
+
+                    <!-- Advanced Constraints -->
+                    <VBox spacing="15">
+                        <Label text="Conditional Constraints (Optional)" styleClass="form-label" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                        <Label text="Apply this tax only if these conditions are met" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+
+                        <HBox spacing="10">
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Min Item Price" styleClass="form-label"/>
+                                <TextField fx:id="minPriceField" promptText="Optional" styleClass="text-field"/>
+                            </VBox>
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Max Item Price" styleClass="form-label"/>
+                                <TextField fx:id="maxPriceField" promptText="Optional" styleClass="text-field"/>
+                            </VBox>
+                        </HBox>
+
+                        <HBox spacing="10">
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Min Invoice Total" styleClass="form-label"/>
+                                <TextField fx:id="minInvoiceField" promptText="Optional" styleClass="text-field"/>
+                            </VBox>
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Max Invoice Total" styleClass="form-label"/>
+                                <TextField fx:id="maxInvoiceField" promptText="Optional" styleClass="text-field"/>
+                            </VBox>
+                        </HBox>
+
+                        <VBox styleClass="form-group">
+                            <Label text="Customer Type Constraint" styleClass="form-label"/>
+                            <TextField fx:id="customerTypeField" promptText="Optional" styleClass="text-field"/>
+                        </VBox>
+
+                        <HBox spacing="10">
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Valid From Date" styleClass="form-label"/>
+                                <DatePicker fx:id="validFromPicker" maxWidth="Infinity" styleClass="date-picker"/>
+                            </VBox>
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Valid To Date" styleClass="form-label"/>
+                                <DatePicker fx:id="validToPicker" maxWidth="Infinity" styleClass="date-picker"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                </VBox>
+            </ScrollPane>
+            
+            <Separator/>
+            
+            <HBox spacing="10" alignment="CENTER_RIGHT">
+                <Button text="Clear" onAction="#handleClear" styleClass="action-button" accessibleText="Clear form fields" cancelButton="true"/>
+                <Button text="Delete" onAction="#handleDelete" styleClass="danger-button" accessibleText="Delete selected rule"/>
+                <Button text="Update" onAction="#handleUpdate" styleClass="action-button" accessibleText="Update selected rule"/>
+                <Button text="Add Rule" onAction="#handleAdd" styleClass="primary-button" accessibleText="Add new rule" defaultButton="true"/>
+            </HBox>
+        </VBox>
     </HBox>
 
 </VBox>

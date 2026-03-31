@@ -7,46 +7,74 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.settings.SettingsController"
-      spacing="20"
-      alignment="TOP_LEFT">
+      styleClass="workspace-view"
+      stylesheets="@../styles/inventory.css">
     
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <Label text="Settings" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <VBox styleClass="view-header">
+        <Label text="System Settings" styleClass="view-title"/>
+        <Label text="Manage general, billing, printing, and tax settings." styleClass="view-subtitle"/>
+    </VBox>
     
-    <TabPane VBox.vgrow="ALWAYS">
+    <TabPane VBox.vgrow="ALWAYS" styleClass="data-table">
         <Tab text="General" closable="false">
-            <VBox spacing="15" style="-fx-padding: 20;">
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="Store Name:" prefWidth="150"/>
-                    <TextField fx:id="storeNameField" prefWidth="300"/>
-                </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="Currency:" prefWidth="150"/>
-                    <ComboBox fx:id="currencyCombo" prefWidth="300"/>
-                </HBox>
-                <Button text="Save General Settings" onAction="#handleSaveGeneral" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20;"/>
-            </VBox>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 16 0 0 0;">
+                <VBox spacing="20">
+                    <VBox styleClass="card">
+                        <Label text="Store Profile" styleClass="card-title"/>
+                        <VBox styleClass="form-group">
+                            <Label text="Store Name" styleClass="form-label"/>
+                            <TextField fx:id="storeNameField" prefWidth="400" maxWidth="400"
+                                       styleClass="text-field" accessibleText="Store Name"/>
+                        </VBox>
+                        <VBox styleClass="form-group">
+                            <Label text="System Currency" styleClass="form-label"/>
+                            <ComboBox fx:id="currencyCombo" prefWidth="400" maxWidth="400"
+                                      styleClass="combo-box" accessibleText="System Currency"/>
+                            <Label text="Used for financial reports and default billing" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
+                        </VBox>
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Button text="Save Settings" onAction="#handleSaveGeneral" styleClass="primary-button"
+                                    defaultButton="true" accessibleText="Save Settings"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
         </Tab>
         
-        <Tab text="Bill" closable="false">
+        <Tab text="Bill Structure" closable="false">
             <AnchorPane fx:id="billSettingsTabContent"/>
         </Tab>
         
-        <Tab text="Printer" closable="false">
-            <VBox spacing="15" style="-fx-padding: 20;">
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="Default Printer:" prefWidth="150"/>
-                    <ComboBox fx:id="printerCombo" prefWidth="300"/>
-                </HBox>
-                <Button text="Test Print" onAction="#handleTestPrint"/>
-                <Button text="Refresh Printers" onAction="#handleRefreshPrinters"/>
-            </VBox>
+        <Tab text="Hardware &amp; Printing" closable="false">
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 16 0 0 0;">
+                <VBox spacing="20">
+                    <VBox styleClass="card">
+                        <HBox alignment="CENTER_LEFT" spacing="15">
+                            <VBox HBox.hgrow="ALWAYS">
+                                <Label text="Receipt Printer" styleClass="card-title"/>
+                                <Label text="Select default printer for POS receipts" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                            </VBox>
+                            <Button text="Refresh Printers" onAction="#handleRefreshPrinters" styleClass="action-button"
+                                    accessibleText="Refresh connected printers list"/>
+                        </HBox>
+                        <Separator/>
+                        <VBox styleClass="form-group" spacing="15">
+                            <VBox spacing="5">
+                                <Label text="Selected Printer" styleClass="form-label"/>
+                                <ComboBox fx:id="printerCombo" prefWidth="400" maxWidth="400" styleClass="combo-box"
+                                          accessibleText="Select Default Printer"/>
+                            </VBox>
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Button fx:id="testPrintBtn" text="Test Print" onAction="#handleTestPrint" styleClass="action-button"
+                                        accessibleText="Send a test print to selected printer"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
         </Tab>
         
-        <Tab text="Tax" closable="false">
+        <Tab text="Tax Config" closable="false">
             <AnchorPane fx:id="taxSettingsTabContent"/>
         </Tab>
     </TabPane>
