@@ -15,38 +15,43 @@
     </padding>
 
     <!-- Header Section -->
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <VBox>
-            <Label text="Product Flow Analysis" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
-            <Label text="Track movement history across products and variants" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
-        </VBox>
-        <Region HBox.hgrow="ALWAYS"/>
-        
-        <HBox spacing="10" alignment="CENTER_LEFT">
-            <VBox spacing="2">
-                <Label text="Analyze By:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
-                <ComboBox fx:id="selectionTypeCombo" prefWidth="120"/>
+    <!-- Header Section -->
+    <VBox spacing="20">
+        <HBox alignment="CENTER_LEFT" spacing="15">
+            <VBox spacing="4">
+                <Label text="Product Flow Analysis" style="-fx-font-size: 26px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+                <Label text="Gain insights into stock movement, sales velocity, and inventory turnover." style="-fx-text-fill: #64748b; -fx-font-size: 14px;"/>
             </VBox>
-            <VBox spacing="2">
-                <Label text="Select Item:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
-                <ComboBox fx:id="itemSelector" prefWidth="200" promptText="Choose..."/>
-            </VBox>
-            <VBox spacing="2">
-                <Label text="Date Range:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
-                <ComboBox fx:id="dateRangeCombo" prefWidth="150"/>
-            </VBox>
-            <HBox fx:id="customDateRange" spacing="10" visible="false" managed="false">
-                <VBox spacing="2">
-                    <Label text="From:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
-                    <DatePicker fx:id="startDatePicker" prefWidth="130"/>
-                </VBox>
-                <VBox spacing="2">
-                    <Label text="To:" style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
-                    <DatePicker fx:id="endDatePicker" prefWidth="130"/>
-                </VBox>
-            </HBox>
         </HBox>
-    </HBox>
+
+        <VBox style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;">
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <VBox spacing="4">
+                    <Label text="Analyze By" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" labelFor="$selectionTypeCombo"/>
+                    <ComboBox fx:id="selectionTypeCombo" prefWidth="140" accessibleText="Select analysis type" accessibleRole="COMBO_BOX" style="-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-radius: 4;"/>
+                </VBox>
+                <VBox spacing="4">
+                    <Label text="Select Specific Item" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" labelFor="$itemSelector"/>
+                    <ComboBox fx:id="itemSelector" prefWidth="250" promptText="Choose item to analyze..." accessibleText="Select product or variant" accessibleRole="COMBO_BOX" style="-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-radius: 4;"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <VBox spacing="4">
+                    <Label text="Timeframe" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" labelFor="$dateRangeCombo"/>
+                    <ComboBox fx:id="dateRangeCombo" prefWidth="160" accessibleText="Select predefined date range" accessibleRole="COMBO_BOX" style="-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-radius: 4;"/>
+                </VBox>
+                <HBox fx:id="customDateRange" spacing="10" visible="false" managed="false">
+                    <VBox spacing="4">
+                        <Label text="From Date" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" labelFor="$startDatePicker"/>
+                        <DatePicker fx:id="startDatePicker" prefWidth="140" accessibleText="Select start date" accessibleRole="DATE_PICKER"/>
+                    </VBox>
+                    <VBox spacing="4">
+                        <Label text="To Date" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #475569;" labelFor="$endDatePicker"/>
+                        <DatePicker fx:id="endDatePicker" prefWidth="140" accessibleText="Select end date" accessibleRole="DATE_PICKER"/>
+                    </VBox>
+                </HBox>
+            </HBox>
+        </VBox>
+    </VBox>
     
     <Separator style="-fx-padding: 20 0;"/>
 

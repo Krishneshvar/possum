@@ -11,23 +11,25 @@
       styleClass="workspace-view"
       stylesheets="@../../styles/inventory.css">
 
-    <!-- Header -->
-    <HBox styleClass="view-header" alignment="CENTER_LEFT">
-        <VBox>
-            <Label text="Products" styleClass="view-title"/>
-            <Label text="Manage inventory items, pricing, and variants" styleClass="view-subtitle"/>
+    <!-- Header Area -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="20">
+        <VBox spacing="4">
+            <Label text="Products Library" styleClass="view-title" accessibleRole="TEXT"/>
+            <Label text="View, search, and manage your central product catalog and their configurations." styleClass="view-subtitle" accessibleRole="TEXT"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh products table">
-            <tooltip>
-                <Tooltip text="Refresh the product list"/>
-            </tooltip>
-        </Button>
-        <Button fx:id="addButton" text="+ Add Product" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new product">
-            <tooltip>
-                <Tooltip text="Create a new product record"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button fx:id="refreshButton" text="↺ Refresh List" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh products table" accessibleRole="BUTTON">
+                <tooltip>
+                    <Tooltip text="Reload the latest product data from the database"/>
+                </tooltip>
+            </Button>
+            <Button fx:id="addButton" text="＋ Add New Product" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Create a new product record" accessibleRole="BUTTON" defaultButton="true">
+                <tooltip>
+                    <Tooltip text="Create a new product and define its variants"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
 
     <!-- Main Content -->

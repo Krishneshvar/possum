@@ -52,7 +52,7 @@ public class InventoryController {
 
     @FXML
     public void initialize() {
-        
+        inventoryTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No inventory records found. Adjust filters to see results."));
         setupTable();
         setupFilters();
         loadInventory();

@@ -13,18 +13,22 @@
 
     <VBox spacing="20" alignment="TOP_LEFT">
 
-        <HBox styleClass="view-header">
-            <Button text="← Back" onAction="#handleCancel" styleClass="back-link" accessibleText="Go back to products list">
+        <HBox styleClass="view-header" alignment="CENTER_LEFT">
+            <Button text="← Back" onAction="#handleCancel" styleClass="back-link" accessibleText="Go back to products list" accessibleRole="BUTTON">
                 <tooltip>
-                    <Tooltip text="Return without saving"/>
+                    <Tooltip text="Return without saving (Esc)"/>
                 </tooltip>
             </Button>
-            <Label fx:id="titleLabel" text="Add Product" styleClass="view-title"/>
+            <Label fx:id="titleLabel" text="Add Product" styleClass="view-title" accessibleRole="TEXT"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
-            <Button fx:id="saveButton" text="Save Product" onAction="#handleSave" styleClass="action-button, primary-button" accessibleText="Save the product">
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true" accessibleText="Cancel product creation" accessibleRole="BUTTON">
                 <tooltip>
-                    <Tooltip text="Save product and variants"/>
+                    <Tooltip text="Return without saving (Esc)"/>
+                </tooltip>
+            </Button>
+            <Button fx:id="saveButton" text="Save Product" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save the product" accessibleRole="BUTTON">
+                <tooltip>
+                    <Tooltip text="Save product and variants (Enter)"/>
                 </tooltip>
             </Button>
         </HBox>
@@ -33,30 +37,43 @@
 
             <!-- Left Column: Product Details -->
             <VBox spacing="20" HBox.hgrow="ALWAYS" maxWidth="800">
-                <VBox styleClass="card">
-                    <Label text="General Information" styleClass="card-title"/>
-
-                    <VBox styleClass="form-group">
-                        <Label text="Product Name *" styleClass="form-label" labelFor="$nameField"/>
-                        <TextField fx:id="nameField" promptText="Enter product name" styleClass="text-field" accessibleText="Product name input"/>
+                <VBox styleClass="card" spacing="20">
+                    <VBox spacing="4">
+                        <Label text="General Information" styleClass="card-title" style="-fx-font-size: 18px;"/>
+                        <Label text="Core details defining the product across all variants." style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        <Separator style="-fx-padding: 8 0;"/>
                     </VBox>
 
-                    <VBox styleClass="form-group">
-                        <Label text="Description" styleClass="form-label" labelFor="$descriptionField"/>
-                        <TextArea fx:id="descriptionField" promptText="Enter product description" prefRowCount="4" styleClass="text-area" accessibleText="Product description input"/>
+                    <VBox styleClass="form-group" spacing="8">
+                        <HBox spacing="4" alignment="BOTTOM_LEFT">
+                            <Label text="Product Name" styleClass="form-label" labelFor="$nameField" style="-fx-font-weight: 600;"/>
+                            <Label text="*" style="-fx-text-fill: #ef4444; -fx-font-weight: bold;"/>
+                        </HBox>
+                        <TextField fx:id="nameField" promptText="e.g., Artisan Coffee Beans" styleClass="text-field" accessibleText="Product name input"/>
+                        <Label text="Used for display on receipts and in reports." style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+                    </VBox>
+
+                    <VBox styleClass="form-group" spacing="8">
+                        <Label text="Description (Optional)" styleClass="form-label" labelFor="$descriptionField" style="-fx-font-weight: 600;"/>
+                        <TextArea fx:id="descriptionField" promptText="Provide a brief description of the product..." prefRowCount="4" styleClass="text-area" accessibleText="Product description input"/>
+                        <Label text="Internal notes or detailed descriptions." style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
                     </VBox>
                 </VBox>
 
-                <VBox styleClass="card">
+                <VBox styleClass="card" spacing="20">
                     <HBox alignment="CENTER_LEFT">
-                        <Label text="Variants" styleClass="card-title"/>
+                        <VBox spacing="4">
+                            <Label text="Product Variants" styleClass="card-title" style="-fx-font-size: 18px;"/>
+                            <Label text="Manage pricing, SKUs, and stock rules for each variation." style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        </VBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button fx:id="addVariantButton" text="+ Add Variant" onAction="#handleAddVariant" styleClass="action-button">
+                        <Button fx:id="addVariantButton" text="＋ Add Variant" onAction="#handleAddVariant" styleClass="action-button, primary-button">
                             <tooltip>
                                 <Tooltip text="Add another variant configuration"/>
                             </tooltip>
                         </Button>
                     </HBox>
+                    <Separator/>
 
                     <VBox fx:id="variantsContainer" spacing="15"/>
                 </VBox>
@@ -64,26 +81,35 @@
 
             <!-- Right Column: Settings -->
             <VBox spacing="20" minWidth="300" maxWidth="400">
-                <VBox styleClass="card">
-                    <Label text="Organization" styleClass="card-title"/>
-
-                    <VBox styleClass="form-group">
-                        <Label text="Category" styleClass="form-label" labelFor="$categoryCombo"/>
-                        <ComboBox fx:id="categoryCombo" promptText="Select category" maxWidth="Infinity" styleClass="combo-box" accessibleText="Product category selection"/>
+                <VBox styleClass="card" spacing="20">
+                    <VBox spacing="4">
+                        <Label text="Organization" styleClass="card-title" style="-fx-font-size: 18px;"/>
+                        <Label text="Categorize to improve discoverability." style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        <Separator style="-fx-padding: 8 0;"/>
                     </VBox>
 
-                    <VBox styleClass="form-group">
-                        <Label text="Status" styleClass="form-label" labelFor="$statusCombo"/>
-                        <ComboBox fx:id="statusCombo" promptText="Select status" maxWidth="Infinity" styleClass="combo-box" accessibleText="Product status selection"/>
+                    <VBox styleClass="form-group" spacing="8">
+                        <Label text="Category" styleClass="form-label" labelFor="$categoryCombo" style="-fx-font-weight: 600;"/>
+                        <ComboBox fx:id="categoryCombo" promptText="Select..." maxWidth="Infinity" styleClass="combo-box" accessibleText="Product category selection"/>
+                    </VBox>
+
+                    <VBox styleClass="form-group" spacing="8">
+                        <Label text="Status" styleClass="form-label" labelFor="$statusCombo" style="-fx-font-weight: 600;"/>
+                        <ComboBox fx:id="statusCombo" promptText="Select..." maxWidth="Infinity" styleClass="combo-box" accessibleText="Product status selection"/>
+                        <Label text="Inactive products cannot be sold." style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
                     </VBox>
                 </VBox>
 
-                <VBox styleClass="card">
-                    <Label text="Pricing Setup" styleClass="card-title"/>
+                <VBox styleClass="card" spacing="20">
+                    <VBox spacing="4">
+                        <Label text="Pricing Setup" styleClass="card-title" style="-fx-font-size: 18px;"/>
+                        <Label text="Global tax rules applied to all variants." style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                        <Separator style="-fx-padding: 8 0;"/>
+                    </VBox>
 
-                    <VBox styleClass="form-group">
-                        <Label text="Tax Category" styleClass="form-label" labelFor="$taxCombo"/>
-                        <ComboBox fx:id="taxCombo" promptText="Select tax category" maxWidth="Infinity" styleClass="combo-box" accessibleText="Tax category selection"/>
+                    <VBox styleClass="form-group" spacing="8">
+                        <Label text="Tax Category" styleClass="form-label" labelFor="$taxCombo" style="-fx-font-weight: 600;"/>
+                        <ComboBox fx:id="taxCombo" promptText="Select..." maxWidth="Infinity" styleClass="combo-box" accessibleText="Tax category selection"/>
                     </VBox>
                 </VBox>
             </VBox>

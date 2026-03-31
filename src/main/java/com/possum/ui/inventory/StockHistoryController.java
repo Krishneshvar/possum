@@ -56,6 +56,7 @@ public class StockHistoryController {
 
     @FXML
     public void initialize() {
+        historyTable.setPlaceholder(new javafx.scene.control.Label("No stock history found for the current selection."));
         setupTable();
         setupFilters();
         setupPagination();

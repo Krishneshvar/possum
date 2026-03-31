@@ -11,18 +11,20 @@
       styleClass="workspace-view"
       stylesheets="@../../styles/inventory.css">
 
-    <!-- Header -->
-    <HBox styleClass="view-header" alignment="CENTER_LEFT">
-        <VBox>
-            <Label text="Variants" styleClass="view-title"/>
-            <Label text="Manage all item variations" styleClass="view-subtitle"/>
+    <!-- Header Area -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="20">
+        <VBox spacing="4">
+            <Label text="Product Variants Library" styleClass="view-title" accessibleRole="TEXT"/>
+            <Label text="Browse and filter specific variations of products, view SKUs, and track unique properties." styleClass="view-subtitle" accessibleRole="TEXT"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh variants table">
-            <tooltip>
-                <Tooltip text="Refresh the variant list"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button fx:id="refreshButton" text="↺ Reload Variants" onAction="#handleRefresh" styleClass="action-button, primary-button" accessibleText="Refresh variants table" accessibleRole="BUTTON" defaultButton="true">
+                <tooltip>
+                    <Tooltip text="Reload all variants from the database"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
 
     <!-- Main Content -->
