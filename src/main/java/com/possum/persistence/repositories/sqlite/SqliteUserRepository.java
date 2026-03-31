@@ -44,6 +44,12 @@ public final class SqliteUserRepository extends BaseSqliteRepository implements 
             params.add(fuzzy);
         }
 
+        if (filter.activeStatuses() != null && !filter.activeStatuses().isEmpty()) {
+            List<Integer> activeInts = filter.activeStatuses().stream().map(b -> b ? 1 : 0).toList();
+            whereJoiner.add("is_active IN (" + "?,".repeat(activeInts.size()).replaceAll(",$", "") + ")");
+            params.addAll(activeInts);
+        }
+
         String where = "WHERE " + whereJoiner;
         int totalCount = queryOne("SELECT COUNT(id) AS total FROM users " + where, rs -> rs.getInt("total"), params.toArray())
                 .orElse(0);
@@ -226,6 +232,21 @@ public final class SqliteUserRepository extends BaseSqliteRepository implements 
                 permissionId,
                 granted ? 1 : 0
         );
+        executeUpdate("DELETE FROM sessions WHERE user_id = ?", userId);
+    }
+
+    @Override
+    public List<Long> getRolePermissions(List<Long> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) return new ArrayList<>();
+        String placeholders = "?,".repeat(roleIds.size()).replaceAll(",$", "");
+        return queryList(
+                "SELECT DISTINCT permission_id FROM role_permissions WHERE role_id IN (" + placeholders + ")",
+                rs -> rs.getLong("permission_id"),
+                roleIds.toArray()
+        );
+    }
+    @Override
+    public void revokeUserSessions(long userId) {
         executeUpdate("DELETE FROM sessions WHERE user_id = ?", userId);
     }
 

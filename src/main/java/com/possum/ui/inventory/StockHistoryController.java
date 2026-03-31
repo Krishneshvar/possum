@@ -157,7 +157,7 @@ public class StockHistoryController {
             }
         });
 
-        CompletableFuture.supplyAsync(() -> userService.getUsers(new UserFilter(null, 1, 1000)).items())
+        CompletableFuture.supplyAsync(() -> userService.getUsers(new UserFilter(null, 1, 1000, null, null)).items())
                 .thenAccept(users -> Platform.runLater(() -> {
                     filterBar.addMultiSelectFilter("adjustedBy", "Filter by User", users, User::name, true);
                 }));

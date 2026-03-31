@@ -807,7 +807,7 @@ public class PosController {
         Customer taxCustomer = currentBill.selectedCustomer;
         if (taxCustomer == null && (!currentBill.customerName.isEmpty() || !currentBill.customerAddress.isEmpty())) {
             // Use dummy customer for tax calculation if fields have values
-            taxCustomer = new Customer(null, currentBill.customerName, currentBill.customerPhone, currentBill.customerEmail, currentBill.customerAddress, 0, null, null, null);
+            taxCustomer = new Customer(null, currentBill.customerName, currentBill.customerPhone, currentBill.customerEmail, currentBill.customerAddress, null, null, null);
         }
         
         TaxCalculationResult taxResult = taxEngine.calculate(new TaxableInvoice(taxableItems), taxCustomer);

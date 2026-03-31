@@ -36,4 +36,8 @@ public interface UserRepository {
     List<UserPermissionOverride> getUserPermissionOverrides(long userId);
 
     void setUserPermission(long userId, long permissionId, boolean granted);
+
+    List<Long> getRolePermissions(List<Long> roleIds);
+
+    void revokeUserSessions(long userId);
 }

@@ -9,7 +9,6 @@ import com.possum.persistence.repositories.interfaces.UserRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.UserFilter;
 
-import java.time.LocalDateTime;
 import com.possum.shared.util.TimeUtil;
 import java.util.List;
 import java.util.Optional;
@@ -49,7 +48,12 @@ public class UserService {
         }
 
         User updatedUser = new User(existingUser.id(), name, username, hashedPassword, active, existingUser.createdAt(), TimeUtil.nowUTC(), existingUser.deletedAt());
-        return userRepository.updateUserWithRolesById(id, updatedUser, roleIds);
+        User result = userRepository.updateUserWithRolesById(id, updatedUser, roleIds);
+        
+        if (!active) {
+            userRepository.revokeUserSessions(id);
+        }
+        return result;
     }
 
     public void deleteUser(long id) {
@@ -87,5 +91,9 @@ public class UserService {
     public void setUserPermission(long userId, long permissionId, boolean granted) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         userRepository.setUserPermission(userId, permissionId, granted);
+    }
+
+    public List<Long> getRolePermissions(List<Long> roleIds) {
+        return userRepository.getRolePermissions(roleIds);
     }
 }

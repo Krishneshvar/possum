@@ -8,7 +8,6 @@ public record Customer(
         String phone,
         String email,
         String address,
-        Integer loyaltyPoints,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt

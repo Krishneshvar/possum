@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 public class UserRolesController implements Parameterizable {
@@ -83,6 +86,12 @@ public class UserRolesController implements Parameterizable {
         });
     }
 
+    private final Map<Long, ButtonPair> permissionButtons = new HashMap<>();
+    private final Set<Long> roleProvidedPermissions = new HashSet<>();
+    private List<Permission> allPermissionsList = new ArrayList<>();
+
+    private static record ButtonPair(Button grant, Button revoke) {}
+
     private void renderRoles(List<Role> allRoles, List<Long> userRoleIds) {
         rolesContainer.getChildren().clear();
         roleCheckboxes.clear();
@@ -90,17 +99,24 @@ public class UserRolesController implements Parameterizable {
         for (Role role : allRoles) {
             HBox row = new HBox(10);
             row.setStyle("-fx-padding: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-background-color: white;");
+            row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             
             CheckBox checkBox = new CheckBox(toTitleCase(role.name()));
-            checkBox.setSelected(userRoleIds.contains(role.id()));
-            checkBox.setStyle("-fx-font-weight: bold;");
+            boolean isSelected = userRoleIds.contains(role.id());
+            checkBox.setSelected(isSelected);
+            checkBox.setStyle("-fx-font-weight: bold; -fx-cursor: hand;");
             
-            VBox textBox = new VBox(5);
+            checkBox.selectedProperty().addListener((obs, old, val) -> {
+                updateRoleProvidedPermissions();
+                refreshPermissionHighlights();
+            });
+            
+            VBox textBox = new VBox(2);
             textBox.getChildren().add(checkBox);
             
             if (role.description() != null && !role.description().isEmpty()) {
                 Label desc = new Label(role.description());
-                desc.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
+                desc.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
                 textBox.getChildren().add(desc);
             }
             
@@ -108,10 +124,26 @@ public class UserRolesController implements Parameterizable {
             row.getChildren().add(textBox);
             rolesContainer.getChildren().add(row);
         }
+        
+        updateRoleProvidedPermissions();
+    }
+
+    private void updateRoleProvidedPermissions() {
+        List<Long> selectedRoleIds = roleCheckboxes.entrySet().stream()
+                .filter(e -> e.getValue().isSelected())
+                .map(Map.Entry::getKey)
+                .toList();
+        
+        roleProvidedPermissions.clear();
+        if (!selectedRoleIds.isEmpty()) {
+            roleProvidedPermissions.addAll(userService.getRolePermissions(selectedRoleIds));
+        }
     }
 
     private void renderPermissions(List<Permission> allPermissions) {
+        this.allPermissionsList = allPermissions;
         permissionsContainer.getChildren().clear();
+        permissionButtons.clear();
         
         Map<String, List<Permission>> grouped = allPermissions.stream()
                 .collect(Collectors.groupingBy(p -> {
@@ -119,37 +151,42 @@ public class UserRolesController implements Parameterizable {
                     return parts.length > 0 ? parts[0] : "other";
                 }));
                 
-        for (Map.Entry<String, List<Permission>> entry : grouped.entrySet()) {
+        List<String> sortedGroups = new ArrayList<>(grouped.keySet());
+        Collections.sort(sortedGroups);
+        for (String groupKey : sortedGroups) {
+            List<Permission> groupPerms = grouped.get(groupKey);
             VBox groupContainer = new VBox(0);
-            groupContainer.setStyle("-fx-border-color: #e2e8f0; -fx-border-radius: 6;");
+            groupContainer.setStyle("-fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-margin: 0 0 10 0;");
             
             HBox header = new HBox();
             header.setStyle("-fx-padding: 10 15; -fx-background-color: #f8fafc; -fx-background-radius: 6 6 0 0; -fx-border-width: 0 0 1 0; -fx-border-color: #e2e8f0;");
             header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             
-            Label title = new Label(toTitleCase(entry.getKey().replace('_', ' ')));
-            title.setStyle("-fx-font-weight: bold;");
+            Label title = new Label(toTitleCase(groupKey.replace('_', ' ')));
+            title.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155;");
             
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
             
-            Label count = new Label(entry.getValue().size() + " permissions");
-            count.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-background-color: #e2e8f0; -fx-padding: 2 6; -fx-background-radius: 10;");
+            Label count = new Label(groupPerms.size() + " Total");
+            count.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b; -fx-background-color: #f1f5f9; -fx-padding: 2 8; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10;");
             
             header.getChildren().addAll(title, spacer, count);
             groupContainer.getChildren().add(header);
             
-            VBox permsBox = new VBox(5);
-            permsBox.setStyle("-fx-padding: 10; -fx-background-color: white; -fx-background-radius: 0 0 6 6;");
+            VBox permsBox = new VBox(0);
+            permsBox.setStyle("-fx-background-color: white; -fx-background-radius: 0 0 6 6;");
             
-            for (Permission perm : entry.getValue()) {
-                HBox permRow = new HBox(10);
+            for (int i = 0; i < groupPerms.size(); i++) {
+                Permission perm = groupPerms.get(i);
+                HBox permRow = new HBox(15);
                 permRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-                permRow.setStyle("-fx-padding: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 4;");
+                String borderStyle = i < groupPerms.size() - 1 ? "-fx-border-width: 0 0 1 0; -fx-border-color: #f1f5f9;" : "";
+                permRow.setStyle("-fx-padding: 10 15; " + borderStyle);
                 
                 VBox textInfo = new VBox(2);
                 Label keyLabel = new Label(perm.key());
-                keyLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 13px;");
+                keyLabel.setStyle("-fx-font-family: 'Inter', system-ui; -fx-font-size: 13px; -fx-font-weight: 500; -fx-text-fill: #1e293b;");
                 textInfo.getChildren().add(keyLabel);
                 
                 if (perm.description() != null && !perm.description().isEmpty()) {
@@ -161,31 +198,32 @@ public class UserRolesController implements Parameterizable {
                 Region pSpacer = new Region();
                 HBox.setHgrow(pSpacer, Priority.ALWAYS);
                 
-                HBox buttonsBox = new HBox(5);
+                HBox buttonsBox = new HBox(0);
+                buttonsBox.setStyle("-fx-background-color: #f1f5f9; -fx-background-radius: 6; -fx-padding: 2;");
                 
                 Button grantBtn = new Button("Grant");
                 Button revokeBtn = new Button("Revoke");
                 
-                Boolean override = permissionOverrides.get(perm.id());
+                permissionButtons.put(perm.id(), new ButtonPair(grantBtn, revokeBtn));
                 
-                updateButtonStyles(grantBtn, revokeBtn, override);
+                Boolean override = permissionOverrides.get(perm.id());
+                updateButtonStyles(perm.id(), grantBtn, revokeBtn, override);
                 
                 grantBtn.setOnAction(e -> {
                     Boolean current = permissionOverrides.get(perm.id());
                     Boolean next = (current != null && current) ? null : true;
                     permissionOverrides.put(perm.id(), next);
-                    updateButtonStyles(grantBtn, revokeBtn, next);
+                    updateButtonStyles(perm.id(), grantBtn, revokeBtn, next);
                 });
                 
                 revokeBtn.setOnAction(e -> {
                     Boolean current = permissionOverrides.get(perm.id());
                     Boolean next = (current != null && !current) ? null : false;
                     permissionOverrides.put(perm.id(), next);
-                    updateButtonStyles(grantBtn, revokeBtn, next);
+                    updateButtonStyles(perm.id(), grantBtn, revokeBtn, next);
                 });
                 
                 buttonsBox.getChildren().addAll(grantBtn, revokeBtn);
-                
                 permRow.getChildren().addAll(textInfo, pSpacer, buttonsBox);
                 permsBox.getChildren().add(permRow);
             }
@@ -194,19 +232,50 @@ public class UserRolesController implements Parameterizable {
             permissionsContainer.getChildren().add(groupContainer);
         }
     }
+
+    private void refreshPermissionHighlights() {
+        for (Permission perm : allPermissionsList) {
+            ButtonPair buttons = permissionButtons.get(perm.id());
+            if (buttons != null) {
+                Boolean override = permissionOverrides.get(perm.id());
+                updateButtonStyles(perm.id(), buttons.grant(), buttons.revoke(), override);
+            }
+        }
+    }
     
-    private void updateButtonStyles(Button grantBtn, Button revokeBtn, Boolean override) {
-        String baseStyle = "-fx-font-size: 11px; -fx-padding: 4 8; -fx-cursor: hand; -fx-background-radius: 4; ";
+    private void updateButtonStyles(Long permissionId, Button grantBtn, Button revokeBtn, Boolean override) {
+        String baseStyle = "-fx-font-size: 11px; -fx-padding: 4 12; -fx-cursor: hand; -fx-font-weight: bold; ";
+        String activeGrant = baseStyle + "-fx-background-color: #16a34a; -fx-text-fill: white; -fx-background-radius: 4;";
+        String activeRevoke = baseStyle + "-fx-background-color: #dc2626; -fx-text-fill: white; -fx-background-radius: 4;";
+        String inactive = baseStyle + "-fx-background-color: transparent; -fx-text-fill: #64748b; -fx-background-radius: 4;";
         
+        boolean isProvidedByRole = roleProvidedPermissions.contains(permissionId);
+
         if (override == null) {
-            grantBtn.setStyle(baseStyle + "-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-text-fill: #334155;");
-            revokeBtn.setStyle(baseStyle + "-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-text-fill: #334155;");
+            // No override: Highlight based on role
+            if (isProvidedByRole) {
+                grantBtn.setStyle(activeGrant + "-fx-opacity: 0.6;"); // Dimmer to show it's inherited
+                revokeBtn.setStyle(inactive);
+                grantBtn.setText("Grant (Role)");
+                revokeBtn.setText("Revoke");
+            } else {
+                grantBtn.setStyle(inactive);
+                revokeBtn.setStyle(activeRevoke + "-fx-opacity: 0.6;");
+                grantBtn.setText("Grant");
+                revokeBtn.setText("Revoke (Default)");
+            }
         } else if (override) {
-            grantBtn.setStyle(baseStyle + "-fx-background-color: #2563eb; -fx-border-color: #2563eb; -fx-text-fill: white;");
-            revokeBtn.setStyle(baseStyle + "-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-text-fill: #334155;");
+            // Explicit Grant
+            grantBtn.setStyle(activeGrant);
+            revokeBtn.setStyle(inactive);
+            grantBtn.setText("Granted");
+            revokeBtn.setText("Revoke");
         } else {
-            grantBtn.setStyle(baseStyle + "-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-text-fill: #334155;");
-            revokeBtn.setStyle(baseStyle + "-fx-background-color: #ef4444; -fx-border-color: #ef4444; -fx-text-fill: white;");
+            // Explicit Revoke
+            grantBtn.setStyle(inactive);
+            revokeBtn.setStyle(activeRevoke);
+            grantBtn.setText("Grant");
+            revokeBtn.setText("Revoked");
         }
     }
     

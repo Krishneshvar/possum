@@ -30,6 +30,7 @@ public class UsersController {
     private final UserService userService;
     private final WorkspaceManager workspaceManager;
     private String currentSearch = "";
+    private java.util.List<Boolean> currentActiveStatuses = null;
 
     public UsersController(UserService userService, WorkspaceManager workspaceManager) {
         this.userService = userService;
@@ -54,22 +55,52 @@ public class UsersController {
         usernameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().username()));
         
         TableColumn<User, String> statusCol = new TableColumn<>("Status");
+        statusCol.setSortable(false);
         statusCol.setCellValueFactory(cellData -> {
             boolean active = cellData.getValue().active();
             return new SimpleStringProperty(active ? "Active" : "Inactive");
         });
         
-        TableColumn<User, String> createdCol = new TableColumn<>("Created At");
-        createdCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().createdAt().toLocalDate().toString()));
+        TableColumn<User, java.time.LocalDateTime> createdCol = new TableColumn<>("Created At");
+        createdCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
+        createdCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            private final java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
+            @Override
+            protected void updateItem(java.time.LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    java.time.ZonedDateTime utcZoned = item.atZone(java.time.ZoneId.of("UTC"));
+                    java.time.ZonedDateTime localZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.systemDefault());
+                    setText(localZoned.format(formatter));
+                }
+            }
+        });
         
         usersTable.getTableView().getColumns().addAll(nameCol, usernameCol, statusCol, createdCol);
         
-        usersTable.addActionColumn("Actions", this::showActions);
+        usersTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
     private void setupFilters() {
+        filterBar.addMultiSelectFilter("status", "All Statuses", 
+                java.util.List.of("Active", "Inactive"),
+                s -> s,
+                false
+        );
+
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+            
+            java.util.List<String> statuses = (java.util.List<String>) filters.get("status");
+            if (statuses == null || statuses.isEmpty()) {
+                currentActiveStatuses = null;
+            } else {
+                currentActiveStatuses = statuses.stream()
+                        .map("Active"::equals)
+                        .toList();
+            }
             loadUsers();
         });
         
@@ -84,7 +115,9 @@ public class UsersController {
                 UserFilter filter = new UserFilter(
                     currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
                     paginationBar.getCurrentPage(),
-                    paginationBar.getPageSize()
+                    paginationBar.getPageSize(),
+                    currentActiveStatuses,
+                    null
                 );
                 
                 PagedResult<User> result = userService.getUsers(filter);
@@ -109,36 +142,26 @@ public class UsersController {
         workspaceManager.openDialog("Add Employee", "/fxml/people/user-form-view.fxml");
     }
 
-    private void showActions(User user) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Employee Actions");
-        alert.setHeaderText(user.name() + " (" + user.username() + ")");
-        alert.setContentText("Choose action:");
-        
-        ButtonType editBtn = new ButtonType("Edit");
-        ButtonType rolesBtn = new ButtonType("Roles & Permissions");
-        ButtonType deleteBtn = new ButtonType("Delete");
-        ButtonType cancelBtn = ButtonType.CANCEL;
-        
-        java.util.List<javafx.scene.control.ButtonType> buttons = new java.util.ArrayList<>();
-        if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.USERS_MANAGE)) {
-            buttons.add(editBtn);
-            buttons.add(rolesBtn);
-            buttons.add(deleteBtn);
-        }
-        buttons.add(cancelBtn);
+    private java.util.List<javafx.scene.control.MenuItem> buildActionsMenu(User user) {
+        java.util.List<javafx.scene.control.MenuItem> items = new java.util.ArrayList<>();
 
-        alert.getButtonTypes().setAll(buttons);
-        
-        alert.showAndWait().ifPresent(type -> {
-            if (type == editBtn) {
-                workspaceManager.openDialog("Edit Employee: " + user.name(), "/fxml/people/user-form-view.fxml", Map.of("userId", user.id(), "mode", "edit"));
-            } else if (type == rolesBtn) {
-                workspaceManager.openWindow("Roles & Permissions: " + user.name(), "/fxml/people/user-roles-view.fxml", Map.of("userId", user.id()));
-            } else if (type == deleteBtn) {
-                handleDelete(user);
-            }
-        });
+        if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.USERS_MANAGE)) {
+            javafx.scene.control.MenuItem editItem = new javafx.scene.control.MenuItem("Edit");
+            editItem.setOnAction(e -> workspaceManager.openDialog("Edit Employee: " + user.name(), "/fxml/people/user-form-view.fxml", Map.of("userId", user.id(), "mode", "edit")));
+            items.add(editItem);
+
+            javafx.scene.control.MenuItem rolesItem = new javafx.scene.control.MenuItem("Roles & Permissions");
+            rolesItem.setOnAction(e -> workspaceManager.openWindow("Roles & Permissions: " + user.name(), "/fxml/people/user-roles-view.fxml", Map.of("userId", user.id())));
+            items.add(rolesItem);
+
+            javafx.scene.control.MenuItem deleteItem = new javafx.scene.control.MenuItem("Delete");
+            deleteItem.setStyle("-fx-text-fill: red;");
+            deleteItem.setOnAction(e -> handleDelete(user));
+            items.add(new javafx.scene.control.SeparatorMenuItem());
+            items.add(deleteItem);
+        }
+
+        return items;
     }
 
     private void handleDelete(User user) {

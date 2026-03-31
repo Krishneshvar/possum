@@ -89,7 +89,6 @@ CREATE TABLE IF NOT EXISTS customers (
   phone TEXT,
   email TEXT,
   address TEXT,
-  loyalty_points INTEGER DEFAULT 0 CHECK(loyalty_points >= 0),
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
   deleted_at TEXT

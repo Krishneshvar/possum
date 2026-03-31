@@ -13,9 +13,6 @@
     <VBox spacing="20" alignment="TOP_LEFT">
         <HBox styleClass="view-header">
             <Label fx:id="titleLabel" text="Add Employee" styleClass="view-title"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
-            <Button fx:id="saveButton" text="Save Employee" onAction="#handleSave" styleClass="action-button, primary-button"/>
         </HBox>
 
         <VBox spacing="20" maxWidth="600">
@@ -38,6 +35,11 @@
                     <ComboBox fx:id="statusCombo" maxWidth="Infinity" styleClass="combo-box"/>
                 </VBox>
             </VBox>
+
+            <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+                <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
+                <Button fx:id="saveButton" text="Save Employee" onAction="#handleSave" styleClass="action-button, primary-button"/>
+            </HBox>
         </VBox>
     </VBox>
 </ScrollPane>

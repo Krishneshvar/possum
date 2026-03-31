@@ -16,7 +16,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.SimpleObjectProperty;
 
 import java.util.Map;
 
@@ -51,6 +50,7 @@ public class CustomersController {
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
         
         TableColumn<Customer, String> phoneCol = new TableColumn<>("Phone");
+        phoneCol.setSortable(false);
         phoneCol.setCellValueFactory(cellData -> {
             String phone = cellData.getValue().phone();
             return new SimpleStringProperty(phone != null && !phone.isEmpty() ? phone : "-");
@@ -63,17 +63,15 @@ public class CustomersController {
         });
         
         TableColumn<Customer, String> addressCol = new TableColumn<>("Address");
+        addressCol.setSortable(false);
         addressCol.setCellValueFactory(cellData -> {
             String addr = cellData.getValue().address();
             return new SimpleStringProperty(addr != null && !addr.isEmpty() ? addr : "-");
         });
         
-        TableColumn<Customer, Integer> pointsCol = new TableColumn<>("Loyalty Points");
-        pointsCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().loyaltyPoints()));
+        customersTable.getTableView().getColumns().addAll(nameCol, phoneCol, emailCol, addressCol);
         
-        customersTable.getTableView().getColumns().addAll(nameCol, phoneCol, emailCol, addressCol, pointsCol);
-        
-        customersTable.addActionColumn("Actions", this::showActions);
+        customersTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
     private void setupFilters() {
@@ -122,32 +120,22 @@ public class CustomersController {
         workspaceManager.openDialog("Add Customer", "/fxml/people/customer-form-view.fxml");
     }
 
-    private void showActions(Customer customer) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Customer Actions");
-        alert.setHeaderText(customer.name());
-        alert.setContentText("Choose action:");
-        
-        ButtonType editBtn = new ButtonType("Edit");
-        ButtonType deleteBtn = new ButtonType("Delete");
-        ButtonType cancelBtn = ButtonType.CANCEL;
-        
-        java.util.List<javafx.scene.control.ButtonType> buttons = new java.util.ArrayList<>();
-        if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE)) {
-            buttons.add(editBtn);
-            buttons.add(deleteBtn);
-        }
-        buttons.add(cancelBtn);
+    private java.util.List<javafx.scene.control.MenuItem> buildActionsMenu(Customer customer) {
+        java.util.List<javafx.scene.control.MenuItem> items = new java.util.ArrayList<>();
 
-        alert.getButtonTypes().setAll(buttons);
-        
-        alert.showAndWait().ifPresent(type -> {
-            if (type == editBtn) {
-                workspaceManager.openDialog("Edit Customer: " + customer.name(), "/fxml/people/customer-form-view.fxml", Map.of("customerId", customer.id(), "mode", "edit"));
-            } else if (type == deleteBtn) {
-                handleDelete(customer);
-            }
-        });
+        if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE)) {
+            javafx.scene.control.MenuItem editItem = new javafx.scene.control.MenuItem("Edit");
+            editItem.setOnAction(e -> workspaceManager.openDialog("Edit Customer: " + customer.name(), "/fxml/people/customer-form-view.fxml", Map.of("customerId", customer.id(), "mode", "edit")));
+            items.add(editItem);
+
+            javafx.scene.control.MenuItem deleteItem = new javafx.scene.control.MenuItem("Delete");
+            deleteItem.setStyle("-fx-text-fill: red;");
+            deleteItem.setOnAction(e -> handleDelete(customer));
+            items.add(new javafx.scene.control.SeparatorMenuItem());
+            items.add(deleteItem);
+        }
+
+        return items;
     }
 
     private void handleDelete(Customer customer) {

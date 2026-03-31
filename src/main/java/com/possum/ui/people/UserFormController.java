@@ -56,7 +56,7 @@ public class UserFormController implements Parameterizable {
             usernameField.setText(user.username());
             // Intentionally not setting password field for existing user
 
-            statusCombo.setValue(Boolean.TRUE.equals(user.active()) ? "active" : "inactive");
+            statusCombo.setValue(Boolean.TRUE.equals(user.active()) ? "Active" : "Inactive");
 
             if (isView) {
                 replaceFieldWithLabel(nameField, user.name());
@@ -80,8 +80,8 @@ public class UserFormController implements Parameterizable {
 
     @FXML
     public void initialize() {
-        statusCombo.setItems(FXCollections.observableArrayList("active", "inactive"));
-        statusCombo.setValue("active");
+        statusCombo.setItems(FXCollections.observableArrayList("Active", "Inactive"));
+        statusCombo.setValue("Active");
     }
 
     @FXML
@@ -89,7 +89,7 @@ public class UserFormController implements Parameterizable {
         try {
             validateInputs();
 
-            boolean isActive = "active".equals(statusCombo.getValue());
+            boolean isActive = "Active".equals(statusCombo.getValue());
 
             if (userId == null) {
                 // New user needs a password

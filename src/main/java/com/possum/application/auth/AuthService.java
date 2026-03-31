@@ -43,12 +43,16 @@ public class AuthService {
     public LoginResponse login(String username, String password) {
         Optional<User> userOpt = userRepository.findUserByUsername(username);
         
-        if (userOpt.isEmpty() || !userOpt.get().active() || userOpt.get().deletedAt() != null) {
+        if (userOpt.isEmpty() || userOpt.get().deletedAt() != null) {
             passwordHasher.verifyPassword(password, DUMMY_HASH); // Prevent timing attacks
             throw new AuthenticationException("Invalid username or password");
         }
 
         User user = userOpt.get();
+        if (!Boolean.TRUE.equals(user.active())) {
+            passwordHasher.verifyPassword(password, DUMMY_HASH); // Prevent timing attacks
+            throw new AuthenticationException("Account is inactive. Please contact administrator.");
+        }
         boolean isValid = passwordHasher.verifyPassword(password, user.passwordHash());
 
         if (!isValid) {
@@ -178,7 +182,7 @@ public class AuthService {
     }
 
     private boolean hasAnyActiveUsers() {
-        PagedResult<User> usersPage = userRepository.findUsers(new UserFilter(null, 1, 1));
+        PagedResult<User> usersPage = userRepository.findUsers(new UserFilter(null, 1, 1, null, null));
         return usersPage.totalCount() > 0;
     }
 
