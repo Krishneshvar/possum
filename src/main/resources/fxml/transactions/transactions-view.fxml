@@ -16,9 +16,9 @@
     </padding>
 
     <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="Transactions" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Label text="Transactions" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Refresh" onAction="#handleRefresh" style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand;">
+        <Button text="🔄 Refresh" accessibleText="Refresh Transactions List" onAction="#handleRefresh" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand; -fx-text-fill: #0f172a;">
             <tooltip>
                 <Tooltip text="Refresh the transactions list"/>
             </tooltip>

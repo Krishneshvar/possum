@@ -19,7 +19,11 @@
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="Bill History" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="🔄 Refresh" onAction="#loadHistory" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand;"/>
+        <Button text="🔄 Refresh" accessibleText="Refresh Bill History" onAction="#loadHistory" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand;">
+            <tooltip>
+                <Tooltip text="Refresh the bill history list"/>
+            </tooltip>
+        </Button>
     </HBox>
 
     <GridPane hgap="20" vgap="20">
@@ -31,39 +35,39 @@
         </columnConstraints>
         
         <!-- Total Bills -->
-        <VBox GridPane.columnIndex="0" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+        <VBox GridPane.columnIndex="0" accessibleText="Total Bills Summary Card" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #bfdbfe; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="📄" style="-fx-font-size: 20px; -fx-text-fill: #3b82f6;"/>
-                <Label text="Total Bills" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+                <Label text="📄" style="-fx-font-size: 20px; -fx-text-fill: #3b82f6;" accessibleText="Total Bills Icon"/>
+                <Label text="Total Bills" style="-fx-font-size: 13px; -fx-text-fill: #3b82f6; -fx-font-weight: 700;"/>
             </HBox>
-            <Label fx:id="totalBillsLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+            <Label fx:id="totalBillsLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #1e3a8a; -fx-padding: 12 0 0 0;"/>
         </VBox>
         
         <!-- Paid -->
-        <VBox GridPane.columnIndex="1" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+        <VBox GridPane.columnIndex="1" accessibleText="Paid Bills Summary Card" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #bbf7d0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="✅" style="-fx-font-size: 20px; -fx-text-fill: #10b981;"/>
-                <Label text="Paid" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+                <Label text="✅" style="-fx-font-size: 20px; -fx-text-fill: #10b981;" accessibleText="Paid Bills Icon"/>
+                <Label text="Paid" style="-fx-font-size: 13px; -fx-text-fill: #10b981; -fx-font-weight: 700;"/>
             </HBox>
-            <Label fx:id="paidLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+            <Label fx:id="paidLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #064e3b; -fx-padding: 12 0 0 0;"/>
         </VBox>
         
         <!-- Partial / Draft -->
-        <VBox GridPane.columnIndex="2" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+        <VBox GridPane.columnIndex="2" accessibleText="Partial or Draft Bills Summary Card" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #fde68a; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="⏳" style="-fx-font-size: 20px; -fx-text-fill: #f59e0b;"/>
-                <Label text="Partial / Draft" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+                <Label text="⏳" style="-fx-font-size: 20px; -fx-text-fill: #f59e0b;" accessibleText="Partial Bills Icon"/>
+                <Label text="Partial / Draft" style="-fx-font-size: 13px; -fx-text-fill: #d97706; -fx-font-weight: 700;"/>
             </HBox>
-            <Label fx:id="partialLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+            <Label fx:id="partialLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #78350f; -fx-padding: 12 0 0 0;"/>
         </VBox>
         
         <!-- Cancelled / Refunded -->
-        <VBox GridPane.columnIndex="3" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+        <VBox GridPane.columnIndex="3" accessibleText="Cancelled Bills Summary Card" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 12; -fx-border-color: #fecaca; -fx-border-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="❌" style="-fx-font-size: 20px; -fx-text-fill: #ef4444;"/>
-                <Label text="Cancelled" style="-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
+                <Label text="❌" style="-fx-font-size: 20px; -fx-text-fill: #ef4444;" accessibleText="Cancelled Bills Icon"/>
+                <Label text="Cancelled" style="-fx-font-size: 13px; -fx-text-fill: #ef4444; -fx-font-weight: 700;"/>
             </HBox>
-            <Label fx:id="cancelledLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-padding: 12 0 0 0;"/>
+            <Label fx:id="cancelledLabel" text="0" style="-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #7f1d1d; -fx-padding: 12 0 0 0;"/>
         </VBox>
     </GridPane>
 
