@@ -159,7 +159,15 @@ public final class ReportsService {
         BigDecimal totalSales = (BigDecimal) item.getOrDefault("total_sales", BigDecimal.ZERO);
         BigDecimal totalTax = (BigDecimal) item.getOrDefault("total_tax", BigDecimal.ZERO);
         BigDecimal totalDiscount = (BigDecimal) item.getOrDefault("total_discount", BigDecimal.ZERO);
-        return new BreakdownItem(period, name, totalTransactions, totalSales, totalSales, totalTax, totalDiscount);
+        
+        BigDecimal cash = (BigDecimal) item.getOrDefault("cash", BigDecimal.ZERO);
+        BigDecimal upi = (BigDecimal) item.getOrDefault("upi", BigDecimal.ZERO);
+        BigDecimal debitCard = (BigDecimal) item.getOrDefault("debit_card", BigDecimal.ZERO);
+        BigDecimal creditCard = (BigDecimal) item.getOrDefault("credit_card", BigDecimal.ZERO);
+        BigDecimal giftCard = (BigDecimal) item.getOrDefault("gift_card", BigDecimal.ZERO);
+        BigDecimal refunds = (BigDecimal) item.getOrDefault("refunds", BigDecimal.ZERO);
+
+        return new BreakdownItem(period, name, totalTransactions, cash, upi, debitCard, creditCard, giftCard, totalSales, totalTax, totalDiscount, refunds);
     }
 
 

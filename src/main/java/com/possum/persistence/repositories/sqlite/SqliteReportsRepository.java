@@ -229,10 +229,16 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                 """
                 SELECT
                   %s AS %s,
-                  COUNT(*) AS total_transactions,
-                  COALESCE(SUM(total_amount), 0) AS total_sales,
-                  COALESCE(SUM(total_tax), 0) AS total_tax,
-                  COALESCE(SUM(discount), 0) AS total_discount
+                  COUNT(DISTINCT s.id) AS total_transactions,
+                  COALESCE(SUM(s.total_amount), 0) AS total_sales,
+                  COALESCE(SUM(s.total_tax), 0) AS total_tax,
+                  COALESCE(SUM(s.discount), 0) AS total_discount,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Cash' AND t.status = 'completed')), 0) AS cash,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'UPI' AND t.status = 'completed')), 0) AS upi,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Debit Card' AND t.status = 'completed')), 0) AS debit_card,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Credit Card' AND t.status = 'completed')), 0) AS credit_card,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Gift Card' AND t.status = 'completed')), 0) AS gift_card,
+                  COALESCE(SUM((SELECT SUM(ABS(t.amount)) FROM transactions t WHERE t.sale_id = s.id AND t.type = 'refund' AND t.status = 'completed')), 0) AS refunds
                 FROM sales s
                 WHERE date(sale_date) >= ? AND date(sale_date) <= ?
                   AND status NOT IN ('cancelled', 'draft')
@@ -247,6 +253,12 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                     map.put("total_sales", rs.getBigDecimal("total_sales"));
                     map.put("total_tax", rs.getBigDecimal("total_tax"));
                     map.put("total_discount", rs.getBigDecimal("total_discount"));
+                    map.put("cash", rs.getBigDecimal("cash"));
+                    map.put("upi", rs.getBigDecimal("upi"));
+                    map.put("debit_card", rs.getBigDecimal("debit_card"));
+                    map.put("credit_card", rs.getBigDecimal("credit_card"));
+                    map.put("gift_card", rs.getBigDecimal("gift_card"));
+                    map.put("refunds", rs.getBigDecimal("refunds"));
                     return map;
                 },
                 params

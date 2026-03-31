@@ -18,11 +18,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
-import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.List;
@@ -227,7 +225,7 @@ public class SalesAnalyticsController {
         series.setName("Sales");
         
         for (BreakdownItem item : breakdown) {
-            series.getData().add(new XYChart.Data<>(item.name(), item.sales()));
+            series.getData().add(new XYChart.Data<>(item.name(), item.totalSales()));
         }
         
         salesTrendChart.getData().clear();
