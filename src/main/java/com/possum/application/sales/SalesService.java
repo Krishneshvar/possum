@@ -13,7 +13,6 @@ import com.possum.persistence.repositories.interfaces.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
 import com.possum.shared.util.TimeUtil;
 import java.util.*;
 
@@ -247,28 +246,26 @@ public class SalesService {
             for (PaymentRequest payment : payments) {
                 Transaction transaction = new Transaction(
                         null,
-                        saleId,
-                        null,
                         payment.amount(),
                         "payment",
                         payment.paymentMethodId(),
                         null,
                         "completed",
                         TimeUtil.nowUTC(),
-                        null, null, null
+                        invoiceNumber,
+                        null, null
                 );
-                long txId = salesRepository.insertTransaction(transaction);
+                long txId = salesRepository.insertTransaction(transaction, saleId);
                 insertedTransactions.add(new Transaction(
                         txId,
-                        saleId,
-                        null,
                         payment.amount(),
                         "payment",
                         payment.paymentMethodId(),
                         null,
                         "completed",
                         TimeUtil.nowUTC(),
-                        null, null, null
+                        invoiceNumber,
+                        null, null
                 ));
             }
 

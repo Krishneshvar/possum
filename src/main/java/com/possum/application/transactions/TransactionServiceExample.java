@@ -23,6 +23,8 @@ public final class TransactionServiceExample {
                 null,                    // startDate
                 null,                    // endDate
                 null,                    // type
+                null,                    // minAmount
+                null,                    // maxAmount
                 null,                    // paymentMethodId
                 null,                    // status
                 null,                    // searchTerm
@@ -38,7 +40,7 @@ public final class TransactionServiceExample {
         TransactionFilter dateFilter = new TransactionFilter(
                 "2024-01-01",
                 "2024-12-31",
-                null, null, null, null,
+                null, null, null, null, null, null,
                 1, 20,
                 "transaction_date", "DESC"
         );
@@ -48,7 +50,7 @@ public final class TransactionServiceExample {
         TransactionFilter typeFilter = new TransactionFilter(
                 null, null,
                 "payment",               // type
-                null, null, null,
+                null, null, null, null, null,
                 1, 20,
                 "transaction_date", "DESC"
         );
@@ -56,7 +58,7 @@ public final class TransactionServiceExample {
 
         // Example 4: Search by invoice/customer/supplier
         TransactionFilter searchFilter = new TransactionFilter(
-                null, null, null, null, null,
+                null, null, null, null, null, null, null,
                 "INV-001",               // searchTerm
                 1, 20,
                 "transaction_date", "DESC"

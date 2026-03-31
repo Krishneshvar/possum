@@ -47,10 +47,10 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
 
         String sortBy = SORTABLE.contains(filter.sortBy()) ? filter.sortBy() : "transaction_date";
         String sortExpr = switch (sortBy) {
-            case "amount" -> "t.amount";
+            case "amount" -> "ABS(t.amount)";
             case "status" -> "t.status";
             case "customer_name" -> "c.name";
-            case "invoice_number" -> "s.invoice_number";
+            case "invoice_number" -> "COALESCE(s.invoice_number, po.invoice_number)";
             case "supplier_name" -> "sup.name";
             default -> "t.transaction_date";
         };
@@ -67,7 +67,7 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
                 SELECT
                   t.*,
                   pm.name AS payment_method_name,
-                  s.invoice_number,
+                  COALESCE(s.invoice_number, po.invoice_number) AS invoice_number,
                   c.name AS customer_name,
                   sup.name AS supplier_name
                 FROM transactions t
@@ -95,7 +95,7 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
                 SELECT
                   t.*,
                   pm.name AS payment_method_name,
-                  s.invoice_number,
+                  COALESCE(s.invoice_number, po.invoice_number) AS invoice_number,
                   c.name AS customer_name,
                   sup.name AS supplier_name
                 FROM transactions t
@@ -118,7 +118,7 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
                 SELECT
                   t.*,
                   pm.name AS payment_method_name,
-                  s.invoice_number,
+                  COALESCE(s.invoice_number, po.invoice_number) AS invoice_number,
                   c.name AS customer_name,
                   sup.name AS supplier_name
                 FROM transactions t
@@ -136,7 +136,7 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
     }
 
     @Override
-    public long insertTransaction(Transaction transaction) {
+    public long insertTransaction(Transaction transaction, Long saleId, Long purchaseOrderId) {
         return executeInsert(
                 """
                 INSERT INTO transactions (
@@ -144,8 +144,8 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
                     payment_method_id, status, transaction_date
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                transaction.saleId(),
-                transaction.purchaseOrderId(),
+                saleId,
+                purchaseOrderId,
                 transaction.amount(),
                 transaction.type(),
                 transaction.paymentMethodId(),
@@ -205,11 +205,19 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
             params.add(filter.status());
         }
         if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
-            String fuzzy = "%" + filter.searchTerm() + "%";
-            joiner.add("(s.invoice_number LIKE ? OR COALESCE(c.name, '') LIKE ? OR COALESCE(sup.name, '') LIKE ?)");
+            String fuzzy = "%" + filter.searchTerm().trim() + "%";
+            joiner.add("(COALESCE(s.invoice_number, po.invoice_number, '') LIKE ? OR COALESCE(c.name, '') LIKE ? OR COALESCE(sup.name, '') LIKE ?)");
             params.add(fuzzy);
             params.add(fuzzy);
             params.add(fuzzy);
+        }
+        if (filter.minAmount() != null) {
+            joiner.add("ABS(t.amount) >= ?");
+            params.add(filter.minAmount().doubleValue());
+        }
+        if (filter.maxAmount() != null) {
+            joiner.add("ABS(t.amount) <= ?");
+            params.add(filter.maxAmount().doubleValue());
         }
         if (joiner.length() == 0) {
             return "";

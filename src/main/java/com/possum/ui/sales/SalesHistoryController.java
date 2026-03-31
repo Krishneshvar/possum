@@ -128,7 +128,8 @@ public class SalesHistoryController {
                     setText(status.toUpperCase());
                     String color = switch (status.toLowerCase()) {
                         case "paid" -> "#10b981";
-                        case "partially_paid" -> "#f59e0b";
+                        case "partially_paid" -> "#3b82f6";
+                        case "partially_refunded" -> "#f97316";
                         case "cancelled", "refunded" -> "#ef4444";
                         default -> "#64748b";
                     };
@@ -154,6 +155,10 @@ public class SalesHistoryController {
         items.add(printItem);
 
         if (!"cancelled".equals(sale.status()) && !"refunded".equals(sale.status())) {
+            MenuItem returnItem = new MenuItem("↩ Return Items");
+            returnItem.setOnAction(e -> handleReturn(sale));
+            items.add(returnItem);
+
             if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.SALES_MANAGE)) {
                 MenuItem cancelItem = new MenuItem("❌ Cancel Sale");
                 cancelItem.setStyle("-fx-text-fill: red;");
@@ -166,12 +171,22 @@ public class SalesHistoryController {
         return items;
     }
 
+    private void handleReturn(Sale sale) {
+        if (sale == null) return;
+        Map<String, Object> params = new HashMap<>();
+        params.put("invoiceNumber", sale.invoiceNumber());
+        workspaceManager.openDialog("Process Return", "/fxml/returns/create-return-dialog.fxml", params);
+        
+        // Refresh the list after return dialog might have changed statuses
+        loadHistory();
+    }
+
     private void setupFilters() {
         filterBar = new FilterBar();
         
         ComboBox<String> statusCombo = filterBar.addFilter("status", "All Statuses");
         statusCombo.setItems(FXCollections.observableArrayList(
-                "All Statuses", "Paid", "Partially Paid", "Draft", "Cancelled", "Refunded"
+                "All Statuses", "Paid", "Partially Paid", "Draft", "Cancelled", "Refunded", "Partially Refunded"
         ));
         filterBar.setDefaultValue("status", "All Statuses");
         statusCombo.getSelectionModel().selectFirst();

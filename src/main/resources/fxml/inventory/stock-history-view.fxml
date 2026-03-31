@@ -17,6 +17,12 @@
             <Label text="Stock History" styleClass="view-title"/>
             <Label text="View inventory adjustments and stock flow history" styleClass="view-subtitle"/>
         </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button">
+            <tooltip>
+                <Tooltip text="Refresh the history list"/>
+            </tooltip>
+        </Button>
     </HBox>
 
     <!-- Data Table -->

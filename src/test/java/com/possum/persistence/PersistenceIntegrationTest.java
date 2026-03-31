@@ -216,18 +216,17 @@ class PersistenceIntegrationTest {
         salesRepository.insertTransaction(
                 new Transaction(
                         null,
-                        saleId,
-                        null,
                         new BigDecimal("120.00"),
                         "payment",
                         1L,
                         null,
                         "completed",
                         null,
-                        null,
+                        invoice,
                         null,
                         null
-                )
+                ),
+                saleId
         );
 
         assertTrue(salesRepository.findSaleById(saleId).isPresent());

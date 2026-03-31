@@ -13,7 +13,6 @@ import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ReturnFilter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import com.possum.shared.util.TimeUtil;
 import java.util.*;
 
@@ -88,8 +87,6 @@ public class ReturnsService {
                 );
                 long returnItemId = returnsRepository.insertReturnItem(returnItem);
 
-                // Update sale item returned quantity
-                salesRepository.updateReturnedQuantity(refundCalc.saleItemId(), refundCalc.quantity());
 
                 // Restore inventory
                 inventoryService.restoreStock(
@@ -227,25 +224,26 @@ public class ReturnsService {
         // Create refund transaction
         Transaction refundTransaction = new Transaction(
                 null,
-                saleId,
-                null,
                 refundAmount.negate(),
                 "refund",
                 paymentMethodId,
                 null,
                 "completed",
                 TimeUtil.nowUTC(),
-                null, null, null
+                sale.invoiceNumber(),
+                null, null
         );
-        salesRepository.insertTransaction(refundTransaction);
+        salesRepository.insertTransaction(refundTransaction, saleId);
 
         // Update sale paid amount
         BigDecimal newPaidAmount = sale.paidAmount().subtract(refundAmount);
         salesRepository.updateSalePaidAmount(saleId, newPaidAmount);
 
-        // Update sale status if fully refunded
+        // Update sale status based on refund
         if (newPaidAmount.compareTo(BigDecimal.ZERO) <= 0 && sale.totalAmount().compareTo(BigDecimal.ZERO) > 0) {
             salesRepository.updateSaleStatus(saleId, "refunded");
+        } else if (refundAmount.compareTo(BigDecimal.ZERO) > 0) {
+            salesRepository.updateSaleStatus(saleId, "partially_refunded");
         }
     }
 

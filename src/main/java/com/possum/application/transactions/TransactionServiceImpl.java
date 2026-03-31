@@ -35,6 +35,8 @@ public final class TransactionServiceImpl implements TransactionService {
                 filter.startDate(),
                 filter.endDate(),
                 filter.type(),
+                filter.minAmount(),
+                filter.maxAmount(),
                 filter.paymentMethodId(),
                 filter.status(),
                 filter.searchTerm(),

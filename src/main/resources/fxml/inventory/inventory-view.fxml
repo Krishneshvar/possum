@@ -17,6 +17,12 @@
             <Label text="Inventory" styleClass="view-title"/>
             <Label text="Monitor stock levels and statuses across all products" styleClass="view-subtitle"/>
         </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button">
+            <tooltip>
+                <Tooltip text="Refresh the inventory list"/>
+            </tooltip>
+        </Button>
     </HBox>
     
     <!-- Main Content -->

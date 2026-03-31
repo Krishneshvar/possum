@@ -4,8 +4,6 @@ import com.possum.application.returns.ReturnsService;
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Return;
-import com.possum.domain.model.SaleItem;
-import com.possum.persistence.repositories.interfaces.SalesRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ReturnFilter;
 import com.possum.infrastructure.filesystem.SettingsStore;
@@ -15,16 +13,10 @@ import com.possum.ui.common.controls.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
@@ -39,16 +31,16 @@ public class ReturnsController {
     
     private final ReturnsService returnsService;
     private final SalesService salesService;
-    private final SalesRepository salesRepository;
     private final SettingsStore settingsStore;
+    private final com.possum.ui.workspace.WorkspaceManager workspaceManager;
     private String currentSearch = "";
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public ReturnsController(ReturnsService returnsService, SalesService salesService, SalesRepository salesRepository, SettingsStore settingsStore) {
+    public ReturnsController(ReturnsService returnsService, SalesService salesService, SettingsStore settingsStore, com.possum.ui.workspace.WorkspaceManager workspaceManager) {
         this.returnsService = returnsService;
         this.salesService = salesService;
-        this.salesRepository = salesRepository;
         this.settingsStore = settingsStore;
+        this.workspaceManager = workspaceManager;
     }
 
     @FXML
@@ -126,27 +118,14 @@ public class ReturnsController {
     }
 
     @FXML
+    private void handleRefresh() {
+        loadReturns();
+    }
+
+    @FXML
     private void handleCreateReturn() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/returns/create-return-dialog.fxml"));
-            
-            CreateReturnDialogController controller = new CreateReturnDialogController(salesService, salesRepository, returnsService);
-            loader.setController(controller);
-            
-            Parent root = loader.load();
-            Stage stage = new Stage();
-            stage.setTitle("Process Return");
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.initOwner(returnsTable.getScene().getWindow());
-            stage.setScene(new Scene(root));
-            
-            controller.setOnSuccess(this::loadReturns);
-            
-            stage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-            NotificationService.error("Failed to open return dialog");
-        }
+        workspaceManager.openDialog("Process Return", "/fxml/returns/create-return-dialog.fxml");
+        loadReturns();
     }
 
     private void handleViewDetails(Return returnRecord) {
@@ -155,17 +134,5 @@ public class ReturnsController {
         
         BillPreviewDialog dialog = new BillPreviewDialog(billHtml, returnsTable.getScene().getWindow());
         dialog.showAndWait();
-    }
-
-    private static class ReturnItemSelection {
-        SaleItem item;
-        CheckBox check;
-        Spinner<Integer> spinner;
-        
-        ReturnItemSelection(SaleItem item, CheckBox check, Spinner<Integer> spinner) {
-            this.item = item;
-            this.check = check;
-            this.spinner = spinner;
-        }
     }
 }

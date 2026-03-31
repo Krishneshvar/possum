@@ -24,7 +24,7 @@ public class PaymentService {
         return salesRepository.findPaymentMethods();
     }
 
-    public long recordTransaction(Transaction transaction) {
-        return salesRepository.insertTransaction(transaction);
+    public long recordTransaction(Transaction transaction, Long saleId) {
+        return salesRepository.insertTransaction(transaction, saleId);
     }
 }

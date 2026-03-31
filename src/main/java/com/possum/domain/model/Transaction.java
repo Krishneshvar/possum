@@ -5,8 +5,6 @@ import java.time.LocalDateTime;
 
 public record Transaction(
         Long id,
-        Long saleId,
-        Long purchaseOrderId,
         BigDecimal amount,
         String type,
         Long paymentMethodId,

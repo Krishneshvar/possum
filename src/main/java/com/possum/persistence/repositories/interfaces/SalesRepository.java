@@ -34,7 +34,7 @@ public interface SalesRepository {
 
     int updateSalePaidAmount(long id, BigDecimal paidAmount);
 
-    long insertTransaction(Transaction transaction);
+    long insertTransaction(Transaction transaction, Long saleId);
 
     Optional<String> getLastSaleInvoiceNumber();
 
@@ -48,6 +48,5 @@ public interface SalesRepository {
 
     long getNextSequenceForPaymentType(String paymentTypeCode);
 
-    int updateReturnedQuantity(long saleItemId, int quantity);
 }
 

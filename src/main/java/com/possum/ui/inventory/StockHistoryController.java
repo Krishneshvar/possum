@@ -62,6 +62,11 @@ public class StockHistoryController {
         loadHistory();
     }
 
+    @FXML
+    private void handleRefresh() {
+        loadHistory();
+    }
+
     private void setupTable() {
         historyTable.setItems(historyList);
 

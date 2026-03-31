@@ -236,6 +236,8 @@ public class SaleDetailController implements Parameterizable {
             statusBadge.setStyle(base + "-fx-background-color: #dcfce7; -fx-text-fill: #166534;");
         } else if ("cancelled".equalsIgnoreCase(status) || "refunded".equalsIgnoreCase(status)) {
             statusBadge.setStyle(base + "-fx-background-color: #fee2e2; -fx-text-fill: #991b1b;");
+        } else if ("partially_refunded".equalsIgnoreCase(status)) {
+            statusBadge.setStyle(base + "-fx-background-color: #fff7ed; -fx-text-fill: #9a3412;");
         } else {
             statusBadge.setStyle(base + "-fx-background-color: #fef9c3; -fx-text-fill: #854d0e;");
         }

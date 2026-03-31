@@ -11,8 +11,6 @@ public final class TransactionMapper implements RowMapper<Transaction> {
     public Transaction map(ResultSet rs) throws SQLException {
         return new Transaction(
                 rs.getLong("id"),
-                getNullableLong(rs, "sale_id"),
-                getNullableLong(rs, "purchase_order_id"),
                 SqlMapperUtils.getBigDecimal(rs, "amount"),
                 rs.getString("type"),
                 rs.getLong("payment_method_id"),
@@ -25,10 +23,6 @@ public final class TransactionMapper implements RowMapper<Transaction> {
         );
     }
 
-    private static Long getNullableLong(ResultSet rs, String column) throws SQLException {
-        long value = rs.getLong(column);
-        return rs.wasNull() ? null : value;
-    }
 
     private static String getOptionalColumn(ResultSet rs, String column) throws SQLException {
         try {

@@ -405,7 +405,7 @@ CREATE TABLE IF NOT EXISTS sales (
   paid_amount NUMERIC(10,2) NOT NULL,
   discount NUMERIC(10,2) DEFAULT 0,
   total_tax NUMERIC(10,2) DEFAULT 0,
-  status TEXT CHECK(status IN ('draft','paid','partially_paid','cancelled','refunded')) NOT NULL,
+  status TEXT CHECK(status IN ('draft','paid','partially_paid','cancelled','refunded','partially_refunded')) NOT NULL,
   fulfillment_status TEXT CHECK(fulfillment_status IN ('pending','fulfilled','cancelled')) NOT NULL DEFAULT 'pending',
   customer_id INTEGER,
   user_id INTEGER NOT NULL,

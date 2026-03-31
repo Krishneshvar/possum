@@ -55,7 +55,9 @@ public final class DatabaseManager implements ConnectionProvider, AutoCloseable 
                 .dataSource(jdbcUrl, null, null)
                 .locations("classpath:sql/migrations")
                 .validateMigrationNaming(true)
+                .mixed(true)
                 .load();
+        flyway.repair();
         flyway.migrate();
     }
 

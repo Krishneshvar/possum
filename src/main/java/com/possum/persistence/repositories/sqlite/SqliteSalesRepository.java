@@ -203,7 +203,7 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
                     COUNT(*) AS total_bills,
                     SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_count,
                     SUM(CASE WHEN status IN ('partially_paid', 'draft') THEN 1 ELSE 0 END) AS partial_count,
-                    SUM(CASE WHEN status IN ('cancelled', 'refunded') THEN 1 ELSE 0 END) AS cancelled_count
+                    SUM(CASE WHEN status IN ('cancelled', 'refunded', 'partially_refunded') THEN 1 ELSE 0 END) AS cancelled_count
                 FROM sales s
                 LEFT JOIN customers c ON s.customer_id = c.id
                 %s
@@ -234,13 +234,13 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     }
 
     @Override
-    public long insertTransaction(Transaction transaction) {
+    public long insertTransaction(Transaction transaction, Long saleId) {
         return executeInsert(
                 """
                 INSERT INTO transactions (sale_id, amount, type, payment_method_id, status)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                transaction.saleId(),
+                saleId,
                 transaction.amount(),
                 transaction.type(),
                 transaction.paymentMethodId(),
@@ -367,14 +367,6 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         return "WHERE " + joiner;
     }
 
-    @Override
-    public int updateReturnedQuantity(long saleItemId, int quantity) {
-        return executeUpdate(
-                "UPDATE sale_items SET returned_quantity = IFNULL(returned_quantity, 0) + ? WHERE id = ?",
-                quantity,
-                saleItemId
-        );
-    }
 }
 
 

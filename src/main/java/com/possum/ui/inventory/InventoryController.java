@@ -56,6 +56,11 @@ public class InventoryController {
         loadInventory();
     }
 
+    @FXML
+    private void handleRefresh() {
+        loadInventory();
+    }
+
     private void setupTable() {
         TableColumn<Variant, String> productCol = new TableColumn<>("Product");
         productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));

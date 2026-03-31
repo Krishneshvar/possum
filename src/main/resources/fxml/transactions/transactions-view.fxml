@@ -15,7 +15,15 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <Label text="Transactions" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <Label text="Transactions" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Refresh" onAction="#handleRefresh" style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-padding: 10 20; -fx-background-radius: 6; -fx-cursor: hand;">
+            <tooltip>
+                <Tooltip text="Refresh the transactions list"/>
+            </tooltip>
+        </Button>
+    </HBox>
     
     <FilterBar fx:id="filterBar"/>
     

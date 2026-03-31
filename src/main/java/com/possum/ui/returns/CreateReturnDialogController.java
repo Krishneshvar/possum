@@ -103,16 +103,17 @@ public class CreateReturnDialogController implements Parameterizable {
         if (input.isEmpty()) return;
 
         try {
-            Optional<Sale> sale;
-            if (input.startsWith("INV-")) {
-                sale = salesRepository.findSaleByInvoiceNumber(input);
-            } else {
+            // First try by Invoice Number
+            Optional<Sale> sale = salesRepository.findSaleByInvoiceNumber(input);
+            
+            // Fallback to ID if it's a number and not found by invoice
+            if (sale.isEmpty() && input.matches("\\d+")) {
                 sale = salesRepository.findSaleById(Long.parseLong(input));
             }
 
             sale.ifPresentOrElse(this::loadSaleDetails, () -> NotificationService.error("Sale not found"));
-        } catch (NumberFormatException e) {
-            NotificationService.error("Invalid ID format");
+        } catch (Exception e) {
+            NotificationService.error("Error finding sale: " + e.getMessage());
         }
     }
 
