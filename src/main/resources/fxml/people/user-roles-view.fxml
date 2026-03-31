@@ -18,8 +18,8 @@
                 <Label fx:id="subtitleLabel" text="Assign roles and customize permissions" styleClass="view-subtitle"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
-            <Button fx:id="saveButton" text="Save Changes" onAction="#handleSave" styleClass="action-button, primary-button"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true" accessibleText="Cancel and close"/>
+            <Button fx:id="saveButton" text="Save Changes" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save roles and permissions"/>
         </HBox>
 
         <VBox spacing="30" maxWidth="800">

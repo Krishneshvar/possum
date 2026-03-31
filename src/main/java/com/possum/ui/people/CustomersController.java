@@ -113,6 +113,7 @@ public class CustomersController {
     @FXML
     private void handleRefresh() {
         loadCustomers();
+        NotificationService.success("Customer list refreshed");
     }
 
     @FXML
@@ -140,9 +141,9 @@ public class CustomersController {
 
     private void handleDelete(Customer customer) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete Customer");
-        confirm.setHeaderText("Delete " + customer.name() + "?");
-        confirm.setContentText("This action cannot be undone.");
+        confirm.setTitle("Confirm Deletion");
+        confirm.setHeaderText("Delete customer '" + customer.name() + "'?");
+        confirm.setContentText("Are you sure you want to delete this customer? This action is permanent and cannot be undone.");
         
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {

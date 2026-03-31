@@ -25,6 +25,7 @@ public class UserFormController implements Parameterizable {
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> statusCombo;
     @FXML private Button saveButton;
+    @FXML private Label passwordHelper;
 
     private Long userId = null;
 
@@ -67,9 +68,20 @@ public class UserFormController implements Parameterizable {
                 if (passwordField.getParent() instanceof VBox box) {
                     box.getChildren().remove(passwordField);
                 }
+                if (passwordHelper != null && passwordHelper.getParent() instanceof VBox box) {
+                    box.getChildren().remove(passwordHelper);
+                }
 
                 saveButton.setVisible(false);
                 saveButton.setManaged(false);
+            } else if (userId != null) { // Editing existing user
+                if (passwordHelper != null) {
+                    passwordHelper.setText("Leave blank to keep current password.");
+                }
+            } else { // New user
+                if (passwordHelper != null) {
+                    passwordHelper.setText("Required for new employees.");
+                }
             }
 
         } catch (Exception e) {
@@ -88,6 +100,9 @@ public class UserFormController implements Parameterizable {
     private void handleSave() {
         try {
             validateInputs();
+
+            saveButton.setDisable(true);
+            saveButton.setText("Saving...");
 
             boolean isActive = "Active".equals(statusCombo.getValue());
 
@@ -118,7 +133,9 @@ public class UserFormController implements Parameterizable {
 
             workspaceManager.close(titleLabel);
         } catch (Exception e) {
-            NotificationService.error("Failed to save user: " + e.getMessage());
+            NotificationService.error(e.getMessage());
+            saveButton.setDisable(false);
+            saveButton.setText("Save Employee");
         }
     }
 

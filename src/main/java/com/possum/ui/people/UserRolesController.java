@@ -202,7 +202,9 @@ public class UserRolesController implements Parameterizable {
                 buttonsBox.setStyle("-fx-background-color: #f1f5f9; -fx-background-radius: 6; -fx-padding: 2;");
                 
                 Button grantBtn = new Button("Grant");
+                grantBtn.setAccessibleText("Grant permission " + perm.key());
                 Button revokeBtn = new Button("Revoke");
+                revokeBtn.setAccessibleText("Revoke permission " + perm.key());
                 
                 permissionButtons.put(perm.id(), new ButtonPair(grantBtn, revokeBtn));
                 

@@ -148,4 +148,8 @@ public class DataTableView<T> extends StackPane {
     public void setEmptyMessage(String message) {
         ((Label) emptyState.getChildren().get(0)).setText(message);
     }
+
+    public String getEmptyMessage() {
+        return ((Label) emptyState.getChildren().get(0)).getText();
+    }
 }

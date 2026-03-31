@@ -81,6 +81,9 @@ public class CustomerFormController implements Parameterizable {
         try {
             validateInputs();
 
+            saveButton.setDisable(true);
+            saveButton.setText("Saving...");
+
             if (customerId == null) {
                 customerService.createCustomer(
                         nameField.getText(),
@@ -102,7 +105,9 @@ public class CustomerFormController implements Parameterizable {
 
             workspaceManager.close(titleLabel);
         } catch (Exception e) {
-            NotificationService.error("Failed to save customer: " + e.getMessage());
+            NotificationService.error(e.getMessage());
+            saveButton.setDisable(false);
+            saveButton.setText("Save Customer");
         }
     }
 

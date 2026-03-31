@@ -33,7 +33,9 @@
     <VBox styleClass="card" VBox.vgrow="ALWAYS">
         <FilterBar fx:id="filterBar"/>
 
-        <DataTableView fx:id="usersTable" VBox.vgrow="ALWAYS" styleClass="data-table"/>
+        <DataTableView fx:id="usersTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+            <emptyMessage>No employees found. Click + Add Employee to create one.</emptyMessage>
+        </DataTableView>
 
         <PaginationBar fx:id="paginationBar"/>
     </VBox>
