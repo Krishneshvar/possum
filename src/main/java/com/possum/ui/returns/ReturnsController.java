@@ -4,11 +4,9 @@ import com.possum.application.returns.ReturnsService;
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Return;
+import com.possum.domain.model.Sale;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ReturnFilter;
-import com.possum.infrastructure.filesystem.SettingsStore;
-import com.possum.infrastructure.printing.BillRenderer;
-import com.possum.ui.common.dialogs.BillPreviewDialog;
 import com.possum.ui.common.controls.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -31,15 +29,17 @@ public class ReturnsController {
     
     private final ReturnsService returnsService;
     private final SalesService salesService;
-    private final SettingsStore settingsStore;
     private final com.possum.ui.workspace.WorkspaceManager workspaceManager;
     private String currentSearch = "";
+    private java.time.LocalDate fromDate = null;
+    private java.time.LocalDate toDate = null;
+    private BigDecimal currentMinAmount = null;
+    private BigDecimal currentMaxAmount = null;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public ReturnsController(ReturnsService returnsService, SalesService salesService, SettingsStore settingsStore, com.possum.ui.workspace.WorkspaceManager workspaceManager) {
+    public ReturnsController(ReturnsService returnsService, SalesService salesService, com.possum.ui.workspace.WorkspaceManager workspaceManager) {
         this.returnsService = returnsService;
         this.salesService = salesService;
-        this.settingsStore = settingsStore;
         this.workspaceManager = workspaceManager;
     }
 
@@ -55,11 +55,26 @@ public class ReturnsController {
     }
 
     private void setupTable() {
-        TableColumn<Return, String> invoiceCol = new TableColumn<>("Invoice");
+        TableColumn<Return, String> invoiceCol = new TableColumn<>("Invoice #");
         invoiceCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
+        invoiceCol.setSortable(false);
         
         TableColumn<Return, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
+        dateCol.setCellFactory(col -> new TableCell<>() {
+            private final java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    java.time.ZonedDateTime utcZoned = item.atZone(java.time.ZoneId.of("UTC"));
+                    java.time.ZonedDateTime localZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.systemDefault());
+                    setText(localZoned.format(formatter));
+                }
+            }
+        });
         
         TableColumn<Return, BigDecimal> refundCol = new TableColumn<>("Refund");
         refundCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalRefund()));
@@ -80,8 +95,17 @@ public class ReturnsController {
     }
 
     private void setupFilters() {
+        filterBar.addDateFilter("fromDate", "From Date");
+        filterBar.addDateFilter("toDate", "To Date");
+        filterBar.addTextFilter("minAmount", "Min Refund");
+        filterBar.addTextFilter("maxAmount", "Max Refund");
+
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
+            fromDate = (java.time.LocalDate) filters.get("fromDate");
+            toDate = (java.time.LocalDate) filters.get("toDate");
+            currentMinAmount = parseBigDecimal(filters.get("minAmount"));
+            currentMaxAmount = parseBigDecimal(filters.get("maxAmount"));
             loadReturns();
         });
         
@@ -96,10 +120,12 @@ public class ReturnsController {
                 ReturnFilter filter = new ReturnFilter(
                     null,
                     null,
-                    null,
-                    null,
+                    fromDate != null ? fromDate.atStartOfDay().toString() : null,
+                    toDate != null ? toDate.atTime(23, 59, 59).toString() : null,
+                    currentMinAmount,
+                    currentMaxAmount,
                     currentSearch.isEmpty() ? null : currentSearch,
-                    paginationBar.getCurrentPage(),
+                    paginationBar.getCurrentPage() + 1,
                     paginationBar.getPageSize(),
                     "created_at",
                     "DESC"
@@ -130,9 +156,22 @@ public class ReturnsController {
 
     private void handleViewDetails(Return returnRecord) {
         SaleResponse saleResponse = salesService.getSaleDetails(returnRecord.saleId());
-        String billHtml = BillRenderer.renderBill(saleResponse, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
+        Sale sale = saleResponse.sale();
+        if (sale == null) return;
         
-        BillPreviewDialog dialog = new BillPreviewDialog(billHtml, returnsTable.getScene().getWindow());
-        dialog.showAndWait();
+        java.util.Map<String, Object> params = new java.util.HashMap<>();
+        params.put("sale", sale);
+        workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
+    }
+
+    private BigDecimal parseBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof BigDecimal) return (BigDecimal) value;
+        try {
+            String s = value.toString().replaceAll("[^0-9.\\-]", "");
+            return s.isEmpty() ? null : new BigDecimal(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

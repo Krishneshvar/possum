@@ -49,7 +49,7 @@ public final class TransactionServiceExample {
         // Example 3: Filter by type
         TransactionFilter typeFilter = new TransactionFilter(
                 null, null,
-                "payment",               // type
+                List.of("payment"),      // type
                 null, null, null, null, null,
                 1, 20,
                 "transaction_date", "DESC"

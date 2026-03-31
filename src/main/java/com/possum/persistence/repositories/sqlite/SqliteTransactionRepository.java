@@ -192,13 +192,13 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
             joiner.add("t.transaction_date <= ?");
             params.add(date + " 23:59:59");
         }
-        if (filter.type() != null && !filter.type().isBlank()) {
-            joiner.add("t.type = ?");
-            params.add(filter.type());
+        if (filter.type() != null && !filter.type().isEmpty()) {
+            joiner.add("t.type IN (" + "?,".repeat(filter.type().size()).replaceAll(",$", "") + ")");
+            params.addAll(filter.type());
         }
-        if (filter.paymentMethodId() != null) {
-            joiner.add("t.payment_method_id = ?");
-            params.add(filter.paymentMethodId());
+        if (filter.paymentMethodId() != null && !filter.paymentMethodId().isEmpty()) {
+            joiner.add("t.payment_method_id IN (" + "?,".repeat(filter.paymentMethodId().size()).replaceAll(",$", "") + ")");
+            params.addAll(filter.paymentMethodId());
         }
         if (filter.status() != null && !filter.status().isBlank()) {
             joiner.add("t.status = ?");

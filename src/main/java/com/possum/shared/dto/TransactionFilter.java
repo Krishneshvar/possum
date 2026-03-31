@@ -1,14 +1,15 @@
 package com.possum.shared.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record TransactionFilter(
         String startDate,
         String endDate,
-        String type,
+        List<String> type,
         BigDecimal minAmount,
         BigDecimal maxAmount,
-        Long paymentMethodId,
+        List<Long> paymentMethodId,
         String status,
         String searchTerm,
         int currentPage,

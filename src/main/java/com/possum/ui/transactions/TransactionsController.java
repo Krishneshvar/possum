@@ -9,12 +9,13 @@ import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.PaginationBar;
+import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.Label;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -38,9 +39,10 @@ public class TransactionsController {
     
     private final TransactionService transactionService;
     private final com.possum.application.sales.SalesService salesService;
+    private final WorkspaceManager workspaceManager;
     private String currentSearch = "";
-    private String currentType = null;
-    private Long currentPaymentMethodId = null;
+    private List<String> currentTypes = null;
+    private List<Long> currentPaymentMethodIds = null;
     private java.time.LocalDate fromDate = null;
     private java.time.LocalDate toDate = null;
     private BigDecimal currentMinAmount = null;
@@ -48,9 +50,11 @@ public class TransactionsController {
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public TransactionsController(TransactionService transactionService, 
-                                  com.possum.application.sales.SalesService salesService) {
+                                  com.possum.application.sales.SalesService salesService,
+                                  WorkspaceManager workspaceManager) {
         this.transactionService = transactionService;
         this.salesService = salesService;
+        this.workspaceManager = workspaceManager;
     }
 
     @FXML
@@ -122,20 +126,52 @@ public class TransactionsController {
             Transaction tx = cellData.getValue();
             return new SimpleStringProperty(tx.invoiceNumber() != null ? tx.invoiceNumber() : "-");
         });
+        refCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null || "-".equals(item)) {
+                    setText(item);
+                    setGraphic(null);
+                } else {
+                    javafx.scene.layout.HBox container = new javafx.scene.layout.HBox(10);
+                    container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                    
+                    Label label = new Label(item);
+                    javafx.scene.control.Button viewBtn = new javafx.scene.control.Button("👁");
+                    viewBtn.getStyleClass().add("button-icon-only");
+                    viewBtn.setStyle("-fx-padding: 0 4; -fx-font-size: 10px;");
+                    viewBtn.setOnAction(e -> handleViewBill(item));
+                    
+                    container.getChildren().addAll(label, viewBtn);
+                    setGraphic(container);
+                    setText(null);
+                }
+            }
+        });
         
         transactionsTable.getTableView().getColumns().addAll(typeCol, amountCol, paymentCol, statusCol, dateCol, refCol);
     }
 
-    private void setupFilters() {
-        ComboBox<String> typeFilter = filterBar.addFilter("type", "All Types");
-        typeFilter.getItems().addAll("All Types", "Sale", "Refund", "Purchase");
-        filterBar.setDefaultValue("type", "All Types");
-        typeFilter.setValue("All Types");
+    private void handleViewBill(String invoiceNumber) {
+        if (invoiceNumber == null || invoiceNumber.isEmpty()) return;
+        
+        salesService.findSaleByInvoiceNumber(invoiceNumber).ifPresent(sale -> {
+            java.util.Map<String, Object> params = new java.util.HashMap<>();
+            params.put("sale", sale);
+            workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
+        });
+    }
 
-        ComboBox<com.possum.domain.model.PaymentMethod> paymentFilter = filterBar.addFilter("paymentMethod", "All Payments");
+    private void setupFilters() {
+        filterBar.addMultiSelectFilter("type", "All Types", 
+                List.of("Sale", "Refund", "Purchase"),
+                s -> s
+        );
+
         List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
-        paymentFilter.setItems(FXCollections.observableArrayList(pms));
-        filterBar.setDefaultValue("paymentMethod", null);
+        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
+                com.possum.domain.model.PaymentMethod::name);
 
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");
@@ -145,20 +181,22 @@ public class TransactionsController {
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
             
-            String type = (String) filters.get("type");
-            if (type == null || "All Types".equals(type)) {
-                currentType = null;
-            } else if ("Sale".equals(type)) {
-                currentType = "payment";
+            List<String> types = (List<String>) filters.get("type");
+            if (types == null || types.isEmpty()) {
+                currentTypes = null;
             } else {
-                currentType = type.toLowerCase();
+                currentTypes = types.stream()
+                        .map(t -> "Sale".equals(t) ? "payment" : t.toLowerCase())
+                        .toList();
             }
 
-            Object pm = filters.get("paymentMethod");
-            if (pm instanceof com.possum.domain.model.PaymentMethod) {
-                currentPaymentMethodId = ((com.possum.domain.model.PaymentMethod) pm).id();
+            List<com.possum.domain.model.PaymentMethod> selectedPms = (List<com.possum.domain.model.PaymentMethod>) filters.get("paymentMethod");
+            if (selectedPms == null || selectedPms.isEmpty()) {
+                currentPaymentMethodIds = null;
             } else {
-                currentPaymentMethodId = null;
+                currentPaymentMethodIds = selectedPms.stream()
+                        .map(com.possum.domain.model.PaymentMethod::id)
+                        .toList();
             }
 
             fromDate = (LocalDate) filters.get("fromDate");
@@ -192,10 +230,10 @@ public class TransactionsController {
                 TransactionFilter filter = new TransactionFilter(
                     fromDate != null ? fromDate.atStartOfDay().toString() : null,
                     toDate != null ? toDate.atTime(23, 59, 59).toString() : null,
-                    currentType,
+                    currentTypes,
                     currentMinAmount,
                     currentMaxAmount,
-                    currentPaymentMethodId,
+                    currentPaymentMethodIds,
                     null,
                     currentSearch.isEmpty() ? null : currentSearch,
                     paginationBar.getCurrentPage() + 1,

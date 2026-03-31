@@ -25,7 +25,6 @@ import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -184,13 +183,10 @@ public class SalesHistoryController {
     private void setupFilters() {
         filterBar = new FilterBar();
         
-        ComboBox<String> statusCombo = filterBar.addFilter("status", "All Statuses");
-        statusCombo.setItems(FXCollections.observableArrayList(
-                "All Statuses", "Paid", "Partially Paid", "Draft", "Cancelled", "Refunded", "Partially Refunded"
-        ));
-        filterBar.setDefaultValue("status", "All Statuses");
-        statusCombo.getSelectionModel().selectFirst();
-
+        filterBar.addMultiSelectFilter("status", "All Statuses", 
+                List.of("Paid", "Partially Paid", "Draft", "Cancelled", "Refunded", "Partially Refunded"),
+                s -> s
+        );
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");
         filterBar.addTextFilter("minAmount", "Min Total");
@@ -207,11 +203,13 @@ public class SalesHistoryController {
             Object max = filters.get("maxAmount");
             currentMaxAmount = parseBigDecimal(max);
             
-            String status = (String) filters.get("status");
-            if (status == null || "All Statuses".equals(status)) {
+            List<String> statuses = (List<String>) filters.get("status");
+            if (statuses == null || statuses.isEmpty()) {
                 currentStatus = null;
             } else {
-                currentStatus = Collections.singletonList(status.toLowerCase().replace(" ", "_"));
+                currentStatus = statuses.stream()
+                        .map(s -> s.toLowerCase().replace(" ", "_"))
+                        .toList();
             }
             paginationBar.reset();
             loadHistory();

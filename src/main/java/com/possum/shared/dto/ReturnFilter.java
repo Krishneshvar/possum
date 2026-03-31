@@ -5,6 +5,8 @@ public record ReturnFilter(
         Long userId,
         String startDate,
         String endDate,
+        java.math.BigDecimal minAmount,
+        java.math.BigDecimal maxAmount,
         String searchTerm,
         int currentPage,
         int itemsPerPage,

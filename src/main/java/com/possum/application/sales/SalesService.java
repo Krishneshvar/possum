@@ -342,6 +342,10 @@ public class SalesService {
         return new SaleResponse(sale, items, transactions);
     }
 
+    public Optional<Sale> findSaleByInvoiceNumber(String invoiceNumber) {
+        return salesRepository.findSaleByInvoiceNumber(invoiceNumber);
+    }
+
     /**
      * Add item to existing sale - NOT IMPLEMENTED
      * Original TypeScript implementation creates sales atomically

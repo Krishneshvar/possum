@@ -15,7 +15,10 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -50,7 +53,9 @@ public class SaleDetailController implements Parameterizable {
     @FXML private VBox returnedItemsContainer;
     @FXML private TableView<SaleItem> returnedItemsTable;
     @FXML private TableColumn<SaleItem, String> retProductCol;
+    @FXML private TableColumn<SaleItem, String> retSkuCol;
     @FXML private TableColumn<SaleItem, Integer> retQtyCol;
+    @FXML private TableColumn<SaleItem, BigDecimal> retPriceCol;
     @FXML private TableColumn<SaleItem, BigDecimal> retRefundCol;
     
     @FXML private Label subtotalLabel;
@@ -160,13 +165,17 @@ public class SaleDetailController implements Parameterizable {
             data.getValue().productName() + (data.getValue().variantName() != null ? " - " + data.getValue().variantName() : "")
         ));
         
+        retSkuCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().sku()));
+        
         retQtyCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().returnedQuantity()));
+        
+        retPriceCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().pricePerUnit()));
+        setupCurrencyCell(retPriceCol);
         
         retRefundCol.setCellValueFactory(data -> {
             SaleItem item = data.getValue();
             BigDecimal price = item.pricePerUnit() != null ? item.pricePerUnit() : BigDecimal.ZERO;
             BigDecimal qty = BigDecimal.valueOf(item.returnedQuantity() != null ? item.returnedQuantity() : 0);
-            // In a real system, we'd also subtract tax/discount proportional to returns
             return new SimpleObjectProperty<>(price.multiply(qty));
         });
         setupCurrencyCell(retRefundCol);
@@ -266,7 +275,14 @@ public class SaleDetailController implements Parameterizable {
         grandTotalLabel.setText(currencyFormat.format(grandTotal));
         paidAmountLabel.setText(currencyFormat.format(paidAmount));
         
-        BigDecimal balance = paidAmount.subtract(grandTotal);
+        BigDecimal totalRefunded = saleDetails.transactions().stream()
+                .filter(t -> "refund".equals(t.type()) && "completed".equals(t.status()))
+                .map(t -> t.amount().abs())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal effectiveGrandTotal = grandTotal.subtract(totalRefunded).max(BigDecimal.ZERO);
+        BigDecimal balance = paidAmount.subtract(effectiveGrandTotal);
+        
         if (balance.compareTo(BigDecimal.ZERO) >= 0) {
             balanceTypeLabel.setText("Change");
             balanceAmountLabel.setText(currencyFormat.format(balance));

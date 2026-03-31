@@ -89,6 +89,8 @@ public class ReturnsServiceExample {
                 100L,  // userId - returns processed by this user
                 null,  // startDate
                 null,  // endDate
+                null,  // minAmount
+                null,  // maxAmount
                 null,  // searchTerm
                 1,     // currentPage
                 20,    // itemsPerPage

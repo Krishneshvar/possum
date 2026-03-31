@@ -39,6 +39,8 @@ public class InventoryController {
     private java.util.List<Long> currentTaxCategoryFilters = java.util.Collections.emptyList();
     private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
     private java.util.List<String> currentStatusFilters = java.util.Collections.emptyList();
+    private java.math.BigDecimal currentMinPrice = null;
+    private java.math.BigDecimal currentMaxPrice = null;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public InventoryController(InventoryService inventoryService, VariantRepository variantRepository, com.possum.application.categories.CategoryService categoryService, TaxRepository taxRepository) {
@@ -123,7 +125,7 @@ public class InventoryController {
         
         TableColumn<Variant, String> taxCategoryCol = new TableColumn<>("Tax Category");
         taxCategoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().taxCategoryName() != null ? cellData.getValue().taxCategoryName() : "N/A"
+                cellData.getValue().taxCategoryName() != null ? cellData.getValue().taxCategoryName() : "-"
         ));
         
         TableColumn<Variant, BigDecimal> priceCol = new TableColumn<>("Price");
@@ -154,7 +156,7 @@ public class InventoryController {
         stockCol.setId("stock");
         priceCol.setId("price");
 
-        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, categoryCol, taxCategoryCol, skuCol, stockCol, priceCol, statusCol);
+        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, taxCategoryCol, stockCol, priceCol, statusCol);
     }
 
     private void setupFilters() {
@@ -165,6 +167,8 @@ public class InventoryController {
         filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
         filterBar.addMultiSelectFilter("categories", "Categories", categories, com.possum.domain.model.Category::name);
         filterBar.addMultiSelectFilter("taxCategories", "Tax Categories", taxCategories, TaxCategory::name);
+        filterBar.addTextFilter("minPrice", "Min Price");
+        filterBar.addTextFilter("maxPrice", "Max Price");
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -188,10 +192,11 @@ public class InventoryController {
             @SuppressWarnings("unchecked")
             java.util.List<TaxCategory> tcs = (java.util.List<TaxCategory>) filters.get("taxCategories");
             if (tcs != null) {
-                currentTaxCategoryFilters = tcs.stream().map(TaxCategory::id).toList();
-            } else {
                 currentTaxCategoryFilters = java.util.Collections.emptyList();
             }
+
+            currentMinPrice = parseBigDecimal(filters.get("minPrice"));
+            currentMaxPrice = parseBigDecimal(filters.get("maxPrice"));
 
             loadInventory();
         });
@@ -211,8 +216,8 @@ public class InventoryController {
                     currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
                     currentStockFilters.isEmpty() ? null : currentStockFilters,
                     currentStatusFilters.isEmpty() ? null : currentStatusFilters,
-                    null,
-                    null,
+                    currentMinPrice,
+                    currentMaxPrice,
                     "stock",
                     "ASC",
                     paginationBar.getCurrentPage(),
@@ -269,5 +274,16 @@ public class InventoryController {
                 NotificationService.error("Failed to adjust stock: " + e.getMessage());
             }
         });
+    }
+
+    private java.math.BigDecimal parseBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.math.BigDecimal) return (java.math.BigDecimal) value;
+        try {
+            String s = value.toString().replaceAll("[^0-9.\\-]", "");
+            return s.isEmpty() ? null : new java.math.BigDecimal(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

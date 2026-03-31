@@ -189,6 +189,18 @@ public final class SqliteReturnsRepository extends BaseSqliteRepository implemen
             params.add(fuzzy);
             params.add(fuzzy);
         }
+
+        // Subquery for total refund amount to allow filtering by the calculated total
+        String refundSub = "(SELECT COALESCE(SUM(ri.refund_amount), 0) FROM return_items ri WHERE ri.return_id = r.id)";
+        if (filter.minAmount() != null) {
+            joiner.add(refundSub + " >= ?");
+            params.add(filter.minAmount().doubleValue());
+        }
+        if (filter.maxAmount() != null) {
+            joiner.add(refundSub + " <= ?");
+            params.add(filter.maxAmount().doubleValue());
+        }
+
         if (joiner.length() == 0) {
             return "";
         }
