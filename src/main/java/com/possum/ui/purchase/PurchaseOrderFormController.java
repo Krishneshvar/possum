@@ -2,6 +2,7 @@ package com.possum.ui.purchase;
 
 import com.possum.application.auth.AuthContext;
 import com.possum.application.purchase.PurchaseService;
+import javafx.scene.control.Label;
 import com.possum.application.sales.SalesService;
 import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.PurchaseOrder;
@@ -260,6 +261,7 @@ public class PurchaseOrderFormController implements Parameterizable {
         });
         
         itemsTable.getColumns().addAll(productCol, qtyCol, costCol, totalCol, actionCol);
+        itemsTable.setPlaceholder(new Label("Search for a product or variant above to add items to your order"));
         itemsTable.setItems(itemRows);
         itemsTable.setPlaceholder(new Label("No items added yet. Search and add products above."));
     }

@@ -12,42 +12,54 @@
 
     <VBox spacing="20" alignment="TOP_LEFT">
         <HBox styleClass="view-header">
-            <Label fx:id="titleLabel" text="Add Supplier" styleClass="view-title"/>
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label fx:id="titleLabel" text="Add Supplier" styleClass="view-title"/>
+                <Label text="Enter supplier details and payment terms" styleClass="view-subtitle"/>
+            </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button"/>
-            <Button fx:id="saveButton" text="Save Supplier" onAction="#handleSave" styleClass="action-button, primary-button"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true"
+                    accessibleText="Cancel supplier creation"/>
+            <Button fx:id="saveButton" text="Save Supplier" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true"
+                    accessibleText="Save supplier information"/>
         </HBox>
 
         <VBox spacing="20" maxWidth="600">
             <VBox styleClass="card">
                 <Label text="Supplier Information" styleClass="card-title"/>
                 <VBox styleClass="form-group">
-                    <Label text="Supplier Name *" styleClass="form-label"/>
-                    <TextField fx:id="nameField" promptText="Enter supplier name" styleClass="text-field"/>
+                    <Label text="Supplier Name *" styleClass="form-label" labelFor="$nameField"/>
+                    <TextField fx:id="nameField" promptText="Enter supplier name" styleClass="text-field"
+                               accessibleText="Supplier Name. Required field"/>
                 </VBox>
                 <VBox styleClass="form-group">
-                    <Label text="Contact Person" styleClass="form-label"/>
-                    <TextField fx:id="contactPersonField" promptText="Enter contact person name" styleClass="text-field"/>
+                    <Label text="Contact Person" styleClass="form-label" labelFor="$contactPersonField"/>
+                    <TextField fx:id="contactPersonField" promptText="Enter contact person name" styleClass="text-field"
+                               accessibleText="Contact Person name"/>
                 </VBox>
                 <VBox styleClass="form-group">
-                    <Label text="Phone Number" styleClass="form-label"/>
-                    <TextField fx:id="phoneField" promptText="Enter phone number" styleClass="text-field"/>
+                    <Label text="Phone Number" styleClass="form-label" labelFor="$phoneField"/>
+                    <TextField fx:id="phoneField" promptText="Enter phone number" styleClass="text-field"
+                               accessibleText="Phone Number"/>
                 </VBox>
                 <VBox styleClass="form-group">
-                    <Label text="Email Address" styleClass="form-label"/>
-                    <TextField fx:id="emailField" promptText="Enter email address" styleClass="text-field"/>
+                    <Label text="Email Address" styleClass="form-label" labelFor="$emailField"/>
+                    <TextField fx:id="emailField" promptText="Enter email address" styleClass="text-field"
+                               accessibleText="Email Address"/>
                 </VBox>
                 <VBox styleClass="form-group">
-                    <Label text="GSTIN" styleClass="form-label"/>
-                    <TextField fx:id="gstinField" promptText="Enter GSTIN" styleClass="text-field"/>
+                    <Label text="GSTIN" styleClass="form-label" labelFor="$gstinField"/>
+                    <TextField fx:id="gstinField" promptText="Enter GSTIN" styleClass="text-field"
+                               accessibleText="GSTIN identification number"/>
                 </VBox>
                 <VBox styleClass="form-group">
-                    <Label text="Payment Policy" styleClass="form-label"/>
-                    <ComboBox fx:id="paymentPolicyCombo" promptText="Select payment policy" styleClass="combo-box"/>
+                    <Label text="Payment Policy" styleClass="form-label" labelFor="$paymentPolicyCombo"/>
+                    <ComboBox fx:id="paymentPolicyCombo" promptText="Select payment policy" styleClass="combo-box"
+                              accessibleText="Payment Policy selection"/>
                 </VBox>
                 <VBox styleClass="form-group">
-                    <Label text="Physical Address" styleClass="form-label"/>
-                    <TextArea fx:id="addressField" promptText="Enter full address" prefRowCount="3" styleClass="text-area"/>
+                    <Label text="Physical Address" styleClass="form-label" labelFor="$addressField"/>
+                    <TextArea fx:id="addressField" promptText="Enter full address" prefRowCount="3" styleClass="text-area"
+                              accessibleText="Physical Address"/>
                 </VBox>
             </VBox>
         </VBox>

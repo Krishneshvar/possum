@@ -10,6 +10,7 @@ import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.PaginationBar;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.workspace.WorkspaceManager;
+import javafx.scene.control.Label;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -67,6 +68,7 @@ public class SuppliersController {
         suppliersTable.getTableView().getColumns().addAll(nameCol, contactCol, phoneCol, emailCol, policyCol);
         
         suppliersTable.addActionColumn("Actions", this::showActions);
+        suppliersTable.setEmptyMessage("No suppliers added yet. Click '+ Create Supplier' to add your first supplier.");
     }
 
     private void setupFilters() {

@@ -145,7 +145,9 @@ public class PurchaseOrderDetailController implements Parameterizable {
         });
 
         itemsTable.getColumns().addAll(productCol, qtyCol, costCol, totalCol);
-        itemsTable.setPlaceholder(new Label("No items in this purchase order"));
+        Label emptyLabel = new Label("No items in this purchase order");
+        emptyLabel.setStyle("-fx-text-fill: gray; -fx-font-style: italic;");
+        itemsTable.setPlaceholder(emptyLabel);
     }
 
     private void loadOrderDetails(long orderId) {

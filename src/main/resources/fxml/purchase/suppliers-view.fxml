@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.geometry.Insets?>
+
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import com.possum.ui.common.controls.*?>
@@ -7,22 +7,26 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.purchase.SuppliersController"
-      spacing="20"
-      alignment="TOP_LEFT">
-    
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
+      stylesheets="@../../styles/inventory.css"
+      styleClass="workspace-view">
 
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="Suppliers" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button text="⟳ Refresh" onAction="#handleRefresh" style="-fx-background-color: #e0e0e0; -fx-text-fill: black; -fx-padding: 10 20; -fx-background-radius: 6;"/>
-        <Button fx:id="createButton" text="+ Create Supplier" onAction="#handleCreate" style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 6;"/>
-    </HBox>
+    <VBox>
+        <HBox styleClass="view-header">
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label text="Suppliers" styleClass="view-title"/>
+                <Label text="Manage your supplier directory and contacts" styleClass="view-subtitle"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="⟳ Refresh" onAction="#handleRefresh" styleClass="action-button"
+                    accessibleText="Refresh suppliers list"/>
+            <Button fx:id="createButton" text="+ Create Supplier" onAction="#handleCreate"
+                    styleClass="action-button, primary-button" defaultButton="true"
+                    accessibleText="Create new supplier"/>
+        </HBox>
+    </VBox>
     
-    <FilterBar fx:id="filterBar"/>
-    <DataTableView fx:id="suppliersTable" VBox.vgrow="ALWAYS"/>
-    <PaginationBar fx:id="paginationBar"/>
+    <FilterBar fx:id="filterBar" styleClass="card"/>
+    <DataTableView fx:id="suppliersTable" VBox.vgrow="ALWAYS" styleClass="card"/>
+    <PaginationBar fx:id="paginationBar" styleClass="card"/>
 
 </VBox>

@@ -7,6 +7,7 @@ import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.PurchaseOrderFilter;
 import com.possum.ui.common.controls.*;
 import com.possum.ui.workspace.WorkspaceManager;
+import javafx.scene.control.Label;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -165,6 +166,7 @@ public class PurchaseController {
         
         purchaseTable.getTableView().getColumns().addAll(idCol, supplierCol, dateCol, itemsCol, statusCol, paymentCol);
         purchaseTable.addMenuActionColumn("Actions", this::buildActionsMenu);
+        purchaseTable.setEmptyMessage("No purchase orders found. Click '+ New Purchase Order' to create one.");
     }
 
     private void setupFilters() {
