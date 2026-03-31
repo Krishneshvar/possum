@@ -135,6 +135,7 @@ public class UsersController {
     @FXML
     private void handleRefresh() {
         loadUsers();
+        NotificationService.success("Employee list refreshed");
     }
 
     @FXML
@@ -166,9 +167,9 @@ public class UsersController {
 
     private void handleDelete(User user) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete Employee");
-        confirm.setHeaderText("Delete " + user.name() + "?");
-        confirm.setContentText("This action cannot be undone.");
+        confirm.setTitle("Confirm Deletion");
+        confirm.setHeaderText("Delete employee '" + user.name() + "'?");
+        confirm.setContentText("Are you sure you want to delete this employee? This action is permanent and cannot be undone.");
         
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
