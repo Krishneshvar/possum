@@ -151,8 +151,8 @@ public class ProductFormController implements Parameterizable {
         }
 
         if (descriptionField != null) {
-            descriptionField.setPrefHeight(100);
-            descriptionField.setMinHeight(80);
+            descriptionField.setPrefHeight(180);
+            descriptionField.setMinHeight(150);
         }
 
         loadCategories();

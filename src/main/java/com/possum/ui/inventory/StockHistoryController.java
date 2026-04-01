@@ -45,7 +45,7 @@ public class StockHistoryController {
     private int pageSize = 20;
 
     private String currentSearch = "";
-    private String currentReason = null;
+    private List<String> currentReasons = null;
     private java.time.LocalDate currentFromDate = null;
     private java.time.LocalDate currentToDate = null;
     private List<Long> currentUserIds = null;
@@ -123,29 +123,17 @@ public class StockHistoryController {
     }
 
     private void setupFilters() {
-        List<String> reasons = new ArrayList<>();
-        reasons.add("All Reasons");
-        for (InventoryReason reason : InventoryReason.values()) {
-            String value = reason.getValue();
-            if ("confirm_receive".equalsIgnoreCase(value)) {
-                reasons.add("Received");
-            } else {
-                String[] words = value.split("_");
-                StringBuilder titleCase = new StringBuilder();
-                for (String word : words) {
-                    if (word.length() > 0) {
-                        titleCase.append(Character.toUpperCase(word.charAt(0)))
-                                 .append(word.substring(1).toLowerCase())
-                                 .append(" ");
-                    }
+        filterBar.addMultiSelectFilter("reasons", "Filter by Reasons", List.of(InventoryReason.values()), 
+            item -> {
+                String val = item.getValue();
+                if ("confirm_receive".equalsIgnoreCase(val)) return "Received";
+                String[] words = val.split("_");
+                StringBuilder sb = new StringBuilder();
+                for (String w : words) {
+                    if (!w.isEmpty()) sb.append(w.substring(0, 1).toUpperCase()).append(w.substring(1).toLowerCase()).append(" ");
                 }
-                reasons.add(titleCase.toString().trim());
-            }
-        }
-
-        ComboBox<String> reasonCombo = filterBar.addFilter("reason", "All Reasons");
-        reasonCombo.setItems(FXCollections.observableArrayList(reasons));
-        reasonCombo.getSelectionModel().selectFirst();
+                return sb.toString().trim();
+            }, false);
 
         DatePicker fromDate = filterBar.addDateFilter("fromDate", "From Date");
         DatePicker toDate = filterBar.addDateFilter("toDate", "To Date");
@@ -172,16 +160,17 @@ public class StockHistoryController {
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
-            String r = (String) filters.get("reason");
-            if (r == null || "All Reasons".equals(r)) {
-                currentReason = null;
-            } else {
-                // Map back to enum value
-                if ("Received".equals(r)) {
-                    currentReason = "confirm_receive";
+            Object reasonsObj = filters.get("reasons");
+            if (reasonsObj instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<InventoryReason> selectedReasons = (List<InventoryReason>) reasonsObj;
+                if (!selectedReasons.isEmpty()) {
+                    currentReasons = selectedReasons.stream().map(InventoryReason::getValue).toList();
                 } else {
-                    currentReason = r.toLowerCase().replace(" ", "_");
+                    currentReasons = null;
                 }
+            } else {
+                currentReasons = null;
             }
             currentFromDate = (java.time.LocalDate) filters.get("fromDate");
             currentToDate = (java.time.LocalDate) filters.get("toDate");
@@ -212,10 +201,7 @@ public class StockHistoryController {
     }
 
     private void loadHistory() {
-        List<String> selectedReasons = new ArrayList<>();
-        if (currentReason != null) {
-            selectedReasons.add(currentReason);
-        }
+        List<String> selectedReasons = currentReasons != null ? currentReasons : new ArrayList<>();
 
         int offset = (currentPage - 1) * pageSize;
 

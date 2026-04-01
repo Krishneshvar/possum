@@ -58,6 +58,8 @@ public class ProductsController {
     private ToggleButton cardsViewButton;
     @FXML
     private ToggleButton tableViewButton;
+    @FXML
+    private Button refreshButton;
 
     private final ProductService productService;
     private final CategoryService categoryService;
@@ -107,6 +109,12 @@ public class ProductsController {
         productsTable.setEmptyMessage("No products found");
         productsTable.setEmptySubtitle("Try changing filters or create your first product.");
 
+        if (refreshButton != null) {
+            FontIcon refreshIcon = new FontIcon("bx-sync");
+            refreshIcon.setIconSize(16);
+            refreshButton.setGraphic(refreshIcon);
+            refreshButton.setText("Refresh");
+        }
         setupTable();
         setupFilters();
         setupViewMode();
@@ -261,8 +269,9 @@ public class ProductsController {
             empty.setAlignment(Pos.CENTER);
             empty.setPrefWidth(560);
 
-            Label icon = new Label("\uD83D\uDCE6");
-            icon.getStyleClass().add("empty-state-icon");
+            FontIcon packageIcon = new FontIcon("bx-package");
+            packageIcon.setIconSize(48);
+            packageIcon.getStyleClass().add("empty-state-icon");
 
             Label title = new Label("No products found");
             title.getStyleClass().add("empty-state-title");
@@ -271,7 +280,7 @@ public class ProductsController {
             subtitle.getStyleClass().add("empty-state-subtitle");
             subtitle.setWrapText(true);
 
-            empty.getChildren().addAll(icon, title, subtitle);
+            empty.getChildren().addAll(packageIcon, title, subtitle);
             productsGrid.getChildren().add(empty);
             return;
         }

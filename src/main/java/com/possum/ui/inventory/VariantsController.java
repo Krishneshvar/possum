@@ -43,6 +43,7 @@ public class VariantsController {
     @FXML private ScrollPane variantsGridScroll;
     @FXML private ToggleButton cardsViewButton;
     @FXML private ToggleButton tableViewButton;
+    @FXML private Button refreshButton;
 
     private final VariantRepository variantRepository;
     private final CategoryService categoryService;
@@ -72,6 +73,12 @@ public class VariantsController {
         variantsTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No variants found. Try adjusting filters or search terms."));
         variantsTable.setEmptyMessage("No variants found");
         variantsTable.setEmptySubtitle("Update search or filters to locate product variants.");
+        if (refreshButton != null) {
+            FontIcon refreshIcon = new FontIcon("bx-sync");
+            refreshIcon.setIconSize(16);
+            refreshButton.setGraphic(refreshIcon);
+            refreshButton.setText("Refresh");
+        }
         setupTable();
         setupFilters();
         setupViewMode();
@@ -305,15 +312,16 @@ public class VariantsController {
             empty.setAlignment(Pos.CENTER);
             empty.setPrefWidth(560);
 
-            Label icon = new Label("\uD83D\uDCE6");
-            icon.getStyleClass().add("empty-state-icon");
+            FontIcon packageIcon = new FontIcon("bx-package");
+            packageIcon.setIconSize(48);
+            packageIcon.getStyleClass().add("empty-state-icon");
             Label title = new Label("No variants found");
             title.getStyleClass().add("empty-state-title");
             Label subtitle = new Label("Adjust filters or search terms to find variants.");
             subtitle.getStyleClass().add("empty-state-subtitle");
             subtitle.setWrapText(true);
 
-            empty.getChildren().addAll(icon, title, subtitle);
+            empty.getChildren().addAll(packageIcon, title, subtitle);
             variantsGrid.getChildren().add(empty);
             return;
         }

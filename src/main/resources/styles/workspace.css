@@ -10,6 +10,10 @@
 
 .workspace-content-pane {
     -fx-background-color: -color-bg-canvas;
+    -fx-background-image: url("../icons/wall.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-background-size: cover;
 }
 
 .internal-window {

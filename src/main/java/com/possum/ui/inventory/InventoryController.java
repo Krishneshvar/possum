@@ -177,7 +177,10 @@ public class InventoryController {
         java.util.List<TaxCategory> taxCategories = taxRepository.getAllTaxCategories();
         filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "discontinued"),
             item -> item.substring(0, 1).toUpperCase() + item.substring(1).toLowerCase(), false);
-        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), String::toString);
+        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), 
+            item -> java.util.Arrays.stream(item.split("-"))
+                        .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
+                        .collect(java.util.stream.Collectors.joining(" ")));
         filterBar.addMultiSelectFilter("categories", "Categories", categories, com.possum.domain.model.Category::name);
         filterBar.addMultiSelectFilter("taxCategories", "Tax Categories", taxCategories, TaxCategory::name);
         filterBar.addTextFilter("minPrice", "Min Price");
@@ -205,6 +208,8 @@ public class InventoryController {
             @SuppressWarnings("unchecked")
             java.util.List<TaxCategory> tcs = (java.util.List<TaxCategory>) filters.get("taxCategories");
             if (tcs != null) {
+                currentTaxCategoryFilters = tcs.stream().map(TaxCategory::id).toList();
+            } else {
                 currentTaxCategoryFilters = java.util.Collections.emptyList();
             }
 

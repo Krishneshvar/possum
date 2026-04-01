@@ -132,6 +132,11 @@ public class CategoriesController {
 
         List<CategoryTreeNode> treeNodes = categoryService.getCategoriesAsTree();
         TreeItem<String> rootItem = new TreeItem<>("All Categories");
+        FontIcon rootIcon = new FontIcon("bx-package");
+        rootIcon.setIconSize(16);
+        rootIcon.setIconColor(javafx.scene.paint.Color.web("#64748b"));
+        rootItem.setGraphic(rootIcon);
+        
         rootItem.setExpanded(true);
         for (CategoryTreeNode node : treeNodes) {
             rootItem.getChildren().add(buildTreeItem(node));
@@ -142,6 +147,12 @@ public class CategoriesController {
 
     private TreeItem<String> buildTreeItem(CategoryTreeNode node) {
         TreeItem<String> item = new TreeItem<>(node.category().name());
+        
+        FontIcon folderIcon = new FontIcon(node.subcategories().isEmpty() ? "bx-layer" : "bx-folder");
+        folderIcon.setIconSize(14);
+        folderIcon.setIconColor(javafx.scene.paint.Color.web("#10b981"));
+        item.setGraphic(folderIcon);
+
         item.setExpanded(true);
         for (CategoryTreeNode childNode : node.subcategories()) {
             item.getChildren().add(buildTreeItem(childNode));
