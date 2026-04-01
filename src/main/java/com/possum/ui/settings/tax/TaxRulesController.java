@@ -11,6 +11,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -265,6 +266,8 @@ public class TaxRulesController {
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+
+        DialogStyler.apply(confirm);
         confirm.setTitle("Delete Tax Rule");
         confirm.setHeaderText("Delete this tax rule?");
         confirm.setContentText("This action cannot be undone.");

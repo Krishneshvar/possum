@@ -5,6 +5,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class FormDialog extends Dialog<Map<String, Object>> {
 
         getDialogPane().setContent(grid);
         getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        DialogStyler.apply(this);
 
         setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {

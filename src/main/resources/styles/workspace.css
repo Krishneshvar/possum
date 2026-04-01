@@ -1,95 +1,97 @@
+@import "tokens.css";
+
 /* =====================================================
    Workspace Desktop
    ===================================================== */
 
 .workspace-desktop {
-    -fx-background-color: #f1f5f9;
+    -fx-background-color: -color-bg-canvas;
 }
 
-/* The center pane that holds the active screen */
 .workspace-content-pane {
-    -fx-background-color: #f8fafc;
-    -fx-background-image: url("../icons/wall.png");
-    -fx-background-repeat: no-repeat;
-    -fx-background-size: cover;
-    -fx-background-position: center center;
+    -fx-background-color: -color-bg-canvas;
 }
 
-/* The internal window itself is just a transparent container now */
 .internal-window {
-    -fx-background-color: white;
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1 0 0 0;
 }
 
 /* =====================================================
-   Tab Bar  (bottom – like Google Sheets)
+   Tab Bar
    ===================================================== */
 
 .workspace-tab-scroll {
-    -fx-background: #e8edf2;
-    -fx-background-color: #e8edf2;
-    -fx-border-color: #d0d7de;
+    -fx-background: -color-bg-canvas;
+    -fx-background-color: -color-bg-canvas;
+    -fx-border-color: -color-border;
     -fx-border-width: 0 0 1 0;
-    -fx-min-height: 36px;
-    -fx-max-height: 36px;
+    -fx-min-height: 38px;
+    -fx-max-height: 38px;
     -fx-padding: 0;
 }
 
-/* Remove scroll pane viewport background */
 .workspace-tab-scroll .viewport {
     -fx-background-color: transparent;
 }
 
 .workspace-tab-bar {
     -fx-background-color: transparent;
-    -fx-alignment: CENTER_LEFT;
+    -fx-alignment: center-left;
     -fx-padding: 4 8 0 8;
 }
 
-/* Individual tab */
+.workspace-tab-placeholder {
+    -fx-text-fill: -color-text-muted;
+    -fx-font-style: italic;
+    -fx-font-size: -font-size-sm;
+    -fx-padding: 0 0 0 10;
+}
+
 .workspace-tab {
-    -fx-background-color: #d0d7de;
+    -fx-background-color: #e5eaf1;
     -fx-background-radius: 6 6 0 0;
-    -fx-border-color: #bcc5ce #bcc5ce transparent #bcc5ce;
+    -fx-border-color: #d2dae4 #d2dae4 transparent #d2dae4;
     -fx-border-width: 1;
     -fx-border-radius: 6 6 0 0;
     -fx-cursor: hand;
-    -fx-min-height: 28px;
-    -fx-max-height: 28px;
+    -fx-min-height: 30px;
+    -fx-max-height: 30px;
     -fx-padding: 0 6 0 12;
 }
 
 .workspace-tab:hover {
-    -fx-background-color: #c4cdd6;
+    -fx-background-color: #dbe3ee;
 }
 
-/* Active tab sits on top of the border and blends into the content */
 .workspace-tab-active {
-    -fx-background-color: white;
-    -fx-border-color: #bcc5ce #bcc5ce transparent #bcc5ce;
+    -fx-background-color: -color-surface;
+    -fx-border-color: #d2dae4 #d2dae4 transparent #d2dae4;
     -fx-effect: null;
 }
 
 .workspace-tab-active:hover {
-    -fx-background-color: white;
+    -fx-background-color: -color-surface;
 }
 
 .workspace-tab-label {
-    -fx-font-size: 13px;
+    -fx-font-size: -font-size-sm;
     -fx-font-weight: 500;
-    -fx-text-fill: #374151;
+    -fx-text-fill: -color-text-secondary;
     -fx-max-width: 160px;
 }
 
 .workspace-tab-active .workspace-tab-label {
     -fx-font-weight: 600;
-    -fx-text-fill: #1e293b;
+    -fx-text-fill: -color-text-main;
 }
 
 .workspace-tab-close {
     -fx-background-color: transparent;
-    -fx-text-fill: #9ca3af;
+    -fx-text-fill: #94a3b8;
     -fx-font-size: 14px;
-    -fx-font-weight: bold;
+    -fx-font-weight: 700;
     -fx-padding: 0 3 1 3;
     -fx-cursor: hand;
     -fx-border-width: 0;
@@ -102,11 +104,11 @@
 }
 
 .workspace-tab-close:hover {
-    -fx-background-color: #e5e7eb;
-    -fx-text-fill: #374151;
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: -color-text-secondary;
 }
 
 .workspace-tab-active .workspace-tab-close:hover {
-    -fx-background-color: #fee2e2;
-    -fx-text-fill: #dc2626;
+    -fx-background-color: -color-error-bg;
+    -fx-text-fill: -color-error;
 }

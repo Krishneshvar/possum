@@ -18,6 +18,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.util.List;
 import java.util.HashMap;
@@ -133,6 +134,7 @@ public class SuppliersController {
 
     private void showActions(Supplier supplier) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(alert);
         alert.setTitle("Supplier Actions");
         alert.setHeaderText(supplier.name());
         alert.setContentText("Choose action:");
@@ -166,6 +168,7 @@ public class SuppliersController {
     private void handleDelete(Supplier supplier) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(confirm);
         confirm.setTitle("Delete Supplier");
         confirm.setHeaderText("Delete " + supplier.name() + "?");
         confirm.setContentText("This will delete the supplier.");

@@ -6,6 +6,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.layout.StackPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -102,6 +103,8 @@ public class NavigationManager {
         LOGGER.warn("Access denied to route: {}", routeId);
         
         Alert alert = new Alert(Alert.AlertType.WARNING);
+        
+        DialogStyler.apply(alert);
         alert.setTitle("Access Denied");
         alert.setHeaderText("Insufficient Permissions");
         alert.setContentText("You do not have permission to access this page.");

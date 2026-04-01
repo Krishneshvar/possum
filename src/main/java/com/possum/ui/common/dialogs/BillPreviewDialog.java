@@ -20,11 +20,12 @@ public class BillPreviewDialog extends Dialog<Void> {
 
         VBox content = new VBox(webView);
         content.setPadding(new Insets(10));
-        content.setStyle("-fx-background-color: white;");
+        content.getStyleClass().add("bill-preview-dialog-content");
         
         getDialogPane().setContent(content);
         getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         getDialogPane().getStyleClass().add("bill-preview-dialog");
+        DialogStyler.apply(this);
         
         setResizable(true);
     }

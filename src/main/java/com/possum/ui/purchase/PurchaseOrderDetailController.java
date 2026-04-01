@@ -19,6 +19,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
@@ -226,6 +227,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
     @FXML
     private void handleReceive() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(confirm);
         confirm.setTitle("Receive Purchase Order");
         String invNum = orderDetail.purchaseOrder().invoiceNumber();
         confirm.setHeaderText("Receive " + (invNum != null ? invNum : ("PO-" + orderDetail.purchaseOrder().id())) + "?");
@@ -261,6 +263,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
     @FXML
     private void handleCancel() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(confirm);
         confirm.setTitle("Cancel Purchase Order");
         String invNum = orderDetail.purchaseOrder().invoiceNumber();
         confirm.setHeaderText("Cancel " + (invNum != null ? invNum : ("PO-" + orderDetail.purchaseOrder().id())) + "?");

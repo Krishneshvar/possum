@@ -9,6 +9,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.util.StringConverter;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,7 @@ public class AddCategoryDialogController implements Parameterizable {
 
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        DialogStyler.apply(alert);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.showAndWait();

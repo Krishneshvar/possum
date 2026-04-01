@@ -28,6 +28,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -408,6 +409,7 @@ public class PurchaseOrderFormController implements Parameterizable {
 
     private void showVariantSelectionDialog(List<Variant> variants) {
         Dialog<Variant> dialog = new Dialog<>();
+        DialogStyler.apply(dialog);
         dialog.setTitle("Select Product Variant");
         dialog.setHeaderText("Multiple products found. Select one:");
         

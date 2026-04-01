@@ -16,6 +16,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.beans.property.SimpleStringProperty;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.util.Map;
 
@@ -141,6 +142,7 @@ public class CustomersController {
 
     private void handleDelete(Customer customer) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(confirm);
         confirm.setTitle("Confirm Deletion");
         confirm.setHeaderText("Delete customer '" + customer.name() + "'?");
         confirm.setContentText("Are you sure you want to delete this customer? This action is permanent and cannot be undone.");

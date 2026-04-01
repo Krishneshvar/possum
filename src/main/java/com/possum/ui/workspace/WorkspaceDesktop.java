@@ -122,8 +122,6 @@ public class WorkspaceDesktop extends BorderPane {
         if (windows.isEmpty()) {
             Label placeholder = new Label("No tabs opened");
             placeholder.getStyleClass().add("workspace-tab-placeholder");
-            // Set a soft color and font style for the placeholder
-            placeholder.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-padding: 0 0 0 10;");
             tabBar.getChildren().add(placeholder);
         } else {
             for (InternalWindow w : windows) {

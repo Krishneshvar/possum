@@ -23,6 +23,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.util.Map;
 
@@ -184,6 +185,7 @@ public class ProductsController {
 
     private void handleDelete(Product product) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(confirm);
         confirm.setTitle("Delete Product");
         confirm.setHeaderText("Delete " + product.name() + "?");
         confirm.setContentText("This action cannot be undone.");

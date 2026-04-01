@@ -17,6 +17,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.util.Map;
 
@@ -167,6 +168,7 @@ public class UsersController {
 
     private void handleDelete(User user) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(confirm);
         confirm.setTitle("Confirm Deletion");
         confirm.setHeaderText("Delete employee '" + user.name() + "'?");
         confirm.setContentText("Are you sure you want to delete this employee? This action is permanent and cannot be undone.");

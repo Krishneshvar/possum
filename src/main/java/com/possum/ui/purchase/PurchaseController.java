@@ -18,6 +18,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -290,6 +291,7 @@ public class PurchaseController {
     
     private void handleCancelOrder(PurchaseOrder po) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        DialogStyler.apply(confirm);
         confirm.setTitle("Cancel Purchase Order");
         confirm.setHeaderText("Cancel PO " + (po.invoiceNumber() != null ? po.invoiceNumber() : ("#" + po.id())) + "?");
         confirm.setContentText("This action cannot be undone.");
@@ -326,6 +328,8 @@ public class PurchaseController {
         }
         
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        
+        DialogStyler.apply(confirm);
         confirm.setTitle("Receive Purchase Order");
         confirm.setHeaderText("Receive PO " + (po.invoiceNumber() != null ? po.invoiceNumber() : ("#" + po.id())) + "?");
         confirm.setContentText("This will create inventory lots and update stock levels.");

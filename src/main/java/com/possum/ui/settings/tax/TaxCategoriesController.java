@@ -9,6 +9,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 public class TaxCategoriesController {
 
@@ -118,6 +119,8 @@ public class TaxCategoriesController {
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+
+        DialogStyler.apply(confirm);
         confirm.setTitle("Delete Tax Category");
         confirm.setHeaderText("Delete " + selectedCategory.name() + "?");
         confirm.setContentText("This category cannot be deleted if it's used by products.");

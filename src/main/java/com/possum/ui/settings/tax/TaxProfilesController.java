@@ -9,6 +9,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.time.LocalDateTime;
 
@@ -156,6 +157,8 @@ public class TaxProfilesController {
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+
+        DialogStyler.apply(confirm);
         confirm.setTitle("Delete Tax Profile");
         confirm.setHeaderText("Delete " + selectedProfile.name() + "?");
         confirm.setContentText("This will also delete all associated tax rules.");

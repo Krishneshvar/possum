@@ -21,6 +21,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -321,6 +322,8 @@ public class SalesHistoryController {
         if (sale == null) return;
         
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        
+        DialogStyler.apply(alert);
         alert.setTitle("Cancel Sale");
         alert.setHeaderText("Cancel Invoice #" + sale.invoiceNumber());
         alert.setContentText("Are you sure you want to cancel this sale? This will restore inventory stock.");
@@ -332,6 +335,7 @@ public class SalesHistoryController {
                         ex.printStackTrace();
                         Platform.runLater(() -> {
                             Alert error = new Alert(Alert.AlertType.ERROR);
+                            DialogStyler.apply(error);
                             error.setContentText("Failed to cancel sale: " + ex.getMessage());
                             error.show();
                         });

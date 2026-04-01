@@ -16,6 +16,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
+import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -160,6 +161,7 @@ this.auditService = auditService;
 
     private void showDetails(AuditLog log) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+        DialogStyler.apply(alert);
         alert.setTitle("Audit Log Details");
         alert.setHeaderText("Event #" + log.id());
         
