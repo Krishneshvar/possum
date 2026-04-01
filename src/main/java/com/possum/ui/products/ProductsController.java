@@ -86,6 +86,21 @@ public class ProductsController {
     public void initialize() {
         if (addButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
+            FontIcon addIcon = new FontIcon("bx-plus");
+            addIcon.setIconSize(16);
+            addIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+            addButton.setGraphic(addIcon);
+        }
+
+        if (cardsViewButton != null) {
+            FontIcon gridIcon = new FontIcon("bx-grid-alt");
+            gridIcon.setIconSize(16);
+            cardsViewButton.setGraphic(gridIcon);
+        }
+        if (tableViewButton != null) {
+            FontIcon listIcon = new FontIcon("bx-list-ul");
+            listIcon.setIconSize(16);
+            tableViewButton.setGraphic(listIcon);
         }
 
         productsTable.getTableView().setPlaceholder(new Label("No products found. Adjust filters or click + Add Product to create one."));
@@ -111,6 +126,18 @@ public class ProductsController {
             cardsViewEnabled = newValue == cardsViewButton || newValue == null;
             applyViewMode();
         });
+
+        HBox toggleWrapper = new HBox(8);
+        toggleWrapper.setAlignment(Pos.CENTER_RIGHT);
+        Label viewLabel = new Label("View:");
+        viewLabel.getStyleClass().add("helper-text");
+
+        HBox segmentedControl = new HBox(0); // No spacing between buttons
+        segmentedControl.getStyleClass().add("toggle-group-neon");
+        segmentedControl.getChildren().addAll(cardsViewButton, tableViewButton);
+
+        toggleWrapper.getChildren().addAll(viewLabel, segmentedControl);
+        filterBar.addTopRightControl(toggleWrapper);
 
         applyViewMode();
     }
@@ -267,21 +294,23 @@ public class ProductsController {
         Label avatar = new Label(initials(product.name()));
         avatar.getStyleClass().add("product-card-avatar");
 
-        VBox titleBox = new VBox(2);
+        VBox titleBox = new VBox(4);
         Label name = new Label(product.name());
         name.getStyleClass().add("product-card-title");
         name.setWrapText(true);
 
         Label category = new Label(product.categoryName() != null ? product.categoryName() : "Uncategorized");
         category.getStyleClass().add("product-card-meta");
-        titleBox.getChildren().addAll(name, category);
-        HBox.setHgrow(titleBox, Priority.ALWAYS);
 
         Label status = new Label(formatStatus(product.status()));
         status.getStyleClass().add("badge-status");
         applyStatusClass(status, product.status());
+        status.setMaxWidth(Region.USE_PREF_SIZE);
 
-        topRow.getChildren().addAll(avatar, titleBox, status);
+        titleBox.getChildren().addAll(name, category, status);
+        HBox.setHgrow(titleBox, Priority.ALWAYS);
+
+        topRow.getChildren().addAll(avatar, titleBox);
 
         Label tax = new Label("Tax: " + (product.taxCategoryName() != null ? product.taxCategoryName() : "-"));
         tax.getStyleClass().add("product-card-meta");
@@ -292,14 +321,19 @@ public class ProductsController {
         HBox actions = new HBox(8);
         actions.getStyleClass().add("product-card-actions");
 
-        Button viewBtn = iconButton("View", "bx-show", () ->
+        Button viewBtn = iconButton("", "bx-show", () ->
             workspaceManager.openWindow("View Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view"))
         );
-        Button editBtn = iconButton("Edit", "bx-edit", () ->
+        viewBtn.setTooltip(new javafx.scene.control.Tooltip("View Details"));
+
+        Button editBtn = iconButton("", "bx-edit", () ->
             workspaceManager.openWindow("Edit Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit"))
         );
-        Button deleteBtn = iconButton("Delete", "bx-trash", () -> handleDelete(product));
-        deleteBtn.getStyleClass().add("action-btn-destructive");
+        editBtn.setTooltip(new javafx.scene.control.Tooltip("Edit Product"));
+
+        Button deleteBtn = iconButton("", "bx-trash", () -> handleDelete(product));
+        deleteBtn.getStyleClass().add("card-action-btn-destructive");
+        deleteBtn.setTooltip(new javafx.scene.control.Tooltip("Delete Product"));
 
         actions.getChildren().addAll(viewBtn, editBtn, deleteBtn);
         actions.setVisible(false);
@@ -324,10 +358,10 @@ public class ProductsController {
 
     private Button iconButton(String text, String iconCode, Runnable action) {
         Button button = new Button(text);
-        button.getStyleClass().add("action-btn");
+        button.getStyleClass().add("card-action-btn");
         FontIcon icon = new FontIcon(iconCode);
-        icon.getStyleClass().add("nav-icon");
-        icon.setIconSize(14);
+        icon.getStyleClass().add("card-action-icon");
+        icon.setIconSize(16);
         button.setGraphic(icon);
         button.setOnAction(e -> action.run());
         return button;
@@ -367,13 +401,25 @@ public class ProductsController {
         List<MenuItem> items = new ArrayList<>();
 
         MenuItem viewItem = new MenuItem("View Details");
+        FontIcon viewIcon = new FontIcon("bx-show");
+        viewIcon.setIconSize(14);
+        viewIcon.getStyleClass().add("table-action-icon");
+        viewItem.setGraphic(viewIcon);
         viewItem.setOnAction(e -> workspaceManager.openWindow("View Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view")));
 
         MenuItem editItem = new MenuItem("Edit Product");
+        FontIcon editIcon = new FontIcon("bx-pencil");
+        editIcon.setIconSize(14);
+        editIcon.getStyleClass().add("table-action-icon");
+        editItem.setGraphic(editIcon);
         editItem.setOnAction(e -> workspaceManager.openWindow("Edit Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit")));
 
         MenuItem deleteItem = new MenuItem("Delete Product");
         deleteItem.getStyleClass().add("logout-menu-item");
+        FontIcon deleteIcon = new FontIcon("bx-trash");
+        deleteIcon.setIconSize(14);
+        deleteIcon.getStyleClass().add("table-action-icon-danger");
+        deleteItem.setGraphic(deleteIcon);
         deleteItem.setOnAction(e -> handleDelete(product));
 
         items.addAll(java.util.Arrays.asList(viewItem, editItem, new SeparatorMenuItem(), deleteItem));

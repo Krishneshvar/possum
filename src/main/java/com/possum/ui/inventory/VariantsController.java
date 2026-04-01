@@ -92,6 +92,28 @@ public class VariantsController {
             applyViewMode();
         });
 
+        HBox toggleWrapper = new HBox(8);
+        toggleWrapper.setAlignment(Pos.CENTER_RIGHT);
+        Label viewLabel = new Label("View:");
+        viewLabel.getStyleClass().add("helper-text");
+
+        if (cardsViewButton != null) {
+            FontIcon gridIcon = new FontIcon("bx-grid-alt");
+            gridIcon.setIconSize(16);
+            cardsViewButton.setGraphic(gridIcon);
+        }
+        if (tableViewButton != null) {
+            FontIcon listIcon = new FontIcon("bx-list-ul");
+            listIcon.setIconSize(16);
+            tableViewButton.setGraphic(listIcon);
+        }
+        HBox segmentedControl = new HBox(0); // No spacing between buttons
+        segmentedControl.getStyleClass().add("toggle-group-neon");
+        segmentedControl.getChildren().addAll(cardsViewButton, tableViewButton);
+
+        toggleWrapper.getChildren().addAll(viewLabel, segmentedControl);
+        filterBar.addTopRightControl(toggleWrapper);
+
         applyViewMode();
     }
 
@@ -314,20 +336,22 @@ public class VariantsController {
         Label avatar = new Label(initials(variant.productName()));
         avatar.getStyleClass().add("product-card-avatar");
 
-        VBox titleBox = new VBox(2);
+        VBox titleBox = new VBox(4);
         Label productName = new Label(variant.productName());
         productName.getStyleClass().add("product-card-title");
         productName.setWrapText(true);
         Label variantName = new Label(variant.name() + " \u2022 " + variant.sku());
         variantName.getStyleClass().add("product-card-meta");
-        titleBox.getChildren().addAll(productName, variantName);
-        HBox.setHgrow(titleBox, Priority.ALWAYS);
 
         Label stockBadge = new Label("Stock " + (variant.stock() == null ? 0 : variant.stock()));
         stockBadge.getStyleClass().add("badge-status");
         applyStockBadge(stockBadge, variant);
+        stockBadge.setMaxWidth(Region.USE_PREF_SIZE);
 
-        topRow.getChildren().addAll(avatar, titleBox, stockBadge);
+        titleBox.getChildren().addAll(productName, variantName, stockBadge);
+        HBox.setHgrow(titleBox, Priority.ALWAYS);
+
+        topRow.getChildren().addAll(avatar, titleBox);
 
         Label details = new Label("MRP " + (variant.price() != null ? variant.price() : "-") + " \u2022 Tax " + (variant.taxCategoryName() != null ? variant.taxCategoryName() : "-"));
         details.getStyleClass().add("product-card-meta");
@@ -337,12 +361,15 @@ public class VariantsController {
 
         HBox actions = new HBox(8);
         actions.getStyleClass().add("product-card-actions");
-        Button viewBtn = iconButton("View", "bx-show", () ->
+        Button viewBtn = iconButton("", "bx-show", () ->
             workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "view"))
         );
-        Button editBtn = iconButton("Edit", "bx-edit", () ->
+        viewBtn.setTooltip(new javafx.scene.control.Tooltip("View Details"));
+
+        Button editBtn = iconButton("", "bx-edit", () ->
             workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "edit"))
         );
+        editBtn.setTooltip(new javafx.scene.control.Tooltip("Edit Product"));
         actions.getChildren().addAll(viewBtn, editBtn);
         actions.setVisible(false);
         actions.setManaged(false);
@@ -366,10 +393,10 @@ public class VariantsController {
 
     private Button iconButton(String text, String iconCode, Runnable action) {
         Button button = new Button(text);
-        button.getStyleClass().add("action-btn");
+        button.getStyleClass().add("card-action-btn");
         FontIcon icon = new FontIcon(iconCode);
-        icon.getStyleClass().add("nav-icon");
-        icon.setIconSize(14);
+        icon.getStyleClass().add("card-action-icon");
+        icon.setIconSize(16);
         button.setGraphic(icon);
         button.setOnAction(e -> action.run());
         return button;
@@ -401,10 +428,18 @@ public class VariantsController {
     private java.util.List<MenuItem> buildActionsMenu(Variant variant) {
         java.util.List<MenuItem> items = new java.util.ArrayList<>();
 
-        MenuItem viewProductItem = new MenuItem("👁 View Product");
+        MenuItem viewProductItem = new MenuItem("View Product");
+        FontIcon viewIcon = new FontIcon("bx-show");
+        viewIcon.setIconSize(14);
+        viewIcon.getStyleClass().add("table-action-icon");
+        viewProductItem.setGraphic(viewIcon);
         viewProductItem.setOnAction(e -> workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "view")));
 
-        MenuItem editProductItem = new MenuItem("✏ Edit Product");
+        MenuItem editProductItem = new MenuItem("Edit Product");
+        FontIcon editIcon = new FontIcon("bx-pencil");
+        editIcon.setIconSize(14);
+        editIcon.getStyleClass().add("table-action-icon");
+        editProductItem.setGraphic(editIcon);
         editProductItem.setOnAction(e -> workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "edit")));
 
         items.addAll(java.util.Arrays.asList(viewProductItem, editProductItem));

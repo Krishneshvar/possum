@@ -17,17 +17,16 @@
 /* ========== Navbar (Light Theme) ========== */
 
 .navbar {
-    -fx-background-color: -color-surface;
-    -fx-border-color: transparent transparent -color-border transparent;
+    -fx-background-color: -color-brand-dark;
+    -fx-border-color: transparent transparent -color-brand-dark-hover transparent;
     -fx-border-width: 0 0 1 0;
     -fx-min-height: 60;
     -fx-pref-height: 60;
-    -fx-effect: dropshadow(three-pass-box, rgba(15, 23, 42, 0.06), 10, 0, 0, 2);
 }
 
 .navbar-brand {
     -fx-background-color: transparent;
-    -fx-border-color: transparent -color-border transparent transparent;
+    -fx-border-color: transparent -color-brand-dark-hover transparent transparent;
     -fx-border-width: 0 1 0 0;
     -fx-min-height: 56;
     -fx-cursor: hand;
@@ -45,7 +44,7 @@
 .brand-title {
     -fx-font-size: 18;
     -fx-font-weight: 800;
-    -fx-text-fill: -color-text-main;
+    -fx-text-fill: white;
 }
 
 .nav-items {
@@ -57,7 +56,7 @@
     -fx-min-height: 40;
     -fx-pref-height: 40;
     -fx-background-color: transparent;
-    -fx-text-fill: -color-text-main;
+    -fx-text-fill: white;
     -fx-font-size: 14;
     -fx-font-weight: 700;
     -fx-padding: 0 16;
@@ -73,24 +72,27 @@
 
 .nav-menu-btn > .label,
 .nav-menu-btn > .text {
-    -fx-text-fill: -color-text-main;
+    -fx-text-fill: white;
     -fx-wrap-text: false;
 }
 
 .nav-menu-btn:hover,
 .nav-menu-btn:focused {
-    -fx-background-color: -color-primary-subtle;
-    -fx-text-fill: -color-primary-dark;
+    -fx-background-color: -color-brand-dark-hover;
+    -fx-text-fill: -color-primary;
 }
 
 .nav-menu-btn:hover > .label,
 .nav-menu-btn:focused > .label {
-    -fx-text-fill: -color-primary-dark;
+    -fx-text-fill: -color-primary;
 }
 
 .nav-menu-btn.active {
-    -fx-background-color: -color-primary-light;
-    -fx-text-fill: -color-primary-dark;
+    -fx-background-color: -color-brand-dark-hover;
+    -fx-text-fill: -color-primary;
+    -fx-border-color: transparent transparent -color-primary transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-radius: 0;
 }
 
 .nav-menu-btn .arrow-button {
@@ -99,7 +101,7 @@
 }
 
 .nav-menu-btn .arrow-button .arrow {
-    -fx-background-color: -color-text-muted;
+    -fx-background-color: rgba(255, 255, 255, 0.6);
 }
 
 .nav-menu-btn:hover .arrow-button .arrow,
@@ -109,21 +111,21 @@
 }
 
 .nav-icon {
-    -fx-icon-color: -color-text-muted;
+    -fx-icon-color: rgba(255, 255, 255, 0.7);
     -fx-icon-size: 16;
 }
 
 .nav-menu-btn:hover .nav-icon,
 .nav-menu-btn:focused .nav-icon,
 .nav-menu-btn.active .nav-icon {
-    -fx-icon-color: -color-primary-dark;
+    -fx-icon-color: -color-primary;
 }
 
 /* ========== User Section ========== */
 
 .navbar-user {
     -fx-background-color: transparent;
-    -fx-border-color: transparent transparent transparent -color-border;
+    -fx-border-color: transparent transparent transparent -color-brand-dark-hover;
     -fx-border-width: 0 0 0 1;
 }
 
@@ -135,7 +137,7 @@
 }
 
 .user-menu-btn:hover {
-    -fx-background-color: -color-primary-subtle;
+    -fx-background-color: -color-brand-dark-hover;
     -fx-background-radius: 20;
 }
 
@@ -172,7 +174,7 @@
 .user-name {
     -fx-font-size: 14;
     -fx-font-weight: 600;
-    -fx-text-fill: -color-text-main;
+    -fx-text-fill: white;
 }
 
 /* ========== Menus ========== */

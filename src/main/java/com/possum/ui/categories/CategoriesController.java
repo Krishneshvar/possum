@@ -12,6 +12,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,16 @@ public class CategoriesController {
     public void initialize() {
         if (addButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.CATEGORIES_MANAGE);
+            FontIcon addIcon = new FontIcon("bx-plus");
+            addIcon.setIconSize(16);
+            addIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+            addButton.setGraphic(addIcon);
+        }
+        
+        if (refreshButton != null) {
+            FontIcon refreshIcon = new FontIcon("bx-refresh");
+            refreshIcon.setIconSize(16);
+            refreshButton.setGraphic(refreshIcon);
         }
         
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().id())));
@@ -54,8 +65,12 @@ public class CategoriesController {
     private void setupActionsColumn() {
         actionsCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue()));
         actionsCol.setCellFactory(col -> new TableCell<>() {
-            private final Button editBtn = new Button("Edit");
+            private final Button editBtn = new Button();
             {
+                FontIcon editIcon = new FontIcon("bx-pencil");
+                editIcon.setIconSize(14);
+                editIcon.getStyleClass().add("table-action-icon");
+                editBtn.setGraphic(editIcon);
                 editBtn.getStyleClass().add("action-button");
                 editBtn.setCursor(javafx.scene.Cursor.HAND);
                 editBtn.setOnAction(e -> {

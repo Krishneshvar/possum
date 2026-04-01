@@ -19,7 +19,7 @@
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
         <HBox spacing="12" alignment="CENTER_RIGHT">
-            <Button fx:id="refreshButton" text="↺ Reload Variants" onAction="#handleRefresh" styleClass="action-button, primary-button" accessibleText="Refresh variants table" accessibleRole="BUTTON" defaultButton="true">
+            <Button fx:id="refreshButton" text="↺ Reload Variants" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh variants table" accessibleRole="BUTTON">
                 <tooltip>
                     <Tooltip text="Reload all variants from the database"/>
                 </tooltip>
@@ -31,8 +31,8 @@
     <VBox styleClass="card" VBox.vgrow="ALWAYS">
         <FilterBar fx:id="filterBar"/>
 
-        <HBox alignment="CENTER_RIGHT" spacing="8" styleClass="view-mode-toggle-row">
-            <Label text="View:" styleClass="helper-text"/>
+        <!-- View mode toggle buttons (re-parented by controller) -->
+        <HBox fx:id="viewToggleContainer" visible="false" managed="false" spacing="8">
             <ToggleButton fx:id="cardsViewButton" text="Cards" styleClass="toggle-btn-neon" selected="true"/>
             <ToggleButton fx:id="tableViewButton" text="Table" styleClass="toggle-btn-neon"/>
         </HBox>

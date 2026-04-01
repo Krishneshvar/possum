@@ -11,6 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.util.Duration;
 import java.util.function.Function;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class FilterBar extends VBox {
     private Consumer<Map<String, Object>> onFilterChange;
 
     private final HBox topRow;
+    private final HBox rightActions;
     private final HBox bottomRow;
     private boolean isResetting = false;
     private final PauseTransition searchDebounce = new PauseTransition(Duration.millis(220));
@@ -36,12 +38,18 @@ public class FilterBar extends VBox {
         getStyleClass().add("filter-bar");
         setStyle("-fx-background-color: #FAFBFC; -fx-border-color: #E2E8F0; -fx-border-width: 0 0 1 0;");
 
-        topRow = new HBox(10);
-        bottomRow = new HBox(10);
+        topRow = new HBox(12);
+        bottomRow = new HBox(12);
+        rightActions = new HBox(8);
+        
         topRow.getStyleClass().add("view-toolbar");
         bottomRow.getStyleClass().add("view-toolbar");
+        rightActions.getStyleClass().add("view-toolbar");
+        
         topRow.setFillHeight(true);
         bottomRow.setFillHeight(true);
+        rightActions.setFillHeight(true);
+        rightActions.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
 
         searchField = new TextField();
         searchField.setPromptText("Search...");
@@ -59,19 +67,29 @@ public class FilterBar extends VBox {
             }
         });
 
-        Button resetButton = new Button("Reset Filters");
+        Button resetButton = new Button("Reset");
+        FontIcon resetIcon = new FontIcon("bx-reset");
+        resetIcon.setIconSize(16);
+        resetButton.setGraphic(resetIcon);
         resetButton.getStyleClass().add("action-button");
         resetButton.setAccessibleText("Reset all filters");
         resetButton.setMinHeight(40);
         resetButton.setPrefHeight(40);
         resetButton.setOnAction(e -> reset());
 
-        topRow.getChildren().addAll(searchField, resetButton);
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        topRow.getChildren().addAll(searchField, resetButton, spacer, rightActions);
         HBox.setHgrow(searchField, Priority.NEVER);
 
         getChildren().addAll(topRow, bottomRow);
 
         searchDebounce.setOnFinished(e -> notifyFilterChange());
+    }
+
+    public void addTopRightControl(javafx.scene.Node node) {
+        rightActions.getChildren().add(node);
     }
 
     public <T> ComboBox<T> addFilter(String key, String prompt) {

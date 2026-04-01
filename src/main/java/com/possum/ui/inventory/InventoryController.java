@@ -29,6 +29,7 @@ public class InventoryController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<Variant> inventoryTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private javafx.scene.control.Button refreshButton;
     
     private InventoryService inventoryService;
     private VariantRepository variantRepository;
@@ -52,6 +53,12 @@ public class InventoryController {
 
     @FXML
     public void initialize() {
+        if (refreshButton != null) {
+            org.kordamp.ikonli.javafx.FontIcon refreshIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-sync");
+            refreshIcon.setIconSize(16);
+            refreshButton.setGraphic(refreshIcon);
+            refreshButton.setText("Refresh");
+        }
         inventoryTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No inventory records found. Adjust filters to see results."));
         inventoryTable.setEmptyMessage("No inventory records found");
         inventoryTable.setEmptySubtitle("Try broader filters or add stock to see live inventory.");
@@ -85,9 +92,12 @@ public class InventoryController {
         stockCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
             private final javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(5);
             private final javafx.scene.control.Label textLabel = new javafx.scene.control.Label();
-            private final javafx.scene.control.Button editBtn = new javafx.scene.control.Button("✎");
+            private final org.kordamp.ikonli.javafx.FontIcon editIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-pencil");
+            private final javafx.scene.control.Button editBtn = new javafx.scene.control.Button();
             {
-                editBtn.setStyle("-fx-background-color: transparent; -fx-padding: 0 0 0 5px; -fx-cursor: hand; -fx-text-fill: #3b82f6; -fx-font-size: 14px; -fx-font-weight: bold;");
+                editIcon.setIconSize(16);
+                editBtn.setGraphic(editIcon);
+                editBtn.getStyleClass().add("btn-edit-stock");
                 editBtn.setOnAction(e -> {
                     Variant variant = getTableView().getItems().get(getIndex());
                     if (variant != null) {
@@ -96,6 +106,7 @@ public class InventoryController {
                 });
                 box.getChildren().addAll(textLabel, editBtn);
                 box.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                box.setSpacing(10);
             }
 
             @Override

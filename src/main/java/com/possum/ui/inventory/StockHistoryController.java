@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 public class StockHistoryController {
 
     @FXML private VBox container;
-    private FilterBar filterBar;
+    @FXML private FilterBar filterBar;
     @FXML private TableView<StockHistoryDto> historyTable;
     @FXML private TableColumn<StockHistoryDto, String> productCol;
     @FXML private TableColumn<StockHistoryDto, String> variantCol;
@@ -35,6 +35,7 @@ public class StockHistoryController {
     @FXML private TableColumn<StockHistoryDto, String> adjustedByCol;
     @FXML private TableColumn<StockHistoryDto, String> dateCol;
     @FXML private PaginationBar paginationBar;
+    @FXML private Button refreshButton;
 
     private final InventoryService inventoryService;
     private final UserService userService;
@@ -56,6 +57,12 @@ public class StockHistoryController {
 
     @FXML
     public void initialize() {
+        if (refreshButton != null) {
+            org.kordamp.ikonli.javafx.FontIcon refreshIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-sync");
+            refreshIcon.setIconSize(16);
+            refreshButton.setGraphic(refreshIcon);
+            refreshButton.setText("Refresh");
+        }
         historyTable.setPlaceholder(new javafx.scene.control.Label("No stock history found for the current selection."));
         setupTable();
         setupFilters();
@@ -116,9 +123,6 @@ public class StockHistoryController {
     }
 
     private void setupFilters() {
-        filterBar = new FilterBar();
-        filterBar.setStyle("-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-border-width: 1;");
-
         List<String> reasons = new ArrayList<>();
         reasons.add("All Reasons");
         for (InventoryReason reason : InventoryReason.values()) {
@@ -163,6 +167,9 @@ public class StockHistoryController {
                     filterBar.addMultiSelectFilter("adjustedBy", "Filter by User", users, User::name, true);
                 }));
 
+        setupDatePickerFormat(fromDate);
+        setupDatePickerFormat(toDate);
+
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
             String r = (String) filters.get("reason");
@@ -194,8 +201,6 @@ public class StockHistoryController {
 
             paginationBar.reset();
         });
-
-        container.getChildren().add(1, filterBar);
     }
 
     private void setupPagination() {
@@ -234,5 +239,35 @@ public class StockHistoryController {
                     ex.printStackTrace();
                     return null;
                 });
+    }
+
+    private void setupDatePickerFormat(DatePicker picker) {
+        picker.setConverter(new javafx.util.StringConverter<java.time.LocalDate>() {
+            java.time.format.DateTimeFormatter dateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            @Override
+            public String toString(java.time.LocalDate date) {
+                if (date != null) {
+                    return dateFormatter.format(date);
+                } else {
+                    return "";
+                }
+            }
+
+            @Override
+            public java.time.LocalDate fromString(String string) {
+                if (string != null && !string.isEmpty()) {
+                    try {
+                        return java.time.LocalDate.parse(string, dateFormatter);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            }
+        });
+        
+        picker.setPromptText("DD/MM/YYYY");
     }
 }

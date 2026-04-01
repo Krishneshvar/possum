@@ -54,10 +54,10 @@
     -fx-min-height: 40;
     -fx-pref-height: 40;
     -fx-background-color: -color-surface;
-    -fx-border-color: -color-border-hover;
+    -fx-border-color: -color-border;
     -fx-border-width: 1;
-    -fx-border-radius: 6;
-    -fx-background-radius: 6;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
     -fx-padding: 9 12;
     -fx-font-size: 14;
 }
@@ -93,21 +93,21 @@
 
 .product-card {
     -fx-background-color: -color-surface;
-    -fx-border-color: -color-border;
-    -fx-border-width: 1;
+    -fx-border-color: -color-border -color-border -color-border -color-primary;
+    -fx-border-width: 1 1 1 4;
     -fx-border-radius: 10;
     -fx-background-radius: 10;
     -fx-padding: 16;
     -fx-spacing: 12;
-    -fx-effect: dropshadow(three-pass-box, rgba(15, 23, 42, 0.04), 6, 0, 0, 2);
+    -fx-effect: -shadow-sm;
     -fx-cursor: hand;
 }
 
 .product-card:hover,
 .product-card-hover {
-    -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.15), 12, 0, 0, 4);
-    -fx-border-color: -color-primary-light;
-    -fx-border-width: 2;
+    -fx-effect: -shadow-card-hover;
+    -fx-border-color: -color-border -color-border -color-border -color-accent;
+    -fx-border-width: 1 1 1 4;
     -fx-translate-y: -2;
 }
 
@@ -144,28 +144,29 @@
 
 /* ========== ENHANCED TABLE STYLING ========== */
 
-/* Table header with modern surface look */
+/* Table header with bold brand dark backgrounds, high contrast white text, and curved top corners */
 .workspace-view .table-view .column-header-background,
 .workspace-view .data-table .column-header-background {
-    -fx-background-color: -color-surface;
-    -fx-border-color: transparent transparent -color-border transparent;
-    -fx-border-width: 0 0 2 0;
+    -fx-background-color: -color-brand-dark !important;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-color: transparent transparent -color-brand-dark-hover transparent;
+    -fx-border-width: 0 0 1 0;
 }
 
 .workspace-view .table-view .column-header,
 .workspace-view .data-table .column-header {
-    -fx-background-color: -color-primary-subtle;
-    -fx-padding: 14 16;
-    -fx-border-color: transparent -color-border transparent transparent;
+    -fx-background-color: transparent !important;
+    -fx-padding: 12 16;
+    -fx-border-color: transparent -color-brand-dark-hover transparent transparent;
     -fx-border-width: 0 1 0 0;
 }
 
 .workspace-view .table-view .column-header .label,
 .workspace-view .data-table .column-header .label {
-    -fx-text-fill: -color-primary-dark;
-    -fx-font-size: 12;
+    -fx-text-fill: white !important;
+    -fx-font-size: 13;
     -fx-font-weight: 800;
-    -fx-letter-spacing: 0.8;
+    -fx-letter-spacing: 1.0;
     -fx-text-transform: uppercase;
 }
 
@@ -175,25 +176,26 @@
     -fx-background-color: -color-surface;
     -fx-border-color: transparent transparent #F1F5F9 transparent;
     -fx-border-width: 1;
-    -fx-padding: 4 0;
+    -fx-padding: 2 0;
 }
 
 .workspace-view .table-view .table-row-cell:hover,
 .workspace-view .data-table .table-row-cell:hover {
-    -fx-background-color: #FAFBFC;
+    -fx-background-color: -color-surface-hover;
+    -fx-effect: dropshadow(three-pass-box, rgba(15, 23, 42, 0.05), 8, 0, 0, 2);
 }
 
 .workspace-view .table-view .table-row-cell:selected,
 .workspace-view .data-table .table-row-cell:selected {
-    -fx-background-color: -color-surface-selected;
-    -fx-border-color: transparent transparent -color-primary-light transparent;
+    -fx-background-color: -color-accent-subtle;
+    -fx-border-color: transparent transparent -color-accent transparent;
 }
 
 .workspace-view .table-view .table-cell,
 .workspace-view .data-table .table-cell {
     -fx-text-fill: -color-text-main;
     -fx-font-size: 14;
-    -fx-padding: 12 16;
+    -fx-padding: 6 16;
     -fx-alignment: center-left;
 }
 
@@ -217,13 +219,17 @@
     -fx-background-color: transparent;
     -fx-text-fill: -color-text-main;
     -fx-font-size: 14;
-    -fx-padding: 6 8;
+    -fx-padding: 8 10;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
 }
 
 .tree-view .tree-cell:selected {
-    -fx-background-color: -color-surface-selected;
-    -fx-text-fill: -color-primary-dark;
-    -fx-font-weight: 600;
+    -fx-background-color: linear-gradient(to right, -color-accent-subtle, transparent);
+    -fx-text-fill: -color-accent-dark;
+    -fx-font-weight: 700;
+    -fx-border-color: transparent transparent transparent -color-accent;
+    -fx-border-width: 0 0 0 3;
 }
 
 .tree-view .tree-cell:hover {
@@ -322,7 +328,7 @@
     -fx-background-color: transparent;
     -fx-border-color: -color-border;
     -fx-border-width: 1 0 0 0;
-    -fx-padding: 24 16;
+    -fx-padding: 16 16;
     -fx-alignment: center;
 }
 
@@ -336,29 +342,29 @@
 }
 
 .pagination .control-box {
-    -fx-spacing: 8;
+    -fx-spacing: 4;
     -fx-alignment: center;
 }
 
 /* Page Buttons (Numbers) */
-.pagination .page-button,
+.pagination .number-button,
 .pagination .left-arrow-button,
 .pagination .right-arrow-button {
-    -fx-min-width: 38;
-    -fx-min-height: 38;
-    -fx-background-color: white;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+    -fx-background-color: -color-surface;
     -fx-background-insets: 0;
-    -fx-background-radius: 8;
+    -fx-background-radius: 6;
     -fx-border-color: -color-border;
     -fx-border-width: 1;
-    -fx-border-radius: 8;
+    -fx-border-radius: 6;
     -fx-text-fill: -color-text-secondary;
-    -fx-font-size: 14;
+    -fx-font-size: 13;
     -fx-font-weight: 600;
     -fx-cursor: hand;
 }
 
-.pagination .page-button:hover,
+.pagination .number-button:hover,
 .pagination .left-arrow-button:hover,
 .pagination .right-arrow-button:hover {
     -fx-background-color: -color-surface-hover;
@@ -367,7 +373,7 @@
 }
 
 /* Selected Page Button */
-.pagination .page-button:selected {
+.pagination .number-button:selected {
     -fx-background-color: -color-primary;
     -fx-border-color: -color-primary;
     -fx-text-fill: white;
@@ -421,4 +427,101 @@
     -fx-wrap-text: true;
     -fx-text-alignment: center;
     -fx-max-width: 400;
+}
+
+/* ========== STOCK ADJUSTMENT BUTTON ========== */
+
+.btn-edit-stock {
+    -fx-min-width: 26;
+    -fx-min-height: 26;
+    -fx-pref-width: 26;
+    -fx-pref-height: 26;
+    -fx-max-width: 26;
+    -fx-max-height: 26;
+    -fx-background-color: -color-primary-subtle;
+    -fx-background-radius: 6;
+    -fx-border-color: -color-primary-light;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-text-fill: -color-primary-dark;
+    -fx-icon-color: -color-primary-dark;
+    -fx-font-size: 11;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+}
+
+.btn-edit-stock:hover {
+    -fx-background-color: -color-primary-dark;
+    -fx-text-fill: white;
+    -fx-border-color: -color-primary-dark;
+}
+
+.btn-edit-stock .ikonli-font-icon {
+    -fx-icon-color: -color-primary-dark;
+}
+
+.btn-edit-stock:hover .ikonli-font-icon {
+    -fx-icon-color: white;
+}
+
+.btn-remove-variant {
+    -fx-text-fill: -color-error;
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-padding: 4 8;
+    -fx-background-radius: 4;
+}
+
+.btn-remove-variant:hover {
+    -fx-background-color: -color-error-subtle;
+    -fx-text-fill: -color-error-dark;
+    -fx-border-color: -color-error;
+    -fx-border-width: 0 0 0 0;
+}
+
+.single-select-filter {
+    -fx-min-height: 40;
+    -fx-pref-height: 40;
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 0 12;
+    -fx-font-size: 14;
+    -fx-text-fill: -color-text-main;
+}
+
+.single-select-filter:focused {
+    -fx-border-color: -color-border-focus;
+    -fx-border-width: 2;
+    -fx-effect: -shadow-focus;
+}
+
+.multi-select-option-btn {
+    -fx-background-color: transparent;
+    -fx-padding: 8 12;
+    -fx-text-fill: -color-text-main;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+    -fx-font-size: 14;
+    -fx-background-radius: 4;
+}
+
+.multi-select-option-btn:hover {
+    -fx-background-color: -color-surface-hover;
+}
+
+.multi-select-option-btn:pressed {
+    -fx-background-color: -color-accent-subtle;
+}
+
+/* Product Form View Specific Styling */
+.product-form-container {
+    -fx-background-color: -color-surface; /* White background for the form container */
+}
+
+.product-form-container .viewport {
+    -fx-background-color: -color-surface;
 }

@@ -7,6 +7,7 @@ import com.possum.domain.model.Category;
 import com.possum.domain.model.TaxCategory;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
 import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.common.controls.SingleSelectFilter;
 import com.possum.ui.workspace.WorkspaceManager;
 import com.possum.ui.navigation.Parameterizable;
 import javafx.collections.FXCollections;
@@ -16,6 +17,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import org.kordamp.ikonli.javafx.FontIcon;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +33,9 @@ public class ProductFormController implements Parameterizable {
     @FXML private Label titleLabel;
     @FXML private TextField nameField;
     @FXML private TextArea descriptionField;
-    @FXML private ComboBox<CategoryItem> categoryCombo;
+    @FXML private SingleSelectFilter<CategoryItem> categoryFilter;
     @FXML private ComboBox<String> statusCombo;
-    @FXML private ComboBox<TaxCategoryItem> taxCombo;
+    @FXML private SingleSelectFilter<TaxCategoryItem> taxFilter;
     @FXML private VBox variantsContainer;
     @FXML private Button saveButton;
     @FXML private Button addVariantButton;
@@ -78,19 +80,13 @@ public class ProductFormController implements Parameterizable {
             descriptionField.setText(dto.product().description());
 
             if (dto.product().categoryId() != null) {
-                categoryCombo.getItems().stream()
-                    .filter(c -> c.id().equals(dto.product().categoryId()))
-                    .findFirst()
-                    .ifPresent(categoryCombo::setValue);
+                categoryFilter.setSelectedItem(new CategoryItem(dto.product().categoryId(), dto.product().categoryName()));
             }
 
             statusCombo.setValue(dto.product().status() != null ? dto.product().status() : "active");
 
             if (dto.product().taxCategoryId() != null) {
-                taxCombo.getItems().stream()
-                    .filter(t -> t.id().equals(dto.product().taxCategoryId()))
-                    .findFirst()
-                    .ifPresent(taxCombo::setValue);
+                taxFilter.setSelectedItem(new TaxCategoryItem(dto.product().taxCategoryId(), dto.product().taxCategoryName()));
             }
 
             variantRows.clear();
@@ -123,13 +119,13 @@ public class ProductFormController implements Parameterizable {
                 replaceFieldWithLabel(nameField, dto.product().name());
                 replaceFieldWithLabel(descriptionField, dto.product().description());
                 
-                String catName = categoryCombo.getValue() != null ? categoryCombo.getValue().name() : "None";
-                replaceFieldWithLabel(categoryCombo, catName);
+                String catName = categoryFilter.getSelectedItem() != null ? categoryFilter.getSelectedItem().name() : "None";
+                replaceFieldWithLabel(categoryFilter, catName);
                 
-                replaceFieldWithLabel(statusCombo, statusCombo.getValue());
+                replaceFieldWithLabel(statusCombo, formatStatus(statusCombo.getValue()));
                 
-                String taxName = taxCombo.getValue() != null ? taxCombo.getValue().name() : "None";
-                replaceFieldWithLabel(taxCombo, taxName);
+                String taxName = taxFilter.getSelectedItem() != null ? taxFilter.getSelectedItem().name() : "None";
+                replaceFieldWithLabel(taxFilter, taxName);
 
                 saveButton.setVisible(false);
                 saveButton.setManaged(false);
@@ -146,6 +142,19 @@ public class ProductFormController implements Parameterizable {
 
     @FXML
     public void initialize() {
+        if (addVariantButton != null) {
+            FontIcon plusIcon = new FontIcon("bx-plus");
+            plusIcon.setIconSize(16);
+            plusIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+            addVariantButton.setGraphic(plusIcon);
+            addVariantButton.setText("Add Variant");
+        }
+
+        if (descriptionField != null) {
+            descriptionField.setPrefHeight(100);
+            descriptionField.setMinHeight(80);
+        }
+
         loadCategories();
         loadTaxCategories();
 
@@ -184,56 +193,7 @@ public class ProductFormController implements Parameterizable {
                 .map(c -> new CategoryItem(c.id(), c.name()))
                 .toList();
 
-        javafx.collections.ObservableList<CategoryItem> observableItems = FXCollections.observableArrayList(items);
-        categoryCombo.setItems(observableItems);
-        categoryCombo.setEditable(true);
-
-        categoryCombo.setConverter(new javafx.util.StringConverter<CategoryItem>() {
-            @Override
-            public String toString(CategoryItem object) {
-                return object == null ? "" : object.name();
-            }
-
-            @Override
-            public CategoryItem fromString(String string) {
-                return categoryCombo.getItems().stream()
-                        .filter(item -> item.name().equals(string))
-                        .findFirst()
-                        .orElse(null);
-            }
-        });
-
-        categoryCombo.getEditor().setOnKeyReleased(event -> {
-            switch (event.getCode()) {
-                case UP:
-                case DOWN:
-                case RIGHT:
-                case LEFT:
-                case HOME:
-                case END:
-                case TAB:
-                case ENTER:
-                case ESCAPE:
-                    return;
-                default:
-                    break;
-            }
-
-            String newValue = categoryCombo.getEditor().getText();
-
-            if (newValue == null || newValue.isEmpty()) {
-                categoryCombo.setItems(observableItems);
-            } else {
-                List<CategoryItem> filtered = items.stream()
-                        .filter(item -> item.name().toLowerCase().contains(newValue.toLowerCase()))
-                        .toList();
-                categoryCombo.setItems(FXCollections.observableArrayList(filtered));
-            }
-
-            if (!categoryCombo.isShowing()) {
-                categoryCombo.show();
-            }
-        });
+        categoryFilter.setItems(items);
     }
 
     private void loadTaxCategories() {
@@ -241,7 +201,7 @@ public class ProductFormController implements Parameterizable {
         List<TaxCategoryItem> items = taxes.stream()
                 .map(t -> new TaxCategoryItem(t.id(), t.name()))
                 .toList();
-        taxCombo.setItems(FXCollections.observableArrayList(items));
+        taxFilter.setItems(items);
     }
 
     @FXML
@@ -295,8 +255,8 @@ public class ProductFormController implements Parameterizable {
                 );
             }).toList();
 
-            Long categoryId = categoryCombo.getValue() != null ? categoryCombo.getValue().id() : null;
-            Long taxId = taxCombo.getValue() != null ? taxCombo.getValue().id() : null;
+            Long categoryId = categoryFilter.getSelectedItem() != null ? categoryFilter.getSelectedItem().id() : null;
+            Long taxId = taxFilter.getSelectedItem() != null ? taxFilter.getSelectedItem().id() : null;
             List<Long> taxIds = taxId != null ? List.of(taxId) : null;
 
             if (productId == null) {
@@ -472,7 +432,11 @@ public class ProductFormController implements Parameterizable {
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
             removeBtn = new Button("Remove");
-            removeBtn.setStyle("-fx-text-fill: #ef4444; -fx-background-color: transparent; -fx-cursor: hand;");
+            FontIcon trashIcon = new FontIcon("bx-trash");
+            trashIcon.setIconSize(14);
+            trashIcon.setIconColor(javafx.scene.paint.Color.web("#ef4444"));
+            removeBtn.setGraphic(trashIcon);
+            removeBtn.getStyleClass().add("btn-remove-variant");
             removeBtn.setOnAction(e -> removeVariantRow(this));
 
             headerBox.getChildren().addAll(title, defaultRadio, spacer, removeBtn);
@@ -655,5 +619,12 @@ public class ProductFormController implements Parameterizable {
         public void setDefault(boolean isDefault) { defaultRadio.setSelected(isDefault); }
         public void setVariantId(Long id) { this.variantId = id; }
         public Long getVariantId() { return variantId; }
+    }
+
+    private String formatStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return "Unknown";
+        }
+        return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
     }
 }

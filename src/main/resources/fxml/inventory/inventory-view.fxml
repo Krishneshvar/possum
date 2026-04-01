@@ -19,7 +19,7 @@
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
         <HBox spacing="12" alignment="CENTER_RIGHT">
-            <Button fx:id="refreshButton" text="↺ Sync Inventory Data" onAction="#handleRefresh" styleClass="action-button, primary-button" accessibleText="Refresh inventory list" accessibleRole="BUTTON" defaultButton="true">
+            <Button fx:id="refreshButton" text="↺ Sync Inventory Data" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh inventory list" accessibleRole="BUTTON">
                 <tooltip>
                     <Tooltip text="Fetch the latest stock levels from the database"/>
                 </tooltip>
