@@ -29,6 +29,7 @@ public class DataTableView<T> extends StackPane {
 
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tableView.getStyleClass().add("data-table");
+        tableView.setAccessibleText("Data table");
         
         getChildren().addAll(tableView, emptyState, loadingOverlay);
         
@@ -45,7 +46,7 @@ public class DataTableView<T> extends StackPane {
     }
 
     private VBox createEmptyState() {
-        Label icon = new Label("\uD83D\uDCCB");
+        Label icon = new Label("▦");
         icon.getStyleClass().add("empty-state-icon");
 
         Label label = new Label("No data available");
@@ -61,6 +62,7 @@ public class DataTableView<T> extends StackPane {
         VBox box = new VBox(4, icon, label, spacer, subtitle);
         box.getStyleClass().add("empty-state-view");
         box.setAlignment(Pos.CENTER);
+        box.setAccessibleText("Empty state view");
         return box;
     }
 
@@ -69,6 +71,7 @@ public class DataTableView<T> extends StackPane {
         spinner.setMaxSize(50, 50);
         StackPane overlay = new StackPane(spinner);
         overlay.getStyleClass().add("table-loading-overlay");
+        overlay.setAccessibleText("Loading data");
         return overlay;
     }
 
@@ -90,6 +93,7 @@ public class DataTableView<T> extends StackPane {
             {
                 button.setCursor(Cursor.HAND);
                 button.getStyleClass().add("action-btn");
+                button.setAccessibleText(title + " action");
                 button.setOnAction(e -> {
                     T item = getItem();
                     if (item != null) {
@@ -119,6 +123,7 @@ public class DataTableView<T> extends StackPane {
             {
                 menuButton.setCursor(Cursor.HAND);
                 menuButton.getStyleClass().add("action-btn");
+                menuButton.setAccessibleText(title + " actions menu");
                 menuButton.setOnShowing(e -> {
                     T item = getItem();
                     if (item != null) {

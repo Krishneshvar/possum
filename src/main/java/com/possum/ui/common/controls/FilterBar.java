@@ -1,5 +1,6 @@
 package com.possum.ui.common.controls;
 
+import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
@@ -8,6 +9,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
+import javafx.util.Duration;
 import java.util.function.Function;
 
 import java.util.HashMap;
@@ -26,32 +28,46 @@ public class FilterBar extends VBox {
     private final HBox topRow;
     private final HBox bottomRow;
     private boolean isResetting = false;
+    private final PauseTransition searchDebounce = new PauseTransition(Duration.millis(220));
 
     public FilterBar() {
         setSpacing(10);
         setPadding(new Insets(10));
-        setStyle("-fx-background-color: #f5f5f5;");
+        getStyleClass().add("filter-toolbar");
 
         topRow = new HBox(10);
         bottomRow = new HBox(10);
+        topRow.getStyleClass().add("view-toolbar");
+        bottomRow.getStyleClass().add("view-toolbar");
 
         searchField = new TextField();
         searchField.setPromptText("Search...");
+        searchField.setAccessibleText("Search records");
         searchField.setPrefWidth(250);
-        searchField.textProperty().addListener((obs, old, val) -> notifyFilterChange());
+        searchField.textProperty().addListener((obs, old, val) -> scheduleFilterNotify());
+        searchField.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                notifyFilterChange();
+                e.consume();
+            }
+        });
 
         Button resetButton = new Button("Reset");
+        resetButton.setAccessibleText("Reset all filters");
         resetButton.setOnAction(e -> reset());
 
         topRow.getChildren().addAll(searchField, resetButton);
         HBox.setHgrow(searchField, Priority.NEVER);
 
         getChildren().addAll(topRow, bottomRow);
+
+        searchDebounce.setOnFinished(e -> notifyFilterChange());
     }
 
     public <T> ComboBox<T> addFilter(String key, String prompt) {
         ComboBox<T> combo = new ComboBox<>();
         combo.setPromptText(prompt);
+        combo.setAccessibleText(prompt);
         combo.setPrefWidth(150);
         combo.valueProperty().addListener((obs, old, val) -> notifyFilterChange());
         
@@ -67,6 +83,7 @@ public class FilterBar extends VBox {
 
     public <T> MultiSelectFilter<T> addMultiSelectFilter(String key, String prompt, java.util.List<T> items, Function<T, String> labelExtractor, boolean searchable) {
         MultiSelectFilter<T> multiSelect = new MultiSelectFilter<>(prompt, labelExtractor, searchable);
+        multiSelect.setAccessibleText(prompt);
         multiSelect.setPrefWidth(150);
         multiSelect.setItems(items);
         multiSelect.getSelectedItems().addListener((javafx.collections.ListChangeListener.Change<? extends T> c) -> notifyFilterChange());
@@ -80,6 +97,7 @@ public class FilterBar extends VBox {
     public DatePicker addDateFilter(String key, String prompt) {
         DatePicker picker = new DatePicker();
         picker.setPromptText(prompt);
+        picker.setAccessibleText(prompt);
         picker.setPrefWidth(150);
         picker.valueProperty().addListener((obs, old, val) -> notifyFilterChange());
         
@@ -91,8 +109,9 @@ public class FilterBar extends VBox {
     public TextField addTextFilter(String key, String prompt) {
         TextField field = new TextField();
         field.setPromptText(prompt);
+        field.setAccessibleText(prompt);
         field.setPrefWidth(120);
-        field.textProperty().addListener((obs, old, val) -> notifyFilterChange());
+        field.textProperty().addListener((obs, old, val) -> scheduleFilterNotify());
 
         textFilters.put(key, field);
         bottomRow.getChildren().add(field);
@@ -113,6 +132,13 @@ public class FilterBar extends VBox {
             textFilters.forEach((key, field) -> values.put(key, field.getText()));
             onFilterChange.accept(values);
         }
+    }
+
+    private void scheduleFilterNotify() {
+        if (isResetting) {
+            return;
+        }
+        searchDebounce.playFromStart();
     }
 
     public void reset() {

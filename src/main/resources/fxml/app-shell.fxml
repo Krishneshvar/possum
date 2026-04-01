@@ -20,7 +20,7 @@
                 <padding>
                     <Insets top="8" right="24" bottom="8" left="20"/>
                 </padding>
-                <ImageView fx:id="brandIcon" fitWidth="28" fitHeight="28" preserveRatio="true"/>
+                <ImageView fx:id="brandIcon" fitWidth="28" fitHeight="28" preserveRatio="true" smooth="true" cache="true" accessibleText="POSSUM logo"/>
                 <Label text="POSSUM" styleClass="brand-title"/>
             </HBox>
             

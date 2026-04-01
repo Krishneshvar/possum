@@ -9,7 +9,7 @@
       xmlns:fx="http://javafx.com/fxml"
       spacing="20"
       styleClass="workspace-view"
-      stylesheets="@../styles/inventory.css">
+      stylesheets="@../../styles/settings.css">
 
     <HBox spacing="10" alignment="CENTER_LEFT" styleClass="view-header">
         <VBox spacing="5" HBox.hgrow="ALWAYS">

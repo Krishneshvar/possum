@@ -45,16 +45,16 @@
 .workspace-tab-placeholder {
     -fx-text-fill: -color-text-muted;
     -fx-font-style: italic;
-    -fx-font-size: -fx-font-size-sm;
+    -fx-font-size: 12px;
     -fx-padding: 0 0 0 10;
 }
 
 .workspace-tab {
     -fx-background-color: #e5eaf1;
-    -fx-background-radius: 6 6 0 0;
+    -fx-background-radius: 6px 6px 0 0;
     -fx-border-color: #d2dae4 #d2dae4 transparent #d2dae4;
     -fx-border-width: 1;
-    -fx-border-radius: 6 6 0 0;
+    -fx-border-radius: 6px 6px 0 0;
     -fx-cursor: hand;
     -fx-min-height: 30px;
     -fx-max-height: 30px;
@@ -63,6 +63,12 @@
 
 .workspace-tab:hover {
     -fx-background-color: #dbe3ee;
+}
+
+.workspace-tab:focused {
+    -fx-border-color: -color-border-focus;
+    -fx-border-width: 2;
+    -fx-effect: -shadow-focus;
 }
 
 .workspace-tab-active {
@@ -76,7 +82,7 @@
 }
 
 .workspace-tab-label {
-    -fx-font-size: -fx-font-size-sm;
+    -fx-font-size: 12px;
     -fx-font-weight: 500;
     -fx-text-fill: -color-text-secondary;
     -fx-max-width: 160px;
@@ -95,7 +101,7 @@
     -fx-padding: 0 3 1 3;
     -fx-cursor: hand;
     -fx-border-width: 0;
-    -fx-background-radius: 4;
+    -fx-background-radius: 4px;
     -fx-min-width: 20px;
     -fx-max-width: 20px;
     -fx-min-height: 20px;
@@ -106,6 +112,12 @@
 .workspace-tab-close:hover {
     -fx-background-color: #e2e8f0;
     -fx-text-fill: -color-text-secondary;
+}
+
+.workspace-tab-close:focused {
+    -fx-border-color: -color-border-focus;
+    -fx-border-width: 1;
+    -fx-effect: -shadow-focus;
 }
 
 .workspace-tab-active .workspace-tab-close:hover {

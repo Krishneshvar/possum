@@ -20,6 +20,8 @@
     -color-border: #E2E8F0;
     -color-border-hover: #CBD5E1;
     -color-border-focus: #10B981;
+    -color-focus-ring: #10B981;
+    -color-focus-ring-soft: rgba(16, 185, 129, 0.22);
 
     /* Text */
     -color-text-main: #0F172A;
@@ -48,21 +50,9 @@
     -fx-font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
     -font-family-mono: "JetBrains Mono", "Consolas", monospace;
 
-    -fx-font-size-display: 32px;
-    -fx-font-size-xl: 24px;
-    -fx-font-size-lg: 20px;
-    -fx-font-size-md: 16px;
-    -fx-font-size-base: 14px;
-    -fx-font-size-sm: 12px;
-
-    /* Radius */
-    -fx-radius-sm: 4px;
-    -fx-radius-md: 6px;
-    -fx-radius-lg: 8px;
-    -fx-radius-xl: 12px;
-
     /* Shadows */
     -shadow-sm: dropshadow(three-pass-box, rgba(15, 23, 42, 0.05), 4, 0, 0, 1);
     -shadow-md: dropshadow(three-pass-box, rgba(15, 23, 42, 0.08), 8, 0, 0, 2);
     -shadow-lg: dropshadow(three-pass-box, rgba(15, 23, 42, 0.12), 14, 0, 0, 4);
+    -shadow-focus: dropshadow(three-pass-box, rgba(16, 185, 129, 0.24), 8, 0, 0, 0);
 }

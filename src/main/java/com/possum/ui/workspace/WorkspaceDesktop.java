@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.input.MouseEvent;
 
@@ -34,6 +35,7 @@ public class WorkspaceDesktop extends BorderPane {
 
     public WorkspaceDesktop() {
         getStyleClass().add("workspace-desktop");
+        setFocusTraversable(true);
 
         // ---- content area ----
         contentPane.getStyleClass().add("workspace-content-pane");
@@ -48,6 +50,7 @@ public class WorkspaceDesktop extends BorderPane {
         tabScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         tabScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         tabScroll.getStyleClass().add("workspace-tab-scroll");
+        tabScroll.setFitToWidth(true);
         setTop(tabScroll);
         rebuildTabBar();
     }
@@ -108,6 +111,22 @@ public class WorkspaceDesktop extends BorderPane {
         return activeWindow;
     }
 
+    public void cycleActiveTab(int step) {
+        if (windows.isEmpty()) {
+            return;
+        }
+
+        int activeIndex = activeWindow == null ? -1 : windows.indexOf(activeWindow);
+        int nextIndex = activeIndex < 0 ? 0 : Math.floorMod(activeIndex + step, windows.size());
+        setActiveWindow(windows.get(nextIndex));
+    }
+
+    public void closeActiveTab() {
+        if (activeWindow != null) {
+            removeWindow(activeWindow);
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Tab bar
     // -----------------------------------------------------------------------
@@ -144,12 +163,16 @@ public class WorkspaceDesktop extends BorderPane {
         tab.setSpacing(6);
         tab.setPadding(new Insets(4, 8, 4, 12));
         tab.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        tab.setFocusTraversable(true);
+        tab.setAccessibleRole(javafx.scene.AccessibleRole.TAB_ITEM);
+        tab.setAccessibleText("Workspace tab " + window.getTitle());
 
         Label title = new Label(window.getTitle());
         title.getStyleClass().add("workspace-tab-label");
 
         Button closeBtn = new Button("×");
         closeBtn.getStyleClass().add("workspace-tab-close");
+        closeBtn.setAccessibleText("Close tab " + window.getTitle());
         closeBtn.setOnAction(e -> {
             e.consume();
             Runnable req = window.getOnCloseRequest();
@@ -158,6 +181,30 @@ public class WorkspaceDesktop extends BorderPane {
 
         tab.getChildren().addAll(title, closeBtn);
         tab.setOnMouseClicked(e -> setActiveWindow(window));
+        tab.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER || e.getCode() == KeyCode.SPACE) {
+                setActiveWindow(window);
+                e.consume();
+                return;
+            }
+
+            if (e.getCode() == KeyCode.DELETE || (e.getCode() == KeyCode.W && e.isControlDown())) {
+                closeBtn.fire();
+                e.consume();
+                return;
+            }
+
+            if (e.getCode() == KeyCode.RIGHT) {
+                cycleActiveTab(1);
+                e.consume();
+                return;
+            }
+
+            if (e.getCode() == KeyCode.LEFT) {
+                cycleActiveTab(-1);
+                e.consume();
+            }
+        });
 
         return tab;
     }

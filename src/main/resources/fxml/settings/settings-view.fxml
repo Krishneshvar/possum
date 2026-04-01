@@ -8,14 +8,14 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.settings.SettingsController"
       styleClass="workspace-view"
-      stylesheets="@../styles/inventory.css">
+      stylesheets="@../../styles/settings.css">
     
     <VBox styleClass="view-header">
         <Label text="System Settings" styleClass="view-title"/>
         <Label text="Manage general, billing, printing, and tax settings." styleClass="view-subtitle"/>
     </VBox>
     
-    <TabPane VBox.vgrow="ALWAYS" styleClass="data-table">
+    <TabPane VBox.vgrow="ALWAYS" styleClass="settings-tab-pane">
         <Tab text="General" closable="false">
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 16 0 0 0;">
                 <VBox spacing="20">
@@ -30,7 +30,7 @@
                             <Label text="System Currency" styleClass="form-label"/>
                             <ComboBox fx:id="currencyCombo" prefWidth="400" maxWidth="400"
                                       styleClass="combo-box" accessibleText="System Currency"/>
-                            <Label text="Used for financial reports and default billing" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
+                            <Label text="Used for financial reports and default billing" styleClass="field-helper"/>
                         </VBox>
                         <HBox alignment="CENTER_LEFT" spacing="10">
                             <Button text="Save Settings" onAction="#handleSaveGeneral" styleClass="primary-button"
@@ -52,7 +52,7 @@
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <VBox HBox.hgrow="ALWAYS">
                                 <Label text="Receipt Printer" styleClass="card-title"/>
-                                <Label text="Select default printer for POS receipts" style="-fx-text-fill: #64748b; -fx-font-size: 13px;"/>
+                                <Label text="Select default printer for POS receipts" styleClass="field-helper"/>
                             </VBox>
                             <Button text="Refresh Printers" onAction="#handleRefreshPrinters" styleClass="action-button"
                                     accessibleText="Refresh connected printers list"/>
