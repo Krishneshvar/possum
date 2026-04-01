@@ -7,27 +7,27 @@
 .root {
     -fx-background-color: -color-bg-canvas;
     -fx-text-fill: -color-text-main;
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
 }
 
 .label {
     -fx-text-fill: -color-text-main;
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
 }
 
 .view-title {
-    -fx-font-size: -font-size-xl;
+    -fx-font-size: -fx-font-size-xl;
     -fx-font-weight: 700;
     -fx-text-fill: -color-text-main;
 }
 
 .view-subtitle {
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
     -fx-text-fill: -color-text-muted;
 }
 
 .helper-text {
-    -fx-font-size: -font-size-sm;
+    -fx-font-size: -fx-font-size-sm;
     -fx-text-fill: -color-text-muted;
 }
 

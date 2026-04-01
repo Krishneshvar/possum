@@ -45,7 +45,7 @@
 .workspace-tab-placeholder {
     -fx-text-fill: -color-text-muted;
     -fx-font-style: italic;
-    -fx-font-size: -font-size-sm;
+    -fx-font-size: -fx-font-size-sm;
     -fx-padding: 0 0 0 10;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .workspace-tab-label {
-    -fx-font-size: -font-size-sm;
+    -fx-font-size: -fx-font-size-sm;
     -fx-font-weight: 500;
     -fx-text-fill: -color-text-secondary;
     -fx-max-width: 160px;

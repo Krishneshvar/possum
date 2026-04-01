@@ -3,268 +3,233 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.shape.Circle?>
 <?import java.net.URL?>
 
-<StackPane fx:id="rootPane" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" 
-            fx:controller="com.possum.ui.sales.PosController">
+<StackPane fx:id="rootPane" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.possum.ui.sales.PosController">
     <BorderPane styleClass="pos-container">
         <stylesheets>
-            <URL value="@../../styles/app-shell.css" />
-            <URL value="@../../styles/pos.css" />
+            <URL value="@../../styles/app-shell.css"/>
+            <URL value="@../../styles/pos.css"/>
         </stylesheets>
 
         <padding>
-            <Insets top="20" right="20" bottom="20" left="20"/>
+            <Insets top="16" right="20" bottom="20" left="20"/>
         </padding>
 
         <center>
-            <HBox spacing="20">
-                <!-- Left Side: Cart and Search -->
-                <!-- Left Side Container -->
-                <VBox fx:id="leftVBox" spacing="20" HBox.hgrow="ALWAYS">
-                    <!-- Cart Card -->
-                    <VBox fx:id="cartCardVBox" spacing="0" VBox.vgrow="ALWAYS" styleClass="pos-card">
-                    <HBox alignment="CENTER_LEFT" styleClass="pos-card-header">
-                        <Label text="Cart Items" styleClass="pos-card-title"/>
-                    </HBox>
-                    
-                        <!-- Search Row moved to the top, just below card title -->
-                        <HBox alignment="CENTER" spacing="10" styleClass="search-row" style="-fx-padding: 8 20; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;">
-                            <Label text="+" style="-fx-font-size: 20px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;" accessibleText="Search Icon"/>
-                            <TextField fx:id="searchField" promptText="Search product, variant, or SKU... (Ctrl+K)" HBox.hgrow="ALWAYS" styleClass="search-field-pos" accessibleText="Product Search Input">
-                                <tooltip>
-                                    <Tooltip text="Search for products, variants or SKUs to add to cart (Ctrl+K)"/>
-                                </tooltip>
-                            </TextField>
-                        </HBox>
+            <VBox spacing="16">
+                <HBox fx:id="searchDock" alignment="CENTER_LEFT" spacing="10" styleClass="pos-search-dock">
+                    <Label text="⌕" styleClass="pos-search-icon"/>
+                    <TextField fx:id="searchField" promptText="Search products, variants, or SKU... (Ctrl+K)" HBox.hgrow="ALWAYS" styleClass="search-field-pos" accessibleText="Product Search Input">
+                        <tooltip>
+                            <Tooltip text="Search-first workflow: start typing to add items quickly (Ctrl+K)"/>
+                        </tooltip>
+                    </TextField>
+                    <Label text="Ctrl+K" styleClass="search-shortcut-hint"/>
+                </HBox>
 
-                        <TableView fx:id="cartTable" styleClass="pos-table" editable="true" VBox.vgrow="ALWAYS">
-                            <columns>
-                                <TableColumn fx:id="colSno" text="#" prefWidth="50" minWidth="50" maxWidth="50" style="-fx-alignment: CENTER;" editable="false" resizable="false"/>
-                                <TableColumn fx:id="colSku" text="SKU" prefWidth="100" minWidth="80" style="-fx-alignment: CENTER-LEFT;" editable="false"/>
-                                <TableColumn fx:id="colProduct" text="Product" prefWidth="200" minWidth="150" editable="false"/>
-                                <TableColumn fx:id="colQty" text="Qty" prefWidth="80" minWidth="80" maxWidth="100" style="-fx-alignment: CENTER;" editable="true"/>
-                                <TableColumn fx:id="colPrice" text="Price" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
-                                <TableColumn fx:id="colMrp" text="MRP" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
-                                <TableColumn fx:id="colDiscountPct" text="Disc %" prefWidth="90" minWidth="80" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
-                                <TableColumn fx:id="colDiscountAmt" text="Disc Amt" prefWidth="100" minWidth="90" style="-fx-alignment: CENTER-RIGHT;" editable="true"/>
-                                <TableColumn fx:id="colTotal" text="Total" prefWidth="120" minWidth="100" style="-fx-alignment: CENTER-RIGHT;" editable="false"/>
-                            </columns>
-                        </TableView>
+                <HBox spacing="16" VBox.vgrow="ALWAYS">
+                    <VBox fx:id="leftVBox" spacing="16" HBox.hgrow="ALWAYS">
+                        <VBox fx:id="cartCardVBox" spacing="0" VBox.vgrow="ALWAYS" styleClass="pos-card">
+                            <HBox alignment="CENTER_LEFT" styleClass="pos-card-header">
+                                <Label text="Cart Items" styleClass="pos-card-title"/>
+                            </HBox>
 
-                        <!-- Sticky-style Totals Bar at the bottom of the cart card -->
-                        <HBox alignment="CENTER_RIGHT" spacing="30" style="-fx-padding: 15 20; -fx-background-color: #f1f5f9; -fx-background-radius: 0 0 12 12; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;">
-                            <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Label text="TOTAL QUANTITY" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                <Label fx:id="totalQtyLabel" text="0" style="-fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-font-size: 14px;"/>
-                            </HBox>
-                            <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Label text="MRP TOTAL" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                <Label fx:id="bottomMrpLabel" text="\$0.00" style="-fx-font-weight: 800; -fx-text-fill: #64748b; -fx-font-size: 14px;"/>
-                            </HBox>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <HBox spacing="12" alignment="CENTER_LEFT">
-                                <Label text="TOTAL" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                <Label fx:id="bottomTotalLabel" text="\$0.00" style="-fx-font-weight: 800; -fx-text-fill: #2563eb; -fx-font-size: 18px;"/>
-                            </HBox>
-                        </HBox>
-                    </VBox>
-                    <HBox spacing="20">
-                        <!-- CUSTOMER CARD SECTION -->
-                        <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 20;" HBox.hgrow="ALWAYS">
-                            <VBox spacing="12">
-                                <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <Label text="👤" style="-fx-font-size: 16px;"/>
-                                    <Label text="Customer Details" style="-fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-font-size: 13px;"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button fx:id="btnResetCustomer" text="Clear" onAction="#handleResetCustomer" accessibleText="Clear Customer" style="-fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 5 10; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-cursor: hand;">
-                                        <tooltip>
-                                            <Tooltip text="Clear selected customer details"/>
-                                        </tooltip>
-                                    </Button>
+                            <TableView fx:id="cartTable" styleClass="pos-table" editable="true" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colSno" text="#" prefWidth="48" minWidth="48" maxWidth="56" editable="false" resizable="false"/>
+                                    <TableColumn fx:id="colSku" text="SKU" prefWidth="95" minWidth="80" editable="false"/>
+                                    <TableColumn fx:id="colProduct" text="Product" prefWidth="180" minWidth="140" editable="false"/>
+                                    <TableColumn fx:id="colQty" text="Qty" prefWidth="78" minWidth="72" maxWidth="96" editable="true"/>
+                                    <TableColumn fx:id="colPrice" text="Price" prefWidth="96" minWidth="86" editable="true"/>
+                                    <TableColumn fx:id="colMrp" text="MRP" prefWidth="96" minWidth="86" editable="false"/>
+                                    <TableColumn fx:id="colDiscountPct" text="Disc %" prefWidth="90" minWidth="80" editable="true"/>
+                                    <TableColumn fx:id="colDiscountAmt" text="Disc Amt" prefWidth="98" minWidth="88" editable="true"/>
+                                    <TableColumn fx:id="colTotal" text="Total" prefWidth="115" minWidth="95" editable="false"/>
+                                </columns>
+                            </TableView>
+
+                            <HBox alignment="CENTER_RIGHT" spacing="24" styleClass="pos-cart-totals">
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="TOTAL QTY" styleClass="totals-chip-label"/>
+                                    <Label fx:id="totalQtyLabel" text="0" styleClass="totals-chip-value"/>
                                 </HBox>
-                                
-                                <GridPane hgap="15" vgap="10">
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="MRP" styleClass="totals-chip-label"/>
+                                    <Label fx:id="bottomMrpLabel" text="\$0.00" styleClass="totals-chip-value-muted"/>
+                                </HBox>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="TOTAL" styleClass="totals-chip-label"/>
+                                    <Label fx:id="bottomTotalLabel" text="\$0.00" styleClass="totals-chip-value-accent"/>
+                                </HBox>
+                            </HBox>
+                        </VBox>
+
+                        <HBox spacing="16">
+                            <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 16;" HBox.hgrow="ALWAYS">
+                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                    <Label text="Customer" styleClass="pos-card-title"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button fx:id="btnResetCustomer" text="Clear" onAction="#handleResetCustomer" styleClass="action-btn" accessibleText="Clear Customer"/>
+                                </HBox>
+
+                                <GridPane hgap="12" vgap="8">
                                     <columnConstraints>
                                         <ColumnConstraints percentWidth="50"/>
                                         <ColumnConstraints percentWidth="50"/>
                                     </columnConstraints>
-                                    
+
                                     <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                                        <Label text="SEARCH / SELECT" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <ComboBox fx:id="customerCombo" promptText="Walk-in Customer" accessibleText="Customer Search Dropdown" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 6;">
-                                            <tooltip>
-                                                <Tooltip text="Select an existing customer or leave as Walk-in"/>
-                                            </tooltip>
-                                        </ComboBox>
+                                        <Label text="Search / Select" styleClass="form-label"/>
+                                        <ComboBox fx:id="customerCombo" promptText="Walk-in Customer" maxWidth="Infinity" accessibleText="Customer Search Dropdown"/>
                                     </VBox>
-                                    
+
                                     <VBox spacing="4" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                                        <Label text="FULL NAME" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="customerNameField" promptText="Name" accessibleText="Customer Name Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                        <Label text="Full Name" styleClass="form-label"/>
+                                        <TextField fx:id="customerNameField" promptText="Name" styleClass="search-field-pos" accessibleText="Customer Name Input"/>
                                     </VBox>
-                                    
+
                                     <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                                        <Label text="PHONE NUMBER" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="customerPhoneField" promptText="Phone" accessibleText="Customer Phone Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                        <Label text="Phone" styleClass="form-label"/>
+                                        <TextField fx:id="customerPhoneField" promptText="Phone" styleClass="search-field-pos" accessibleText="Customer Phone Input"/>
                                     </VBox>
-                                    
+
                                     <VBox spacing="4" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                        <Label text="EMAIL ADDRESS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="customerEmailField" promptText="Email" accessibleText="Customer Email Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                        <Label text="Email" styleClass="form-label"/>
+                                        <TextField fx:id="customerEmailField" promptText="Email" styleClass="search-field-pos" accessibleText="Customer Email Input"/>
                                     </VBox>
-                                    
+
                                     <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
-                                        <Label text="PHYSICAL ADDRESS" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="customerAddressField" promptText="Address" accessibleText="Customer Address Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                        <Label text="Address" styleClass="form-label"/>
+                                        <TextField fx:id="customerAddressField" promptText="Address" styleClass="search-field-pos" accessibleText="Customer Address Input"/>
                                     </VBox>
                                 </GridPane>
                             </VBox>
-                        </VBox>
 
-                        <!-- QUICK ADD PRODUCT SECTION -->
-                        <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 20; -fx-background-color: #f8fafc;" prefWidth="400">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                <Label text="⚡" style="-fx-font-size: 16px;"/>
-                                <Label text="Quick Add Product" style="-fx-font-weight: 800; -fx-text-fill: #0f172a; -fx-font-size: 13px;"/>
-                            </HBox>
-                            
-                            <VBox spacing="10">
-                                <VBox spacing="4">
-                                    <Label text="PRODUCT NAME" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                    <TextField fx:id="quickProductName" promptText="Search or type new product name..." accessibleText="Quick Add Product Name Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                            <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 16;" prefWidth="360">
+                                <Label text="Quick Add Product" styleClass="pos-card-title"/>
+
+                                <VBox spacing="8">
+                                    <VBox spacing="4">
+                                        <Label text="Product Name" styleClass="form-label"/>
+                                        <TextField fx:id="quickProductName" promptText="Search or type product name" styleClass="search-field-pos" accessibleText="Quick Add Product Name Input"/>
+                                    </VBox>
+
+                                    <HBox spacing="10">
+                                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                            <Label text="Variant" styleClass="form-label"/>
+                                            <TextField fx:id="quickVariantName" promptText="Standard, 1kg, Red" styleClass="search-field-pos" accessibleText="Quick Add Variant Name Input"/>
+                                        </VBox>
+                                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                            <Label text="Stock" styleClass="form-label"/>
+                                            <TextField fx:id="quickStock" promptText="0" styleClass="search-field-pos" accessibleText="Quick Add Stock Input"/>
+                                        </VBox>
+                                    </HBox>
+
+                                    <HBox spacing="10">
+                                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                            <Label text="Price" styleClass="form-label"/>
+                                            <TextField fx:id="quickPrice" promptText="0.00" styleClass="search-field-pos" accessibleText="Quick Add Price Input"/>
+                                        </VBox>
+                                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                            <Label text="Category" styleClass="form-label"/>
+                                            <TextField fx:id="quickCategorySearch" promptText="Search category" styleClass="search-field-pos" accessibleText="Quick Add Category Input"/>
+                                        </VBox>
+                                    </HBox>
+
+                                    <Button text="Add and Push to Cart" onAction="#handleQuickAddProduct" styleClass="complete-btn" maxWidth="Infinity" accessibleText="Quick Add Product Button"/>
                                 </VBox>
-                                
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <StackPane fx:id="rightPane" prefWidth="420" minWidth="360" maxWidth="520" VBox.vgrow="ALWAYS">
+                        <VBox spacing="16" VBox.vgrow="ALWAYS">
+                            <VBox fx:id="paymentCard" spacing="14" styleClass="pos-card,payment-card" style="-fx-padding: 20;" VBox.vgrow="ALWAYS">
+                                <Label text="Payment" styleClass="pos-card-title"/>
+
+                                <VBox spacing="8">
+                                    <Label text="Payment Method" styleClass="billing-label"/>
+                                    <ComboBox fx:id="paymentMethodCombo" promptText="Select method" maxWidth="Infinity" accessibleText="Payment Method Dropdown"/>
+                                </VBox>
+
+                                <VBox spacing="8">
+                                    <Label text="Payment Type" styleClass="billing-label"/>
+                                    <HBox styleClass="toggle-group-neon">
+                                        <ToggleButton fx:id="btnFullPayment" text="Full Payment" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="toggle-btn-neon"/>
+                                        <ToggleButton fx:id="btnPartialPayment" text="Partial Payment" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="toggle-btn-neon"/>
+                                    </HBox>
+                                </VBox>
+
+                                <VBox spacing="8">
+                                    <Label text="Overall Discount" styleClass="billing-label"/>
+                                    <HBox spacing="8">
+                                        <TextField fx:id="discountField" promptText="0.00" HBox.hgrow="ALWAYS" accessibleText="Overall Discount Input"/>
+                                        <HBox styleClass="toggle-group-neon">
+                                            <ToggleButton fx:id="btnDiscountFixed" text="\$" prefWidth="45" styleClass="toggle-btn-neon"/>
+                                            <ToggleButton fx:id="btnDiscountPercent" text="\%" prefWidth="45" styleClass="toggle-btn-neon"/>
+                                        </HBox>
+                                    </HBox>
+                                </VBox>
+
+                                <VBox spacing="10">
+                                    <HBox>
+                                        <Label text="Subtotal" styleClass="billing-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="subtotalLabel" text="\$0.00" styleClass="billing-value"/>
+                                    </HBox>
+                                    <HBox>
+                                        <Label text="Tax" styleClass="billing-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="taxLabel" text="\$0.00" styleClass="billing-value"/>
+                                    </HBox>
+                                    <Separator/>
+                                    <HBox>
+                                        <Label text="Total" styleClass="total-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="totalLabel" text="\$0.00" styleClass="total-amount"/>
+                                    </HBox>
+                                </VBox>
+
                                 <HBox spacing="10">
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="VARIANT NAME" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="quickVariantName" promptText="Standard, 1kg, Red" accessibleText="Quick Add Variant Name Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                        <Label text="Tendered" styleClass="billing-label"/>
+                                        <TextField fx:id="tenderedField" promptText="0.00" accessibleText="Amount Tendered Input"/>
                                     </VBox>
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="STOCK" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="quickStock" promptText="0" accessibleText="Quick Add Stock Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
+                                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                        <Label fx:id="balanceTypeLabel" text="Change" styleClass="billing-label"/>
+                                        <Label fx:id="balanceLabel" text="\$0.00" maxWidth="Infinity" styleClass="balance-value"/>
                                     </VBox>
                                 </HBox>
 
-                                <HBox spacing="10">
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="PRICE" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="quickPrice" promptText="0.00" accessibleText="Quick Add Price Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
-                                    </VBox>
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="CATEGORY" style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #64748b;"/>
-                                        <TextField fx:id="quickCategorySearch" promptText="Search category..." accessibleText="Quick Add Category Input" styleClass="search-field-pos" style="-fx-padding: 6 10;"/>
-                                    </VBox>
-                                </HBox>
-                                
-                                <Button text="⚡ Add &amp; Add to Cart" onAction="#handleQuickAddProduct" accessibleText="Quick Add Product Button" maxWidth="Infinity"
-                                        style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: 800; -fx-padding: 10; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 12px;">
+                                <Button fx:id="completeButton" text="Complete Sale" defaultButton="true" onAction="#handleCompleteSale" styleClass="complete-btn" maxWidth="Infinity" accessibleText="Complete Sale Button">
                                     <tooltip>
-                                        <Tooltip text="Create or update product and add to cart instantly"/>
+                                        <Tooltip text="Complete sale (Ctrl+Enter)"/>
                                     </tooltip>
                                 </Button>
-                                
-                                <Label text="Creates or updates a product and adds the variant instantly." wrapText="true" style="-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-style: italic;"/>
                             </VBox>
-                        </VBox>
-                    </HBox>
-                </VBox>
 
-                <!-- Right Side: Billing Section -->
-                <VBox spacing="20" prefWidth="400" VBox.vgrow="ALWAYS">
-                    <!-- Payment Setup -->
-                    <VBox spacing="20" styleClass="pos-card" style="-fx-padding: 24;">
-                        <VBox spacing="15">
-                            <HBox alignment="CENTER_LEFT" spacing="8">
-                                <Label text="💳" />
-                                <Label text="Payment Method" styleClass="billing-label"/>
-                            </HBox>
-                            <ComboBox fx:id="paymentMethodCombo" promptText="Select method" accessibleText="Payment Method Dropdown" maxWidth="Infinity" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 4;"/>
-                            
-                            <Label text="Payment Type" style="-fx-font-size: 11px; -fx-text-fill: #64748b; -fx-font-weight: 600;"/>
-                            <HBox styleClass="toggle-group-neon">
-                                <ToggleButton fx:id="btnFullPayment" text="Full Payment" accessibleText="Full Payment Toggle" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="toggle-btn-neon"/>
-                                <ToggleButton fx:id="btnPartialPayment" text="Partial Payment" accessibleText="Partial Payment Toggle" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="toggle-btn-neon"/>
-                            </HBox>
-                        </VBox>
-
-                        <Separator/>
-
-                        <VBox spacing="10">
-                            <HBox alignment="CENTER_LEFT" spacing="8">
-                                <Label text="🏷️" />
-                                <Label text="Overall Discount" styleClass="billing-label"/>
-                            </HBox>
-                            <HBox spacing="8">
-                                <TextField fx:id="discountField" promptText="0.00" accessibleText="Overall Discount Input" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 8;"/>
-                                <HBox styleClass="toggle-group-neon">
-                                    <ToggleButton fx:id="btnDiscountFixed" text="\$" accessibleText="Fixed Discount Toggle" prefWidth="45" styleClass="toggle-btn-neon"/>
-                                    <ToggleButton fx:id="btnDiscountPercent" text="\%" accessibleText="Percentage Discount Toggle" prefWidth="45" styleClass="toggle-btn-neon"/>
+                            <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 16;">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Active Bills" styleClass="pos-card-title"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="Ctrl+1..9" styleClass="helper-text"/>
                                 </HBox>
-                            </HBox>
+                                <HBox fx:id="billsFlowPane" spacing="6"/>
+                                <Button text="Clear Current Cart" onAction="#handleClearCart" maxWidth="Infinity" styleClass="action-btn-destructive" accessibleText="Clear Current Cart Button"/>
+                            </VBox>
                         </VBox>
 
-                        <Separator/>
-
-                        <VBox spacing="12">
-                            <HBox>
-                                <Label text="Subtotal" style="-fx-text-fill: #64748b; -fx-font-size: 13px; -fx-font-weight: 500;"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label fx:id="subtotalLabel" text="\$0.00" style="-fx-font-weight: 600; -fx-text-fill: #0f172a; -fx-font-size: 13px;"/>
-                            </HBox>
-                            <HBox>
-                                <Label text="Tax" style="-fx-text-fill: #64748b; -fx-font-size: 13px; -fx-font-weight: 500;"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label fx:id="taxLabel" text="\$0.00" style="-fx-font-weight: 600; -fx-text-fill: #16a34a; -fx-font-size: 13px;"/>
-                            </HBox>
-                            <Separator style="-fx-padding: 5 0;"/>
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="Total" styleClass="total-label"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label fx:id="totalLabel" text="\$0.00" styleClass="total-amount"/>
-                            </HBox>
+                        <VBox fx:id="paymentLockedOverlay" visible="false" managed="false" alignment="CENTER" spacing="10" styleClass="payment-locked-overlay">
+                            <Label text="🔒" styleClass="empty-state-icon"/>
+                            <Label text="Payment Unlocks After Cart Items" styleClass="empty-state-title"/>
+                            <Label text="Use the search bar (Ctrl+K) to add products first." styleClass="empty-state-subtitle"/>
                         </VBox>
-
-                        <HBox spacing="12">
-                            <VBox spacing="6" HBox.hgrow="ALWAYS">
-                                <Label text="Tendered" styleClass="billing-label" style="-fx-font-size: 11px;"/>
-                                <TextField fx:id="tenderedField" promptText="0.00" accessibleText="Amount Tendered Input" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-font-weight: 700; -fx-font-size: 16px; -fx-padding: 10;"/>
-                            </VBox>
-                            <VBox spacing="6" HBox.hgrow="ALWAYS">
-                                <Label fx:id="balanceTypeLabel" text="Change" styleClass="billing-label" style="-fx-font-size: 11px;"/>
-                                <Label fx:id="balanceLabel" text="\$0.00" maxWidth="Infinity" style="-fx-background-color: #f1f5f9; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 11 12; -fx-font-weight: 800; -fx-font-size: 16px;"/>
-                            </VBox>
-                        </HBox>
-                        
-                        <Button fx:id="completeButton" text="Complete Sale" defaultButton="true" accessibleText="Complete Sale Button" maxWidth="Infinity" onAction="#handleCompleteSale" styleClass="complete-btn">
-                            <tooltip>
-                                <Tooltip text="Complete the sale and process payment (Enter)"/>
-                            </tooltip>
-                        </Button>
-                    </VBox>
-                    
-                    <!-- Active Bills Tabs -->
-                    <VBox spacing="15" styleClass="pos-card" style="-fx-padding: 20;">
-                        <HBox alignment="CENTER_LEFT">
-                            <Label text="Active Bills" styleClass="pos-card-title"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="Ctrl+1-9" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: 600;"/>
-                        </HBox>
-                        <HBox fx:id="billsFlowPane" spacing="5">
-                            <!-- Add ToggleButtons inside Controller -->
-                        </HBox>
-                        <Button text="Clear Current Cart" accessibleText="Clear Current Cart Button" maxWidth="Infinity" onAction="#handleClearCart"
-                                style="-fx-background-color: #fff1f2; -fx-text-fill: #e11d48; -fx-border-color: #fda4af; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10; -fx-font-weight: 700; -fx-font-size: 13px; -fx-cursor: hand;">
-                            <tooltip>
-                                <Tooltip text="Clear all items from the current cart"/>
-                            </tooltip>
-                        </Button>
-                    </VBox>
-                </VBox>
-            </HBox>
+                    </StackPane>
+                </HBox>
+            </VBox>
         </center>
     </BorderPane>
 </StackPane>
-
-

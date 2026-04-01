@@ -37,6 +37,10 @@ public class PosController {
 
     @FXML private VBox leftVBox;
     @FXML private VBox cartCardVBox;
+    @FXML private HBox searchDock;
+    @FXML private VBox paymentCard;
+    @FXML private VBox paymentLockedOverlay;
+    @FXML private StackPane rightPane;
     @FXML private TableView<CartItem> cartTable;
     @FXML private TableColumn<CartItem, String> colSno;
     @FXML private TableColumn<CartItem, String> colSku;
@@ -145,35 +149,17 @@ public class PosController {
         setupListeners();
         loadCombos();
         setupBillingToggles();
-        
-        // Bento Grid: Keep bottom components visible by capping cart height
-        Platform.runLater(() -> {
-            if (rootPane != null && cartCardVBox != null) {
-                cartCardVBox.maxHeightProperty().bind(rootPane.heightProperty().multiply(0.60));
-            }
-        });
-        
+
         renderBillsFlowPane();
         switchBill(0);
         taxEngine.init();
         setupSearchAutocomplete();
         setupQuickAddAutocomplete();
         setupCategoryAutocomplete();
-        
-        Platform.runLater(() -> {
-            cartTable.getScene().setOnKeyPressed(e -> {
-                if (e.isControlDown() || e.isMetaDown()) {
-                    if (e.getCode().isDigitKey()) {
-                        int digit = e.getText().charAt(0) - '1';
-                        if (digit >= 0 && digit < MAX_BILLS) {
-                            switchBill(digit);
-                        }
-                    } else if (e.getCode().toString().equals("K")) { // Ctrl+K
-                        searchField.requestFocus();
-                    }
-                }
-            });
-        });
+
+        setupKeyboardShortcuts();
+        updatePaymentSectionState();
+        setupLayoutSizing();
     }
 
     private void setupTable() {
@@ -300,8 +286,6 @@ public class PosController {
                 return;
             }
             boolean isFull = newVal == btnFullPayment;
-            btnFullPayment.setStyle(isFull ? "-fx-background-color: #0f172a; -fx-text-fill: white;" : "-fx-background-color: white; -fx-text-fill: #64748b;");
-            btnPartialPayment.setStyle(!isFull ? "-fx-background-color: #0f172a; -fx-text-fill: white;" : "-fx-background-color: white; -fx-text-fill: #64748b;");
             currentBill.fullPayment = isFull;
             refreshCurrentBill();
         });
@@ -312,8 +296,6 @@ public class PosController {
                 return;
             }
             boolean isFixed = newVal == btnDiscountFixed;
-            btnDiscountFixed.setStyle(isFixed ? "-fx-background-color: #0f172a; -fx-text-fill: white;" : "-fx-background-color: white; -fx-text-fill: #64748b;");
-            btnDiscountPercent.setStyle(!isFixed ? "-fx-background-color: #0f172a; -fx-text-fill: white;" : "-fx-background-color: white; -fx-text-fill: #64748b;");
             currentBill.isDiscountFixed = isFixed;
             recalculateTotals();
         });
@@ -458,6 +440,95 @@ public class PosController {
         
         paymentMethodCombo.valueProperty().addListener((obs, old, val) -> currentBill.selectedPaymentMethod = val);
     }
+
+    private void setupKeyboardShortcuts() {
+        Platform.runLater(() -> {
+            if (rootPane == null || rootPane.getScene() == null) {
+                return;
+            }
+            rootPane.getScene().addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.K) {
+                    focusSearchAndOpen(true);
+                    e.consume();
+                    return;
+                }
+
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.ENTER) {
+                    if (!completeButton.isDisabled()) {
+                        handleCompleteSale();
+                    }
+                    e.consume();
+                    return;
+                }
+
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.N) {
+                    openOrSwitchToNextBill();
+                    e.consume();
+                    return;
+                }
+
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode().isDigitKey()) {
+                    String text = e.getText();
+                    if (text != null && !text.isEmpty()) {
+                        int digit = text.charAt(0) - '1';
+                        if (digit >= 0 && digit < MAX_BILLS) {
+                            switchBill(digit);
+                            e.consume();
+                        }
+                    }
+                    return;
+                }
+
+                if (e.getCode() == KeyCode.ESCAPE) {
+                    searchPopup.hide();
+                    quickProductPopup.hide();
+                    quickCategoryPopup.hide();
+                    rootPane.requestFocus();
+                    e.consume();
+                    return;
+                }
+
+                if (!e.isControlDown() && !e.isMetaDown() && e.getCode() == KeyCode.SLASH && e.isShiftDown()) {
+                    NotificationService.info("POS shortcuts: Ctrl+K Search, Ctrl+Enter Complete, Ctrl+N New Bill, Ctrl+1..9 Switch Bill, Esc Close popups");
+                    e.consume();
+                }
+            });
+        });
+    }
+
+    private void setupLayoutSizing() {
+        Platform.runLater(() -> {
+            if (rootPane == null || leftVBox == null || rightPane == null) {
+                return;
+            }
+            leftVBox.prefWidthProperty().bind(rootPane.widthProperty().multiply(0.60));
+            rightPane.prefWidthProperty().bind(rootPane.widthProperty().multiply(0.40));
+        });
+    }
+
+    private void focusSearchAndOpen(boolean openPopup) {
+        searchField.requestFocus();
+        searchField.selectAll();
+        if (openPopup) {
+            showAutocompletePopup(searchField.getText() != null ? searchField.getText().trim() : "");
+        }
+    }
+
+    private void openOrSwitchToNextBill() {
+        for (BillState bill : bills) {
+            if (bill.items.isEmpty() && bill.index != currentBill.index) {
+                switchBill(bill.index);
+                return;
+            }
+        }
+        int next = (currentBill.index + 1) % MAX_BILLS;
+        if (next == currentBill.index) {
+            return;
+        }
+        bills.get(next).reset();
+        switchBill(next);
+        NotificationService.info("Switched to a fresh bill tab");
+    }
     
     @FXML
     private void handleResetCustomer() {
@@ -546,8 +617,13 @@ public class PosController {
         }
         
         paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
+        if (currentBill.selectedPaymentMethod == null && !paymentMethodCombo.getItems().isEmpty()) {
+            currentBill.selectedPaymentMethod = paymentMethodCombo.getItems().get(0);
+            paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
+        }
         
         refreshCurrentBill();
+        focusSearchAndOpen(false);
     }
 
     private void setupQuickAdd() {
@@ -734,7 +810,21 @@ public class PosController {
     private void refreshCurrentBill() {
         cartTable.refresh();
         renderBillsFlowPane();
+        updatePaymentSectionState();
         recalculateTotals();
+    }
+
+    private void updatePaymentSectionState() {
+        boolean hasItems = currentBill != null && !currentBill.items.isEmpty();
+
+        if (paymentCard != null) {
+            paymentCard.setDisable(!hasItems);
+            paymentCard.setOpacity(hasItems ? 1.0 : 0.52);
+        }
+        if (paymentLockedOverlay != null) {
+            paymentLockedOverlay.setVisible(!hasItems);
+            paymentLockedOverlay.setManaged(!hasItems);
+        }
     }
 
     private void recalculateTotals() {
@@ -1059,6 +1149,7 @@ public class PosController {
             customerPhone = "";
             customerEmail = "";
             customerAddress = "";
+            selectedPaymentMethod = null;
 
             fullPayment = true;
             overallDiscountValue = BigDecimal.ZERO;

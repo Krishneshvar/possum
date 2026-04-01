@@ -48,18 +48,18 @@
     -fx-font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
     -font-family-mono: "JetBrains Mono", "Consolas", monospace;
 
-    -font-size-display: 32px;
-    -font-size-xl: 24px;
-    -font-size-lg: 20px;
-    -font-size-md: 16px;
-    -font-size-base: 14px;
-    -font-size-sm: 12px;
+    -fx-font-size-display: 32px;
+    -fx-font-size-xl: 24px;
+    -fx-font-size-lg: 20px;
+    -fx-font-size-md: 16px;
+    -fx-font-size-base: 14px;
+    -fx-font-size-sm: 12px;
 
     /* Radius */
-    -radius-sm: 4px;
-    -radius-md: 6px;
-    -radius-lg: 8px;
-    -radius-xl: 12px;
+    -fx-radius-sm: 4px;
+    -fx-radius-md: 6px;
+    -fx-radius-lg: 8px;
+    -fx-radius-xl: 12px;
 
     /* Shadows */
     -shadow-sm: dropshadow(three-pass-box, rgba(15, 23, 42, 0.05), 4, 0, 0, 1);

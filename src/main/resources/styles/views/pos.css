@@ -203,3 +203,77 @@
     -fx-background-color: #f1f5f9;
     -fx-text-fill: #475569;
 }
+
+.pos-search-dock {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: -radius-lg;
+    -fx-background-radius: -radius-lg;
+    -fx-padding: 10 14;
+    -fx-effect: -shadow-sm;
+}
+
+.pos-search-icon {
+    -fx-font-size: 16px;
+    -fx-text-fill: -color-text-muted;
+}
+
+.search-shortcut-hint {
+    -fx-background-color: -color-bg-canvas;
+    -fx-text-fill: -color-text-muted;
+    -fx-font-size: -font-size-sm;
+    -fx-padding: 4 8;
+    -fx-background-radius: -radius-sm;
+}
+
+.pos-cart-totals {
+    -fx-padding: 10 14;
+    -fx-background-color: -color-bg-canvas;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1 0 0 0;
+}
+
+.totals-chip-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -color-text-muted;
+}
+
+.totals-chip-value {
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -color-text-main;
+}
+
+.totals-chip-value-muted {
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -color-text-secondary;
+}
+
+.totals-chip-value-accent {
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -color-primary-dark;
+}
+
+.balance-value {
+    -fx-background-color: -color-bg-canvas;
+    -fx-border-color: -color-border;
+    -fx-border-radius: -radius-md;
+    -fx-background-radius: -radius-md;
+    -fx-padding: 10 12;
+    -fx-font-weight: 800;
+    -fx-font-size: 15px;
+    -fx-text-fill: -color-text-main;
+}
+
+.payment-locked-overlay {
+    -fx-background-color: rgba(248, 250, 252, 0.90);
+    -fx-background-radius: -radius-xl;
+    -fx-border-color: #d1fae5;
+    -fx-border-width: 1;
+    -fx-border-radius: -radius-xl;
+    -fx-padding: 20;
+}

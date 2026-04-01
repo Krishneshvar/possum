@@ -9,17 +9,17 @@
 .card,
 .pos-card {
     -fx-background-color: -color-surface;
-    -fx-background-radius: -radius-lg;
+    -fx-background-radius: -fx-radius-lg;
     -fx-border-color: -color-border;
     -fx-border-width: 1;
-    -fx-border-radius: -radius-lg;
+    -fx-border-radius: -fx-radius-lg;
     -fx-padding: 20;
     -fx-spacing: 16;
     -fx-effect: -shadow-sm;
 }
 
 .card-title {
-    -fx-font-size: -font-size-md;
+    -fx-font-size: -fx-font-size-md;
     -fx-font-weight: 600;
     -fx-text-fill: -color-text-main;
 }
@@ -46,10 +46,10 @@
     -fx-background-color: -color-surface;
     -fx-border-color: -color-border-hover;
     -fx-border-width: 1;
-    -fx-border-radius: -radius-md;
-    -fx-background-radius: -radius-md;
+    -fx-border-radius: -fx-radius-md;
+    -fx-background-radius: -fx-radius-md;
     -fx-text-fill: -color-text-main;
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
 }
 
 .text-field,
@@ -94,10 +94,10 @@
     -fx-background-color: -color-surface;
     -fx-border-color: -color-border-hover;
     -fx-border-width: 1;
-    -fx-background-radius: -radius-md;
-    -fx-border-radius: -radius-md;
+    -fx-background-radius: -fx-radius-md;
+    -fx-border-radius: -fx-radius-md;
     -fx-text-fill: -color-text-secondary;
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
     -fx-font-weight: 600;
     -fx-cursor: hand;
 }
@@ -156,7 +156,7 @@
 .icon-button:hover,
 .icon-btn:hover {
     -fx-background-color: -color-surface-hover;
-    -fx-background-radius: -radius-md;
+    -fx-background-radius: -fx-radius-md;
     -fx-text-fill: -color-text-main;
 }
 
@@ -215,20 +215,20 @@
 .data-table .table-cell,
 .pos-table .table-cell {
     -fx-text-fill: -color-text-main;
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
     -fx-alignment: center-left;
 }
 
 .table-empty-placeholder {
     -fx-text-fill: -color-text-muted;
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
 }
 
 .empty-state-view {
     -fx-alignment: center;
     -fx-padding: 20;
     -fx-background-color: -color-surface;
-    -fx-background-radius: -radius-lg;
+    -fx-background-radius: -fx-radius-lg;
 }
 
 .empty-state-icon {
@@ -236,13 +236,13 @@
 }
 
 .empty-state-title {
-    -fx-font-size: -font-size-md;
+    -fx-font-size: -fx-font-size-md;
     -fx-font-weight: 700;
     -fx-text-fill: -color-text-main;
 }
 
 .empty-state-subtitle {
-    -fx-font-size: -font-size-base;
+    -fx-font-size: -fx-font-size-base;
     -fx-text-fill: -color-text-muted;
 }
 
@@ -254,8 +254,8 @@
 .action-btn-destructive {
     -fx-background-color: -color-surface;
     -fx-border-color: -color-border;
-    -fx-border-radius: -radius-sm;
-    -fx-background-radius: -radius-sm;
+    -fx-border-radius: -fx-radius-sm;
+    -fx-background-radius: -fx-radius-sm;
     -fx-padding: 4 8;
     -fx-cursor: hand;
 }
@@ -277,7 +277,7 @@
 
 .badge-status {
     -fx-padding: 2 8;
-    -fx-background-radius: -radius-sm;
+    -fx-background-radius: -fx-radius-sm;
     -fx-font-size: 11px;
     -fx-font-weight: 700;
 }
@@ -299,7 +299,7 @@
 
 .toggle-group-neon {
     -fx-background-color: -color-bg-canvas;
-    -fx-background-radius: -radius-lg;
+    -fx-background-radius: -fx-radius-lg;
     -fx-padding: 2;
 }
 
@@ -308,9 +308,9 @@
     -fx-border-color: transparent;
     -fx-text-fill: -color-text-muted;
     -fx-font-weight: 600;
-    -fx-font-size: -font-size-sm;
+    -fx-font-size: -fx-font-size-sm;
     -fx-padding: 6 12;
-    -fx-background-radius: -radius-md;
+    -fx-background-radius: -fx-radius-md;
 }
 
 .toggle-btn-neon:selected {
