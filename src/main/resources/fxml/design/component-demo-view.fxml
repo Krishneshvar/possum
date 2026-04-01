@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.possum.ui.design.ComponentDemoController"
+      styleClass="workspace-view"
+      spacing="20"
+      stylesheets="@../../styles/inventory.css">
+
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="Component Demo" styleClass="view-title"/>
+            <Label text="Phase 1 design-system sandbox for buttons, inputs, cards, and data tables." styleClass="view-subtitle"/>
+        </VBox>
+        <Button text="Primary Action" styleClass="primary-button"/>
+    </HBox>
+
+    <HBox spacing="20" VBox.vgrow="ALWAYS">
+        <VBox spacing="16" styleClass="card" HBox.hgrow="ALWAYS">
+            <Label text="Buttons" styleClass="card-title"/>
+            <HBox spacing="10">
+                <Button text="Default" styleClass="action-button"/>
+                <Button text="Primary" styleClass="primary-button"/>
+                <Button text="Danger" styleClass="danger-button"/>
+                <Button text="Icon" styleClass="icon-button"/>
+            </HBox>
+
+            <Label text="Inputs" styleClass="card-title"/>
+            <GridPane hgap="12" vgap="10">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50"/>
+                    <ColumnConstraints percentWidth="50"/>
+                </columnConstraints>
+                <VBox styleClass="form-group" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="Text Field" styleClass="form-label"/>
+                    <TextField promptText="Start typing..."/>
+                </VBox>
+                <VBox styleClass="form-group" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="Combo Box" styleClass="form-label"/>
+                    <ComboBox fx:id="statusCombo" promptText="Select status"/>
+                </VBox>
+                <VBox styleClass="form-group" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="Date Picker" styleClass="form-label"/>
+                    <DatePicker fx:id="demoDate"/>
+                </VBox>
+                <VBox styleClass="form-group" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="Notes" styleClass="form-label"/>
+                    <TextArea promptText="Example multiline text" prefRowCount="3"/>
+                </VBox>
+            </GridPane>
+        </VBox>
+
+        <VBox spacing="12" styleClass="card" HBox.hgrow="ALWAYS">
+            <Label text="Data Table" styleClass="card-title"/>
+            <TableView fx:id="componentTable" styleClass="data-table" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="componentColumn" text="Component" prefWidth="180"/>
+                    <TableColumn fx:id="variantColumn" text="Variant" prefWidth="140"/>
+                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="120"/>
+                </columns>
+            </TableView>
+            <Label text="Use this page for iterative style checks before applying changes across feature views." styleClass="helper-text" wrapText="true"/>
+        </VBox>
+    </HBox>
+
+    <padding>
+        <Insets top="24" right="24" bottom="24" left="24"/>
+    </padding>
+</VBox>

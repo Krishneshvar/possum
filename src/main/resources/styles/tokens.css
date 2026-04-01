@@ -1,0 +1,68 @@
+/* =====================================================
+   POSSUM Design Tokens - Emerald & Slate System
+   JavaFX looked-up colors and sizing scales.
+   ===================================================== */
+
+.root {
+    /* Primary - Emerald */
+    -color-primary: #10B981;
+    -color-primary-dark: #059669;
+    -color-primary-light: #D1FAE5;
+    -color-primary-subtle: #ECFDF5;
+
+    /* Canvas and surfaces */
+    -color-bg-canvas: #F8FAFC;
+    -color-surface: #FFFFFF;
+    -color-surface-hover: #F8FAFC;
+    -color-surface-selected: #ECFDF5;
+
+    /* Borders */
+    -color-border: #E2E8F0;
+    -color-border-hover: #CBD5E1;
+    -color-border-focus: #10B981;
+
+    /* Text */
+    -color-text-main: #0F172A;
+    -color-text-secondary: #475569;
+    -color-text-muted: #64748B;
+    -color-text-disabled: #94A3B8;
+
+    /* Semantic */
+    -color-success: #10B981;
+    -color-success-bg: #ECFDF5;
+    -color-success-text: #064E3B;
+
+    -color-error: #EF4444;
+    -color-error-bg: #FEF2F2;
+    -color-error-text: #991B1B;
+
+    -color-warning: #F59E0B;
+    -color-warning-bg: #FFFBEB;
+    -color-warning-text: #78350F;
+
+    -color-info: #3B82F6;
+    -color-info-bg: #EFF6FF;
+    -color-info-text: #1E3A8A;
+
+    /* Typography */
+    -fx-font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+    -font-family-mono: "JetBrains Mono", "Consolas", monospace;
+
+    -font-size-display: 32px;
+    -font-size-xl: 24px;
+    -font-size-lg: 20px;
+    -font-size-md: 16px;
+    -font-size-base: 14px;
+    -font-size-sm: 12px;
+
+    /* Radius */
+    -radius-sm: 4px;
+    -radius-md: 6px;
+    -radius-lg: 8px;
+    -radius-xl: 12px;
+
+    /* Shadows */
+    -shadow-sm: dropshadow(three-pass-box, rgba(15, 23, 42, 0.05), 4, 0, 0, 1);
+    -shadow-md: dropshadow(three-pass-box, rgba(15, 23, 42, 0.08), 8, 0, 0, 2);
+    -shadow-lg: dropshadow(three-pass-box, rgba(15, 23, 42, 0.12), 14, 0, 0, 4);
+}

@@ -1,0 +1,224 @@
+@import "tokens.css";
+
+/* =====================================================
+   Shared Component Library
+   Phase 1: BaseButton + BaseInput + Card + DataTable
+   ===================================================== */
+
+/* Cards */
+.card,
+.pos-card {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: -radius-lg;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: -radius-lg;
+    -fx-padding: 20;
+    -fx-spacing: 16;
+    -fx-effect: -shadow-sm;
+}
+
+.card-title {
+    -fx-font-size: -font-size-md;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-text-main;
+}
+
+/* Form field wrappers */
+.form-group {
+    -fx-spacing: 6;
+    -fx-alignment: top-left;
+}
+
+.form-label,
+.billing-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -color-text-secondary;
+}
+
+/* BaseInput */
+.text-field,
+.password-field,
+.text-area,
+.combo-box,
+.date-picker {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border-hover;
+    -fx-border-width: 1;
+    -fx-border-radius: -radius-md;
+    -fx-background-radius: -radius-md;
+    -fx-text-fill: -color-text-main;
+    -fx-font-size: -font-size-base;
+}
+
+.text-field,
+.password-field,
+.text-area {
+    -fx-padding: 8 12;
+}
+
+.combo-box > .list-cell,
+.date-picker > .text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -color-text-main;
+    -fx-padding: 8 12;
+}
+
+.combo-box > .arrow-button,
+.date-picker > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 10 0 0;
+}
+
+.combo-box > .arrow-button > .arrow,
+.date-picker > .arrow-button > .arrow {
+    -fx-background-color: -color-text-muted;
+}
+
+.text-field:focused,
+.password-field:focused,
+.text-area:focused,
+.combo-box:focused,
+.date-picker:focused {
+    -fx-border-color: -color-border-focus;
+    -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.18), 6, 0, 0, 0);
+}
+
+/* BaseButton */
+.button,
+.action-button {
+    -fx-min-height: 40;
+    -fx-padding: 8 16;
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border-hover;
+    -fx-border-width: 1;
+    -fx-background-radius: -radius-md;
+    -fx-border-radius: -radius-md;
+    -fx-text-fill: -color-text-secondary;
+    -fx-font-size: -font-size-base;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+}
+
+.button:hover,
+.action-button:hover {
+    -fx-background-color: -color-surface-hover;
+    -fx-border-color: -color-border;
+}
+
+.button:focused,
+.action-button:focused,
+.primary-button:focused,
+.danger-button:focused,
+.complete-btn:focused {
+    -fx-border-color: -color-border-focus;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.2), 6, 0, 0, 0);
+}
+
+.primary-button,
+.complete-btn {
+    -fx-background-color: -color-primary;
+    -fx-border-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+}
+
+.primary-button:hover,
+.complete-btn:hover {
+    -fx-background-color: -color-primary-dark;
+    -fx-border-color: transparent;
+}
+
+.danger-button {
+    -fx-background-color: -color-error-bg;
+    -fx-border-color: transparent;
+    -fx-text-fill: -color-error;
+}
+
+.danger-button:hover {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #b91c1c;
+}
+
+.icon-button,
+.icon-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -color-text-muted;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+    -fx-min-height: 32;
+}
+
+.icon-button:hover,
+.icon-btn:hover {
+    -fx-background-color: -color-surface-hover;
+    -fx-background-radius: -radius-md;
+    -fx-text-fill: -color-text-main;
+}
+
+/* DataTable */
+.data-table,
+.pos-table {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.data-table .column-header-background,
+.pos-table .column-header-background {
+    -fx-background-color: -color-bg-canvas;
+    -fx-border-color: transparent transparent -color-border transparent;
+    -fx-border-width: 1;
+}
+
+.data-table .column-header,
+.pos-table .column-header {
+    -fx-background-color: transparent;
+    -fx-padding: 12 16;
+}
+
+.data-table .column-header .label,
+.pos-table .column-header .label {
+    -fx-text-fill: -color-text-secondary;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.data-table .table-row-cell,
+.pos-table .table-row-cell {
+    -fx-background-color: -color-surface;
+    -fx-border-color: transparent transparent -color-bg-canvas transparent;
+    -fx-border-width: 1;
+}
+
+.data-table .table-row-cell:hover,
+.pos-table .table-row-cell:hover {
+    -fx-background-color: -color-surface-hover;
+}
+
+.data-table .table-row-cell:selected,
+.pos-table .table-row-cell:selected {
+    -fx-background-color: -color-surface-selected;
+}
+
+.data-table .table-cell,
+.pos-table .table-cell {
+    -fx-text-fill: -color-text-main;
+    -fx-font-size: -font-size-base;
+    -fx-alignment: center-left;
+}
+
+.back-link {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-text-muted;
+    -fx-font-weight: 600;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.back-link:hover {
+    -fx-text-fill: -color-text-main;
+}

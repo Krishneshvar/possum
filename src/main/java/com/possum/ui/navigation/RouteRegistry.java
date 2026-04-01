@@ -46,6 +46,7 @@ public class RouteRegistry {
 
         // System
         register("settings", "/fxml/settings/settings-view.fxml", "settings.view");
+        register("component-demo", "/fxml/design/component-demo-view.fxml", "settings.view");
     }
 
     private void register(String routeId, String fxmlPath) {

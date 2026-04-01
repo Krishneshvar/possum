@@ -1,0 +1,16 @@
+@import "../tokens.css";
+
+/* =====================================================
+   Inventory and Management Views
+   View-specific styling only.
+   ===================================================== */
+
+.check-box {
+    -fx-text-fill: -color-text-main;
+    -fx-font-size: -font-size-base;
+}
+
+.icon-button {
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+}

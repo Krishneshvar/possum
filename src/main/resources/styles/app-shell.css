@@ -1,7 +1,11 @@
+@import "tokens.css";
+@import "base.css";
+@import "components.css";
+
 /* App Shell Styles */
 
 .app-shell {
-    -fx-background-color: #fafbfc;
+    -fx-background-color: -color-bg-canvas;
 }
 
 /* ========== NAVBAR ========== */
@@ -253,7 +257,7 @@
 }
 
 .content-area {
-    -fx-background-color: #fafbfc;
+    -fx-background-color: -color-bg-canvas;
 }
 
 /* ========== TOAST NOTIFICATIONS ========== */
