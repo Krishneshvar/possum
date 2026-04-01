@@ -3,6 +3,7 @@ package com.possum.ui.workspace;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.common.controls.ViewStateEnhancer;
 import com.possum.ui.navigation.Parameterizable;
 
 import java.util.Map;
@@ -55,6 +56,7 @@ public class WorkspaceManager {
                 loader.setControllerFactory(dependencyInjector.getControllerFactory());
             }
             Node content = loader.load();
+            ViewStateEnhancer.enhance(content);
 
             Object controller = loader.getController();
             if (controller instanceof Parameterizable) {
@@ -79,6 +81,7 @@ public class WorkspaceManager {
                 loader.setControllerFactory(dependencyInjector.getControllerFactory());
             }
             javafx.scene.Parent root = loader.load();
+            ViewStateEnhancer.enhance(root);
 
             Object controller = loader.getController();
             if (controller instanceof Parameterizable) {

@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region;
 import javafx.util.Callback;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Cursor;
@@ -27,6 +28,7 @@ public class DataTableView<T> extends StackPane {
         this.loadingOverlay = createLoadingOverlay();
 
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tableView.getStyleClass().add("data-table");
         
         getChildren().addAll(tableView, emptyState, loadingOverlay);
         
@@ -38,19 +40,27 @@ public class DataTableView<T> extends StackPane {
             loadingOverlay.setManaged(isLoading);
         });
         
-        tableView.itemsProperty().addListener((obs, old, items) -> {
-            boolean isEmpty = items == null || items.isEmpty();
-            emptyState.setVisible(isEmpty && !loading.get());
-            emptyState.setManaged(isEmpty && !loading.get());
-        });
+        tableView.itemsProperty().addListener((obs, old, items) -> refreshEmptyState());
+        tableView.getItems().addListener((javafx.collections.ListChangeListener<T>) change -> refreshEmptyState());
     }
 
     private VBox createEmptyState() {
+        Label icon = new Label("\uD83D\uDCCB");
+        icon.getStyleClass().add("empty-state-icon");
+
         Label label = new Label("No data available");
-        label.setStyle("-fx-text-fill: gray; -fx-font-size: 14px;");
-        VBox box = new VBox(label);
+        label.getStyleClass().add("empty-state-title");
+
+        Label subtitle = new Label("New records will appear here once available.");
+        subtitle.getStyleClass().add("empty-state-subtitle");
+        subtitle.setWrapText(true);
+
+        Region spacer = new Region();
+        spacer.setMinHeight(4);
+
+        VBox box = new VBox(4, icon, label, spacer, subtitle);
+        box.getStyleClass().add("empty-state-view");
         box.setAlignment(Pos.CENTER);
-        box.setStyle("-fx-background-color: white;");
         return box;
     }
 
@@ -58,7 +68,7 @@ public class DataTableView<T> extends StackPane {
         ProgressIndicator spinner = new ProgressIndicator();
         spinner.setMaxSize(50, 50);
         StackPane overlay = new StackPane(spinner);
-        overlay.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8);");
+        overlay.getStyleClass().add("table-loading-overlay");
         return overlay;
     }
 
@@ -79,7 +89,7 @@ public class DataTableView<T> extends StackPane {
             private final Button button = new Button(title);
             {
                 button.setCursor(Cursor.HAND);
-                button.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 4 12; -fx-font-size: 13px;");
+                button.getStyleClass().add("action-btn");
                 button.setOnAction(e -> {
                     T item = getItem();
                     if (item != null) {
@@ -108,7 +118,7 @@ public class DataTableView<T> extends StackPane {
             private final MenuButton menuButton = new MenuButton(title);
             {
                 menuButton.setCursor(Cursor.HAND);
-                menuButton.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #1e293b; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 4 12; -fx-font-size: 13px;");
+                menuButton.getStyleClass().add("action-btn");
                 menuButton.setOnShowing(e -> {
                     T item = getItem();
                     if (item != null) {
@@ -131,6 +141,7 @@ public class DataTableView<T> extends StackPane {
 
     public void setItems(ObservableList<T> items) {
         tableView.setItems(items);
+        refreshEmptyState();
     }
 
     public ObservableList<T> getItems() {
@@ -139,6 +150,7 @@ public class DataTableView<T> extends StackPane {
 
     public void setLoading(boolean loading) {
         this.loading.set(loading);
+        refreshEmptyState();
     }
 
     public TableView<T> getTableView() {
@@ -146,10 +158,21 @@ public class DataTableView<T> extends StackPane {
     }
 
     public void setEmptyMessage(String message) {
-        ((Label) emptyState.getChildren().get(0)).setText(message);
+        ((Label) emptyState.getChildren().get(1)).setText(message);
     }
 
     public String getEmptyMessage() {
-        return ((Label) emptyState.getChildren().get(0)).getText();
+        return ((Label) emptyState.getChildren().get(1)).getText();
+    }
+
+    public void setEmptySubtitle(String subtitle) {
+        ((Label) emptyState.getChildren().get(3)).setText(subtitle);
+    }
+
+    private void refreshEmptyState() {
+        boolean isEmpty = tableView.getItems() == null || tableView.getItems().isEmpty();
+        boolean shouldShow = isEmpty && !loading.get();
+        emptyState.setVisible(shouldShow);
+        emptyState.setManaged(shouldShow);
     }
 }

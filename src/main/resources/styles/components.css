@@ -161,12 +161,14 @@
 }
 
 /* DataTable */
+.table-view,
 .data-table,
 .pos-table {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }
 
+.table-view .column-header-background,
 .data-table .column-header-background,
 .pos-table .column-header-background {
     -fx-background-color: -color-bg-canvas;
@@ -174,12 +176,14 @@
     -fx-border-width: 1;
 }
 
+.table-view .column-header,
 .data-table .column-header,
 .pos-table .column-header {
     -fx-background-color: transparent;
     -fx-padding: 12 16;
 }
 
+.table-view .column-header .label,
 .data-table .column-header .label,
 .pos-table .column-header .label {
     -fx-text-fill: -color-text-secondary;
@@ -187,6 +191,7 @@
     -fx-font-weight: 600;
 }
 
+.table-view .table-row-cell,
 .data-table .table-row-cell,
 .pos-table .table-row-cell {
     -fx-background-color: -color-surface;
@@ -194,21 +199,123 @@
     -fx-border-width: 1;
 }
 
+.table-view .table-row-cell:hover,
 .data-table .table-row-cell:hover,
 .pos-table .table-row-cell:hover {
     -fx-background-color: -color-surface-hover;
 }
 
+.table-view .table-row-cell:selected,
 .data-table .table-row-cell:selected,
 .pos-table .table-row-cell:selected {
     -fx-background-color: -color-surface-selected;
 }
 
+.table-view .table-cell,
 .data-table .table-cell,
 .pos-table .table-cell {
     -fx-text-fill: -color-text-main;
     -fx-font-size: -font-size-base;
     -fx-alignment: center-left;
+}
+
+.table-empty-placeholder {
+    -fx-text-fill: -color-text-muted;
+    -fx-font-size: -font-size-base;
+}
+
+.empty-state-view {
+    -fx-alignment: center;
+    -fx-padding: 20;
+    -fx-background-color: -color-surface;
+    -fx-background-radius: -radius-lg;
+}
+
+.empty-state-icon {
+    -fx-font-size: 36px;
+}
+
+.empty-state-title {
+    -fx-font-size: -font-size-md;
+    -fx-font-weight: 700;
+    -fx-text-fill: -color-text-main;
+}
+
+.empty-state-subtitle {
+    -fx-font-size: -font-size-base;
+    -fx-text-fill: -color-text-muted;
+}
+
+.table-loading-overlay {
+    -fx-background-color: rgba(255, 255, 255, 0.82);
+}
+
+.action-btn,
+.action-btn-destructive {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-radius: -radius-sm;
+    -fx-background-radius: -radius-sm;
+    -fx-padding: 4 8;
+    -fx-cursor: hand;
+}
+
+.action-btn:hover {
+    -fx-background-color: -color-bg-canvas;
+    -fx-text-fill: -color-primary;
+    -fx-border-color: -color-primary;
+}
+
+.action-btn-destructive {
+    -fx-text-fill: -color-error;
+}
+
+.action-btn-destructive:hover {
+    -fx-background-color: -color-error-bg;
+    -fx-border-color: -color-error;
+}
+
+.badge-status {
+    -fx-padding: 2 8;
+    -fx-background-radius: -radius-sm;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.badge-success {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #166534;
+}
+
+.badge-neutral {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #334155;
+}
+
+.badge-warning {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #92400e;
+}
+
+.toggle-group-neon {
+    -fx-background-color: -color-bg-canvas;
+    -fx-background-radius: -radius-lg;
+    -fx-padding: 2;
+}
+
+.toggle-btn-neon {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -color-text-muted;
+    -fx-font-weight: 600;
+    -fx-font-size: -font-size-sm;
+    -fx-padding: 6 12;
+    -fx-background-radius: -radius-md;
+}
+
+.toggle-btn-neon:selected {
+    -fx-background-color: -color-primary-light;
+    -fx-text-fill: -color-primary-dark;
 }
 
 .back-link {

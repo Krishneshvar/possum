@@ -14,3 +14,61 @@
     -fx-min-width: 32;
     -fx-min-height: 32;
 }
+
+.view-mode-toggle-row {
+    -fx-padding: 2 0 2 0;
+}
+
+.product-grid-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.product-grid-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.product-grid {
+    -fx-background-color: transparent;
+}
+
+.product-card {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: -radius-lg;
+    -fx-background-radius: -radius-lg;
+    -fx-padding: 14;
+    -fx-spacing: 10;
+    -fx-effect: -shadow-sm;
+}
+
+.product-card-hover {
+    -fx-effect: -shadow-md;
+    -fx-border-color: #a7f3d0;
+}
+
+.product-card-avatar {
+    -fx-min-width: 34;
+    -fx-min-height: 34;
+    -fx-alignment: center;
+    -fx-background-color: -color-primary-subtle;
+    -fx-text-fill: -color-primary-dark;
+    -fx-background-radius: 17;
+    -fx-font-weight: 700;
+}
+
+.product-card-title {
+    -fx-font-size: -font-size-md;
+    -fx-font-weight: 700;
+    -fx-text-fill: -color-text-main;
+}
+
+.product-card-meta {
+    -fx-font-size: -font-size-sm;
+    -fx-text-fill: -color-text-muted;
+}
+
+.product-card-actions {
+    -fx-alignment: center-left;
+}

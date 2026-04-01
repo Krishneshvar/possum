@@ -3,6 +3,7 @@ package com.possum.ui.settings.tax;
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.ui.common.controls.ViewStateEnhancer;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -20,6 +21,7 @@ public class TaxManagementWindow {
             );
             
             Parent root = loader.load();
+            ViewStateEnhancer.enhance(root);
             
             TaxManagementController controller = loader.getController();
             controller.setServices(taxService, taxRepository, jsonService);

@@ -53,6 +53,8 @@ public class InventoryController {
     @FXML
     public void initialize() {
         inventoryTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No inventory records found. Adjust filters to see results."));
+        inventoryTable.setEmptyMessage("No inventory records found");
+        inventoryTable.setEmptySubtitle("Try broader filters or add stock to see live inventory.");
         setupTable();
         setupFilters();
         loadInventory();

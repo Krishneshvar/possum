@@ -31,7 +31,25 @@
     <VBox styleClass="card" VBox.vgrow="ALWAYS">
         <FilterBar fx:id="filterBar"/>
 
-        <DataTableView fx:id="variantsTable" VBox.vgrow="ALWAYS" styleClass="data-table"/>
+        <HBox alignment="CENTER_RIGHT" spacing="8" styleClass="view-mode-toggle-row">
+            <Label text="View:" styleClass="helper-text"/>
+            <ToggleButton fx:id="cardsViewButton" text="Cards" styleClass="toggle-btn-neon" selected="true"/>
+            <ToggleButton fx:id="tableViewButton" text="Table" styleClass="toggle-btn-neon"/>
+        </HBox>
+
+        <StackPane VBox.vgrow="ALWAYS">
+            <ScrollPane fx:id="variantsGridScroll" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="product-grid-scroll">
+                <content>
+                    <FlowPane fx:id="variantsGrid" hgap="16" vgap="16" prefWrapLength="1200" styleClass="product-grid">
+                        <padding>
+                            <Insets top="8" right="4" bottom="8" left="4"/>
+                        </padding>
+                    </FlowPane>
+                </content>
+            </ScrollPane>
+
+            <DataTableView fx:id="variantsTable" VBox.vgrow="ALWAYS" styleClass="data-table" visible="false" managed="false"/>
+        </StackPane>
 
         <PaginationBar fx:id="paginationBar"/>
     </VBox>

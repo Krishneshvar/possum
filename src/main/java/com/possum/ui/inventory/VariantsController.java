@@ -12,10 +12,22 @@ import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.ScrollPane;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +39,10 @@ public class VariantsController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<Variant> variantsTable;
     @FXML private PaginationBar paginationBar;
+    @FXML private FlowPane variantsGrid;
+    @FXML private ScrollPane variantsGridScroll;
+    @FXML private ToggleButton cardsViewButton;
+    @FXML private ToggleButton tableViewButton;
 
     private final VariantRepository variantRepository;
     private final CategoryService categoryService;
@@ -39,6 +55,8 @@ public class VariantsController {
     private java.math.BigDecimal currentMinPrice = null;
     private java.math.BigDecimal currentMaxPrice = null;
     private final com.possum.persistence.repositories.interfaces.TaxRepository taxRepository;
+    private final ToggleGroup viewModeGroup = new ToggleGroup();
+    private boolean cardsViewEnabled = true;
 
     public VariantsController(VariantRepository variantRepository, CategoryService categoryService, 
                               com.possum.persistence.repositories.interfaces.TaxRepository taxRepository,
@@ -52,9 +70,38 @@ public class VariantsController {
     @FXML
     public void initialize() {
         variantsTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No variants found. Try adjusting filters or search terms."));
+        variantsTable.setEmptyMessage("No variants found");
+        variantsTable.setEmptySubtitle("Update search or filters to locate product variants.");
         setupTable();
         setupFilters();
+        setupViewMode();
         loadVariants();
+    }
+
+    private void setupViewMode() {
+        if (cardsViewButton == null || tableViewButton == null) {
+            return;
+        }
+
+        cardsViewButton.setToggleGroup(viewModeGroup);
+        tableViewButton.setToggleGroup(viewModeGroup);
+        cardsViewButton.setSelected(true);
+
+        viewModeGroup.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
+            cardsViewEnabled = newValue == cardsViewButton || newValue == null;
+            applyViewMode();
+        });
+
+        applyViewMode();
+    }
+
+    private void applyViewMode() {
+        if (variantsGridScroll != null) {
+            variantsGridScroll.setVisible(cardsViewEnabled);
+            variantsGridScroll.setManaged(cardsViewEnabled);
+        }
+        variantsTable.setVisible(!cardsViewEnabled);
+        variantsTable.setManaged(!cardsViewEnabled);
     }
 
     @FXML
@@ -131,7 +178,9 @@ public class VariantsController {
             );
         }).thenAccept(result -> {
             Platform.runLater(() -> {
-                variantsTable.setItems(FXCollections.observableArrayList(result.items()));
+                var items = FXCollections.observableArrayList(result.items());
+                variantsTable.setItems(items);
+                renderVariantCards(items);
                 paginationBar.setTotalItems(result.totalCount());
                 variantsTable.setLoading(false);
             });
@@ -219,6 +268,134 @@ public class VariantsController {
         variantsTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, mrpCol, taxCol, stockCol, statusCol);
 
         variantsTable.addMenuActionColumn("Actions", this::buildActionsMenu);
+    }
+
+    private void renderVariantCards(List<Variant> variants) {
+        if (variantsGrid == null) {
+            return;
+        }
+
+        variantsGrid.getChildren().clear();
+
+        if (variants == null || variants.isEmpty()) {
+            VBox empty = new VBox(8);
+            empty.getStyleClass().add("empty-state-view");
+            empty.setAlignment(Pos.CENTER);
+            empty.setPrefWidth(560);
+
+            Label icon = new Label("\uD83D\uDCE6");
+            icon.getStyleClass().add("empty-state-icon");
+            Label title = new Label("No variants found");
+            title.getStyleClass().add("empty-state-title");
+            Label subtitle = new Label("Adjust filters or search terms to find variants.");
+            subtitle.getStyleClass().add("empty-state-subtitle");
+            subtitle.setWrapText(true);
+
+            empty.getChildren().addAll(icon, title, subtitle);
+            variantsGrid.getChildren().add(empty);
+            return;
+        }
+
+        for (Variant variant : variants) {
+            variantsGrid.getChildren().add(createVariantCard(variant));
+        }
+    }
+
+    private VBox createVariantCard(Variant variant) {
+        VBox card = new VBox(10);
+        card.getStyleClass().add("product-card");
+        card.setPrefWidth(280);
+        card.setMinWidth(250);
+        card.setMaxWidth(340);
+
+        HBox topRow = new HBox(8);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+
+        Label avatar = new Label(initials(variant.productName()));
+        avatar.getStyleClass().add("product-card-avatar");
+
+        VBox titleBox = new VBox(2);
+        Label productName = new Label(variant.productName());
+        productName.getStyleClass().add("product-card-title");
+        productName.setWrapText(true);
+        Label variantName = new Label(variant.name() + " \u2022 " + variant.sku());
+        variantName.getStyleClass().add("product-card-meta");
+        titleBox.getChildren().addAll(productName, variantName);
+        HBox.setHgrow(titleBox, Priority.ALWAYS);
+
+        Label stockBadge = new Label("Stock " + (variant.stock() == null ? 0 : variant.stock()));
+        stockBadge.getStyleClass().add("badge-status");
+        applyStockBadge(stockBadge, variant);
+
+        topRow.getChildren().addAll(avatar, titleBox, stockBadge);
+
+        Label details = new Label("MRP " + (variant.price() != null ? variant.price() : "-") + " \u2022 Tax " + (variant.taxCategoryName() != null ? variant.taxCategoryName() : "-"));
+        details.getStyleClass().add("product-card-meta");
+
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+
+        HBox actions = new HBox(8);
+        actions.getStyleClass().add("product-card-actions");
+        Button viewBtn = iconButton("View", "bx-show", () ->
+            workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "view"))
+        );
+        Button editBtn = iconButton("Edit", "bx-edit", () ->
+            workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "edit"))
+        );
+        actions.getChildren().addAll(viewBtn, editBtn);
+        actions.setVisible(false);
+        actions.setManaged(false);
+
+        card.setOnMouseEntered(e -> {
+            actions.setVisible(true);
+            actions.setManaged(true);
+            if (!card.getStyleClass().contains("product-card-hover")) {
+                card.getStyleClass().add("product-card-hover");
+            }
+        });
+        card.setOnMouseExited(e -> {
+            actions.setVisible(false);
+            actions.setManaged(false);
+            card.getStyleClass().remove("product-card-hover");
+        });
+
+        card.getChildren().addAll(topRow, details, spacer, actions);
+        return card;
+    }
+
+    private Button iconButton(String text, String iconCode, Runnable action) {
+        Button button = new Button(text);
+        button.getStyleClass().add("action-btn");
+        FontIcon icon = new FontIcon(iconCode);
+        icon.getStyleClass().add("nav-icon");
+        icon.setIconSize(14);
+        button.setGraphic(icon);
+        button.setOnAction(e -> action.run());
+        return button;
+    }
+
+    private String initials(String name) {
+        if (name == null || name.isBlank()) {
+            return "V";
+        }
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, 1).toUpperCase();
+        }
+        return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+    }
+
+    private void applyStockBadge(Label badge, Variant variant) {
+        int stock = variant.stock() == null ? 0 : variant.stock();
+        int alertCap = variant.stockAlertCap() == null ? 0 : variant.stockAlertCap();
+        if (stock <= 0) {
+            badge.getStyleClass().add("badge-warning");
+        } else if (stock <= alertCap) {
+            badge.getStyleClass().add("badge-neutral");
+        } else {
+            badge.getStyleClass().add("badge-success");
+        }
     }
 
     private java.util.List<MenuItem> buildActionsMenu(Variant variant) {
