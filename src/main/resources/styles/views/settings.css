@@ -1,0 +1,56 @@
+@import "../tokens.css";
+
+/* =====================================================
+   Settings + Management Views (Tax/User/Supplier)
+   ===================================================== */
+
+.settings-tab-pane {
+    -fx-tab-min-height: 34;
+}
+
+.settings-tab-pane .tab-header-area {
+    -fx-padding: 0 0 8 0;
+}
+
+.settings-tab-pane .tab {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: -fx-radius-md -fx-radius-md 0 0;
+    -fx-background-radius: -fx-radius-md -fx-radius-md 0 0;
+    -fx-padding: 8 12;
+}
+
+.settings-tab-pane .tab:selected {
+    -fx-background-color: -color-primary-subtle;
+    -fx-border-color: -color-primary-light;
+}
+
+.settings-tab-pane .tab .tab-label {
+    -fx-text-fill: -color-text-secondary;
+    -fx-font-weight: 600;
+}
+
+.settings-tab-pane .tab:selected .tab-label {
+    -fx-text-fill: -color-primary-dark;
+}
+
+.profile-selector-card {
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: -fx-radius-lg;
+    -fx-background-radius: -fx-radius-lg;
+    -fx-padding: 14;
+    -fx-alignment: center-left;
+    -fx-spacing: 10;
+}
+
+.rule-editor-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.rule-editor-scroll > .viewport {
+    -fx-background-color: transparent;
+}

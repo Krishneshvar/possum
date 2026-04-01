@@ -11,7 +11,7 @@
       stylesheets="@../../styles/inventory.css">
 
     <!-- Header -->
-    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+    <HBox styleClass="view-header,view-toolbar" alignment="CENTER_LEFT">
         <VBox>
             <Label text="Employees" styleClass="view-title"/>
             <Label text="Manage employees and system users" styleClass="view-subtitle"/>

@@ -13,8 +13,10 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SupplierFormController implements Parameterizable {
 
@@ -30,9 +32,13 @@ public class SupplierFormController implements Parameterizable {
     @FXML private TextField gstinField;
     @FXML private ComboBox<PaymentPolicy> paymentPolicyCombo;
     @FXML private Button saveButton;
+    @FXML private Label nameErrorLabel;
+    @FXML private Label phoneErrorLabel;
+    @FXML private Label emailErrorLabel;
 
     private Long supplierId = null;
     private Runnable onSaveCallback;
+    private final Set<Control> invalidFields = new HashSet<>();
 
     public SupplierFormController(SupplierRepository supplierRepository, WorkspaceManager workspaceManager) {
         this.supplierRepository = supplierRepository;
@@ -142,13 +148,17 @@ public class SupplierFormController implements Parameterizable {
 
     @FXML
     public void initialize() {
+        setupValidation();
     }
 
     @FXML
     private void handleSave() {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
         try {
-            validateInputs();
+            if (!validateInputs()) {
+                NotificationService.warning("Please fix the highlighted fields");
+                return;
+            }
 
             PaymentPolicy selectedPolicy = paymentPolicyCombo.getValue();
             Long policyId = selectedPolicy != null ? selectedPolicy.id() : null;
@@ -156,12 +166,12 @@ public class SupplierFormController implements Parameterizable {
 
             Supplier supplierToSave = new Supplier(
                     supplierId,
-                    nameField.getText(),
-                    contactPersonField.getText().isEmpty() ? null : contactPersonField.getText(),
-                    phoneField.getText().isEmpty() ? null : phoneField.getText(),
-                    emailField.getText().isEmpty() ? null : emailField.getText(),
-                    addressField.getText().isEmpty() ? null : addressField.getText(),
-                    gstinField.getText().isEmpty() ? null : gstinField.getText(),
+                    nameField.getText().trim(),
+                    contactPersonField.getText().trim().isEmpty() ? null : contactPersonField.getText().trim(),
+                    phoneField.getText().trim().isEmpty() ? null : phoneField.getText().trim(),
+                    emailField.getText().trim().isEmpty() ? null : emailField.getText().trim(),
+                    addressField.getText().trim().isEmpty() ? null : addressField.getText().trim(),
+                    gstinField.getText().trim().isEmpty() ? null : gstinField.getText().trim(),
                     policyId,
                     policyName,
                     null, null, null
@@ -186,10 +196,60 @@ public class SupplierFormController implements Parameterizable {
         }
     }
 
-    private void validateInputs() {
-        if (nameField.getText() == null || nameField.getText().trim().isEmpty()) {
-            throw new IllegalArgumentException("Supplier name is required");
+    private void setupValidation() {
+        nameField.focusedProperty().addListener((obs, old, focused) -> {
+            if (!focused) {
+                validateName();
+            }
+        });
+        phoneField.focusedProperty().addListener((obs, old, focused) -> {
+            if (!focused) {
+                validatePhone();
+            }
+        });
+        emailField.focusedProperty().addListener((obs, old, focused) -> {
+            if (!focused) {
+                validateEmail();
+            }
+        });
+    }
+
+    private boolean validateInputs() {
+        boolean valid = true;
+        valid &= validateName();
+        valid &= validatePhone();
+        valid &= validateEmail();
+        return valid;
+    }
+
+    private boolean validateName() {
+        String value = nameField.getText() == null ? "" : nameField.getText().trim();
+        if (value.isEmpty()) {
+            showFieldError(nameField, nameErrorLabel, "Supplier name is required");
+            return false;
         }
+        clearFieldError(nameField, nameErrorLabel);
+        return true;
+    }
+
+    private boolean validatePhone() {
+        String value = phoneField.getText() == null ? "" : phoneField.getText().trim();
+        if (!value.isEmpty() && !value.matches("[+0-9()\\-\\s]{7,20}")) {
+            showFieldError(phoneField, phoneErrorLabel, "Enter a valid phone number");
+            return false;
+        }
+        clearFieldError(phoneField, phoneErrorLabel);
+        return true;
+    }
+
+    private boolean validateEmail() {
+        String value = emailField.getText() == null ? "" : emailField.getText().trim();
+        if (!value.isEmpty() && !value.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            showFieldError(emailField, emailErrorLabel, "Enter a valid email address");
+            return false;
+        }
+        clearFieldError(emailField, emailErrorLabel);
+        return true;
     }
 
     @FXML
@@ -200,7 +260,7 @@ public class SupplierFormController implements Parameterizable {
     private void replaceFieldWithLabel(Control field, String text) {
         if (field == null || field.getParent() == null) return;
         Label label = new Label(text != null && !text.isEmpty() ? text : "-");
-        label.setStyle("-fx-font-size: 14px; -fx-text-fill: #1e293b; -fx-padding: 8 12;");
+        label.getStyleClass().add("readonly-value");
         label.setWrapText(true);
         
         javafx.scene.Parent parent = field.getParent();
@@ -214,6 +274,30 @@ public class SupplierFormController implements Parameterizable {
             if (index != -1) {
                 box.getChildren().set(index, label);
             }
+        }
+    }
+
+    private void showFieldError(Control control, Label errorLabel, String message) {
+        if (control != null && !control.getStyleClass().contains("input-error")) {
+            control.getStyleClass().add("input-error");
+        }
+        invalidFields.add(control);
+        if (errorLabel != null) {
+            errorLabel.setText(message);
+            errorLabel.setVisible(true);
+            errorLabel.setManaged(true);
+        }
+    }
+
+    private void clearFieldError(Control control, Label errorLabel) {
+        if (control != null) {
+            control.getStyleClass().remove("input-error");
+            invalidFields.remove(control);
+        }
+        if (errorLabel != null) {
+            errorLabel.setText("");
+            errorLabel.setVisible(false);
+            errorLabel.setManaged(false);
         }
     }
 }

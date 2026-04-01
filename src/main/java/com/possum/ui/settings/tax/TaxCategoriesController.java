@@ -3,13 +3,12 @@ package com.possum.ui.settings.tax;
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.domain.model.TaxCategory;
 import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.common.dialogs.DialogStyler;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import com.possum.ui.common.dialogs.DialogStyler;
 
 public class TaxCategoriesController {
 
@@ -17,9 +16,10 @@ public class TaxCategoriesController {
     @FXML private TableColumn<TaxCategory, String> nameColumn;
     @FXML private TableColumn<TaxCategory, String> descriptionColumn;
     @FXML private TableColumn<TaxCategory, Integer> productCountColumn;
-    
+
     @FXML private TextField nameField;
     @FXML private TextArea descriptionArea;
+    @FXML private Label nameErrorLabel;
 
     private TaxManagementService taxService;
     private TaxCategory selectedCategory;
@@ -32,6 +32,7 @@ public class TaxCategoriesController {
     @FXML
     public void initialize() {
         setupTable();
+        setupValidation();
     }
 
     private void setupTable() {
@@ -47,6 +48,14 @@ public class TaxCategoriesController {
         });
     }
 
+    private void setupValidation() {
+        nameField.focusedProperty().addListener((obs, old, focused) -> {
+            if (!focused) {
+                validateName();
+            }
+        });
+    }
+
     private void loadCategories() {
         if (taxService != null) {
             categoriesTable.setItems(FXCollections.observableArrayList(taxService.getAllTaxCategories()));
@@ -56,19 +65,21 @@ public class TaxCategoriesController {
     private void populateForm(TaxCategory category) {
         nameField.setText(category.name());
         descriptionArea.setText(category.description());
+        clearFieldError(nameField, nameErrorLabel);
     }
 
     private void clearForm() {
         nameField.clear();
         descriptionArea.clear();
+        clearFieldError(nameField, nameErrorLabel);
         selectedCategory = null;
         categoriesTable.getSelectionModel().clearSelection();
     }
 
     @FXML
     private void handleAdd() {
-        if (nameField.getText().trim().isEmpty()) {
-            NotificationService.warning("Category name is required");
+        if (!validateName()) {
+            NotificationService.warning("Please fix the highlighted fields");
             return;
         }
 
@@ -92,8 +103,8 @@ public class TaxCategoriesController {
             return;
         }
 
-        if (nameField.getText().trim().isEmpty()) {
-            NotificationService.warning("Category name is required");
+        if (!validateName()) {
+            NotificationService.warning("Please fix the highlighted fields");
             return;
         }
 
@@ -144,5 +155,31 @@ public class TaxCategoriesController {
     @FXML
     private void handleClear() {
         clearForm();
+    }
+
+    private boolean validateName() {
+        String value = nameField.getText() == null ? "" : nameField.getText().trim();
+        if (value.isEmpty()) {
+            showFieldError(nameField, nameErrorLabel, "Category name is required");
+            return false;
+        }
+        clearFieldError(nameField, nameErrorLabel);
+        return true;
+    }
+
+    private void showFieldError(Control field, Label errorLabel, String message) {
+        if (!field.getStyleClass().contains("input-error")) {
+            field.getStyleClass().add("input-error");
+        }
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+    }
+
+    private void clearFieldError(Control field, Label errorLabel) {
+        field.getStyleClass().remove("input-error");
+        errorLabel.setText("");
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
     }
 }

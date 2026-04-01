@@ -11,13 +11,13 @@
       styleClass="workspace-view">
 
     <VBox>
-        <HBox styleClass="view-header">
+        <HBox styleClass="view-header,view-toolbar">
             <VBox spacing="5" HBox.hgrow="ALWAYS">
                 <Label text="Suppliers" styleClass="view-title"/>
                 <Label text="Manage your supplier directory and contacts" styleClass="view-subtitle"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="⟳ Refresh" onAction="#handleRefresh" styleClass="action-button"
+            <Button text="Refresh" onAction="#handleRefresh" styleClass="action-button"
                     accessibleText="Refresh suppliers list"/>
             <Button fx:id="createButton" text="+ Create Supplier" onAction="#handleCreate"
                     styleClass="action-button, primary-button" defaultButton="true"

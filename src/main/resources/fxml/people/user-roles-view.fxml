@@ -22,25 +22,23 @@
             <Button fx:id="saveButton" text="Save Changes" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save roles and permissions"/>
         </HBox>
 
-        <VBox spacing="30" maxWidth="800">
+        <VBox spacing="20" maxWidth="860">
             
             <!-- Roles Section -->
-            <VBox spacing="10">
+            <VBox spacing="10" styleClass="form-section">
                 <VBox>
-                    <Label text="Roles" styleClass="card-title" style="-fx-font-size: 16px;"/>
-                    <Label text="Roles provide a set of permissions to the user" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                    <Label text="Roles" styleClass="form-section-title"/>
+                    <Label text="Roles provide a set of permissions to the user" styleClass="form-section-subtitle"/>
                 </VBox>
                 
                 <VBox fx:id="rolesContainer" spacing="10"/>
             </VBox>
 
-            <Separator/>
-
             <!-- Permission Overrides Section -->
-            <VBox spacing="10">
+            <VBox spacing="10" styleClass="form-section">
                 <VBox>
-                    <Label text="Permission Overrides" styleClass="card-title" style="-fx-font-size: 16px;"/>
-                    <Label text="Grant or revoke specific permissions regardless of role assignments" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                    <Label text="Permission Overrides" styleClass="form-section-title"/>
+                    <Label text="Grant or revoke specific permissions regardless of role assignments" styleClass="form-section-subtitle"/>
                 </VBox>
 
                 <VBox fx:id="permissionsContainer" spacing="15"/>

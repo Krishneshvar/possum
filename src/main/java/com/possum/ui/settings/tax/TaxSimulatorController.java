@@ -24,6 +24,8 @@ public class TaxSimulatorController {
     @FXML private TextField quantityField;
     @FXML private TextArea resultArea;
     @FXML private Button calculateButton;
+    @FXML private Label amountErrorLabel;
+    @FXML private Label quantityErrorLabel;
 
     private TaxManagementService taxService;
     private TaxRepository taxRepository;
@@ -46,6 +48,20 @@ public class TaxSimulatorController {
     public void initialize() {
         quantityField.setText("1");
         amountField.setText("100");
+        setupValidation();
+    }
+
+    private void setupValidation() {
+        amountField.focusedProperty().addListener((obs, old, focused) -> {
+            if (!focused) {
+                validateAmount();
+            }
+        });
+        quantityField.focusedProperty().addListener((obs, old, focused) -> {
+            if (!focused) {
+                validateQuantity();
+            }
+        });
     }
 
     private void loadCategories() {
@@ -77,6 +93,11 @@ public class TaxSimulatorController {
     private void handleCalculate() {
         if (taxRepository == null || jsonService == null) {
             NotificationService.error("Tax engine not initialized");
+            return;
+        }
+
+        if (!validateForm()) {
+            NotificationService.warning("Please fix the highlighted fields");
             return;
         }
 
@@ -155,5 +176,70 @@ public class TaxSimulatorController {
         quantityField.setText("1");
         categoryCombo.setValue(null);
         resultArea.clear();
+        clearFieldError(amountField, amountErrorLabel);
+        clearFieldError(quantityField, quantityErrorLabel);
+    }
+
+    private boolean validateForm() {
+        boolean valid = true;
+        valid &= validateAmount();
+        valid &= validateQuantity();
+        return valid;
+    }
+
+    private boolean validateAmount() {
+        String text = amountField.getText() == null ? "" : amountField.getText().trim();
+        if (text.isEmpty()) {
+            showFieldError(amountField, amountErrorLabel, "Unit price is required");
+            return false;
+        }
+        try {
+            BigDecimal amount = new BigDecimal(text);
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                showFieldError(amountField, amountErrorLabel, "Unit price must be greater than zero");
+                return false;
+            }
+        } catch (NumberFormatException ex) {
+            showFieldError(amountField, amountErrorLabel, "Enter a valid numeric amount");
+            return false;
+        }
+        clearFieldError(amountField, amountErrorLabel);
+        return true;
+    }
+
+    private boolean validateQuantity() {
+        String text = quantityField.getText() == null ? "" : quantityField.getText().trim();
+        if (text.isEmpty()) {
+            showFieldError(quantityField, quantityErrorLabel, "Quantity is required");
+            return false;
+        }
+        try {
+            int quantity = Integer.parseInt(text);
+            if (quantity <= 0) {
+                showFieldError(quantityField, quantityErrorLabel, "Quantity must be greater than zero");
+                return false;
+            }
+        } catch (NumberFormatException ex) {
+            showFieldError(quantityField, quantityErrorLabel, "Quantity must be a whole number");
+            return false;
+        }
+        clearFieldError(quantityField, quantityErrorLabel);
+        return true;
+    }
+
+    private void showFieldError(Control field, Label errorLabel, String message) {
+        if (!field.getStyleClass().contains("input-error")) {
+            field.getStyleClass().add("input-error");
+        }
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+    }
+
+    private void clearFieldError(Control field, Label errorLabel) {
+        field.getStyleClass().remove("input-error");
+        errorLabel.setText("");
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
     }
 }

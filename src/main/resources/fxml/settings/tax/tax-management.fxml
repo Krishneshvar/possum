@@ -8,14 +8,14 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.settings.tax.TaxManagementController"
       styleClass="workspace-view"
-      stylesheets="@../../styles/inventory.css">
+      stylesheets="@../../../styles/settings.css">
 
     <VBox styleClass="view-header">
         <Label text="Tax Configuration" styleClass="view-title"/>
         <Label text="Configure tax profiles, categories, tax rules, and test calculations using the simulator." styleClass="view-subtitle"/>
     </VBox>
     
-    <TabPane fx:id="taxTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" styleClass="data-table">
+    <TabPane fx:id="taxTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" styleClass="settings-tab-pane">
         <Tab text="Profiles" closable="false">
             <fx:include source="tax-profiles.fxml" fx:id="taxProfiles"/>
         </Tab>

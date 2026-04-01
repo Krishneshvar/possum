@@ -16,42 +16,55 @@
         </HBox>
 
         <VBox spacing="20" maxWidth="600">
-            <VBox styleClass="card" spacing="15">
-                <Label text="Employee Profile" styleClass="card-title"/>
-                <Label text="Basic identifying information for this employee." styleClass="helper-text" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
-                <Separator style="-fx-padding: 0 0 10 0;" />
+            <VBox styleClass="form-section" spacing="15">
+                <Label text="Employee Profile" styleClass="form-section-title"/>
+                <Label text="Basic identifying information for this employee." styleClass="form-section-subtitle"/>
+                <Separator style="-fx-padding: 0 0 10 0;"/>
 
                 <HBox spacing="20">
                     <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
-                        <Label text="Full Name *" styleClass="form-label"/>
+                        <HBox spacing="4">
+                            <Label text="Full Name" styleClass="form-label"/>
+                            <Label text="*" styleClass="required-indicator"/>
+                        </HBox>
                         <TextField fx:id="nameField" promptText="e.g., John Smith" styleClass="text-field" accessibleText="Employee Full Name"/>
+                        <Label fx:id="nameErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                     </VBox>
                 </HBox>
             </VBox>
 
-            <VBox styleClass="card" spacing="15">
-                <Label text="System Access" styleClass="card-title"/>
-                <Label text="Authentication credentials and account status." styleClass="helper-text" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
-                <Separator style="-fx-padding: 0 0 10 0;" />
+            <VBox styleClass="form-section" spacing="15">
+                <Label text="System Access" styleClass="form-section-title"/>
+                <Label text="Authentication credentials and account status." styleClass="form-section-subtitle"/>
+                <Separator style="-fx-padding: 0 0 10 0;"/>
 
                 <HBox spacing="20">
                     <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
-                        <Label text="Username *" styleClass="form-label"/>
+                        <HBox spacing="4">
+                            <Label text="Username" styleClass="form-label"/>
+                            <Label text="*" styleClass="required-indicator"/>
+                        </HBox>
                         <TextField fx:id="usernameField" promptText="e.g., jsmith" styleClass="text-field" accessibleText="System Username"/>
+                        <Label fx:id="usernameErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                     </VBox>
                     <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
-                        <Label text="Status *" styleClass="form-label"/>
+                        <HBox spacing="4">
+                            <Label text="Status" styleClass="form-label"/>
+                            <Label text="*" styleClass="required-indicator"/>
+                        </HBox>
                         <ComboBox fx:id="statusCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Account Status"/>
+                        <Label fx:id="statusErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                     </VBox>
                 </HBox>
                 <VBox styleClass="form-group">
                     <Label text="Password" styleClass="form-label"/>
                     <PasswordField fx:id="passwordField" promptText="Enter password" styleClass="text-field" accessibleText="Account Password"/>
-                    <Label fx:id="passwordHelper" text="Required for new employees. Leave blank to keep current password if editing." styleClass="helper-text" style="-fx-text-fill: #64748b; -fx-font-size: 11px;"/>
+                    <Label fx:id="passwordHelper" text="Required for new employees. Leave blank to keep current password if editing." styleClass="field-helper"/>
+                    <Label fx:id="passwordErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                 </VBox>
             </VBox>
 
-            <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+            <HBox styleClass="form-actions">
                 <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true" accessibleText="Cancel and close"/>
                 <Button fx:id="saveButton" text="Save Employee" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save employee details"/>
             </HBox>

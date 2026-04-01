@@ -24,12 +24,17 @@
         </HBox>
 
         <VBox spacing="20" maxWidth="600">
-            <VBox styleClass="card">
-                <Label text="Supplier Information" styleClass="card-title"/>
+            <VBox styleClass="form-section">
+                <Label text="Supplier Information" styleClass="form-section-title"/>
+                <Label text="Business contact details, payment terms, and tax identifiers for procurement." styleClass="form-section-subtitle"/>
                 <VBox styleClass="form-group">
-                    <Label text="Supplier Name *" styleClass="form-label" labelFor="$nameField"/>
+                    <HBox spacing="4">
+                        <Label text="Supplier Name" styleClass="form-label" labelFor="$nameField"/>
+                        <Label text="*" styleClass="required-indicator"/>
+                    </HBox>
                     <TextField fx:id="nameField" promptText="Enter supplier name" styleClass="text-field"
                                accessibleText="Supplier Name. Required field"/>
+                    <Label fx:id="nameErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                 </VBox>
                 <VBox styleClass="form-group">
                     <Label text="Contact Person" styleClass="form-label" labelFor="$contactPersonField"/>
@@ -40,11 +45,13 @@
                     <Label text="Phone Number" styleClass="form-label" labelFor="$phoneField"/>
                     <TextField fx:id="phoneField" promptText="Enter phone number" styleClass="text-field"
                                accessibleText="Phone Number"/>
+                    <Label fx:id="phoneErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                 </VBox>
                 <VBox styleClass="form-group">
                     <Label text="Email Address" styleClass="form-label" labelFor="$emailField"/>
                     <TextField fx:id="emailField" promptText="Enter email address" styleClass="text-field"
                                accessibleText="Email Address"/>
+                    <Label fx:id="emailErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                 </VBox>
                 <VBox styleClass="form-group">
                     <Label text="GSTIN" styleClass="form-label" labelFor="$gstinField"/>

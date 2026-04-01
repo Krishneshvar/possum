@@ -9,7 +9,7 @@
       fx:controller="com.possum.ui.settings.tax.TaxProfilesController"
       spacing="20"
       style="-fx-padding: 20 0 0 0;"
-      stylesheets="@../../styles/inventory.css">
+      stylesheets="@../../../styles/settings.css">
 
     <HBox spacing="20" VBox.vgrow="ALWAYS">
         <!-- Left Side: Table of Profiles -->
@@ -17,7 +17,7 @@
             <Label text="Tax Profiles List" styleClass="card-title"/>
             <TableView fx:id="profilesTable" VBox.vgrow="ALWAYS" styleClass="data-table">
                 <placeholder>
-                    <Label text="No tax profiles created yet. Create one from the details pane." style="-fx-text-fill: #94a3b8;"/>
+                    <Label text="No tax profiles created yet. Create one from the details pane." styleClass="helper-text"/>
                 </placeholder>
                 <columns>
                     <TableColumn fx:id="nameColumn" text="Profile Name" prefWidth="250"/>
@@ -32,19 +32,28 @@
         </VBox>
 
         <!-- Right Side: Details Form -->
-        <VBox spacing="15" styleClass="card" style="-fx-min-width: 400; -fx-max-width: 400;">
-            <Label text="Profile Details" styleClass="card-title"/>
+        <VBox spacing="15" styleClass="form-section" style="-fx-min-width: 400; -fx-max-width: 400;">
+            <Label text="Profile Details" styleClass="form-section-title"/>
+            <Label text="Define region, pricing mode, and active status for this tax profile." styleClass="form-section-subtitle"/>
 
             <VBox spacing="15" VBox.vgrow="ALWAYS">
                 <VBox styleClass="form-group">
-                    <Label text="Profile Name *" styleClass="form-label"/>
+                    <HBox spacing="4">
+                        <Label text="Profile Name" styleClass="form-label"/>
+                        <Label text="*" styleClass="required-indicator"/>
+                    </HBox>
                     <TextField fx:id="nameField" promptText="e.g., GST India" styleClass="text-field" accessibleText="Profile Name"/>
+                    <Label fx:id="nameErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                 </VBox>
 
                 <HBox spacing="10">
                     <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
-                        <Label text="Country Code *" styleClass="form-label"/>
+                        <HBox spacing="4">
+                            <Label text="Country Code" styleClass="form-label"/>
+                            <Label text="*" styleClass="required-indicator"/>
+                        </HBox>
                         <TextField fx:id="countryCodeField" promptText="e.g., IN" styleClass="text-field" accessibleText="Country Code"/>
+                        <Label fx:id="countryCodeErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                     </VBox>
                     <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
                         <Label text="Region Code" styleClass="form-label"/>
@@ -55,7 +64,8 @@
                 <VBox styleClass="form-group">
                     <Label text="Pricing Mode" styleClass="form-label"/>
                     <ComboBox fx:id="pricingModeCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Pricing Mode"/>
-                    <Label text="Determines if product prices include tax" style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
+                    <Label text="Determines if product prices include tax" styleClass="field-helper"/>
+                    <Label fx:id="pricingModeErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                 </VBox>
 
                 <VBox style="-fx-padding: 10 0 0 0;">
@@ -65,7 +75,7 @@
 
             <Separator/>
 
-            <HBox spacing="10" alignment="CENTER_RIGHT">
+            <HBox styleClass="form-actions">
                 <Button text="Clear" onAction="#handleClear" styleClass="action-button" accessibleText="Clear form fields" cancelButton="true"/>
                 <Button text="Delete" onAction="#handleDelete" styleClass="danger-button" accessibleText="Delete selected profile"/>
                 <Button text="Update" onAction="#handleUpdate" styleClass="action-button" accessibleText="Update selected profile"/>

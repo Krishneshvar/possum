@@ -9,13 +9,14 @@
       fx:controller="com.possum.ui.settings.tax.TaxRulesController"
       spacing="20"
       style="-fx-padding: 20 0 0 0;"
-      stylesheets="@../../styles/inventory.css">
+      stylesheets="@../../../styles/settings.css">
 
     <!-- Top Selection Area -->
-    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="card">
-        <Label text="Select Tax Profile" styleClass="form-label" style="-fx-font-weight: bold;"/>
+    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="profile-selector-card">
+        <Label text="Select Tax Profile" styleClass="form-label"/>
         <ComboBox fx:id="profileCombo" prefWidth="300" styleClass="combo-box" accessibleText="Select Tax Profile"/>
-        <Label text="Tax rules belong to a specific profile." style="-fx-text-fill: #94a3b8;"/>
+        <Label text="Tax rules belong to a specific profile." styleClass="field-helper"/>
+        <Label fx:id="profileErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
     </HBox>
 
     <HBox spacing="20" VBox.vgrow="ALWAYS">
@@ -24,7 +25,7 @@
             <Label text="Tax Rules List" styleClass="card-title"/>
             <TableView fx:id="rulesTable" VBox.vgrow="ALWAYS" styleClass="data-table">
                 <placeholder>
-                    <Label text="No tax rules found for this profile. Add a new rule." style="-fx-text-fill: #94a3b8;"/>
+                    <Label text="No tax rules found for this profile. Add a new rule." styleClass="helper-text"/>
                 </placeholder>
                 <columns>
                     <TableColumn fx:id="categoryColumn" text="Category" prefWidth="150"/>
@@ -39,34 +40,44 @@
         </VBox>
 
         <!-- Right Side: Rule Details Form -->
-        <VBox spacing="15" styleClass="card" style="-fx-min-width: 450; -fx-max-width: 500;">
-            <Label text="Rule Configuration" styleClass="card-title"/>
+        <VBox spacing="15" styleClass="form-section" style="-fx-min-width: 450; -fx-max-width: 500;">
+            <Label text="Rule Configuration" styleClass="form-section-title"/>
+            <Label text="Create or edit tax rules with conditional constraints and effective date range." styleClass="form-section-subtitle"/>
             
-            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-padding: 0;">
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="rule-editor-scroll" style="-fx-padding: 0;">
                 <VBox spacing="20" style="-fx-padding: 0 5 0 0;">
 
                     <!-- Basic Config -->
                     <VBox spacing="15">
-                        <Label text="Basic Details" styleClass="form-label" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+                        <Label text="Basic Details" styleClass="form-section-title"/>
                         <HBox spacing="10">
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
-                                <Label text="Tax Category *" styleClass="form-label"/>
+                                <Label text="Tax Category" styleClass="form-label"/>
                                 <ComboBox fx:id="categoryCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Tax Category"/>
                             </VBox>
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
-                                <Label text="Tax Scope *" styleClass="form-label"/>
+                                <HBox spacing="4">
+                                    <Label text="Tax Scope" styleClass="form-label"/>
+                                    <Label text="*" styleClass="required-indicator"/>
+                                </HBox>
                                 <ComboBox fx:id="scopeCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Tax Scope"/>
+                                <Label fx:id="scopeErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                             </VBox>
                         </HBox>
 
                         <HBox spacing="10">
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
-                                <Label text="Rate (%) *" styleClass="form-label"/>
+                                <HBox spacing="4">
+                                    <Label text="Rate (%)" styleClass="form-label"/>
+                                    <Label text="*" styleClass="required-indicator"/>
+                                </HBox>
                                 <TextField fx:id="rateField" promptText="e.g., 18" styleClass="text-field" accessibleText="Tax Rate Percentage"/>
+                                <Label fx:id="rateErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                             </VBox>
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
                                 <Label text="Priority Level" styleClass="form-label"/>
                                 <TextField fx:id="priorityField" promptText="0" styleClass="text-field" accessibleText="Execution Priority"/>
+                                <Label fx:id="priorityErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                             </VBox>
                         </HBox>
 
@@ -77,17 +88,19 @@
 
                     <!-- Advanced Constraints -->
                     <VBox spacing="15">
-                        <Label text="Conditional Constraints (Optional)" styleClass="form-label" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
-                        <Label text="Apply this tax only if these conditions are met" style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+                        <Label text="Conditional Constraints (Optional)" styleClass="form-section-title"/>
+                        <Label text="Apply this tax only if these conditions are met" styleClass="field-helper"/>
 
                         <HBox spacing="10">
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
                                 <Label text="Min Item Price" styleClass="form-label"/>
                                 <TextField fx:id="minPriceField" promptText="Optional" styleClass="text-field"/>
+                                <Label fx:id="minPriceErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                             </VBox>
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
                                 <Label text="Max Item Price" styleClass="form-label"/>
                                 <TextField fx:id="maxPriceField" promptText="Optional" styleClass="text-field"/>
+                                <Label fx:id="maxPriceErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                             </VBox>
                         </HBox>
 
@@ -95,10 +108,12 @@
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
                                 <Label text="Min Invoice Total" styleClass="form-label"/>
                                 <TextField fx:id="minInvoiceField" promptText="Optional" styleClass="text-field"/>
+                                <Label fx:id="minInvoiceErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                             </VBox>
                             <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
                                 <Label text="Max Invoice Total" styleClass="form-label"/>
                                 <TextField fx:id="maxInvoiceField" promptText="Optional" styleClass="text-field"/>
+                                <Label fx:id="maxInvoiceErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                             </VBox>
                         </HBox>
 
@@ -117,6 +132,7 @@
                                 <DatePicker fx:id="validToPicker" maxWidth="Infinity" styleClass="date-picker"/>
                             </VBox>
                         </HBox>
+                        <Label fx:id="dateRangeErrorLabel" text="" styleClass="field-error" visible="false" managed="false"/>
                     </VBox>
 
                 </VBox>
@@ -124,7 +140,7 @@
             
             <Separator/>
             
-            <HBox spacing="10" alignment="CENTER_RIGHT">
+            <HBox styleClass="form-actions">
                 <Button text="Clear" onAction="#handleClear" styleClass="action-button" accessibleText="Clear form fields" cancelButton="true"/>
                 <Button text="Delete" onAction="#handleDelete" styleClass="danger-button" accessibleText="Delete selected rule"/>
                 <Button text="Update" onAction="#handleUpdate" styleClass="action-button" accessibleText="Update selected rule"/>
