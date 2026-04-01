@@ -18,9 +18,11 @@ public class PaginationBar extends HBox {
     private int totalItems = 0;
 
     public PaginationBar() {
-        setSpacing(10);
-        setPadding(new Insets(10));
+        setSpacing(12);
+        setPadding(new Insets(12, 16, 12, 16));
         setAlignment(Pos.CENTER);
+        getStyleClass().add("pagination-bar");
+        setStyle("-fx-background-color: #FAFBFC; -fx-border-color: #E2E8F0; -fx-border-width: 1 0 0 0;");
 
         pagination = new Pagination();
         pagination.setMaxPageIndicatorCount(5);
@@ -32,16 +34,20 @@ public class PaginationBar extends HBox {
         pageSizeCombo = new ComboBox<>();
         pageSizeCombo.getItems().addAll(10, 25, 50, 100);
         pageSizeCombo.setValue(25);
+        pageSizeCombo.setMinHeight(40);
+        pageSizeCombo.setPrefHeight(40);
         pageSizeCombo.valueProperty().addListener((obs, old, newSize) -> {
             updatePageCount();
             notifyPageChange();
         });
 
         infoLabel = new Label();
+        infoLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #475569;");
         updateInfo();
 
         HBox leftBox = new HBox(10, new Label("Items per page:"), pageSizeCombo);
         leftBox.setAlignment(Pos.CENTER_LEFT);
+        leftBox.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #475569;");
 
         HBox rightBox = new HBox(10, infoLabel);
         rightBox.setAlignment(Pos.CENTER_RIGHT);

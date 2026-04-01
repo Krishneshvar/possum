@@ -3,7 +3,8 @@
    JavaFX looked-up colors and sizing scales.
    ===================================================== */
 
-.root {
+/* Design tokens apply to root and as lookups for the scene */
+.root, .app-shell, .toast-container {
     /* Primary - Emerald */
     -color-primary: #10B981;
     -color-primary-dark: #059669;

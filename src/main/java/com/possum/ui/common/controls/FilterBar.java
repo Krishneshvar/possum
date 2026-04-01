@@ -32,18 +32,25 @@ public class FilterBar extends VBox {
 
     public FilterBar() {
         setSpacing(10);
-        setPadding(new Insets(10));
-        getStyleClass().add("filter-toolbar");
+        setPadding(new Insets(12, 16, 12, 16));
+        getStyleClass().add("filter-bar");
+        setStyle("-fx-background-color: #FAFBFC; -fx-border-color: #E2E8F0; -fx-border-width: 0 0 1 0;");
 
         topRow = new HBox(10);
         bottomRow = new HBox(10);
         topRow.getStyleClass().add("view-toolbar");
         bottomRow.getStyleClass().add("view-toolbar");
+        topRow.setFillHeight(true);
+        bottomRow.setFillHeight(true);
 
         searchField = new TextField();
         searchField.setPromptText("Search...");
         searchField.setAccessibleText("Search records");
-        searchField.setPrefWidth(250);
+        searchField.getStyleClass().add("search-field");
+        searchField.setPrefWidth(300);
+        searchField.setMinWidth(260);
+        searchField.setMinHeight(40);
+        searchField.setPrefHeight(40);
         searchField.textProperty().addListener((obs, old, val) -> scheduleFilterNotify());
         searchField.setOnKeyPressed(e -> {
             if (e.getCode() == javafx.scene.input.KeyCode.ENTER) {
@@ -52,8 +59,11 @@ public class FilterBar extends VBox {
             }
         });
 
-        Button resetButton = new Button("Reset");
+        Button resetButton = new Button("Reset Filters");
+        resetButton.getStyleClass().add("action-button");
         resetButton.setAccessibleText("Reset all filters");
+        resetButton.setMinHeight(40);
+        resetButton.setPrefHeight(40);
         resetButton.setOnAction(e -> reset());
 
         topRow.getChildren().addAll(searchField, resetButton);
@@ -68,7 +78,10 @@ public class FilterBar extends VBox {
         ComboBox<T> combo = new ComboBox<>();
         combo.setPromptText(prompt);
         combo.setAccessibleText(prompt);
-        combo.setPrefWidth(150);
+        combo.setMinWidth(176);
+        combo.setPrefWidth(188);
+        combo.setMinHeight(40);
+        combo.setPrefHeight(40);
         combo.valueProperty().addListener((obs, old, val) -> notifyFilterChange());
         
         filters.put(key, combo);
@@ -84,7 +97,10 @@ public class FilterBar extends VBox {
     public <T> MultiSelectFilter<T> addMultiSelectFilter(String key, String prompt, java.util.List<T> items, Function<T, String> labelExtractor, boolean searchable) {
         MultiSelectFilter<T> multiSelect = new MultiSelectFilter<>(prompt, labelExtractor, searchable);
         multiSelect.setAccessibleText(prompt);
-        multiSelect.setPrefWidth(150);
+        multiSelect.setMinWidth(176);
+        multiSelect.setPrefWidth(188);
+        multiSelect.setMinHeight(40);
+        multiSelect.setPrefHeight(40);
         multiSelect.setItems(items);
         multiSelect.getSelectedItems().addListener((javafx.collections.ListChangeListener.Change<? extends T> c) -> notifyFilterChange());
 
@@ -98,7 +114,10 @@ public class FilterBar extends VBox {
         DatePicker picker = new DatePicker();
         picker.setPromptText(prompt);
         picker.setAccessibleText(prompt);
-        picker.setPrefWidth(150);
+        picker.setMinWidth(176);
+        picker.setPrefWidth(188);
+        picker.setMinHeight(40);
+        picker.setPrefHeight(40);
         picker.valueProperty().addListener((obs, old, val) -> notifyFilterChange());
         
         dateFilters.put(key, picker);
@@ -110,7 +129,10 @@ public class FilterBar extends VBox {
         TextField field = new TextField();
         field.setPromptText(prompt);
         field.setAccessibleText(prompt);
-        field.setPrefWidth(120);
+        field.setMinWidth(152);
+        field.setPrefWidth(168);
+        field.setMinHeight(40);
+        field.setPrefHeight(40);
         field.textProperty().addListener((obs, old, val) -> scheduleFilterNotify());
 
         textFilters.put(key, field);

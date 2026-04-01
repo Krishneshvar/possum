@@ -455,13 +455,14 @@ public class ProductFormController implements Parameterizable {
         }
 
         public VariantRow(boolean isDefault, String initialName) {
-            view = new VBox(10);
-            view.setStyle("-fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 15;");
+            view = new VBox(14);
+            view.getStyleClass().add("variant-row-container");
 
-            HBox headerBox = new HBox(10);
+            HBox headerBox = new HBox(12);
+            headerBox.getStyleClass().add("variant-row-header");
             headerBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             Label title = new Label("Variant Details");
-            title.setStyle("-fx-font-weight: bold; -fx-text-fill: #475569;");
+            title.getStyleClass().add("variant-row-title");
 
             defaultRadio = new RadioButton("Default Variant");
             defaultRadio.setToggleGroup(defaultVariantGroup);
@@ -476,12 +477,14 @@ public class ProductFormController implements Parameterizable {
 
             headerBox.getChildren().addAll(title, defaultRadio, spacer, removeBtn);
 
-            HBox row1 = new HBox(15);
+            HBox row1 = new HBox(14);
+            row1.getStyleClass().add("variant-field-row");
             variantNameField = createTextField("Variant Name", initialName != null ? initialName : "e.g. Small, Red");
             skuField = createTextField("SKU", "Stock Keeping Unit");
             row1.getChildren().addAll(createFieldBox("Name *", variantNameField), createFieldBox("SKU", skuField));
 
-            HBox row2 = new HBox(15);
+            HBox row2 = new HBox(14);
+            row2.getStyleClass().add("variant-field-row");
             priceField = createTextField("Price", "0.00");
             costPriceField = createTextField("Cost Price", "0.00");
             marginField = createTextField("Margin %", "0.00%");
@@ -497,7 +500,8 @@ public class ProductFormController implements Parameterizable {
                 createFieldBox("Margin %", marginField)
             );
 
-            HBox row3 = new HBox(15);
+            HBox row3 = new HBox(14);
+            row3.getStyleClass().add("variant-field-row");
             stockAlertField = createTextField("Stock Alert Cap", "10");
             variantStatusCombo = new ComboBox<>(FXCollections.observableArrayList("active", "inactive", "discontinued"));
             variantStatusCombo.setConverter(new javafx.util.StringConverter<String>() {
@@ -618,9 +622,10 @@ public class ProductFormController implements Parameterizable {
         }
 
         private VBox createFieldBox(String labelText, Control field) {
-            VBox box = new VBox(5);
+            VBox box = new VBox(6);
+            box.getStyleClass().add("variant-field-box");
             Label label = new Label(labelText);
-            label.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
+            label.getStyleClass().add("variant-field-label");
             box.getChildren().addAll(label, field);
             HBox.setHgrow(box, Priority.ALWAYS);
             return box;
