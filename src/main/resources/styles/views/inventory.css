@@ -515,6 +515,39 @@
     -fx-icon-color: white;
 }
 
+.btn-delete {
+    -fx-min-width: 26;
+    -fx-min-height: 26;
+    -fx-pref-width: 26;
+    -fx-pref-height: 26;
+    -fx-max-width: 26;
+    -fx-max-height: 26;
+    -fx-background-color: #FEF2F2; /* Subtle error background */
+    -fx-background-radius: 6;
+    -fx-border-color: #FCA5A5; /* Light error border */
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-text-fill: #EF4444; /* Error red */
+    -fx-icon-color: #EF4444;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+}
+
+.btn-delete:hover {
+    -fx-background-color: #EF4444;
+    -fx-text-fill: white;
+    -fx-border-color: #EF4444;
+}
+
+.btn-delete .ikonli-font-icon {
+    -fx-icon-color: #EF4444;
+}
+
+.btn-delete:hover .ikonli-font-icon {
+    -fx-icon-color: white;
+}
+
 .btn-remove-variant {
     -fx-text-fill: -color-error;
     -fx-background-color: transparent;

@@ -17,16 +17,17 @@
                 <Label text="Manage your supplier directory and contacts" styleClass="view-subtitle"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Refresh" onAction="#handleRefresh" styleClass="action-button"
+            <Button text="↺ Refresh" onAction="#handleRefresh" styleClass="action-button"
                     accessibleText="Refresh suppliers list"/>
-            <Button fx:id="createButton" text="+ Create Supplier" onAction="#handleCreate"
+            <Button fx:id="createButton" text="Create Supplier" onAction="#handleCreate"
                     styleClass="action-button, primary-button" defaultButton="true"
                     accessibleText="Create new supplier"/>
         </HBox>
     </VBox>
     
-    <FilterBar fx:id="filterBar" styleClass="card"/>
-    <DataTableView fx:id="suppliersTable" VBox.vgrow="ALWAYS" styleClass="card"/>
-    <PaginationBar fx:id="paginationBar" styleClass="card"/>
-
+    <VBox VBox.vgrow="ALWAYS" styleClass="card">
+        <FilterBar fx:id="filterBar"/>
+        <DataTableView fx:id="suppliersTable" VBox.vgrow="ALWAYS"/>
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 </VBox>

@@ -70,14 +70,14 @@ public class SupplierFormController implements Parameterizable {
         Platform.runLater(() -> {
             try {
                 List<PaymentPolicy> policies = supplierRepository.getPaymentPolicies();
-                makePolicyComboSearchable(policies);
+                setupPolicyCombo(policies);
             } catch (Exception e) {
                 NotificationService.error("Failed to load payment policies");
             }
         });
     }
 
-    private void makePolicyComboSearchable(List<PaymentPolicy> allPolicies) {
+    private void setupPolicyCombo(List<PaymentPolicy> allPolicies) {
         paymentPolicyCombo.setItems(FXCollections.observableArrayList(allPolicies));
         paymentPolicyCombo.setConverter(new javafx.util.StringConverter<PaymentPolicy>() {
             @Override
@@ -89,22 +89,7 @@ public class SupplierFormController implements Parameterizable {
                 return allPolicies.stream().filter(p -> p.name().equals(string)).findFirst().orElse(null);
             }
         });
-        
-        paymentPolicyCombo.setEditable(true);
-        paymentPolicyCombo.getEditor().textProperty().addListener((obs, oldV, newV) -> {
-            if (newV == null || newV.isEmpty()) {
-                paymentPolicyCombo.setItems(FXCollections.observableArrayList(allPolicies));
-            } else {
-                PaymentPolicy selected = paymentPolicyCombo.getSelectionModel().getSelectedItem();
-                if (selected != null && selected.name().equals(newV)) return;
-                
-                List<PaymentPolicy> filtered = allPolicies.stream()
-                        .filter(p -> p.name().toLowerCase().contains(newV.toLowerCase()))
-                        .toList();
-                paymentPolicyCombo.setItems(FXCollections.observableArrayList(filtered));
-                if (!filtered.isEmpty()) paymentPolicyCombo.show();
-            }
-        });
+        paymentPolicyCombo.setEditable(false);
     }
 
     private void loadSupplierDetails(boolean isView) {

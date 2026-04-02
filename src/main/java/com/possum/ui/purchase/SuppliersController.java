@@ -14,6 +14,10 @@ import javafx.scene.control.Label;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import org.kordamp.ikonli.javafx.FontIcon;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import java.util.ArrayList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -44,6 +48,10 @@ public class SuppliersController {
     public void initialize() {
         if (createButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(createButton, com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
+            FontIcon plusIcon = new FontIcon("bx-plus");
+            plusIcon.setIconSize(16);
+            plusIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+            createButton.setGraphic(plusIcon);
         }
         setupTable();
         setupFilters();
@@ -51,6 +59,10 @@ public class SuppliersController {
     }
 
     private void setupTable() {
+        TableColumn<Supplier, String> gstinCol = new TableColumn<>("GSTIN");
+        gstinCol.setPrefWidth(140);
+        gstinCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().gstin() != null ? cellData.getValue().gstin() : "-"));
+        
         TableColumn<Supplier, String> nameCol = new TableColumn<>("Name");
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
         
@@ -66,10 +78,38 @@ public class SuppliersController {
         TableColumn<Supplier, String> policyCol = new TableColumn<>("Policy");
         policyCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentPolicyName() != null ? cellData.getValue().paymentPolicyName() : "-"));
 
-        suppliersTable.getTableView().getColumns().addAll(nameCol, contactCol, phoneCol, emailCol, policyCol);
-        
-        suppliersTable.addActionColumn("Actions", this::showActions);
-        suppliersTable.setEmptyMessage("No suppliers added yet. Click '+ Create Supplier' to add your first supplier.");
+        suppliersTable.getTableView().getColumns().addAll(gstinCol, nameCol, contactCol, phoneCol, emailCol, policyCol);
+        suppliersTable.addMenuActionColumn("Actions", this::buildActionsMenu);
+        suppliersTable.setEmptyMessage("No suppliers found. Click 'Create Supplier' to add one.");
+    }
+
+    private List<MenuItem> buildActionsMenu(Supplier supplier) {
+        List<MenuItem> items = new ArrayList<>();
+
+        MenuItem viewItem = new MenuItem("View Details");
+        FontIcon viewIcon = new FontIcon("bx-show");
+        viewIcon.setIconSize(14);
+        viewIcon.getStyleClass().add("table-action-icon");
+        viewItem.setGraphic(viewIcon);
+        viewItem.setOnAction(e -> workspaceManager.openWindow("View Supplier: " + supplier.name(), "/fxml/purchase/supplier-form-view.fxml", Map.of("supplierId", supplier.id(), "mode", "view")));
+
+        MenuItem editItem = new MenuItem("Edit Supplier");
+        FontIcon editIcon = new FontIcon("bx-pencil");
+        editIcon.setIconSize(14);
+        editIcon.getStyleClass().add("table-action-icon");
+        editItem.setGraphic(editIcon);
+        editItem.setOnAction(e -> handleEdit(supplier));
+
+        MenuItem deleteItem = new MenuItem("Delete Supplier");
+        deleteItem.getStyleClass().add("logout-menu-item"); // Usage of standard destructive menu item style
+        FontIcon deleteIcon = new FontIcon("bx-trash");
+        deleteIcon.setIconSize(14);
+        deleteIcon.getStyleClass().add("table-action-icon-danger");
+        deleteItem.setGraphic(deleteIcon);
+        deleteItem.setOnAction(e -> handleDelete(supplier));
+
+        items.addAll(java.util.Arrays.asList(viewItem, editItem, new SeparatorMenuItem(), deleteItem));
+        return items;
     }
 
     private void setupFilters() {
@@ -132,30 +172,7 @@ public class SuppliersController {
         workspaceManager.openWindow("Add Supplier", "/fxml/purchase/supplier-form-view.fxml", params);
     }
 
-    private void showActions(Supplier supplier) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        DialogStyler.apply(alert);
-        alert.setTitle("Supplier Actions");
-        alert.setHeaderText(supplier.name());
-        alert.setContentText("Choose action:");
-        
-        ButtonType editBtn = new ButtonType("Edit");
-        ButtonType deleteBtn = new ButtonType("Delete");
-        ButtonType refreshBtn = new ButtonType("Refresh List");
-        ButtonType cancelBtn = ButtonType.CANCEL;
-        
-        alert.getButtonTypes().setAll(editBtn, deleteBtn, refreshBtn, cancelBtn);
-        
-        alert.showAndWait().ifPresent(type -> {
-            if (type == editBtn) {
-                handleEdit(supplier);
-            } else if (type == deleteBtn) {
-                handleDelete(supplier);
-            } else if (type == refreshBtn) {
-                loadSuppliers();
-            }
-        });
-    }
+
 
     private void handleEdit(Supplier supplier) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SUPPLIERS_MANAGE);
