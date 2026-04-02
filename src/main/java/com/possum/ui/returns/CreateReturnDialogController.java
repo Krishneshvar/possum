@@ -24,6 +24,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -81,6 +82,21 @@ public class CreateReturnDialogController implements Parameterizable {
 
         saleInput.setOnAction(e -> handleFindSale());
         findSaleButton.setOnAction(e -> handleFindSale());
+        
+        FontIcon searchIcon = new FontIcon("bx-search-alt");
+        searchIcon.setIconSize(16);
+        searchIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+        findSaleButton.setGraphic(searchIcon);
+
+        FontIcon returnIcon = new FontIcon("bx-undo");
+        returnIcon.setIconSize(18);
+        returnIcon.setIconColor(javafx.scene.paint.Color.valueOf("#ef4444")); // Matches -color-error
+        submitButton.setGraphic(returnIcon);
+
+        FontIcon closeIcon = new FontIcon("bx-x");
+        closeIcon.setIconSize(18);
+        closeIcon.setIconColor(javafx.scene.paint.Color.valueOf("#1e293b")); // Matches -color-text-main
+        cancelButton.setGraphic(closeIcon);
         
         cancelButton.setOnAction(e -> ((Stage)cancelButton.getScene().getWindow()).close());
     }
@@ -204,17 +220,17 @@ public class CreateReturnDialogController implements Parameterizable {
             this.maxQty = maxQty;
 
             checkBox = new CheckBox();
-            checkBox.setStyle("-fx-font-size: 16px;");
+            checkBox.setStyle("-fx-font-size: 16px; -fx-cursor: hand;");
 
             Label nameLabel = new Label(item.productName());
-            nameLabel.setStyle("-fx-font-weight: 700; -fx-font-size: 15px; -fx-text-fill: #1e293b;");
+            nameLabel.setStyle("-fx-font-weight: 700; -fx-font-size: 14px; -fx-text-fill: -color-text-main;");
             
             Label variantLabel = new Label(item.variantName() != null ? item.variantName() : "Standard Variant");
-            variantLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
+            variantLabel.setStyle("-fx-text-fill: -color-text-secondary; -fx-font-size: 12px;");
             
-            Label detailsLabel = new Label(String.format("Price: %s  |  Available: %d", 
+            Label detailsLabel = new Label(String.format("Unit Price: %s  |  Available: %d", 
                 currencyFormat.format(item.pricePerUnit()), maxQty));
-            detailsLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px;");
+            detailsLabel.setStyle("-fx-text-fill: -color-text-muted; -fx-font-size: 11px;");
 
             VBox nameArea = new VBox(2, nameLabel, variantLabel, detailsLabel);
             HBox itemInfo = new HBox(12, checkBox, nameArea);
@@ -222,33 +238,33 @@ public class CreateReturnDialogController implements Parameterizable {
 
             qtySpinner = new Spinner<>(1, maxQty, maxQty);
             qtySpinner.setPrefWidth(90);
-            qtySpinner.setDisable(true);
             qtySpinner.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
+            qtySpinner.setDisable(true);
             qtySpinner.valueProperty().addListener((obs, old, val) -> updateLineTotal());
 
             lineTotalLabel = new Label("");
-            lineTotalLabel.setStyle("-fx-font-weight: 800; -fx-text-fill: #ef4444; -fx-font-size: 16px;");
+            lineTotalLabel.setStyle("-fx-font-weight: 800; -fx-text-fill: -color-error-text; -fx-font-size: 15px;");
 
-            VBox actionArea = new VBox(5, new Label("Qty to Return:"), qtySpinner);
+            VBox actionArea = new VBox(4, new Label("Qty to Return"), qtySpinner);
+            ((Label)actionArea.getChildren().get(0)).setStyle("-fx-font-size: 10px; -fx-text-fill: -color-text-muted; -fx-font-weight: 700;");
             actionArea.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
             
             HBox mainRow = new HBox(15, itemInfo, new Region(), actionArea, lineTotalLabel);
             mainRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             HBox.setHgrow(mainRow.getChildren().get(1), Priority.ALWAYS);
             
-            mainRow.getStyleClass().add("return-item-card");
-            mainRow.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 16;");
+            mainRow.setStyle("-fx-background-color: -color-bg-canvas; -fx-border-color: -color-border; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 14;");
 
             checkBox.selectedProperty().addListener((obs, old, selected) -> {
                 qtySpinner.setDisable(!selected);
                 mainRow.setStyle(selected 
-                    ? "-fx-background-color: #fef2f2; -fx-border-color: #fecaca; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 16;" 
-                    : "-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 16;");
+                    ? "-fx-background-color: #fef2f2; -fx-border-color: -color-error; -fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 14;" 
+                    : "-fx-background-color: -color-bg-canvas; -fx-border-color: -color-border; -fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 14;");
                 updateLineTotal();
                 updateSummary();
             });
 
-            this.node = new VBox(mainRow); // Wrapped in VBox for future expansion if needed
+            this.node = new VBox(mainRow);
             updateLineTotal();
         }
 

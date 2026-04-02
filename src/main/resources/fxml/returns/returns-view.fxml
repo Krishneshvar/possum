@@ -19,12 +19,12 @@
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
         <HBox spacing="10" alignment="CENTER_RIGHT">
-            <Button text="Refresh" accessibleText="Refresh Returns List" onAction="#handleRefresh" styleClass="action-button">
+            <Button text="↺ Refresh" accessibleText="Refresh Returns List" onAction="#handleRefresh" styleClass="action-button">
                 <tooltip>
                     <Tooltip text="Refresh the returns list"/>
                 </tooltip>
             </Button>
-            <Button fx:id="createReturnButton" text="Create Return" accessibleText="Create New Return" onAction="#handleCreateReturn" styleClass="action-button, danger-button">
+            <Button fx:id="createReturnButton" text="Create Return" accessibleText="Create New Return" onAction="#handleCreateReturn" styleClass="action-button, danger-button" style="-fx-border-color: -color-error; -fx-border-width: 1;">
                 <tooltip>
                     <Tooltip text="Create a new return from a sale"/>
                 </tooltip>
@@ -32,10 +32,12 @@
         </HBox>
     </HBox>
     
-    <FilterBar fx:id="filterBar"/>
-    
-    <DataTableView fx:id="returnsTable" VBox.vgrow="ALWAYS"/>
-    
-    <PaginationBar fx:id="paginationBar"/>
+    <VBox VBox.vgrow="ALWAYS" styleClass="card">
+        <FilterBar fx:id="filterBar"/>
+        
+        <DataTableView fx:id="returnsTable" VBox.vgrow="ALWAYS"/>
+        
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 
 </VBox>

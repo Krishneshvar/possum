@@ -21,10 +21,34 @@
 .workspace-view .text-field,
 .workspace-view .password-field,
 .workspace-view .combo-box,
-.workspace-view .date-picker {
+.workspace-view .date-picker,
+.workspace-view .text-area {
     -fx-min-height: 40;
     -fx-pref-height: 40;
-    -fx-max-height: 40;
+}
+
+.workspace-view .text-area {
+    -fx-pref-height: 100;
+    -fx-min-height: 100;
+    -fx-max-height: 300;
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+    -fx-font-size: 14;
+    -fx-wrap-text: true;
+}
+
+.workspace-view .text-area:focused {
+    -fx-border-color: -color-border-focus;
+    -fx-border-width: 2;
+    -fx-effect: -shadow-focus;
+}
+
+.workspace-view .text-area .content {
+    -fx-background-color: transparent;
 }
 
 .workspace-view .combo-box > .list-cell,
@@ -550,4 +574,33 @@
 
 .product-form-container .viewport {
     -fx-background-color: -color-surface;
+}
+
+/* Premium TextArea Styling */
+.workspace-view .text-area,
+.card .text-area,
+.text-area {
+    -fx-pref-height: 100;
+    -fx-min-height: 100;
+    -fx-max-height: 300;
+    -fx-background-color: -color-surface;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+    -fx-font-size: 14;
+    -fx-wrap-text: true;
+}
+
+.workspace-view .text-area:focused,
+.card .text-area:focused,
+.text-area:focused {
+    -fx-border-color: -color-border-focus;
+    -fx-border-width: 2;
+    -fx-effect: -shadow-focus;
+}
+
+.text-area .content {
+    -fx-background-color: transparent;
 }

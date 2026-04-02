@@ -14,6 +14,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -48,6 +49,10 @@ public class ReturnsController {
     public void initialize() {
         if (createReturnButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(createReturnButton, com.possum.application.auth.Permissions.RETURNS_MANAGE);
+            FontIcon returnIcon = new FontIcon("bx-undo");
+            returnIcon.setIconSize(16);
+            returnIcon.setIconColor(javafx.scene.paint.Color.valueOf("#ef4444")); // Matches -color-error
+            createReturnButton.setGraphic(returnIcon);
         }
         
         setupTable();
@@ -59,10 +64,41 @@ public class ReturnsController {
         TableColumn<Return, String> invoiceCol = new TableColumn<>("Invoice #");
         invoiceCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
         invoiceCol.setSortable(false);
+        invoiceCol.setCellFactory(col -> new TableCell<Return, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(item);
+                    setGraphic(null);
+                } else {
+                    javafx.scene.layout.HBox container = new javafx.scene.layout.HBox(10);
+                    container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                    
+                    Label label = new Label(item);
+                    Button viewBtn = new Button();
+                    FontIcon viewIcon = new FontIcon("bx-show-alt");
+                    viewIcon.setIconSize(16);
+                    viewBtn.setGraphic(viewIcon);
+                    viewBtn.getStyleClass().add("btn-edit-stock");
+                    viewBtn.setTooltip(new Tooltip("View Sale Details"));
+                    
+                    Return returnRec = getTableView().getItems().get(getIndex());
+                    viewBtn.setOnAction(e -> handleViewDetails(returnRec));
+                    
+                    container.getChildren().addAll(label, viewBtn);
+                    setGraphic(container);
+                    setText(null);
+                }
+            }
+        });
         
+        TableColumn<Return, String> paymentCol = new TableColumn<>("Payment Method");
+        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentMethodName()));
+
         TableColumn<Return, BigDecimal> refundCol = new TableColumn<>("Refund");
         refundCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalRefund()));
-        refundCol.setCellFactory(col -> new TableCell<>() {
+        refundCol.setCellFactory(col -> new TableCell<Return, BigDecimal>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
@@ -70,9 +106,12 @@ public class ReturnsController {
             }
         });
         
+        TableColumn<Return, String> reasonCol = new TableColumn<>("Reason");
+        reasonCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().reason()));
+
         TableColumn<Return, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
-        dateCol.setCellFactory(col -> new TableCell<>() {
+        dateCol.setCellFactory(col -> new TableCell<Return, LocalDateTime>() {
             private final java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
@@ -87,27 +126,19 @@ public class ReturnsController {
             }
         });
         
-        TableColumn<Return, String> paymentCol = new TableColumn<>("Payment Method");
-        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentMethodName()));
-        
-        TableColumn<Return, String> reasonCol = new TableColumn<>("Reason");
-        reasonCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().reason()));
-        
-        returnsTable.getTableView().getColumns().addAll(invoiceCol, refundCol, dateCol, paymentCol, reasonCol);
-        
-        returnsTable.addActionColumn("View", this::handleViewDetails);
+        returnsTable.getTableView().getColumns().addAll(invoiceCol, paymentCol, refundCol, reasonCol, dateCol);
     }
 
     private void setupFilters() {
-        filterBar.addDateFilter("fromDate", "From Date");
-        filterBar.addDateFilter("toDate", "To Date");
-        filterBar.addTextFilter("minAmount", "Min Refund");
-        filterBar.addTextFilter("maxAmount", "Max Refund");
-        
         List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
         filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
                 com.possum.domain.model.PaymentMethod::name,
                 false);
+
+        filterBar.addDateFilter("fromDate", "From Date");
+        filterBar.addDateFilter("toDate", "To Date");
+        filterBar.addTextFilter("minAmount", "Min Refund");
+        filterBar.addTextFilter("maxAmount", "Max Refund");
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");

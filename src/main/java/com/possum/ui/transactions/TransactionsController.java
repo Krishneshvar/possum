@@ -71,85 +71,13 @@ public class TransactionsController {
     }
 
     private void setupTable() {
-        TableColumn<Transaction, String> typeCol = new TableColumn<>("Type");
-        typeCol.setSortable(false);
-        typeCol.setCellValueFactory(cellData -> {
-            String type = cellData.getValue().type();
-            if ("payment".equals(type)) return new SimpleStringProperty("Sale");
-            return new SimpleStringProperty(toTitleCase(type));
-        });
-        
-        TableColumn<Transaction, BigDecimal> amountCol = new TableColumn<>("Amount");
-        amountCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().amount()));
-        amountCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(BigDecimal item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(currencyFormat.format(item.abs()));
-                    setStyle(item.compareTo(BigDecimal.ZERO) < 0 ? "-fx-text-fill: #ef4444;" : "-fx-text-fill: #10b981;");
-                }
-            }
-        });
-        
-        TableColumn<Transaction, String> paymentCol = new TableColumn<>("Payment Method");
-        paymentCol.setSortable(false);
-        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentMethodName()));
-        
-        TableColumn<Transaction, String> statusCol = new TableColumn<>("Status");
-        statusCol.setSortable(false);
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
-        statusCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String status, boolean empty) {
-                super.updateItem(status, empty);
-                if (empty || status == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    Label badge = new Label(toTitleCase(status));
-                    badge.getStyleClass().add("badge-status");
-                    switch (status.toLowerCase()) {
-                        case "completed", "success", "paid" -> badge.getStyleClass().add("badge-success");
-                        case "pending", "draft", "partially_paid" -> badge.getStyleClass().add("badge-warning");
-                        case "failed", "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");
-                        default -> badge.getStyleClass().add("badge-neutral");
-                    }
-                    setGraphic(badge);
-                    setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
-                    setAlignment(javafx.geometry.Pos.CENTER);
-                    setText(null);
-                }
-            }
-        });
-        
-        TableColumn<Transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
-        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().transactionDate()));
-        dateCol.setCellFactory(col -> new TableCell<>() {
-            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
-            @Override
-            protected void updateItem(LocalDateTime item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    // Convert from UTC to the system's local timezone for accurate local display
-                    ZonedDateTime utcZoned = item.atZone(ZoneId.of("UTC"));
-                    ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
-                    setText(localZoned.format(formatter));
-                }
-            }
-        });
-        
-        TableColumn<Transaction, String> refCol = new TableColumn<>("Reference");
+        TableColumn<Transaction, String> refCol = new TableColumn<>("Reference Bill");
         refCol.setSortable(false);
         refCol.setCellValueFactory(cellData -> {
             Transaction tx = cellData.getValue();
             return new SimpleStringProperty(tx.invoiceNumber() != null ? tx.invoiceNumber() : "-");
         });
-        refCol.setCellFactory(col -> new TableCell<>() {
+        refCol.setCellFactory(col -> new TableCell<Transaction, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -175,8 +103,79 @@ public class TransactionsController {
                 }
             }
         });
+
+        TableColumn<Transaction, String> typeCol = new TableColumn<>("Type");
+        typeCol.setSortable(false);
+        typeCol.setCellValueFactory(cellData -> {
+            String type = cellData.getValue().type();
+            if ("payment".equals(type)) return new SimpleStringProperty("Sale");
+            return new SimpleStringProperty(toTitleCase(type));
+        });
+
+        TableColumn<Transaction, String> paymentCol = new TableColumn<>("Payment Method");
+        paymentCol.setSortable(false);
+        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().paymentMethodName()));
+
+        TableColumn<Transaction, BigDecimal> amountCol = new TableColumn<>("Amount");
+        amountCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().amount()));
+        amountCol.setCellFactory(col -> new TableCell<Transaction, BigDecimal>() {
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(currencyFormat.format(item.abs()));
+                    setStyle(item.compareTo(BigDecimal.ZERO) < 0 ? "-fx-text-fill: #ef4444;" : "-fx-text-fill: #10b981;");
+                }
+            }
+        });
+
+        TableColumn<Transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().transactionDate()));
+        dateCol.setCellFactory(col -> new TableCell<Transaction, LocalDateTime>() {
+            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    ZonedDateTime utcZoned = item.atZone(ZoneId.of("UTC"));
+                    ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
+                    setText(localZoned.format(formatter));
+                }
+            }
+        });
+
+        TableColumn<Transaction, String> statusCol = new TableColumn<>("Status");
+        statusCol.setSortable(false);
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setCellFactory(col -> new TableCell<Transaction, String>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(toTitleCase(status));
+                    badge.getStyleClass().add("badge-status");
+                    switch (status.toLowerCase()) {
+                        case "completed", "success", "paid" -> badge.getStyleClass().add("badge-success");
+                        case "pending", "draft", "partially_paid" -> badge.getStyleClass().add("badge-warning");
+                        case "failed", "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");
+                        default -> badge.getStyleClass().add("badge-neutral");
+                    }
+                    setGraphic(badge);
+                    setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+                    setAlignment(javafx.geometry.Pos.CENTER);
+                    setText(null);
+                }
+            }
+        });
         
-        transactionsTable.getTableView().getColumns().addAll(typeCol, amountCol, paymentCol, statusCol, dateCol, refCol);
+        transactionsTable.getTableView().getColumns().addAll(refCol, typeCol, paymentCol, amountCol, dateCol);
     }
 
     private void handleViewBill(String invoiceNumber) {
