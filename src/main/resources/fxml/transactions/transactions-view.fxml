@@ -8,21 +8,23 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.transactions.TransactionsController"
-      spacing="20"
-      alignment="TOP_LEFT">
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
     
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="Transactions" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+    <!-- Header Area -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Transactions" styleClass="view-title"/>
+            <Label text="Monitor financial movements including sales, refunds, and payments" styleClass="view-subtitle"/>
+        </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="🔄 Refresh" accessibleText="Refresh Transactions List" onAction="#handleRefresh" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand; -fx-text-fill: #0f172a;">
-            <tooltip>
-                <Tooltip text="Refresh the transactions list"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Refresh" accessibleText="Refresh Transactions List" onAction="#handleRefresh" styleClass="action-button">
+                <tooltip>
+                    <Tooltip text="Refresh the transactions list"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
     
     <FilterBar fx:id="filterBar"/>

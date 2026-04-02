@@ -16,9 +16,8 @@ import com.possum.persistence.repositories.interfaces.TaxRepository;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.TableColumn;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.control.*;
+import javafx.beans.property.*;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -153,12 +152,31 @@ public class InventoryController {
         
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
         statusCol.setSortable(false);
-        statusCol.setCellValueFactory(cellData -> {
-            String s = cellData.getValue().status();
-            if (s != null && !s.isEmpty()) {
-                return new SimpleStringProperty(s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase());
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    String formatted = status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
+                    Label badge = new Label(formatted);
+                    badge.getStyleClass().add("badge-status");
+                    
+                    if ("active".equalsIgnoreCase(status)) {
+                        badge.getStyleClass().add("badge-success");
+                    } else if ("inactive".equalsIgnoreCase(status)) {
+                        badge.getStyleClass().add("badge-neutral");
+                    } else {
+                        badge.getStyleClass().add("badge-warning");
+                    }
+                    
+                    setGraphic(badge);
+                    setText(null);
+                }
             }
-            return new SimpleStringProperty("");
         });
 
         productCol.setId("product_name");
@@ -169,7 +187,7 @@ public class InventoryController {
         stockCol.setId("stock");
         priceCol.setId("price");
 
-        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, taxCategoryCol, stockCol, priceCol, statusCol);
+        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, taxCategoryCol, priceCol, stockCol, statusCol);
     }
 
     private void setupFilters() {

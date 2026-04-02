@@ -174,9 +174,20 @@
 .workspace-view .table-view .table-row-cell,
 .workspace-view .data-table .table-row-cell {
     -fx-background-color: -color-surface;
-    -fx-border-color: transparent transparent #F1F5F9 transparent;
+    -fx-border-color: transparent transparent #CBD5E1 transparent;
     -fx-border-width: 1;
     -fx-padding: 2 0;
+}
+
+/* Reduced height for category specific table */
+.workspace-view .data-table.categories-table .table-row-cell,
+.workspace-view .table-view.categories-table .table-row-cell {
+    -fx-padding: 0 0;
+}
+
+.workspace-view .data-table.categories-table .table-cell,
+.workspace-view .table-view.categories-table .table-cell {
+    -fx-padding: 4 16;
 }
 
 .workspace-view .table-view .table-row-cell:hover,
@@ -222,10 +233,25 @@
     -fx-padding: 8 10;
     -fx-border-radius: 6;
     -fx-background-radius: 6;
+    -fx-content-display: left;
+    -fx-graphic-text-gap: 8;
+    -fx-indent: 28;
+}
+
+/* Drawing indentation guides using repeating linear gradient */
+.tree-view .tree-cell:filled {
+    -fx-background-image: linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px);
+    -fx-background-repeat: repeat-x;
+    -fx-background-size: 28px 100%; /* Matches -fx-indent */
+    -fx-background-position: left;
 }
 
 .tree-view .tree-cell:selected {
     -fx-background-color: linear-gradient(to right, -color-accent-subtle, transparent);
+    /* Keep indentation guides visible on selection but more subtle if needed */
+    -fx-background-image: linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px), 
+                          linear-gradient(to right, -color-accent-subtle, transparent);
+    -fx-background-size: 28px 100%, 100% 100%;
     -fx-text-fill: -color-accent-dark;
     -fx-font-weight: 700;
     -fx-border-color: transparent transparent transparent -color-accent;

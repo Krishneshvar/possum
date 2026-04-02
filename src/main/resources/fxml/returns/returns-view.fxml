@@ -8,27 +8,28 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.returns.ReturnsController"
-      spacing="20"
-      alignment="TOP_LEFT"
-      stylesheets="@/styles/returns.css">
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
     
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <HBox alignment="CENTER_LEFT" spacing="15">
-        <Label text="Returns" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+    <!-- Header Area -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Returns Manager" styleClass="view-title"/>
+            <Label text="Process product returns and view past refund histories" styleClass="view-subtitle"/>
+        </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="🔄 Refresh" accessibleText="Refresh Returns List" onAction="#handleRefresh" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand; -fx-text-fill: #0f172a;">
-            <tooltip>
-                <Tooltip text="Refresh the returns list"/>
-            </tooltip>
-        </Button>
-        <Button fx:id="createReturnButton" text="+ Create Return" accessibleText="Create New Return" onAction="#handleCreateReturn" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-padding: 8 16; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;">
-            <tooltip>
-                <Tooltip text="Create a new return from a sale"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Refresh" accessibleText="Refresh Returns List" onAction="#handleRefresh" styleClass="action-button">
+                <tooltip>
+                    <Tooltip text="Refresh the returns list"/>
+                </tooltip>
+            </Button>
+            <Button fx:id="createReturnButton" text="Create Return" accessibleText="Create New Return" onAction="#handleCreateReturn" styleClass="action-button, danger-button">
+                <tooltip>
+                    <Tooltip text="Create a new return from a sale"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
     
     <FilterBar fx:id="filterBar"/>

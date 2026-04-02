@@ -9,21 +9,23 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.sales.SalesHistoryController"
       fx:id="container"
-      spacing="20"
-      style="-fx-background-color: #f8fafc;">
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
 
-    <padding>
-        <Insets top="24" right="24" bottom="24" left="24"/>
-    </padding>
-
-    <HBox alignment="CENTER_LEFT" spacing="10">
-        <Label text="Bill History" style="-fx-font-size: 24px; -fx-font-weight: 800; -fx-text-fill: #0f172a;"/>
+    <!-- Header Area -->
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Bill History" styleClass="view-title"/>
+            <Label text="View and manage all past point-of-sale transactions and invoices" styleClass="view-subtitle"/>
+        </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="🔄 Refresh" accessibleText="Refresh Bill History" onAction="#loadHistory" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 8 16; -fx-font-weight: 600; -fx-cursor: hand;">
-            <tooltip>
-                <Tooltip text="Refresh the bill history list"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Refresh" accessibleText="Refresh Bill History" onAction="#loadHistory" styleClass="action-button">
+                <tooltip>
+                    <Tooltip text="Refresh the bill history list"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
 
     <GridPane hgap="20" vgap="20">
@@ -72,10 +74,10 @@
     </GridPane>
 
     <!-- Table Section -->
-    <VBox spacing="15" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-padding: 0;">
+    <VBox VBox.vgrow="ALWAYS" styleClass="card" style="-fx-padding: 0;">
         <com.possum.ui.common.controls.DataTableView fx:id="salesTable" VBox.vgrow="ALWAYS" />
         
-        <PaginationBar fx:id="paginationBar" style="-fx-padding: 10 20; -fx-background-color: #f8fafc; -fx-background-radius: 0 0 12 12;"/>
+        <PaginationBar fx:id="paginationBar" />
     </VBox>
 
 </VBox>

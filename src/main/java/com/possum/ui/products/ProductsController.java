@@ -173,7 +173,23 @@ public class ProductsController {
 
         TableColumn<Product, String> statusCol = new TableColumn<>("Status");
         statusCol.setSortable(false);
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(formatStatus(cellData.getValue().status())));
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Label badge = new Label(formatStatus(status));
+                    badge.getStyleClass().add("badge-status");
+                    applyStatusClass(badge, status);
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
+        });
 
         productsTable.getTableView().getColumns().addAll(nameCol, categoryCol, taxCol, statusCol);
         productsTable.addMenuActionColumn("Actions", this::buildActionsMenu);

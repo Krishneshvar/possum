@@ -119,22 +119,23 @@ public class SalesHistoryController {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                if (empty || getTableRow() == null || getTableRow().getItem() == null || item == null) {
                     setText(null);
                     setGraphic(null);
-                    setStyle(null);
                 } else {
-                    Sale sale = getTableRow().getItem();
-                    String status = sale.status();
-                    setText(status.toUpperCase());
-                    String color = switch (status.toLowerCase()) {
-                        case "paid" -> "#10b981";
-                        case "partially_paid" -> "#3b82f6";
-                        case "partially_refunded" -> "#f97316";
-                        case "cancelled", "refunded" -> "#ef4444";
-                        default -> "#64748b";
-                    };
-                    setStyle("-fx-text-fill: white; -fx-background-color: " + color + "; -fx-background-radius: 4; -fx-padding: 2 6; -fx-font-weight: bold; -fx-font-size: 10px;");
+                    String status = item;
+                    Label badge = new Label(formatStatus(status));
+                    badge.getStyleClass().add("badge-status");
+                    switch (status.toLowerCase()) {
+                        case "paid" -> badge.getStyleClass().add("badge-success");
+                        case "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");
+                        case "partially_paid", "partially_refunded", "draft" -> badge.getStyleClass().add("badge-warning");
+                        default -> badge.getStyleClass().add("badge-neutral");
+                    }
+                    setGraphic(badge);
+                    setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+                    setAlignment(javafx.geometry.Pos.CENTER);
+                    setText(null);
                 }
             }
         });
@@ -342,5 +343,17 @@ public class SalesHistoryController {
                         return null;
                     });
         }
+    }
+
+    private String formatStatus(String status) {
+        if (status == null || status.trim().isEmpty()) return "Unknown";
+        String[] words = status.toLowerCase().split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                sb.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1)).append(" ");
+            }
+        }
+        return sb.toString().trim();
     }
 }

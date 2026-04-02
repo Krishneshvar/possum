@@ -233,6 +233,26 @@ public class VariantsController {
         variantCol.setSortable(true);
         variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
 
+        TableColumn<Variant, java.math.BigDecimal> mrpCol = new TableColumn<>("MRP");
+        mrpCol.setId("price");
+        mrpCol.setSortable(true);
+        mrpCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
+
+        TableColumn<Variant, String> taxCol = new TableColumn<>("Tax Category");
+        taxCol.setId("tax_category_name");
+        taxCol.setSortable(true);
+        taxCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().taxCategoryName() != null ? cellData.getValue().taxCategoryName() : "-"));
+
+        TableColumn<Variant, String> skuCol = new TableColumn<>("SKU");
+        skuCol.setId("sku");
+        skuCol.setSortable(true);
+        skuCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().sku()));
+
+        TableColumn<Variant, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setId("category_name");
+        categoryCol.setSortable(true);
+        categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().categoryName() != null ? cellData.getValue().categoryName() : ""));
+
         TableColumn<Variant, Integer> stockCol = new TableColumn<>("Stock");
         stockCol.setId("stock");
         stockCol.setSortable(true);
@@ -263,38 +283,37 @@ public class VariantsController {
             }
         });
 
-        TableColumn<Variant, java.math.BigDecimal> mrpCol = new TableColumn<>("MRP");
-        mrpCol.setId("price");
-        mrpCol.setSortable(true);
-        mrpCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
-
-        TableColumn<Variant, String> taxCol = new TableColumn<>("Tax Category");
-        taxCol.setId("tax_category_name");
-        taxCol.setSortable(true);
-        taxCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().taxCategoryName() != null ? cellData.getValue().taxCategoryName() : "-"));
-
-        TableColumn<Variant, String> skuCol = new TableColumn<>("SKU");
-        skuCol.setId("sku");
-        skuCol.setSortable(true);
-        skuCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().sku()));
-
-        TableColumn<Variant, String> categoryCol = new TableColumn<>("Category");
-        categoryCol.setId("category_name");
-        categoryCol.setSortable(true);
-        categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().categoryName() != null ? cellData.getValue().categoryName() : ""));
-
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
         statusCol.setId("status");
         statusCol.setSortable(false);
-        statusCol.setCellValueFactory(cellData -> {
-            String s = cellData.getValue().status();
-            if (s != null && !s.isEmpty()) {
-                return new SimpleStringProperty(s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase());
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    String formatted = status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
+                    Label badge = new Label(formatted);
+                    badge.getStyleClass().add("badge-status");
+                    
+                    if ("active".equalsIgnoreCase(status)) {
+                        badge.getStyleClass().add("badge-success");
+                    } else if ("inactive".equalsIgnoreCase(status)) {
+                        badge.getStyleClass().add("badge-neutral");
+                    } else {
+                        badge.getStyleClass().add("badge-warning");
+                    }
+                    
+                    setGraphic(badge);
+                    setText(null);
+                }
             }
-            return new SimpleStringProperty("");
         });
 
-        variantsTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, mrpCol, taxCol, stockCol, statusCol);
+        variantsTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, taxCol, mrpCol, stockCol, statusCol);
 
         variantsTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }

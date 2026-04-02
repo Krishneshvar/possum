@@ -33,7 +33,11 @@
 }
 
 .navbar-brand:hover {
-    -fx-background-color: -color-primary-subtle;
+    -fx-background-color: -color-brand-dark-hover;
+}
+
+.navbar-brand:hover .brand-title {
+    -fx-text-fill: -color-primary;
 }
 
 .navbar-brand:focused {

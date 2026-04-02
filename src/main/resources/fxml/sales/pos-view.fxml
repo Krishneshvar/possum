@@ -59,6 +59,10 @@
                                     <Label text="MRP" styleClass="totals-chip-label"/>
                                     <Label fx:id="bottomMrpLabel" text="\$0.00" styleClass="totals-chip-value-muted"/>
                                 </HBox>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="PRICE" styleClass="totals-chip-label"/>
+                                    <Label fx:id="bottomPriceTotalLabel" text="\$0.00" styleClass="totals-chip-value-muted"/>
+                                </HBox>
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="TOTAL" styleClass="totals-chip-label"/>
@@ -145,7 +149,7 @@
                         </HBox>
                     </VBox>
 
-                    <StackPane fx:id="rightPane" prefWidth="420" minWidth="360" maxWidth="520" VBox.vgrow="ALWAYS">
+                    <StackPane fx:id="rightPane" prefWidth="380" minWidth="320" maxWidth="520" VBox.vgrow="ALWAYS">
                         <VBox spacing="16" VBox.vgrow="ALWAYS">
                             <VBox fx:id="paymentCard" spacing="14" styleClass="pos-card,payment-card" style="-fx-padding: 20;" VBox.vgrow="ALWAYS">
                                 <Label text="Payment" styleClass="pos-card-title"/>
@@ -174,11 +178,18 @@
                                     </HBox>
                                 </VBox>
 
+                                <Separator/>
+
                                 <VBox spacing="10">
                                     <HBox>
                                         <Label text="Subtotal" styleClass="billing-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
                                         <Label fx:id="subtotalLabel" text="\$0.00" styleClass="billing-value"/>
+                                    </HBox>
+                                    <HBox>
+                                        <Label text="Discount" styleClass="billing-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="totalDiscountLabel" text="\$0.00" styleClass="billing-value" style="-fx-text-fill: #ef4444;"/>
                                     </HBox>
                                     <HBox>
                                         <Label text="Tax" styleClass="billing-label"/>
@@ -193,7 +204,7 @@
                                     </HBox>
                                 </VBox>
 
-                                <HBox spacing="10">
+                                <HBox fx:id="tenderedBalanceContainer" spacing="10">
                                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                                         <Label text="Tendered" styleClass="billing-label"/>
                                         <TextField fx:id="tenderedField" promptText="0.00" accessibleText="Amount Tendered Input"/>
@@ -222,11 +233,6 @@
                             </VBox>
                         </VBox>
 
-                        <VBox fx:id="paymentLockedOverlay" visible="false" managed="false" alignment="CENTER" spacing="10" styleClass="payment-locked-overlay">
-                            <Label text="🔒" styleClass="empty-state-icon"/>
-                            <Label text="Payment Unlocks After Cart Items" styleClass="empty-state-title"/>
-                            <Label text="Use the search bar (Ctrl+K) to add products first." styleClass="empty-state-subtitle"/>
-                        </VBox>
                     </StackPane>
                 </HBox>
             </VBox>

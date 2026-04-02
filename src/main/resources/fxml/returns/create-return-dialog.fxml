@@ -16,15 +16,15 @@
     </padding>
 
     <!-- Header -->
-    <VBox spacing="5">
-        <Label text="Process Return" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
-        <Label text="Select items to return from sale" style="-fx-text-fill: #64748b;"/>
+    <VBox spacing="5" style="-fx-padding: 0 0 10 0;">
+        <Label text="Process Return" styleClass="card-title" style="-fx-font-size: 20px;"/>
+        <Label text="Select items to return from sale" styleClass="form-label"/>
     </VBox>
 
     <!-- Find Sale Section -->
     <HBox spacing="10" alignment="CENTER_LEFT">
-        <TextField fx:id="saleInput" promptText="Enter Invoice # or Sale ID" accessibleText="Invoice or Sale ID Input" HBox.hgrow="ALWAYS" style="-fx-padding: 10; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-background-radius: 4;"/>
-        <Button fx:id="findSaleButton" text="Find Sale" accessibleText="Find Sale Button" defaultButton="true" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-padding: 10 20; -fx-font-weight: bold; -fx-background-radius: 4; -fx-cursor: hand;">
+        <TextField fx:id="saleInput" promptText="Enter Invoice # or Sale ID" accessibleText="Invoice or Sale ID Input" HBox.hgrow="ALWAYS" styleClass="text-field"/>
+        <Button fx:id="findSaleButton" text="Find Sale" accessibleText="Find Sale Button" defaultButton="true" styleClass="action-button, primary-button">
             <tooltip>
                 <Tooltip text="Find sale details by ID or Invoice number (Enter)"/>
             </tooltip>
@@ -69,8 +69,8 @@
 
         <!-- Reason Section -->
         <VBox spacing="8">
-            <Label text="Reason for Return *" style="-fx-font-weight: bold; -fx-text-fill: #475569;"/>
-            <TextArea fx:id="reasonArea" promptText="e.g., Defective product, Wrong item..." accessibleText="Reason for Return Input" prefHeight="80" wrapText="true" style="-fx-padding: 5; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-background-radius: 4;"/>
+            <Label text="Reason for Return *" styleClass="form-label"/>
+            <TextArea fx:id="reasonArea" promptText="e.g., Defective product, Wrong item..." accessibleText="Reason for Return Input" prefHeight="80" wrapText="true" styleClass="text-area"/>
         </VBox>
 
     </VBox>
@@ -78,13 +78,13 @@
     <Separator/>
 
     <!-- Footer Buttons -->
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button fx:id="cancelButton" text="Cancel" accessibleText="Cancel Button" cancelButton="true" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 4; -fx-padding: 10 20; -fx-cursor: hand; -fx-font-weight: 600;">
+    <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+        <Button fx:id="cancelButton" text="Cancel" accessibleText="Cancel Button" cancelButton="true" styleClass="action-button">
             <tooltip>
                 <Tooltip text="Cancel and close dialog (Esc)"/>
             </tooltip>
         </Button>
-        <Button fx:id="submitButton" text="Confirm Return" accessibleText="Confirm Return Button" onAction="#handleSubmit" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-padding: 10 25; -fx-font-weight: bold; -fx-background-radius: 4; -fx-cursor: hand;">
+        <Button fx:id="submitButton" text="Confirm Return" accessibleText="Confirm Return Button" onAction="#handleSubmit" styleClass="action-button, danger-button">
             <tooltip>
                 <Tooltip text="Submit return processing"/>
             </tooltip>

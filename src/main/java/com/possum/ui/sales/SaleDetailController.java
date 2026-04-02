@@ -240,15 +240,16 @@ public class SaleDetailController implements Parameterizable {
     }
 
     private void applyStatusStyle(String status) {
-        String base = "-fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-font-size: 11; ";
+        statusBadge.getStyleClass().removeAll("badge-success", "badge-error", "badge-warning", "badge-neutral");
+        statusBadge.getStyleClass().add("badge-status");
         if ("paid".equalsIgnoreCase(status)) {
-            statusBadge.setStyle(base + "-fx-background-color: #dcfce7; -fx-text-fill: #166534;");
+            statusBadge.getStyleClass().add("badge-success");
         } else if ("cancelled".equalsIgnoreCase(status) || "refunded".equalsIgnoreCase(status)) {
-            statusBadge.setStyle(base + "-fx-background-color: #fee2e2; -fx-text-fill: #991b1b;");
-        } else if ("partially_refunded".equalsIgnoreCase(status)) {
-            statusBadge.setStyle(base + "-fx-background-color: #fff7ed; -fx-text-fill: #9a3412;");
+            statusBadge.getStyleClass().add("badge-error");
+        } else if ("partially_refunded".equalsIgnoreCase(status) || "partially_paid".equalsIgnoreCase(status) || "draft".equalsIgnoreCase(status)) {
+            statusBadge.getStyleClass().add("badge-warning");
         } else {
-            statusBadge.setStyle(base + "-fx-background-color: #fef9c3; -fx-text-fill: #854d0e;");
+            statusBadge.getStyleClass().add("badge-neutral");
         }
     }
 

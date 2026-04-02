@@ -100,7 +100,30 @@ public class TransactionsController {
         
         TableColumn<Transaction, String> statusCol = new TableColumn<>("Status");
         statusCol.setSortable(false);
-        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(toTitleCase(cellData.getValue().status())));
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
+        statusCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(toTitleCase(status));
+                    badge.getStyleClass().add("badge-status");
+                    switch (status.toLowerCase()) {
+                        case "completed", "success", "paid" -> badge.getStyleClass().add("badge-success");
+                        case "pending", "draft", "partially_paid" -> badge.getStyleClass().add("badge-warning");
+                        case "failed", "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");
+                        default -> badge.getStyleClass().add("badge-neutral");
+                    }
+                    setGraphic(badge);
+                    setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+                    setAlignment(javafx.geometry.Pos.CENTER);
+                    setText(null);
+                }
+            }
+        });
         
         TableColumn<Transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().transactionDate()));

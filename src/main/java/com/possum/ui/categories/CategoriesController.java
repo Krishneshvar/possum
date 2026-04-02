@@ -65,13 +65,14 @@ public class CategoriesController {
     private void setupActionsColumn() {
         actionsCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue()));
         actionsCol.setCellFactory(col -> new TableCell<>() {
-            private final Button editBtn = new Button();
+            private final Button editBtn = new Button("Edit");
             {
                 FontIcon editIcon = new FontIcon("bx-pencil");
                 editIcon.setIconSize(14);
                 editIcon.getStyleClass().add("table-action-icon");
                 editBtn.setGraphic(editIcon);
                 editBtn.getStyleClass().add("action-button");
+                editBtn.getStyleClass().add("btn-edit-action");
                 editBtn.setCursor(javafx.scene.Cursor.HAND);
                 editBtn.setOnAction(e -> {
                     Category category = getItem();

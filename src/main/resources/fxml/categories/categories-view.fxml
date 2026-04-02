@@ -38,7 +38,7 @@
         <!-- Table View on the right -->
         <VBox styleClass="card">
             <Label text="All Categories" styleClass="card-title" />
-            <TableView fx:id="categoryTableView" VBox.vgrow="ALWAYS" styleClass="data-table">
+            <TableView fx:id="categoryTableView" VBox.vgrow="ALWAYS" styleClass="data-table, categories-table">
                 <columns>
                     <TableColumn fx:id="idCol" text="ID" prefWidth="50" />
                     <TableColumn fx:id="nameCol" text="Name" prefWidth="250" />

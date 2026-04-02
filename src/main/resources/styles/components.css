@@ -658,6 +658,11 @@
     -fx-text-fill: #92400e;
 }
 
+.badge-error {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #b91c1c;
+}
+
 .toggle-group-neon {
     -fx-background-color: #F1F5F9;
     -fx-background-radius: 8;
