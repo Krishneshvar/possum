@@ -2,7 +2,6 @@ package com.possum.ui.sales;
 
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
-import com.possum.application.sales.dto.SaleStats;
 import com.possum.domain.model.Sale;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.SaleFilter;
@@ -38,11 +37,7 @@ import java.util.concurrent.CompletableFuture;
 public class SalesHistoryController {
 
     @FXML private VBox container;
-    @FXML private Label totalBillsLabel;
-    @FXML private Label paidLabel;
-    @FXML private Label partialLabel;
-    @FXML private Label cancelledLabel;
-
+    @FXML private VBox mainCard;
     @FXML private DataTableView<Sale> salesTable;
 
     @FXML private PaginationBar paginationBar;
@@ -92,13 +87,8 @@ public class SalesHistoryController {
         salesTable.addColumn("Customer", cellData -> new SimpleStringProperty(
                 cellData.getValue().customerName() != null ? cellData.getValue().customerName() : "Walk-in Customer"));
         
-        salesTable.addColumn("Date & Time", cellData -> {
-            LocalDateTime saleDate = cellData.getValue().saleDate();
-            if (saleDate == null) return new SimpleStringProperty("");
-            ZonedDateTime utcZoned = saleDate.atZone(ZoneId.of("UTC"));
-            ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
-            return new SimpleStringProperty(localZoned.format(DATE_FORMATTER));
-        });
+        salesTable.addColumn("Payment", cellData -> new SimpleStringProperty(
+                cellData.getValue().paymentMethodName() != null ? cellData.getValue().paymentMethodName() : "-"));
 
         TableColumn<Sale, BigDecimal> amountCol = (TableColumn<Sale, BigDecimal>) salesTable.addColumn("Bill Total", cellData -> new SimpleObjectProperty<>(cellData.getValue().totalAmount()));
         amountCol.setCellFactory(column -> new TableCell<>() {
@@ -142,8 +132,13 @@ public class SalesHistoryController {
         statusCol.setStyle("-fx-alignment: CENTER;");
         statusCol.setSortable(false);
 
-        salesTable.addColumn("Payment", cellData -> new SimpleStringProperty(
-                cellData.getValue().paymentMethodName() != null ? cellData.getValue().paymentMethodName() : "-"));
+        salesTable.addColumn("Date & Time", cellData -> {
+            LocalDateTime saleDate = cellData.getValue().saleDate();
+            if (saleDate == null) return new SimpleStringProperty("");
+            ZonedDateTime utcZoned = saleDate.atZone(ZoneId.of("UTC"));
+            ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
+            return new SimpleStringProperty(localZoned.format(DATE_FORMATTER));
+        });
 
         salesTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
@@ -194,15 +189,17 @@ public class SalesHistoryController {
                 s -> s,
                 false
         );
+
+        List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
+        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
+                com.possum.domain.model.PaymentMethod::name,
+                false);
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");
         filterBar.addTextFilter("minAmount", "Min Total");
         filterBar.addTextFilter("maxAmount", "Max Total");
         
-        List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
-        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
-                com.possum.domain.model.PaymentMethod::name,
-                false);
+
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -237,7 +234,7 @@ public class SalesHistoryController {
             loadHistory();
         });
 
-        container.getChildren().add(2, filterBar);
+        mainCard.getChildren().add(0, filterBar);
     }
 
     private void setupPagination() {
@@ -270,16 +267,10 @@ public class SalesHistoryController {
         salesTable.setLoading(true);
         CompletableFuture.runAsync(() -> {
             PagedResult<Sale> results = salesService.findSales(filter);
-            SaleStats stats = salesService.getSaleStats(filter);
 
             Platform.runLater(() -> {
                 salesList.setAll(results.items());
                 paginationBar.setTotalItems(results.totalCount());
-                
-                totalBillsLabel.setText(String.valueOf(stats.totalBills()));
-                paidLabel.setText(String.valueOf(stats.paidCount()));
-                partialLabel.setText(String.valueOf(stats.partialOrDraftCount()));
-                cancelledLabel.setText(String.valueOf(stats.cancelledOrRefundedCount()));
                 salesTable.setLoading(false);
             });
         }).exceptionally(ex -> {
