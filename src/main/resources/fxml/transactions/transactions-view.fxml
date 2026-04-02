@@ -19,7 +19,7 @@
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
         <HBox spacing="10" alignment="CENTER_RIGHT">
-            <Button text="Refresh" accessibleText="Refresh Transactions List" onAction="#handleRefresh" styleClass="action-button">
+            <Button text="↺ Refresh" accessibleText="Refresh Transactions List" onAction="#handleRefresh" styleClass="action-button">
                 <tooltip>
                     <Tooltip text="Refresh the transactions list"/>
                 </tooltip>
@@ -27,10 +27,12 @@
         </HBox>
     </HBox>
     
-    <FilterBar fx:id="filterBar"/>
-    
-    <DataTableView fx:id="transactionsTable" VBox.vgrow="ALWAYS"/>
-    
-    <PaginationBar fx:id="paginationBar"/>
+    <VBox VBox.vgrow="ALWAYS" styleClass="card">
+        <FilterBar fx:id="filterBar"/>
+        
+        <DataTableView fx:id="transactionsTable" VBox.vgrow="ALWAYS"/>
+        
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 
 </VBox>

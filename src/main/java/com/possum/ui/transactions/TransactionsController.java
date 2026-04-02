@@ -161,9 +161,12 @@ public class TransactionsController {
                     container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                     
                     Label label = new Label(item);
-                    javafx.scene.control.Button viewBtn = new javafx.scene.control.Button("👁");
-                    viewBtn.getStyleClass().add("button-icon-only");
-                    viewBtn.setStyle("-fx-padding: 0 4; -fx-font-size: 10px;");
+                    javafx.scene.control.Button viewBtn = new javafx.scene.control.Button();
+                    org.kordamp.ikonli.javafx.FontIcon viewIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-show-alt");
+                    viewIcon.setIconSize(16);
+                    viewBtn.setGraphic(viewIcon);
+                    viewBtn.getStyleClass().add("btn-edit-stock");
+                    viewBtn.setTooltip(new javafx.scene.control.Tooltip("View Bill Details"));
                     viewBtn.setOnAction(e -> handleViewBill(item));
                     
                     container.getChildren().addAll(label, viewBtn);
