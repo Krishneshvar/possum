@@ -1,5 +1,6 @@
 package com.possum.ui.sales;
 
+import com.possum.shared.util.TimeUtil;
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Sale;
@@ -48,7 +49,6 @@ public class SalesHistoryController {
     private final PrinterService printerService;
     private final WorkspaceManager workspaceManager;
     private final ObservableList<Sale> salesList = FXCollections.observableArrayList();
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
 
     private int currentPage = 1;
@@ -135,9 +135,8 @@ public class SalesHistoryController {
         salesTable.addColumn("Date & Time", cellData -> {
             LocalDateTime saleDate = cellData.getValue().saleDate();
             if (saleDate == null) return new SimpleStringProperty("");
-            ZonedDateTime utcZoned = saleDate.atZone(ZoneId.of("UTC"));
-            ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
-            return new SimpleStringProperty(localZoned.format(DATE_FORMATTER));
+            LocalDateTime localZoned = TimeUtil.toLocal(saleDate);
+            return new SimpleStringProperty(TimeUtil.formatStandard(localZoned));
         });
 
         salesTable.addMenuActionColumn("Actions", this::buildActionsMenu);

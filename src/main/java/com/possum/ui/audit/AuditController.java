@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import com.possum.shared.util.TimeUtil;
 
 public class AuditController {
     
@@ -64,16 +65,14 @@ this.auditService = auditService;
         TableColumn<AuditLog, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
         dateCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
-            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    ZonedDateTime utcZoned = item.atZone(ZoneId.of("UTC"));
-                    ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
-                    setText(localZoned.format(formatter));
+                    LocalDateTime localTime = TimeUtil.toLocal(item);
+                    setText(localTime != null ? TimeUtil.formatStandard(localTime) : "");
                 }
             }
         });

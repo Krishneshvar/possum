@@ -25,6 +25,8 @@ public class SettingsController {
     
     @FXML private TextField storeNameField;
     @FXML private ComboBox<String> currencyCombo;
+    @FXML private ComboBox<String> dateFormatCombo;
+    @FXML private ComboBox<String> timeFormatCombo;
     @FXML private ComboBox<String> printerCombo;
     @FXML private AnchorPane taxSettingsTabContent;
     @FXML private AnchorPane billSettingsTabContent;
@@ -49,6 +51,7 @@ public class SettingsController {
     @FXML
     public void initialize() {
         setupCurrencies();
+        setupDateAndTimeFormats();
         loadGeneralSettings();
         loadPrinters();
         setupBillSettings();
@@ -61,10 +64,39 @@ public class SettingsController {
         ));
     }
 
+    private void setupDateAndTimeFormats() {
+        dateFormatCombo.setItems(FXCollections.observableArrayList(
+            "DD/MM/YYYY",
+            "MM/DD/YYYY",
+            "YYYY/MM/DD",
+            "Month Date, Year",
+            "Date Month, Year"
+        ));
+
+        timeFormatCombo.setItems(FXCollections.observableArrayList(
+            "12 hour format",
+            "24 hour format"
+        ));
+    }
+
     private void loadGeneralSettings() {
         GeneralSettings settings = settingsStore.loadGeneralSettings();
         storeNameField.setText(settings.getStoreName());
         currencyCombo.setValue(settings.getCurrencyCode());
+
+        String dateFormat = settings.getDateFormat();
+        if (dateFormatCombo.getItems().contains(dateFormat)) {
+            dateFormatCombo.setValue(dateFormat);
+        } else {
+            dateFormatCombo.setValue("DD/MM/YYYY");
+        }
+
+        String timeFormat = settings.getTimeFormat();
+        if (timeFormatCombo.getItems().contains(timeFormat)) {
+            timeFormatCombo.setValue(timeFormat);
+        } else {
+            timeFormatCombo.setValue("12 hour format");
+        }
     }
 
     private void loadPrinters() {
@@ -86,6 +118,8 @@ public class SettingsController {
             GeneralSettings settings = new GeneralSettings();
             settings.setStoreName(storeNameField.getText());
             settings.setCurrencyCode(currencyCombo.getValue());
+            settings.setDateFormat(dateFormatCombo.getValue());
+            settings.setTimeFormat(timeFormatCombo.getValue());
             
             settingsStore.saveGeneralSettings(settings);
             NotificationService.success("General settings saved");
