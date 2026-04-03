@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import com.possum.shared.util.TimeUtil;
 import java.util.*;
+import java.util.Objects;
 
 public class SalesService {
     private final SalesRepository salesRepository;
@@ -460,5 +461,79 @@ public class SalesService {
 
     public com.possum.application.sales.dto.SaleStats getSaleStats(com.possum.shared.dto.SaleFilter filter) {
         return salesRepository.getSaleStats(filter);
+    }
+
+    public void changeSalePaymentMethod(long saleId, long newPaymentMethodId, long userId) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SALES_MANAGE);
+        
+        transactionManager.runInTransaction(() -> {
+            Sale sale = salesRepository.findSaleById(saleId)
+                    .orElseThrow(() -> new NotFoundException("Sale not found: " + saleId));
+
+            if ("cancelled".equals(sale.status()) || "refunded".equals(sale.status())) {
+                throw new ValidationException("Cannot change payment method for a " + sale.status() + " sale");
+            }
+
+            if (!salesRepository.paymentMethodExists(newPaymentMethodId)) {
+                throw new NotFoundException("Payment method not found: " + newPaymentMethodId);
+            }
+
+            List<Transaction> transactions = salesRepository.findTransactionsBySaleId(saleId);
+            Transaction primaryTx = transactions.stream()
+                    .filter(t -> "payment".equals(t.type()))
+                    .findFirst()
+                    .orElseThrow(() -> new ValidationException("No payment transaction found for this sale"));
+
+            if (primaryTx.paymentMethodId() == newPaymentMethodId) {
+                return null; // No change needed
+            }
+
+            salesRepository.updateTransactionPaymentMethod(saleId, newPaymentMethodId);
+
+            Map<String, Object> oldData = Map.of("payment_method_id", primaryTx.paymentMethodId());
+            Map<String, Object> newData = Map.of("payment_method_id", newPaymentMethodId);
+            
+            AuditLog auditLog = new AuditLog(
+                    null, userId, "UPDATE", "transactions", primaryTx.id(),
+                    jsonService.toJson(oldData), jsonService.toJson(newData),
+                    jsonService.toJson(Map.of("reason", "Payment method correction", "sale_id", saleId)),
+                    null, TimeUtil.nowUTC()
+            );
+            auditRepository.insertAuditLog(auditLog);
+
+            return null;
+        });
+    }
+
+    public void changeSaleCustomer(long saleId, Long newCustomerId, long userId) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SALES_MANAGE);
+        
+        transactionManager.runInTransaction(() -> {
+            Sale sale = salesRepository.findSaleById(saleId)
+                    .orElseThrow(() -> new NotFoundException("Sale not found: " + saleId));
+
+            if ("cancelled".equals(sale.status()) || "refunded".equals(sale.status())) {
+                throw new ValidationException("Cannot change customer for a " + sale.status() + " sale");
+            }
+
+            if (Objects.equals(sale.customerId(), newCustomerId)) {
+                return null; // No change
+            }
+
+            salesRepository.updateSaleCustomer(saleId, newCustomerId);
+
+            Map<String, Object> oldData = Map.of("customer_id", sale.customerId() != null ? sale.customerId() : -1L);
+            Map<String, Object> newData = Map.of("customer_id", newCustomerId != null ? newCustomerId : -1L);
+            
+            AuditLog auditLog = new AuditLog(
+                    null, userId, "UPDATE", "sales", saleId,
+                    jsonService.toJson(oldData), jsonService.toJson(newData),
+                    jsonService.toJson(Map.of("reason", "Customer correction")),
+                    null, TimeUtil.nowUTC()
+            );
+            auditRepository.insertAuditLog(auditLog);
+
+            return null;
+        });
     }
 }

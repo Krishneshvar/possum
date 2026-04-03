@@ -48,5 +48,9 @@ public interface SalesRepository {
 
     long getNextSequenceForPaymentType(String paymentTypeCode);
 
+    int updateTransactionPaymentMethod(long saleId, long newPaymentMethodId);
+
+    int updateSaleCustomer(long saleId, Long customerId);
+
 }
 

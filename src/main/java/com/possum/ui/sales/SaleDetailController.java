@@ -10,6 +10,7 @@ import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.ui.navigation.Parameterizable;
 import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -18,15 +19,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import java.util.List;
-
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.time.format.DateTimeFormatter;
 import com.possum.shared.util.TimeUtil;
 import java.util.Locale;
 import java.util.Map;
@@ -41,22 +36,9 @@ public class SaleDetailController implements Parameterizable {
     @FXML private Label paymentMethodLabel;
     @FXML private Label billerLabel;
     
-    @FXML private TableView<SaleItem> itemsTable;
-    @FXML private TableColumn<SaleItem, String> productCol;
-    @FXML private TableColumn<SaleItem, String> skuCol;
-    @FXML private TableColumn<SaleItem, Integer> qtyCol;
-    @FXML private TableColumn<SaleItem, BigDecimal> priceCol;
-    @FXML private TableColumn<SaleItem, BigDecimal> taxCol;
-    @FXML private TableColumn<SaleItem, BigDecimal> discountCol;
-    @FXML private TableColumn<SaleItem, BigDecimal> totalCol;
-
+    @FXML private DataTableView<SaleItem> itemsTable;
     @FXML private VBox returnedItemsContainer;
-    @FXML private TableView<SaleItem> returnedItemsTable;
-    @FXML private TableColumn<SaleItem, String> retProductCol;
-    @FXML private TableColumn<SaleItem, String> retSkuCol;
-    @FXML private TableColumn<SaleItem, Integer> retQtyCol;
-    @FXML private TableColumn<SaleItem, BigDecimal> retPriceCol;
-    @FXML private TableColumn<SaleItem, BigDecimal> retRefundCol;
+    @FXML private DataTableView<SaleItem> returnedItemsTable;
     
     @FXML private Label subtotalLabel;
     @FXML private Label taxTotalLabel;
@@ -100,6 +82,17 @@ public class SaleDetailController implements Parameterizable {
     }
 
     private void setupActiveItemsTable() {
+        TableColumn<SaleItem, String> productCol = new TableColumn<>("Product / Variant");
+        TableColumn<SaleItem, String> skuCol = new TableColumn<>("SKU");
+        TableColumn<SaleItem, Integer> qtyCol = new TableColumn<>("Qty");
+        TableColumn<SaleItem, BigDecimal> priceCol = new TableColumn<>("Unit Price");
+        TableColumn<SaleItem, BigDecimal> taxCol = new TableColumn<>("Tax");
+        TableColumn<SaleItem, BigDecimal> discountCol = new TableColumn<>("Discount");
+        TableColumn<SaleItem, BigDecimal> totalCol = new TableColumn<>("Line Total");
+        
+        itemsTable.getTableView().getColumns().setAll(productCol, skuCol, qtyCol, priceCol, taxCol, discountCol, totalCol);
+        itemsTable.setEmptyMessage("No active items in this bill");
+
         productCol.setCellValueFactory(data -> new SimpleStringProperty(
             data.getValue().productName() + (data.getValue().variantName() != null ? " - " + data.getValue().variantName() : "")
         ));
@@ -160,6 +153,15 @@ public class SaleDetailController implements Parameterizable {
     }
 
     private void setupReturnedItemsTable() {
+        TableColumn<SaleItem, String> retProductCol = new TableColumn<>("Product / Variant");
+        TableColumn<SaleItem, String> retSkuCol = new TableColumn<>("SKU");
+        TableColumn<SaleItem, Integer> retQtyCol = new TableColumn<>("Returned Qty");
+        TableColumn<SaleItem, BigDecimal> retPriceCol = new TableColumn<>("Unit Price");
+        TableColumn<SaleItem, BigDecimal> retRefundCol = new TableColumn<>("Refund Amount");
+
+        returnedItemsTable.getTableView().getColumns().setAll(retProductCol, retSkuCol, retQtyCol, retPriceCol, retRefundCol);
+        returnedItemsTable.setEmptyMessage("No returned items recorded");
+
         retProductCol.setCellValueFactory(data -> new SimpleStringProperty(
             data.getValue().productName() + (data.getValue().variantName() != null ? " - " + data.getValue().variantName() : "")
         ));
@@ -303,18 +305,52 @@ public class SaleDetailController implements Parameterizable {
 
     @FXML
     private void handleEdit() {
-        // In a real POS, editing a finalized bill is usually restricted.
-        // We'll provide a hint that they should create a return or void it.
-        NotificationService.info("To edit a finalized bill, please process a return or void the sale.");
+        try {
+            java.util.List<com.possum.domain.model.PaymentMethod> methods = salesService.getPaymentMethods();
+            if (methods.isEmpty()) {
+                NotificationService.warning("No payment methods available");
+                return;
+            }
+
+            javafx.scene.control.ChoiceDialog<com.possum.domain.model.PaymentMethod> dialog = new javafx.scene.control.ChoiceDialog<>(
+                methods.get(0), methods
+            );
+            dialog.setTitle("Change Payment Method");
+            dialog.setHeaderText("Correcting Payment Method for #" + currentSale.invoiceNumber());
+            dialog.setContentText("Select the correct payment method:");
+            dialog.initOwner(itemsTable.getScene().getWindow());
+
+            // Get current method to pre-select
+            long currentMethodId = saleDetails.transactions().stream()
+                    .filter(t -> "payment".equals(t.type()))
+                    .map(com.possum.domain.model.Transaction::paymentMethodId)
+                    .findFirst()
+                    .orElse(-1L);
+            
+            methods.stream()
+                .filter(m -> m.id() == currentMethodId)
+                .findFirst()
+                .ifPresent(dialog::setSelectedItem);
+
+            dialog.showAndWait().ifPresent(newMethod -> {
+                try {
+                    com.possum.application.auth.AuthUser currentUser = com.possum.application.auth.AuthContext.getCurrentUser();
+                    salesService.changeSalePaymentMethod(currentSale.id(), newMethod.id(), currentUser.id());
+                    NotificationService.success("Payment method updated to " + newMethod.name());
+                    loadSaleDetails(); // Refresh view
+                } catch (Exception e) {
+                    NotificationService.error("Failed to update payment method: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            NotificationService.error("Error: " + e.getMessage());
+        }
     }
 
     @FXML
     private void handleReturn() {
-        // Open return dialog pre-filtered
         Map<String, Object> params = Map.of("invoiceNumber", currentSale.invoiceNumber());
         workspaceManager.openDialog("Process Return", "/fxml/returns/create-return-dialog.fxml", params);
-        
-        // Refresh after dialog closes
         loadSaleDetails();
     }
 }

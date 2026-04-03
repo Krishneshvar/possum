@@ -4,6 +4,7 @@ import com.possum.application.taxes.TaxManagementService;
 import com.possum.domain.model.TaxCategory;
 import com.possum.domain.model.TaxProfile;
 import com.possum.domain.model.TaxRule;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.dialogs.DialogStyler;
 import javafx.beans.property.SimpleObjectProperty;
@@ -19,11 +20,11 @@ import java.util.List;
 public class TaxRulesController {
 
     @FXML private ComboBox<TaxProfile> profileCombo;
-    @FXML private TableView<TaxRule> rulesTable;
-    @FXML private TableColumn<TaxRule, String> categoryColumn;
-    @FXML private TableColumn<TaxRule, BigDecimal> rateColumn;
-    @FXML private TableColumn<TaxRule, String> typeColumn;
-    @FXML private TableColumn<TaxRule, Integer> priorityColumn;
+    @FXML private DataTableView<TaxRule> rulesTable;
+    private TableColumn<TaxRule, String> categoryColumn;
+    private TableColumn<TaxRule, BigDecimal> rateColumn;
+    private TableColumn<TaxRule, String> typeColumn;
+    private TableColumn<TaxRule, Integer> priorityColumn;
 
     @FXML private ComboBox<TaxCategory> categoryCombo;
     @FXML private ComboBox<String> scopeCombo;
@@ -64,6 +65,15 @@ public class TaxRulesController {
     }
 
     private void setupTable() {
+        categoryColumn = new TableColumn<>("Category");
+        rateColumn = new TableColumn<>("Rate (%)");
+        typeColumn = new TableColumn<>("Scope");
+        priorityColumn = new TableColumn<>("Priority");
+
+        rulesTable.getTableView().getColumns().setAll(categoryColumn, rateColumn, typeColumn, priorityColumn);
+        rulesTable.setEmptyMessage("No tax rules found for this profile");
+        rulesTable.setEmptySubtitle("Add a new rule using the form.");
+
         categoryColumn.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().categoryName() != null ? data.getValue().categoryName() : "All Categories"));
         rateColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().ratePercent()));
@@ -71,7 +81,7 @@ public class TaxRulesController {
             new SimpleStringProperty(Boolean.TRUE.equals(data.getValue().compound()) ? "Compound" : "Simple"));
         priorityColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().priority()));
 
-        rulesTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+        rulesTable.getTableView().getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             selectedRule = newVal;
             if (newVal != null) {
                 populateForm(newVal);
@@ -190,7 +200,16 @@ public class TaxRulesController {
     }
 
     private void populateForm(TaxRule rule) {
-        categoryCombo.setValue(null);
+        // Find matching category in combo or set null for "All Categories"
+        if (rule.taxCategoryId() == null) {
+            categoryCombo.setValue(null);
+        } else {
+            categoryCombo.getItems().stream()
+                .filter(c -> c != null && c.id().equals(rule.taxCategoryId()))
+                .findFirst()
+                .ifPresent(categoryCombo::setValue);
+        }
+
         scopeCombo.setValue(rule.ruleScope());
         rateField.setText(rule.ratePercent().toString());
         priorityField.setText(rule.priority().toString());
@@ -220,7 +239,7 @@ public class TaxRulesController {
         validFromPicker.setValue(null);
         validToPicker.setValue(null);
         selectedRule = null;
-        rulesTable.getSelectionModel().clearSelection();
+        rulesTable.getTableView().getSelectionModel().clearSelection();
 
         clearValidationState();
     }

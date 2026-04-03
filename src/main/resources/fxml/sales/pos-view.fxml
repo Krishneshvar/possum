@@ -36,19 +36,7 @@
                                 <Label text="Cart Items" styleClass="pos-card-title"/>
                             </HBox>
 
-                            <TableView fx:id="cartTable" styleClass="pos-table" editable="true" VBox.vgrow="ALWAYS">
-                                <columns>
-                                    <TableColumn fx:id="colSno" text="#" prefWidth="48" minWidth="48" maxWidth="56" editable="false" resizable="false"/>
-                                    <TableColumn fx:id="colSku" text="SKU" prefWidth="95" minWidth="80" editable="false"/>
-                                    <TableColumn fx:id="colProduct" text="Product" prefWidth="180" minWidth="140" editable="false"/>
-                                    <TableColumn fx:id="colQty" text="Qty" prefWidth="78" minWidth="72" maxWidth="96" editable="true"/>
-                                    <TableColumn fx:id="colPrice" text="Price" prefWidth="96" minWidth="86" editable="true"/>
-                                    <TableColumn fx:id="colMrp" text="MRP" prefWidth="96" minWidth="86" editable="false"/>
-                                    <TableColumn fx:id="colDiscountPct" text="Disc %" prefWidth="90" minWidth="80" editable="true"/>
-                                    <TableColumn fx:id="colDiscountAmt" text="Disc Amt" prefWidth="98" minWidth="88" editable="true"/>
-                                    <TableColumn fx:id="colTotal" text="Total" prefWidth="115" minWidth="95" editable="false"/>
-                                </columns>
-                            </TableView>
+                            <com.possum.ui.common.controls.DataTableView fx:id="cartTable" VBox.vgrow="ALWAYS" />
 
                             <HBox alignment="CENTER_RIGHT" spacing="24" styleClass="pos-cart-totals">
                                 <HBox spacing="8" alignment="CENTER_LEFT">

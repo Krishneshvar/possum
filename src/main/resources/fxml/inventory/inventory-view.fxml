@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import com.possum.ui.common.controls.DataTableView?>
 <?import com.possum.ui.common.controls.*?>
 
 <VBox xmlns="http://javafx.com/javafx"

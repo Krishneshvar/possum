@@ -12,6 +12,7 @@ import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.ui.common.dialogs.BillPreviewDialog;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.application.Platform;
 import javafx.beans.property.*;
@@ -32,123 +33,75 @@ import java.util.*;
 import java.util.Locale;
 import javafx.stage.Popup;
 import javafx.scene.input.KeyCode;
+import javafx.geometry.Pos;
 
 public class PosController {
 
-    @FXML
-    private VBox leftVBox;
-    @FXML
-    private VBox cartCardVBox;
-    @FXML
-    private HBox searchDock;
-    @FXML
-    private VBox paymentCard;
-    @FXML
-    private HBox tenderedBalanceContainer;
-    @FXML
-    private StackPane rightPane;
-    @FXML
-    private TableView<CartItem> cartTable;
-    @FXML
+    @FXML private VBox leftVBox;
+    @FXML private VBox cartCardVBox;
+    @FXML private HBox searchDock;
+    @FXML private VBox paymentCard;
+    @FXML private HBox tenderedBalanceContainer;
+    @FXML private StackPane rightPane;
+    @FXML private DataTableView<CartItem> cartTable;
+    
+    // Virtual columns
     private TableColumn<CartItem, String> colSno;
-    @FXML
     private TableColumn<CartItem, String> colSku;
-    @FXML
     private TableColumn<CartItem, String> colProduct;
-    @FXML
     private TableColumn<CartItem, CartItem> colQty;
-    @FXML
     private TableColumn<CartItem, CartItem> colPrice;
-    @FXML
     private TableColumn<CartItem, CartItem> colDiscountPct;
-    @FXML
     private TableColumn<CartItem, CartItem> colDiscountAmt;
-    @FXML
     private TableColumn<CartItem, String> colTotal;
-    @FXML
     private TableColumn<CartItem, String> colMrp;
 
-    @FXML
-    private TextField searchField;
-    @FXML
-    private Label totalQtyLabel;
-    @FXML
-    private Label bottomTotalLabel;
-    @FXML
-    private Label bottomMrpLabel;
-    @FXML
-    private Label bottomPriceTotalLabel;
+    @FXML private TextField searchField;
+    @FXML private Label totalQtyLabel;
+    @FXML private Label bottomTotalLabel;
+    @FXML private Label bottomMrpLabel;
+    @FXML private Label bottomPriceTotalLabel;
 
-    @FXML
-    private TextField quickProductName;
-    @FXML
-    private TextField quickVariantName;
-    @FXML
-    private TextField quickStock;
-    @FXML
-    private TextField quickPrice;
-    @FXML
-    private TextField quickCategorySearch;
+    @FXML private TextField quickProductName;
+    @FXML private TextField quickVariantName;
+    @FXML private TextField quickStock;
+    @FXML private TextField quickPrice;
+    @FXML private TextField quickCategorySearch;
 
-    @FXML
-    private ComboBox<Customer> customerCombo;
-    @FXML
-    private TextField customerNameField;
-    @FXML
-    private TextField customerPhoneField;
-    @FXML
-    private TextField customerEmailField;
-    @FXML
-    private TextField customerAddressField;
+    @FXML private ComboBox<Customer> customerCombo;
+    @FXML private TextField customerNameField;
+    @FXML private TextField customerPhoneField;
+    @FXML private TextField customerEmailField;
+    @FXML private TextField customerAddressField;
 
-    @FXML
-    private ComboBox<PaymentMethod> paymentMethodCombo;
+    @FXML private ComboBox<PaymentMethod> paymentMethodCombo;
 
-    @FXML
-    private ToggleButton btnFullPayment;
-    @FXML
-    private ToggleButton btnPartialPayment;
-    @FXML
-    private TextField discountField;
-    @FXML
-    private ToggleButton btnDiscountFixed;
-    @FXML
-    private ToggleButton btnDiscountPercent;
+    @FXML private ToggleButton btnFullPayment;
+    @FXML private ToggleButton btnPartialPayment;
+    @FXML private TextField discountField;
+    @FXML private ToggleButton btnDiscountFixed;
+    @FXML private ToggleButton btnDiscountPercent;
 
-    @FXML
-    private Label subtotalLabel;
-    @FXML
-    private Label totalDiscountLabel;
-    @FXML
-    private Label taxLabel;
-    @FXML
-    private Label totalLabel;
+    @FXML private Label subtotalLabel;
+    @FXML private Label totalDiscountLabel;
+    @FXML private Label taxLabel;
+    @FXML private Label totalLabel;
 
-    @FXML
-    private TextField tenderedField;
-    @FXML
-    private Label balanceTypeLabel;
-    @FXML
-    private Label balanceLabel;
+    @FXML private TextField tenderedField;
+    @FXML private Label balanceTypeLabel;
+    @FXML private Label balanceLabel;
 
-    @FXML
-    private Button completeButton;
-    @FXML
-    private HBox billsFlowPane;
-    @FXML
-    private Button btnResetCustomer;
-    @FXML
-    private StackPane rootPane;
+    @FXML private Button completeButton;
+    @FXML private HBox billsFlowPane;
+    @FXML private StackPane rootPane;
     private boolean isAutofilling = false;
     private Long selectedProductIdForQuickAdd = null;
     private Category selectedCategoryForQuickAdd = null;
 
     private Popup searchPopup = new Popup();
     private ListView<Variant> searchResultsView = new ListView<>(FXCollections.observableArrayList());
-
     private Popup quickProductPopup = new Popup();
     private ListView<Variant> quickProductResultsView = new ListView<>(FXCollections.observableArrayList());
-
     private Popup quickCategoryPopup = new Popup();
     private ListView<Category> quickCategoryResultsView = new ListView<>(FXCollections.observableArrayList());
 
@@ -189,7 +142,6 @@ public class PosController {
                     com.possum.application.auth.Permissions.SALES_CREATE);
         }
 
-        // Init Bills
         for (int i = 0; i < MAX_BILLS; i++) {
             bills.add(new BillState(i));
         }
@@ -214,11 +166,28 @@ public class PosController {
     }
 
     private void setupTable() {
-        colSno.setCellValueFactory(
-                cell -> new SimpleStringProperty(String.valueOf(cartTable.getItems().indexOf(cell.getValue()) + 1)));
+        colSno = new TableColumn<>("#");
+        colSku = new TableColumn<>("SKU");
+        colProduct = new TableColumn<>("Product");
+        colQty = new TableColumn<>("Qty");
+        colPrice = new TableColumn<>("Price");
+        colMrp = new TableColumn<>("MRP");
+        colDiscountPct = new TableColumn<>("Disc %");
+        colDiscountAmt = new TableColumn<>("Disc Amt");
+        colTotal = new TableColumn<>("Total");
 
+        cartTable.getTableView().getColumns().setAll(
+            colSno, colSku, colProduct, colQty, colPrice, colMrp, colDiscountPct, colDiscountAmt, colTotal
+        );
+
+        colSno.setPrefWidth(48);
+        colSno.setResizable(false);
+        colSno.setCellValueFactory(cell -> new SimpleStringProperty(String.valueOf(cartTable.getTableView().getItems().indexOf(cell.getValue()) + 1)));
+
+        colSku.setPrefWidth(95);
         colSku.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().variant.sku()));
 
+        colProduct.setPrefWidth(180);
         colProduct.setCellValueFactory(cell -> {
             Variant v = cell.getValue().variant;
             String disp = v.productName();
@@ -228,37 +197,38 @@ public class PosController {
             return new SimpleStringProperty(disp);
         });
 
+        colQty.setPrefWidth(78);
         colQty.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colQty.setEditable(true);
         colQty.setCellFactory(col -> new EditableQuantityCell());
 
+        colPrice.setPrefWidth(96);
         colPrice.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colPrice.setEditable(true);
         colPrice.setCellFactory(col -> new EditablePriceCell());
 
-        colMrp.setCellValueFactory(
-                cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().variant.price())));
+        colMrp.setPrefWidth(96);
+        colMrp.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().variant.price())));
 
+        colDiscountPct.setPrefWidth(90);
         colDiscountPct.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colDiscountPct.setEditable(true);
         colDiscountPct.setCellFactory(col -> new EditableDiscountPctCell());
 
+        colDiscountAmt.setPrefWidth(98);
         colDiscountAmt.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colDiscountAmt.setEditable(true);
         colDiscountAmt.setCellFactory(col -> new EditableDiscountAmtCell());
 
-        colTotal.setCellValueFactory(
-                cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().netLineTotal)));
+        colTotal.setPrefWidth(115);
+        colTotal.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().netLineTotal)));
 
-        cartTable.setEditable(true);
-        cartTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        cartTable.getSelectionModel().setCellSelectionEnabled(true);
-        cartTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        cartTable.getTableView().setEditable(true);
+        cartTable.getTableView().getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        cartTable.getTableView().getSelectionModel().setCellSelectionEnabled(true);
+        
+        cartTable.setEmptyMessage("Your cart is empty");
+        cartTable.setEmptySubtitle("Search for products or scan a barcode to add items.");
 
-        cartTable.setOnKeyPressed(e -> {
+        cartTable.getTableView().setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.DELETE || e.getCode() == KeyCode.BACK_SPACE) {
-                // Delete the selected row
-                CartItem selectedItem = cartTable.getSelectionModel().getSelectedItem();
+                CartItem selectedItem = cartTable.getTableView().getSelectionModel().getSelectedItem();
                 if (selectedItem != null) {
                     currentBill.items.remove(selectedItem);
                     refreshCurrentBill();
@@ -266,19 +236,18 @@ public class PosController {
                 }
             } else if (e.getCode() == KeyCode.ENTER || e.getCode() == KeyCode.SPACE
                     || (!e.isControlDown() && !e.isAltDown() && e.getText().length() > 0)) {
-                // Start editing on Enter, Space, or any character key
-                TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+                TablePosition<CartItem, ?> pos = cartTable.getTableView().getFocusModel().getFocusedCell();
                 if (pos != null && pos.getTableColumn() != null) {
                     TableColumn<CartItem, ?> col = pos.getTableColumn();
                     if (col == colQty || col == colPrice || col == colDiscountAmt || col == colDiscountPct) {
-                        cartTable.edit(pos.getRow(), col);
+                        cartTable.getTableView().edit(pos.getRow(), col);
                         e.consume();
                     }
                 }
             }
         });
 
-        cartTable.setFixedCellSize(60);
+        cartTable.getTableView().setFixedCellSize(60);
     }
 
     private void loadCombos() {
@@ -286,7 +255,7 @@ public class PosController {
             @Override
             protected void updateItem(Customer item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(item == null ? "Walk-in Customer" : item.name() + " (" + item.phone() + ")");
+                setText(item == null || empty ? "Walk-in Customer" : item.name() + " (" + item.phone() + ")");
             }
         });
         customerCombo.setButtonCell(new ListCell<>() {
@@ -299,14 +268,13 @@ public class PosController {
         try {
             List<Customer> customers = salesService.getAllCustomers();
             customerCombo.getItems().setAll(customers);
-        } catch (Exception e) {
-        }
+        } catch (Exception e) {}
 
         paymentMethodCombo.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(PaymentMethod item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(item == null ? "Select Method" : item.name());
+                setText(item == null || empty ? "Select Method" : item.name());
             }
         });
         paymentMethodCombo.setButtonCell(new ListCell<>() {
@@ -333,7 +301,7 @@ public class PosController {
 
         paymentTypeGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal == null) {
-                oldVal.setSelected(true); // Prevent unselecting both
+                oldVal.setSelected(true);
                 return;
             }
             boolean isFull = newVal == btnFullPayment;
@@ -356,10 +324,7 @@ public class PosController {
     private void setupListeners() {
         searchField.setOnAction(e -> {
             String query = searchField.getText().trim();
-            if (query.isEmpty())
-                return;
-
-            // Try Barcode first
+            if (query.isEmpty()) return;
             Optional<Variant> byBarcode = searchIndex.findByBarcode(query);
             if (byBarcode.isPresent()) {
                 addToCart(byBarcode.get());
@@ -367,14 +332,11 @@ public class PosController {
                 searchPopup.hide();
                 return;
             }
-
-            // Otherwise take first from current results if popup is visible
             if (searchPopup.isShowing() && !searchResultsView.getItems().isEmpty()) {
                 addToCart(searchResultsView.getItems().get(0));
                 searchField.clear();
                 searchPopup.hide();
             } else {
-                // Last ditch search
                 List<Variant> results = searchIndex.searchByName(query);
                 if (!results.isEmpty()) {
                     addToCart(results.get(0));
@@ -388,11 +350,7 @@ public class PosController {
         searchResultsView.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) {
                 Variant v = searchResultsView.getSelectionModel().getSelectedItem();
-                if (v != null) {
-                    addToCart(v);
-                    searchField.clear();
-                    searchPopup.hide();
-                }
+                if (v != null) { addToCart(v); searchField.clear(); searchPopup.hide(); }
             } else if (e.getCode() == KeyCode.UP && searchResultsView.getSelectionModel().getSelectedIndex() == 0) {
                 searchField.requestFocus();
             }
@@ -402,54 +360,38 @@ public class PosController {
             Variant v = searchResultsView.getSelectionModel().getSelectedItem();
             if (v != null) {
                 addToCart(v);
-                Platform.runLater(() -> {
-                    searchField.clear();
-                    searchPopup.hide();
-                });
+                Platform.runLater(() -> { searchField.clear(); searchPopup.hide(); });
             }
         });
 
         searchField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.DOWN) {
-                if (!cartTable.getItems().isEmpty()) {
-                    cartTable.requestFocus();
-                    // Focus on first row SKU column
-                    cartTable.getSelectionModel().select(0, colSku);
-                    cartTable.getFocusModel().focus(0, colSku);
+                if (!cartTable.getTableView().getItems().isEmpty()) {
+                    cartTable.getTableView().requestFocus();
+                    cartTable.getTableView().getSelectionModel().select(0, colSku);
+                    cartTable.getTableView().getFocusModel().focus(0, colSku);
                 }
             }
         });
 
-        searchField.setOnMouseClicked(e -> {
-            String query = searchField.getText().trim();
-            showAutocompletePopup(query);
-        });
+        searchField.setOnMouseClicked(e -> showAutocompletePopup(searchField.getText().trim()));
 
         discountField.textProperty().addListener((obs, oldVal, newVal) -> {
             try {
-                if (newVal.isEmpty())
-                    currentBill.overallDiscountValue = BigDecimal.ZERO;
-                else
-                    currentBill.overallDiscountValue = new BigDecimal(newVal);
+                currentBill.overallDiscountValue = newVal.isEmpty() ? BigDecimal.ZERO : new BigDecimal(newVal);
                 recalculateTotals();
-            } catch (Exception e) {
-            }
+            } catch (Exception e) {}
         });
 
         tenderedField.textProperty().addListener((obs, oldVal, newVal) -> {
             try {
-                if (newVal.isEmpty())
-                    currentBill.amountTendered = BigDecimal.ZERO;
-                else
-                    currentBill.amountTendered = new BigDecimal(newVal);
+                currentBill.amountTendered = newVal.isEmpty() ? BigDecimal.ZERO : new BigDecimal(newVal);
                 updateBalanceLabel();
-            } catch (Exception e) {
-            }
+            } catch (Exception e) {}
         });
 
         customerCombo.valueProperty().addListener((obs, old, val) -> {
-            if (isAutofilling)
-                return;
+            if (isAutofilling) return;
             isAutofilling = true;
             try {
                 currentBill.selectedCustomer = val;
@@ -458,134 +400,48 @@ public class PosController {
                     customerPhoneField.setText(val.phone());
                     customerEmailField.setText(val.email() != null ? val.email() : "");
                     customerAddressField.setText(val.address() != null ? val.address() : "");
-                } else {
-                    // If switching to "Walk-in" (null selection), we don't necessarily want to
-                    // clear fields
-                    // because the user might be typing a NEW customer's details.
-                    // However, if it was explicitly unselected by the user, clearing might be
-                    // expected.
-                    // Given the flow, we'll only clear if the fields currently match the OLD
-                    // selection.
-                    if (old != null && old.name().equals(customerNameField.getText().trim())
+                } else if (old != null && old.name().equals(customerNameField.getText().trim())
                             && old.phone().equals(customerPhoneField.getText().trim())) {
-                        customerNameField.clear();
-                        customerPhoneField.clear();
-                        customerEmailField.clear();
-                        customerAddressField.clear();
-                    }
+                    customerNameField.clear(); customerPhoneField.clear(); customerEmailField.clear(); customerAddressField.clear();
                 }
-            } finally {
-                isAutofilling = false;
-            }
+            } finally { isAutofilling = false; }
         });
 
-        customerNameField.textProperty().addListener((obs, old, val) -> {
-            if (isAutofilling)
-                return;
-            currentBill.customerName = val;
-            checkCustomerMatch();
-            recalculateTotals();
-        });
-        customerPhoneField.textProperty().addListener((obs, old, val) -> {
-            if (isAutofilling)
-                return;
-            currentBill.customerPhone = val;
-            checkCustomerMatch();
-            recalculateTotals();
-        });
-        customerEmailField.textProperty().addListener((obs, old, val) -> {
-            if (isAutofilling)
-                return;
-            currentBill.customerEmail = val;
-        });
-        customerAddressField.textProperty().addListener((obs, old, val) -> {
-            if (isAutofilling)
-                return;
-            currentBill.customerAddress = val;
-            recalculateTotals();
-        });
+        customerNameField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.customerName = val; checkCustomerMatch(); recalculateTotals(); } });
+        customerPhoneField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.customerPhone = val; checkCustomerMatch(); recalculateTotals(); } });
+        customerEmailField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) currentBill.customerEmail = val; });
+        customerAddressField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.customerAddress = val; recalculateTotals(); } });
 
-        paymentMethodCombo.valueProperty().addListener((obs, old, val) -> {
-            currentBill.selectedPaymentMethod = val;
-            updateBalanceLabel();
-        });
+        paymentMethodCombo.valueProperty().addListener((obs, old, val) -> { currentBill.selectedPaymentMethod = val; updateBalanceLabel(); });
     }
 
     private void setupKeyboardShortcuts() {
         Platform.runLater(() -> {
-            if (rootPane == null || rootPane.getScene() == null) {
-                return;
-            }
+            if (rootPane == null || rootPane.getScene() == null) return;
             rootPane.getScene().addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
-                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.K) {
-                    focusSearchAndOpen(true);
-                    e.consume();
-                    return;
-                }
-
-                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.ENTER) {
-                    if (!completeButton.isDisabled()) {
-                        handleCompleteSale();
-                    }
-                    e.consume();
-                    return;
-                }
-
-                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.N) {
-                    openOrSwitchToNextBill();
-                    e.consume();
-                    return;
-                }
-
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.K) { focusSearchAndOpen(true); e.consume(); return; }
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.ENTER) { if (!completeButton.isDisabled()) handleCompleteSale(); e.consume(); return; }
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.N) { openOrSwitchToNextBill(); e.consume(); return; }
                 if ((e.isControlDown() || e.isMetaDown()) && e.getCode().isDigitKey()) {
-                    String text = e.getText();
-                    if (text != null && !text.isEmpty()) {
-                        int digit = text.charAt(0) - '1';
-                        if (digit >= 0 && digit < MAX_BILLS) {
-                            switchBill(digit);
-                            e.consume();
-                        }
+                    String t = e.getText();
+                    if (t != null && !t.isEmpty()) {
+                        int d = t.charAt(0) - '1';
+                        if (d >= 0 && d < MAX_BILLS) { switchBill(d); e.consume(); }
                     }
                     return;
                 }
-
                 if (e.getCode() == KeyCode.F12) {
-                    if (currentBill.items.isEmpty()) {
-                        NotificationService.warning("Add items to cart first");
-                        e.consume();
-                        return;
-                    }
-
+                    if (currentBill.items.isEmpty()) { NotificationService.warning("Add items to cart first"); e.consume(); return; }
                     if (tenderedField.isFocused()) {
-                        if (!completeButton.isDisabled()) {
-                            handleCompleteSale();
-                        } else {
-                            if (currentBill.fullPayment) {
-                                NotificationService.warning("Tendered amount must be greater than or equal to total");
-                            } else {
-                                NotificationService.warning("Partial payment must be between 0 and total");
-                            }
-                        }
-                    } else {
-                        tenderedField.requestFocus();
-                        tenderedField.selectAll();
-                    }
+                        if (!completeButton.isDisabled()) handleCompleteSale();
+                        else NotificationService.warning(currentBill.fullPayment ? "Tendered amount must be >= total" : "Partial payment must be between 0 and total");
+                    } else { tenderedField.requestFocus(); tenderedField.selectAll(); }
                     e.consume();
                     return;
                 }
-
-                if (e.getCode() == KeyCode.ESCAPE) {
-                    searchPopup.hide();
-                    quickProductPopup.hide();
-                    quickCategoryPopup.hide();
-                    rootPane.requestFocus();
-                    e.consume();
-                    return;
-                }
-
+                if (e.getCode() == KeyCode.ESCAPE) { searchPopup.hide(); quickProductPopup.hide(); quickCategoryPopup.hide(); rootPane.requestFocus(); e.consume(); return; }
                 if (!e.isControlDown() && !e.isMetaDown() && e.getCode() == KeyCode.SLASH && e.isShiftDown()) {
-                    NotificationService.info(
-                            "POS shortcuts: Ctrl+K Search, Ctrl+Enter Complete, Ctrl+N New Bill, Ctrl+1..9 Switch Bill, Esc Close popups");
+                    NotificationService.info("POS shortcuts: Ctrl+K Search, Ctrl+Enter Complete, Ctrl+N New Bill, Ctrl+1..9 Switch Bill, Esc Close popups");
                     e.consume();
                 }
             });
@@ -594,33 +450,21 @@ public class PosController {
 
     private void setupLayoutSizing() {
         Platform.runLater(() -> {
-            if (rootPane == null || leftVBox == null || rightPane == null) {
-                return;
-            }
+            if (rootPane == null || leftVBox == null || rightPane == null) return;
             leftVBox.prefWidthProperty().bind(rootPane.widthProperty().multiply(0.60));
             rightPane.prefWidthProperty().bind(rootPane.widthProperty().multiply(0.40));
         });
     }
 
     private void focusSearchAndOpen(boolean openPopup) {
-        searchField.requestFocus();
-        searchField.selectAll();
-        if (openPopup) {
-            showAutocompletePopup(searchField.getText() != null ? searchField.getText().trim() : "");
-        }
+        searchField.requestFocus(); searchField.selectAll();
+        if (openPopup) showAutocompletePopup(searchField.getText() != null ? searchField.getText().trim() : "");
     }
 
     private void openOrSwitchToNextBill() {
-        for (BillState bill : bills) {
-            if (bill.items.isEmpty() && bill.index != currentBill.index) {
-                switchBill(bill.index);
-                return;
-            }
-        }
+        for (BillState bill : bills) if (bill.items.isEmpty() && bill.index != currentBill.index) { switchBill(bill.index); return; }
         int next = (currentBill.index + 1) % MAX_BILLS;
-        if (next == currentBill.index) {
-            return;
-        }
+        if (next == currentBill.index) return;
         bills.get(next).reset();
         switchBill(next);
         NotificationService.info("Switched to a fresh bill tab");
@@ -630,38 +474,21 @@ public class PosController {
     private void handleResetCustomer() {
         isAutofilling = true;
         try {
-            customerCombo.setValue(null);
-            customerNameField.clear();
-            customerPhoneField.clear();
-            customerEmailField.clear();
-            customerAddressField.clear();
-
-            currentBill.selectedCustomer = null;
-            currentBill.customerName = "";
-            currentBill.customerPhone = "";
-            currentBill.customerEmail = "";
-            currentBill.customerAddress = "";
-
+            customerCombo.setValue(null); customerNameField.clear(); customerPhoneField.clear();
+            customerEmailField.clear(); customerAddressField.clear();
+            currentBill.selectedCustomer = null; currentBill.customerName = ""; currentBill.customerPhone = "";
+            currentBill.customerEmail = ""; currentBill.customerAddress = "";
             recalculateTotals();
-        } finally {
-            isAutofilling = false;
-        }
+        } finally { isAutofilling = false; }
     }
 
     private void checkCustomerMatch() {
-        if (isAutofilling)
-            return;
-        Customer selected = customerCombo.getValue();
-        if (selected != null) {
-            String name = customerNameField.getText().trim();
-            String phone = customerPhoneField.getText().trim();
-            if (!name.equalsIgnoreCase(selected.name()) || !phone.equals(selected.phone())) {
-                // Modified fields no longer match selected customer - unselect in combo
-                Platform.runLater(() -> {
-                    if (customerCombo.getValue() != null) {
-                        customerCombo.setValue(null);
-                    }
-                });
+        if (isAutofilling) return;
+        Customer sel = customerCombo.getValue();
+        if (sel != null) {
+            String n = customerNameField.getText().trim(); String p = customerPhoneField.getText().trim();
+            if (!n.equalsIgnoreCase(sel.name()) || !p.equals(sel.phone())) {
+                Platform.runLater(() -> { if (customerCombo.getValue() != null) customerCombo.setValue(null); });
             }
         }
     }
@@ -671,40 +498,26 @@ public class PosController {
         for (int i = 0; i < MAX_BILLS; i++) {
             BillState bill = bills.get(i);
             Button btn = new Button(String.valueOf(i + 1));
-
-            boolean isActive = currentBill.index == i;
-            boolean hasItems = !bill.items.isEmpty();
-
-            String style = "-fx-font-weight: bold; -fx-background-radius: 8; -fx-border-radius: 8; -fx-min-width: 30; -fx-min-height: 30; -fx-font-size: 11px; ";
-            if (isActive) {
-                style += "-fx-background-color: #0f172a; -fx-text-fill: white; -fx-border-color: #0f172a; -fx-border-width: 1;";
-            } else if (hasItems) {
-                style += "-fx-background-color: #fef3c7; -fx-text-fill: #d97706; -fx-border-color: #fcd34d; -fx-border-width: 1;";
-            } else {
-                style += "-fx-background-color: #f8fafc; -fx-text-fill: #94a3b8; -fx-border-color: #e2e8f0; -fx-border-width: 1;";
-            }
-            btn.setStyle(style);
-            btn.setCursor(javafx.scene.Cursor.HAND);
-
-            int idx = i;
-            btn.setOnAction(e -> switchBill(idx));
+            boolean act = currentBill.index == i;
+            boolean has = !bill.items.isEmpty();
+            String s = "-fx-font-weight: bold; -fx-background-radius: 8; -fx-border-radius: 8; -fx-min-width: 30; -fx-min-height: 30; -fx-font-size: 11px; ";
+            if (act) s += "-fx-background-color: #0f172a; -fx-text-fill: white; -fx-border-color: #0f172a; -fx-border-width: 1;";
+            else if (has) s += "-fx-background-color: #fef3c7; -fx-text-fill: #d97706; -fx-border-color: #fcd34d; -fx-border-width: 1;";
+            else s += "-fx-background-color: #f8fafc; -fx-text-fill: #94a3b8; -fx-border-color: #e2e8f0; -fx-border-width: 1;";
+            btn.setStyle(s); btn.setCursor(javafx.scene.Cursor.HAND);
+            int idx = i; btn.setOnAction(e -> switchBill(idx));
             billsFlowPane.getChildren().add(btn);
         }
     }
 
     private void switchBill(int index) {
         currentBill = bills.get(index);
-
-        cartTable.setItems(currentBill.items);
+        cartTable.getTableView().setItems(currentBill.items);
         btnFullPayment.setSelected(currentBill.fullPayment);
         btnPartialPayment.setSelected(!currentBill.fullPayment);
-        discountField.setText(currentBill.overallDiscountValue.compareTo(BigDecimal.ZERO) > 0
-                ? currentBill.overallDiscountValue.toString()
-                : "");
-        btnDiscountFixed.setSelected(currentBill.isDiscountFixed);
-        btnDiscountPercent.setSelected(!currentBill.isDiscountFixed);
-        tenderedField.setText(
-                currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0 ? currentBill.amountTendered.toString() : "");
+        discountField.setText(currentBill.overallDiscountValue.compareTo(BigDecimal.ZERO) > 0 ? currentBill.overallDiscountValue.toString() : "");
+        btnDiscountFixed.setSelected(currentBill.isDiscountFixed); btnDiscountPercent.setSelected(!currentBill.isDiscountFixed);
+        tenderedField.setText(currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0 ? currentBill.amountTendered.toString() : "");
         isAutofilling = true;
         try {
             customerCombo.setValue(currentBill.selectedCustomer);
@@ -712,1249 +525,387 @@ public class PosController {
             customerPhoneField.setText(currentBill.customerPhone != null ? currentBill.customerPhone : "");
             customerEmailField.setText(currentBill.customerEmail != null ? currentBill.customerEmail : "");
             customerAddressField.setText(currentBill.customerAddress != null ? currentBill.customerAddress : "");
-        } finally {
-            isAutofilling = false;
-        }
-
+        } finally { isAutofilling = false; }
         paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
         if (currentBill.selectedPaymentMethod == null && !paymentMethodCombo.getItems().isEmpty()) {
             currentBill.selectedPaymentMethod = paymentMethodCombo.getItems().get(0);
             paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
         }
-
-        refreshCurrentBill();
-        focusSearchAndOpen(false);
+        refreshCurrentBill(); focusSearchAndOpen(false);
     }
 
-    private void setupQuickAdd() {
-    }
+    private void setupQuickAdd() {}
 
     @FXML
     private void handleQuickAddProduct() {
-        String pName = quickProductName.getText().trim();
-        String vName = quickVariantName.getText().trim();
-        String priceStr = quickPrice.getText().trim();
-        String stockStr = quickStock.getText().trim();
-        String catName = quickCategorySearch.getText().trim();
-
-        if (pName.isEmpty() || priceStr.isEmpty() || catName.isEmpty()) {
-            NotificationService.error("Please enter product name, price and select a category.");
-            return;
-        }
-
-        Category category = selectedCategoryForQuickAdd;
-        if (category == null) {
-            // Find by name
-            category = categoryService.getAllCategories().stream()
-                    .filter(c -> c.name().equalsIgnoreCase(catName))
-                    .findFirst().orElse(null);
-        }
-
-        if (category == null) {
-            NotificationService.error("Please select a valid category.");
-            return;
-        }
-
+        String pN = quickProductName.getText().trim(); String vN = quickVariantName.getText().trim();
+        String pS = quickPrice.getText().trim(); String sS = quickStock.getText().trim();
+        String cN = quickCategorySearch.getText().trim();
+        if (pN.isEmpty() || pS.isEmpty() || cN.isEmpty()) { NotificationService.error("Please enter product name, price and select a category."); return; }
+        Category cat = selectedCategoryForQuickAdd;
+        if (cat == null) cat = categoryService.getAllCategories().stream().filter(c -> c.name().equalsIgnoreCase(cN)).findFirst().orElse(null);
+        if (cat == null) { NotificationService.error("Please select a valid category."); return; }
         try {
-            BigDecimal price = new BigDecimal(priceStr);
-            int stock = stockStr.isEmpty() ? 1 : Integer.parseInt(stockStr);
-            if (stock < 0)
-                stock = 0;
-
-            AuthUser currentUser = AuthContext.getCurrentUser();
-            long userId = currentUser != null ? currentUser.id() : 1L;
-
-            Variant variantToCart = null;
-
-            // 1. Try to use selected product ID or find by exact name
-            Long productId = selectedProductIdForQuickAdd;
-            if (productId == null) {
-                Optional<Variant> productMatch = searchIndex.searchByName(pName).stream()
-                        .filter(v -> v.productName().equalsIgnoreCase(pName))
-                        .findFirst();
-                if (productMatch.isPresent()) {
-                    productId = productMatch.get().productId();
-                }
+            BigDecimal price = new BigDecimal(pS); int stock = sS.isEmpty() ? 1 : Integer.parseInt(sS);
+            if (stock < 0) stock = 0;
+            AuthUser cur = AuthContext.getCurrentUser(); long uId = cur != null ? cur.id() : 1L;
+            Variant vCart = null; Long pId = selectedProductIdForQuickAdd;
+            if (pId == null) {
+                Optional<Variant> m = searchIndex.searchByName(pN).stream().filter(v -> v.productName().equalsIgnoreCase(pN)).findFirst();
+                if (m.isPresent()) pId = m.get().productId();
             }
-
-            if (productId != null) {
-                // Product exists, now check if variant exists for this product
-                final String finalVName = vName;
-                final Long currentProductId = productId;
-                Optional<Variant> exactVariant = searchIndex.searchByName(pName).stream()
-                        .filter(v -> v.productId().equals(currentProductId) && v.name().equalsIgnoreCase(finalVName))
-                        .findFirst();
-
-                if (exactVariant.isPresent()) {
-                    variantToCart = exactVariant.get();
-                    // Update stock and price
-                    productService.updateProduct(currentProductId, new ProductService.UpdateProductCommand(
-                            null, null, null, null, null,
-                            List.of(new ProductService.VariantCommand(
-                                    variantToCart.id(), variantToCart.name(), variantToCart.sku(), price,
-                                    variantToCart.costPrice(),
-                                    variantToCart.stockAlertCap(), variantToCart.defaultVariant(),
-                                    variantToCart.status(), stock, "Quick add adjustment")),
-                            null, userId));
+            if (pId != null) {
+                final String fvN = vN; final Long fId = pId;
+                Optional<Variant> ex = searchIndex.searchByName(pN).stream().filter(v -> v.productId().equals(fId) && v.name().equalsIgnoreCase(fvN)).findFirst();
+                if (ex.isPresent()) {
+                    vCart = ex.get();
+                    productService.updateProduct(fId, new ProductService.UpdateProductCommand(null, null, null, null, null, List.of(new ProductService.VariantCommand(vCart.id(), vCart.name(), vCart.sku(), price, vCart.costPrice(), vCart.stockAlertCap(), vCart.defaultVariant(), vCart.status(), stock, "Quick add adjustment")), null, uId));
                     searchIndex.refresh();
-                    variantToCart = searchIndex.searchByName(pName).stream()
-                            .filter(v -> v.productId().equals(currentProductId)
-                                    && v.name().equalsIgnoreCase(finalVName))
-                            .findFirst().orElse(variantToCart);
+                    vCart = searchIndex.searchByName(pN).stream().filter(v -> v.productId().equals(fId) && v.name().equalsIgnoreCase(fvN)).findFirst().orElse(null);
                 } else {
-                    // Add new variant
-                    productService.updateProduct(currentProductId, new ProductService.UpdateProductCommand(
-                            null, null, null, null, null,
-                            List.of(new ProductService.VariantCommand(
-                                    null, vName, null, price, BigDecimal.ZERO, 0, false, "active", stock, null)),
-                            null, userId));
+                    productService.updateProduct(fId, new ProductService.UpdateProductCommand(null, null, null, null, null, List.of(new ProductService.VariantCommand(null, vN, null, price, BigDecimal.ZERO, 0, false, "active", stock, null)), null, uId));
                     searchIndex.refresh();
-                    variantToCart = searchIndex.searchByName(pName).stream()
-                            .filter(v -> v.productId().equals(currentProductId)
-                                    && v.name().equalsIgnoreCase(finalVName))
-                            .findFirst().orElse(null);
+                    vCart = searchIndex.searchByName(pN).stream().filter(v -> v.productId().equals(fId) && v.name().equalsIgnoreCase(fvN)).findFirst().orElse(null);
                 }
             } else {
-                // Product doesn't exist - create new product with the variant
-                ProductService.CreateProductCommand cmd = new ProductService.CreateProductCommand(
-                        pName,
-                        "Quick added from POS",
-                        category.id(),
-                        "active",
-                        null,
-                        List.of(new ProductService.VariantCommand(
-                                null, vName, null, price, BigDecimal.ZERO, 0, true, "active", stock, null)),
-                        null,
-                        userId);
-
-                productService.createProductWithVariants(cmd);
-                searchIndex.refresh();
-                final String finalVName = vName;
-                variantToCart = searchIndex.searchByName(pName).stream()
-                        .filter(v -> v.productName().equalsIgnoreCase(pName) && v.name().equalsIgnoreCase(finalVName))
-                        .findFirst().orElse(null);
+                productService.createProductWithVariants(new ProductService.CreateProductCommand(pN, "Quick added from POS", cat.id(), "active", null, List.of(new ProductService.VariantCommand(null, vN, null, price, BigDecimal.ZERO, 0, true, "active", stock, null)), null, uId));
+                searchIndex.refresh(); final String fvN = vN;
+                vCart = searchIndex.searchByName(pN).stream().filter(v -> v.productName().equalsIgnoreCase(pN) && v.name().equalsIgnoreCase(fvN)).findFirst().orElse(null);
             }
-
-            if (variantToCart != null) {
-                addToCart(variantToCart);
-
-                // Clear fields
-                quickProductName.clear();
-                quickVariantName.clear();
-                quickPrice.clear();
-                quickStock.clear();
-                quickCategorySearch.clear();
-                selectedProductIdForQuickAdd = null;
-                selectedCategoryForQuickAdd = null;
-
-                NotificationService.success("Added to cart.");
-            } else {
-                NotificationService.error("Failed to process quick add.");
-            }
-
-        } catch (NumberFormatException e) {
-            NotificationService.error("Please enter a valid numeric price/stock.");
-        } catch (Exception e) {
-            NotificationService.error("Quick add failed: " + e.getMessage());
-            e.printStackTrace();
-        }
+            if (vCart != null) {
+                addToCart(vCart); quickProductName.clear(); quickVariantName.clear(); quickPrice.clear(); quickStock.clear(); quickCategorySearch.clear();
+                selectedProductIdForQuickAdd = null; selectedCategoryForQuickAdd = null; NotificationService.success("Added to cart.");
+            } else NotificationService.error("Failed to process quick add.");
+        } catch (NumberFormatException e) { NotificationService.error("Please enter a valid numeric price/stock."); }
+        catch (Exception e) { NotificationService.error("Quick add failed: " + e.getMessage()); e.printStackTrace(); }
     }
 
     private void addToCart(Variant variant) {
-        Optional<CartItem> existing = currentBill.items.stream()
-                .filter(item -> item.variant.id().equals(variant.id()))
-                .findFirst();
-
-        int newQty = existing.map(cartItem -> cartItem.quantity + 1).orElse(1);
-
-        if (variant.stock() != null && newQty > variant.stock()) {
-            NotificationService.warning("Insufficient stock! Available: " + variant.stock());
-            return;
-        }
-
-        if (existing.isPresent()) {
-            existing.get().quantity = newQty;
-        } else {
-            currentBill.items.add(new CartItem(variant, 1));
-        }
-
+        Optional<CartItem> exists = currentBill.items.stream().filter(i -> i.variant.id().equals(variant.id())).findFirst();
+        int nQty = exists.map(i -> i.quantity + 1).orElse(1);
+        if (variant.stock() != null && nQty > variant.stock()) { NotificationService.warning("Insufficient stock! Available: " + variant.stock()); return; }
+        if (exists.isPresent()) exists.get().quantity = nQty;
+        else currentBill.items.add(new CartItem(variant, 1));
         refreshCurrentBill();
-
-        final CartItem targetItem = existing.orElse(currentBill.items.get(currentBill.items.size() - 1));
+        final CartItem target = exists.orElse(currentBill.items.get(currentBill.items.size() - 1));
         Platform.runLater(() -> {
-            int index = currentBill.items.indexOf(targetItem);
-            if (index >= 0) {
-                cartTable.getSelectionModel().select(index, colQty);
-                cartTable.getFocusModel().focus(index, colQty);
-                cartTable.edit(index, colQty);
+            int i = currentBill.items.indexOf(target);
+            if (i >= 0) {
+                cartTable.getTableView().getSelectionModel().select(i, colQty);
+                cartTable.getTableView().getFocusModel().focus(i, colQty);
+                cartTable.getTableView().edit(i, colQty);
             }
         });
     }
 
-    private void adjustQuantity(CartItem item, int delta) {
-        int newQty = item.quantity + delta;
-
-        if (delta > 0 && item.variant.stock() != null && newQty > item.variant.stock()) {
-            NotificationService.warning("Cannot exceed available stock (" + item.variant.stock() + ")");
-            return;
-        }
-
-        item.quantity = newQty;
-        if (item.quantity <= 0) {
-            currentBill.items.remove(item);
-        }
-        refreshCurrentBill();
-    }
-
-    private void refreshCurrentBill() {
-        cartTable.refresh();
-        renderBillsFlowPane();
-        updatePaymentSectionState();
-        recalculateTotals();
-    }
+    private void refreshCurrentBill() { cartTable.getTableView().refresh(); renderBillsFlowPane(); updatePaymentSectionState(); recalculateTotals(); }
 
     private void updatePaymentSectionState() {
-        boolean hasItems = currentBill != null && !currentBill.items.isEmpty();
-
-        if (paymentCard != null) {
-            paymentCard.setDisable(!hasItems);
-            paymentCard.setOpacity(hasItems ? 1.0 : 0.52);
-        }
+        boolean has = currentBill != null && !currentBill.items.isEmpty();
+        if (paymentCard != null) { paymentCard.setDisable(!has); paymentCard.setOpacity(has ? 1.0 : 0.52); }
     }
 
     private void recalculateTotals() {
-        if (currentBill.items.isEmpty()) {
-            currentBill.subtotal = BigDecimal.ZERO;
-            currentBill.taxAmount = BigDecimal.ZERO;
-            currentBill.total = BigDecimal.ZERO;
-            currentBill.totalMrp = BigDecimal.ZERO;
-            updateUI();
-            return;
+        if (currentBill.items.isEmpty()) { currentBill.subtotal = BigDecimal.ZERO; currentBill.taxAmount = BigDecimal.ZERO; currentBill.total = BigDecimal.ZERO; currentBill.totalMrp = BigDecimal.ZERO; updateUI(); return; }
+        BigDecimal gT = BigDecimal.ZERO, gM = BigDecimal.ZERO, gP = BigDecimal.ZERO;
+        for (CartItem it : currentBill.items) {
+            BigDecimal lT = it.pricePerUnit.multiply(BigDecimal.valueOf(it.quantity));
+            gP = gP.add(lT); gM = gM.add(it.variant.price().multiply(BigDecimal.valueOf(it.quantity)));
+            BigDecimal lD = "fixed".equals(it.discountType) ? it.discountValue : lT.multiply(it.discountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            it.discountAmount = lD; it.netLineTotal = lT.subtract(lD).max(BigDecimal.ZERO); gT = gT.add(it.netLineTotal);
         }
-
-        BigDecimal grossTotal = BigDecimal.ZERO;
-        BigDecimal grossMrp = BigDecimal.ZERO;
-        BigDecimal grossPriceTotal = BigDecimal.ZERO;
-        for (CartItem item : currentBill.items) {
-            BigDecimal lineTotal = item.pricePerUnit.multiply(BigDecimal.valueOf(item.quantity));
-            grossPriceTotal = grossPriceTotal.add(lineTotal);
-            grossMrp = grossMrp.add(item.variant.price().multiply(BigDecimal.valueOf(item.quantity)));
-            BigDecimal lineDiscount = "fixed".equals(item.discountType)
-                    ? item.discountValue
-                    : lineTotal.multiply(item.discountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-            item.discountAmount = lineDiscount;
-            item.netLineTotal = lineTotal.subtract(lineDiscount).max(BigDecimal.ZERO);
-            grossTotal = grossTotal.add(item.netLineTotal);
-        }
-        currentBill.totalMrp = grossMrp;
-        currentBill.totalPrice = grossPriceTotal;
-
-        BigDecimal overallDiscountAmount = BigDecimal.ZERO;
+        currentBill.totalMrp = gM; currentBill.totalPrice = gP;
+        BigDecimal oD = BigDecimal.ZERO;
         if (currentBill.overallDiscountValue.compareTo(BigDecimal.ZERO) > 0) {
-            if (currentBill.isDiscountFixed) {
-                overallDiscountAmount = currentBill.overallDiscountValue;
-            } else {
-                overallDiscountAmount = grossTotal.multiply(currentBill.overallDiscountValue)
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            }
+            if (currentBill.isDiscountFixed) oD = currentBill.overallDiscountValue;
+            else oD = gT.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
-
-        // Calculate absolute total discount (Line discounts + Overall discount)
-        BigDecimal totalLineDiscounts = currentBill.items.stream()
-                .map(item -> item.discountAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        currentBill.discountTotal = totalLineDiscounts.add(overallDiscountAmount);
-
-        List<TaxableItem> taxableItems = new ArrayList<>();
-        BigDecimal distributedGlobalDiscount = BigDecimal.ZERO;
-
+        BigDecimal tLD = currentBill.items.stream().map(i -> i.discountAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        currentBill.discountTotal = tLD.add(oD);
+        List<TaxableItem> txIds = new ArrayList<>(); BigDecimal distD = BigDecimal.ZERO;
         for (int i = 0; i < currentBill.items.size(); i++) {
-            CartItem item = currentBill.items.get(i);
-            BigDecimal itemGlobalDiscount = BigDecimal.ZERO;
-            if (grossTotal.compareTo(BigDecimal.ZERO) > 0 && overallDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
-                if (i == currentBill.items.size() - 1) {
-                    itemGlobalDiscount = overallDiscountAmount.subtract(distributedGlobalDiscount);
-                } else {
-                    itemGlobalDiscount = item.netLineTotal
-                            .divide(grossTotal, 10, RoundingMode.HALF_UP)
-                            .multiply(overallDiscountAmount);
-                    distributedGlobalDiscount = distributedGlobalDiscount.add(itemGlobalDiscount);
-                }
+            CartItem it = currentBill.items.get(i); BigDecimal iGD = BigDecimal.ZERO;
+            if (gT.compareTo(BigDecimal.ZERO) > 0 && oD.compareTo(BigDecimal.ZERO) > 0) {
+                if (i == currentBill.items.size() - 1) iGD = oD.subtract(distD);
+                else { iGD = it.netLineTotal.divide(gT, 10, RoundingMode.HALF_UP).multiply(oD); distD = distD.add(iGD); }
             }
-
-            BigDecimal finalTaxableAmount = item.netLineTotal.subtract(itemGlobalDiscount).max(BigDecimal.ZERO);
-            BigDecimal effectiveUnitPrice = item.quantity > 0
-                    ? finalTaxableAmount.divide(BigDecimal.valueOf(item.quantity), 10, RoundingMode.HALF_UP)
-                    : BigDecimal.ZERO;
-
-            TaxableItem taxable = new TaxableItem(
-                    item.variant.productName(),
-                    item.variant.name(),
-                    effectiveUnitPrice,
-                    item.quantity,
-                    null, // taxCategoryId not easily available here
-                    item.variant.id(),
-                    item.variant.productId());
-            taxableItems.add(taxable);
+            BigDecimal fTA = it.netLineTotal.subtract(iGD).max(BigDecimal.ZERO);
+            BigDecimal eUP = it.quantity > 0 ? fTA.divide(BigDecimal.valueOf(it.quantity), 10, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+            txIds.add(new TaxableItem(it.variant.productName(), it.variant.name(), eUP, it.quantity, null, it.variant.id(), it.variant.productId()));
         }
-
-        Customer taxCustomer = currentBill.selectedCustomer;
-        if (taxCustomer == null && (!currentBill.customerName.isEmpty() || !currentBill.customerAddress.isEmpty())) {
-            // Use dummy customer for tax calculation if fields have values
-            taxCustomer = new Customer(null, currentBill.customerName, currentBill.customerPhone,
-                    currentBill.customerEmail, currentBill.customerAddress, null, null, null);
-        }
-
-        TaxCalculationResult taxResult = taxEngine.calculate(new TaxableInvoice(taxableItems), taxCustomer);
-        currentBill.subtotal = grossTotal;
-        currentBill.taxAmount = taxResult.totalTax();
-        currentBill.total = taxResult.grandTotal();
-
-        updateUI();
+        Customer tC = currentBill.selectedCustomer;
+        if (tC == null && (!currentBill.customerName.isEmpty() || !currentBill.customerAddress.isEmpty())) tC = new Customer(null, currentBill.customerName, currentBill.customerPhone, currentBill.customerEmail, currentBill.customerAddress, null, null, null);
+        TaxCalculationResult tR = taxEngine.calculate(new TaxableInvoice(txIds), tC);
+        currentBill.subtotal = gT; currentBill.taxAmount = tR.totalTax(); currentBill.total = tR.grandTotal(); updateUI();
     }
 
     private void updateUI() {
-        subtotalLabel.setText(currencyFormat.format(currentBill.subtotal));
-        totalDiscountLabel.setText(currencyFormat.format(currentBill.discountTotal));
-        taxLabel.setText(currencyFormat.format(currentBill.taxAmount));
-        totalLabel.setText(currencyFormat.format(currentBill.total));
-        bottomTotalLabel.setText(currencyFormat.format(currentBill.total));
-        bottomMrpLabel.setText(currencyFormat.format(currentBill.totalMrp));
+        subtotalLabel.setText(currencyFormat.format(currentBill.subtotal)); totalDiscountLabel.setText(currencyFormat.format(currentBill.discountTotal));
+        taxLabel.setText(currencyFormat.format(currentBill.taxAmount)); totalLabel.setText(currencyFormat.format(currentBill.total));
+        bottomTotalLabel.setText(currencyFormat.format(currentBill.total)); bottomMrpLabel.setText(currencyFormat.format(currentBill.totalMrp));
         bottomPriceTotalLabel.setText(currencyFormat.format(currentBill.totalPrice));
-
-        int qty = currentBill.items.stream().mapToInt(i -> i.quantity).sum();
-        totalQtyLabel.setText(String.valueOf(qty));
-
-        updateBalanceLabel();
+        totalQtyLabel.setText(String.valueOf(currentBill.items.stream().mapToInt(i -> i.quantity).sum())); updateBalanceLabel();
     }
 
     private void updateBalanceLabel() {
-        BigDecimal diff = currentBill.amountTendered.subtract(currentBill.total);
-        if (diff.compareTo(BigDecimal.ZERO) >= 0) {
-            balanceTypeLabel.setText("Change");
-            balanceTypeLabel.setTextFill(Color.web("#16a34a")); // success
-            balanceLabel.setText(currencyFormat.format(diff));
-            balanceLabel.setStyle(
-                    "-fx-background-color: #dcfce7; -fx-text-fill: #16a34a; -fx-border-color: #bbf7d0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;");
+        BigDecimal d = currentBill.amountTendered.subtract(currentBill.total);
+        if (d.compareTo(BigDecimal.ZERO) >= 0) {
+            balanceTypeLabel.setText("Change"); balanceTypeLabel.setTextFill(Color.web("#16a34a"));
+            balanceLabel.setText(currencyFormat.format(d));
+            balanceLabel.setStyle("-fx-background-color: #dcfce7; -fx-text-fill: #16a34a; -fx-border-color: #bbf7d0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;");
         } else {
-            balanceTypeLabel.setText("Balance");
-            balanceTypeLabel.setTextFill(Color.web("#64748b"));
-            balanceLabel.setText(currencyFormat.format(diff.abs()));
-            balanceLabel.setStyle(
-                    "-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;");
+            balanceTypeLabel.setText("Balance"); balanceTypeLabel.setTextFill(Color.web("#64748b"));
+            balanceLabel.setText(currencyFormat.format(d.abs()));
+            balanceLabel.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;");
         }
-
         if (!currentBill.items.isEmpty() && currentBill.selectedPaymentMethod != null) {
-            boolean validPayment;
-            if (currentBill.fullPayment) {
-                // Full payment: tendered amount must be >= total
-                validPayment = currentBill.amountTendered.compareTo(currentBill.total) >= 0;
-            } else {
-                // Partial payment: tendered must be > 0 and < total
-                validPayment = currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0
-                        && currentBill.amountTendered.compareTo(currentBill.total) < 0;
-            }
-
-            // High-speed check: for digital full payments, we skip the validation check
-            // unless special logic is needed, but we keep it here to ensure data integrity
-            completeButton.setDisable(!validPayment);
-        } else {
-            completeButton.setDisable(true);
-        }
-
+            boolean vP = currentBill.fullPayment ? d.compareTo(BigDecimal.ZERO) >= 0 : (currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0 && currentBill.amountTendered.compareTo(currentBill.total) < 0);
+            completeButton.setDisable(!vP);
+        } else completeButton.setDisable(true);
         updateTenderedVisibility();
     }
 
     private void updateTenderedVisibility() {
-        if (tenderedBalanceContainer == null)
-            return;
-
-        PaymentMethod method = currentBill.selectedPaymentMethod;
-        boolean isFullPayment = currentBill.fullPayment;
-
-        if (method == null) {
-            tenderedBalanceContainer.setVisible(true);
-            tenderedBalanceContainer.setManaged(true);
-            return;
-        }
-
-        String mName = method.name().toUpperCase();
-        boolean isDigital = mName.contains("DEBIT") || mName.contains("CREDIT") || mName.contains("UPI")
-                || mName.contains("CARD");
-
-        // Hide only for Full + Digital
-        boolean hide = isDigital && isFullPayment;
-
-        tenderedBalanceContainer.setVisible(!hide);
-        tenderedBalanceContainer.setManaged(!hide);
-
-        // If hidden, technically amountTendered should be exactly the total to pass validation
-        if (hide) {
-            currentBill.amountTendered = currentBill.total;
-        }
+        if (tenderedBalanceContainer == null) return;
+        PaymentMethod m = currentBill.selectedPaymentMethod; boolean fP = currentBill.fullPayment;
+        if (m == null) { tenderedBalanceContainer.setVisible(true); tenderedBalanceContainer.setManaged(true); return; }
+        String n = m.name().toUpperCase(); boolean isD = n.contains("DEBIT") || n.contains("CREDIT") || n.contains("UPI") || n.contains("CARD");
+        boolean hide = isD && fP; tenderedBalanceContainer.setVisible(!hide); tenderedBalanceContainer.setManaged(!hide);
+        if (hide) currentBill.amountTendered = currentBill.total;
     }
 
     @FXML
     private void handleCompleteSale() {
-        if (currentBill.items.isEmpty())
-            return;
-
+        if (currentBill.items.isEmpty()) return;
         try {
             List<CreateSaleItemRequest> items = currentBill.items.stream()
-                    .map(item -> new CreateSaleItemRequest(
-                            item.variant.id(),
-                            item.quantity,
-                            item.discountAmount,
-                            item.pricePerUnit))
-                    .toList();
-
-            BigDecimal discount = currentBill.isDiscountFixed ? currentBill.overallDiscountValue
-                    : currentBill.subtotal.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2,
-                            RoundingMode.HALF_UP);
-            BigDecimal paidAmt = currentBill.fullPayment ? currentBill.total : currentBill.amountTendered;
-
-            Long customerId = null;
-            if (currentBill.selectedCustomer != null) {
-                customerId = currentBill.selectedCustomer.id();
-            } else if (!currentBill.customerName.trim().isEmpty() || !currentBill.customerPhone.trim().isEmpty()) {
-                // Check if this is a "new" customer that needs to be added
+                    .map(it -> new CreateSaleItemRequest(it.variant.id(), it.quantity, it.discountAmount, it.pricePerUnit)).toList();
+            BigDecimal d = currentBill.isDiscountFixed ? currentBill.overallDiscountValue : currentBill.subtotal.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            BigDecimal pA = currentBill.fullPayment ? currentBill.total : currentBill.amountTendered;
+            Long cId = null;
+            if (currentBill.selectedCustomer != null) cId = currentBill.selectedCustomer.id();
+            else if (!currentBill.customerName.trim().isEmpty() || !currentBill.customerPhone.trim().isEmpty()) {
                 try {
-                    // Try to find if a customer with this phone already exists to avoid duplicates
-                    Optional<Customer> existing = customerService.getCustomers(new com.possum.shared.dto.CustomerFilter(
-                            currentBill.customerPhone.trim(), 1, 1, 0, 10, "name", "asc")).items().stream()
-                            .filter(c -> c.phone().equals(currentBill.customerPhone.trim()))
-                            .findFirst();
-
-                    if (existing.isPresent()) {
-                        customerId = existing.get().id();
-                    } else {
-                        // Create new customer
-                        Customer newCust = customerService.createCustomer(
-                                currentBill.customerName.trim(),
-                                currentBill.customerPhone.trim(),
-                                currentBill.customerEmail.trim(),
-                                currentBill.customerAddress.trim());
-                        customerId = newCust.id();
-                        NotificationService.success("New customer added: " + newCust.name());
-                        // Reload customers combo
-                        loadCombos();
+                    Optional<Customer> ex = customerService.getCustomers(new com.possum.shared.dto.CustomerFilter(currentBill.customerPhone.trim(), 1, 1, 0, 10, "name", "asc")).items().stream().filter(c -> c.phone().equals(currentBill.customerPhone.trim())).findFirst();
+                    if (ex.isPresent()) cId = ex.get().id();
+                    else {
+                        Customer nC = customerService.createCustomer(currentBill.customerName.trim(), currentBill.customerPhone.trim(), currentBill.customerEmail.trim(), currentBill.customerAddress.trim());
+                        cId = nC.id(); NotificationService.success("New customer added: " + nC.name()); loadCombos();
                     }
-                } catch (Exception e) {
-                    NotificationService.warning("Failed to automatically add customer: " + e.getMessage());
-                }
+                } catch (Exception e) { NotificationService.warning("Failed to automatically add customer: " + e.getMessage()); }
             }
-
-            CreateSaleRequest request = new CreateSaleRequest(
-                    items,
-                    customerId,
-                    discount.compareTo(BigDecimal.ZERO) > 0 ? discount : null,
-                    List.of(new PaymentRequest(paidAmt, currentBill.selectedPaymentMethod.id())));
-
-            long userId = AuthContext.getCurrentUser().id();
-            SaleResponse response = salesService.createSale(request, userId);
-
-            if (confirmPrint()) {
-                printReceipt(response);
-            }
-
-            NotificationService
-                    .success("Sale completed successfully! Total: " + currencyFormat.format(currentBill.total));
+            SaleResponse resp = salesService.createSale(new CreateSaleRequest(items, cId, d.compareTo(BigDecimal.ZERO) > 0 ? d : null, List.of(new PaymentRequest(pA, currentBill.selectedPaymentMethod.id()))), AuthContext.getCurrentUser().id());
+            if (confirmPrint()) printReceipt(resp);
+            NotificationService.success("Sale completed successfully! Total: " + currencyFormat.format(currentBill.total));
             handleClearCart();
-
-        } catch (Exception e) {
-            NotificationService.error("Sale failed: " + e.getMessage());
-        }
+        } catch (Exception e) { NotificationService.error("Sale failed: " + e.getMessage()); }
     }
 
     private boolean confirmPrint() {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Print Receipt");
-        alert.setHeaderText(null);
-        alert.setContentText("Do you want to print the bill?");
-        alert.initOwner(rootPane.getScene().getWindow());
-
-        ButtonType btnYes = new ButtonType("Yes", ButtonBar.ButtonData.YES);
-        ButtonType btnNo = new ButtonType("No", ButtonBar.ButtonData.NO);
-        alert.getButtonTypes().setAll(btnYes, btnNo);
-
-        Optional<ButtonType> result = alert.showAndWait();
-        return result.isPresent() && result.get() == btnYes;
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION); a.setTitle("Print Receipt"); a.setHeaderText(null); a.setContentText("Do you want to print the bill?"); a.initOwner(rootPane.getScene().getWindow());
+        ButtonType bY = new ButtonType("Yes", ButtonBar.ButtonData.YES), bN = new ButtonType("No", ButtonBar.ButtonData.NO);
+        a.getButtonTypes().setAll(bY, bN); return a.showAndWait().filter(r -> r == bY).isPresent();
     }
 
     private void printReceipt(SaleResponse sale) {
-        String billHtml = BillRenderer.renderBill(sale, settingsStore.loadGeneralSettings(),
-                settingsStore.loadBillSettings());
-
-        printerService.printInvoice(billHtml)
-                .thenAccept(success -> {
-                    if (!success)
-                        Platform.runLater(() -> NotificationService.warning("Print failed"));
-                });
-
-        // Also show preview
-        Platform.runLater(() -> {
-            BillPreviewDialog dialog = new BillPreviewDialog(billHtml, rootPane.getScene().getWindow());
-            dialog.showAndWait();
-        });
+        String h = BillRenderer.renderBill(sale, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
+        printerService.printInvoice(h).thenAccept(s -> { if (!s) Platform.runLater(() -> NotificationService.warning("Print failed")); });
+        Platform.runLater(() -> { new BillPreviewDialog(h, rootPane.getScene().getWindow()).showAndWait(); });
     }
 
-    @FXML
-    private void handleClearCart() {
-        currentBill.reset();
-        refreshCurrentBill();
-        switchBill(currentBill.index);
-    }
+    @FXML private void handleClearCart() { currentBill.reset(); refreshCurrentBill(); switchBill(currentBill.index); }
 
     private void setupSearchAutocomplete() {
-        searchResultsView.getStyleClass().add("search-results-list");
-        applyPopupListStyles(searchResultsView);
-        searchPopup.getContent().add(searchResultsView);
-        searchPopup.setAutoHide(true);
-
+        searchResultsView.getStyleClass().add("search-results-list"); applyPopupListStyles(searchResultsView);
+        searchPopup.getContent().add(searchResultsView); searchPopup.setAutoHide(true);
         searchResultsView.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Variant item, boolean empty) {
+            @Override protected void updateItem(Variant item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-
-                } else {
-                    VBox box = new VBox(2);
-                    box.getStyleClass().add("search-item-box");
-
-                    Label name = new Label(
-                            item.productName() + (item.name().equals("Default") ? "" : " - " + item.name()));
-                    name.getStyleClass().add("search-item-name");
-
-                    Label details = new Label(item.sku() + " • " + currencyFormat.format(item.price()) + " • Stock: "
-                            + (item.stock() != null ? item.stock() : "∞"));
-                    details.getStyleClass().add("search-item-details");
-
-                    box.getChildren().addAll(name, details);
-                    setGraphic(box);
+                if (empty || item == null) { setText(null); setGraphic(null); }
+                else {
+                    VBox b = new VBox(2); b.getStyleClass().add("search-item-box");
+                    Label n = new Label(item.productName() + (item.name().equals("Default") ? "" : " - " + item.name())); n.getStyleClass().add("search-item-name");
+                    Label d = new Label(item.sku() + " • " + currencyFormat.format(item.price()) + " • Stock: " + (item.stock() != null ? item.stock() : "∞"));
+                    d.getStyleClass().add("search-item-details"); b.getChildren().addAll(n, d); setGraphic(b);
                 }
             }
         });
-
-        searchField.textProperty().addListener((obs, old, query) -> {
-            showAutocompletePopup(query != null ? query.trim() : "");
-        });
-
-        searchField.focusedProperty().addListener((obs, old, isFocused) -> {
-            if (!isFocused) {
-                Platform.runLater(() -> {
-                    if (!searchResultsView.isFocused())
-                        searchPopup.hide();
-                });
-            }
-        });
+        searchField.textProperty().addListener((o, ol, q) -> showAutocompletePopup(q != null ? q.trim() : ""));
+        searchField.focusedProperty().addListener((o, ol, f) -> { if (!f) Platform.runLater(() -> { if (!searchResultsView.isFocused()) searchPopup.hide(); }); });
     }
 
     private void showAutocompletePopup(String query) {
-        List<Variant> results;
-        if (query.isEmpty()) {
-            // Show top results/all
-            results = searchIndex.searchByName(""); // Assuming empty string returns all/top
-            if (results.isEmpty())
-                results = searchIndex.searchByName(" ");
-        } else {
-            results = searchIndex.searchByName(query);
-        }
-
-        if (!results.isEmpty()) {
-            searchResultsView.getItems().setAll(results);
-            searchResultsView.setPrefHeight(Math.min(results.size() * 52 + 10, 400));
-            searchResultsView.setPrefWidth(Math.max(searchField.getWidth(), 300));
-
-            javafx.geometry.Point2D pos = searchField.localToScreen(0, searchField.getHeight() + 5);
-            if (pos != null) {
-                // Ensure the popup doesn't go off screen bottom
-                double screenHeight = searchField.getScene().getWindow().getHeight();
-                if (pos.getY() + searchResultsView.getPrefHeight() > screenHeight) {
-                    // Show above instead
-                    searchPopup.show(searchField, pos.getX(),
-                            pos.getY() - searchField.getHeight() - searchResultsView.getPrefHeight() - 10);
-                } else {
-                    searchPopup.show(searchField, pos.getX(), pos.getY());
-                }
+        List<Variant> res = query.isEmpty() ? searchIndex.searchByName("") : searchIndex.searchByName(query);
+        if (res.isEmpty() && query.isEmpty()) res = searchIndex.searchByName(" ");
+        if (!res.isEmpty()) {
+            searchResultsView.getItems().setAll(res); searchResultsView.setPrefHeight(Math.min(res.size() * 52 + 10, 400)); searchResultsView.setPrefWidth(Math.max(searchField.getWidth(), 300));
+            javafx.geometry.Point2D p = searchField.localToScreen(0, searchField.getHeight() + 5);
+            if (p != null) {
+                if (p.getY() + searchResultsView.getPrefHeight() > searchField.getScene().getWindow().getHeight()) searchPopup.show(searchField, p.getX(), p.getY() - searchField.getHeight() - searchResultsView.getPrefHeight() - 10);
+                else searchPopup.show(searchField, p.getX(), p.getY());
             }
-        } else {
-            searchPopup.hide();
-        }
+        } else searchPopup.hide();
     }
 
     private static class BillState {
-        int index;
-        ObservableList<CartItem> items = FXCollections.observableArrayList();
-        Customer selectedCustomer;
-        String customerName = "";
-        String customerPhone = "";
-        String customerEmail = "";
-        String customerAddress = "";
-
-        PaymentMethod selectedPaymentMethod;
-        boolean fullPayment = true;
-        BigDecimal overallDiscountValue = BigDecimal.ZERO;
-        boolean isDiscountFixed = true;
-        BigDecimal amountTendered = BigDecimal.ZERO;
-
-        BigDecimal subtotal = BigDecimal.ZERO;
-        BigDecimal discountTotal = BigDecimal.ZERO;
-        BigDecimal taxAmount = BigDecimal.ZERO;
-        BigDecimal total = BigDecimal.ZERO;
-        BigDecimal totalMrp = BigDecimal.ZERO;
-        BigDecimal totalPrice = BigDecimal.ZERO;
-
-        BillState(int index) {
-            this.index = index;
-        }
-
-        void reset() {
-            items.clear();
-            selectedCustomer = null;
-            customerName = "";
-            customerPhone = "";
-            customerEmail = "";
-            customerAddress = "";
-            selectedPaymentMethod = null;
-
-            fullPayment = true;
-            overallDiscountValue = BigDecimal.ZERO;
-            isDiscountFixed = true;
-            amountTendered = BigDecimal.ZERO;
-            subtotal = BigDecimal.ZERO;
-            taxAmount = BigDecimal.ZERO;
-            total = BigDecimal.ZERO;
-            totalMrp = BigDecimal.ZERO;
-        }
+        int index; ObservableList<CartItem> items = FXCollections.observableArrayList();
+        Customer selectedCustomer; String customerName = "", customerPhone = "", customerEmail = "", customerAddress = "";
+        PaymentMethod selectedPaymentMethod; boolean fullPayment = true; BigDecimal overallDiscountValue = BigDecimal.ZERO; boolean isDiscountFixed = true; BigDecimal amountTendered = BigDecimal.ZERO;
+        BigDecimal subtotal = BigDecimal.ZERO, discountTotal = BigDecimal.ZERO, taxAmount = BigDecimal.ZERO, total = BigDecimal.ZERO, totalMrp = BigDecimal.ZERO, totalPrice = BigDecimal.ZERO;
+        BillState(int i) { this.index = i; }
+        void reset() { items.clear(); selectedCustomer = null; customerName = ""; customerPhone = ""; customerEmail = ""; customerAddress = ""; selectedPaymentMethod = null; fullPayment = true; overallDiscountValue = BigDecimal.ZERO; isDiscountFixed = true; amountTendered = BigDecimal.ZERO; subtotal = BigDecimal.ZERO; taxAmount = BigDecimal.ZERO; total = BigDecimal.ZERO; totalMrp = BigDecimal.ZERO; }
     }
 
     private static class CartItem {
-        Variant variant;
-        int quantity;
-        BigDecimal pricePerUnit;
-        String discountType = "fixed"; // fixed or pct
-        BigDecimal discountValue = BigDecimal.ZERO;
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        BigDecimal netLineTotal = BigDecimal.ZERO;
-
-        CartItem(Variant variant, int quantity) {
-            this.variant = variant;
-            this.quantity = quantity;
-            this.pricePerUnit = variant.price();
-        }
+        Variant variant; int quantity; BigDecimal pricePerUnit; String discountType = "fixed"; BigDecimal discountValue = BigDecimal.ZERO, discountAmount = BigDecimal.ZERO, netLineTotal = BigDecimal.ZERO;
+        CartItem(Variant v, int q) { this.variant = v; this.quantity = q; this.pricePerUnit = v.price(); }
     }
 
     private class EditableQuantityCell extends TableCell<CartItem, CartItem> {
-        private TextField textField;
-
-        @Override
-        public void startEdit() {
-            super.startEdit();
-            if (textField == null)
-                createTextField();
-            setText(null);
-            setGraphic(textField);
-            textField.selectAll();
-            textField.requestFocus();
+        private TextField tf;
+        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(true); setText(null); setGraphic(tf); tf.selectAll(); tf.requestFocus(); }
+        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(String.valueOf(getItem().quantity)); setGraphic(null); }
+        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(String.valueOf(it.quantity)); setText(null); setGraphic(tf); } else { setText(String.valueOf(it.quantity)); setGraphic(null); } }
+        private TextField createTF(boolean center) { TextField f = new TextField(); f.getStyleClass().add("table-input"); if (center) f.setAlignment(Pos.CENTER); f.setPrefWidth(60); 
+            f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
+            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colQty); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
+            return f;
         }
-
-        @Override
-        public void cancelEdit() {
-            super.cancelEdit();
-            if (getItem() != null) {
-                setText(String.valueOf(getItem().quantity));
-            }
-            setGraphic(null);
-        }
-
-        @Override
-        public void updateItem(CartItem item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-                setGraphic(null);
-            } else {
-                if (isEditing()) {
-                    if (textField != null)
-                        textField.setText(String.valueOf(item.quantity));
-                    setText(null);
-                    setGraphic(textField);
-                } else {
-                    setText(String.valueOf(item.quantity));
-                    setGraphic(null);
-                }
-            }
-        }
-
-        private void createTextField() {
-            textField = new TextField();
-            textField.getStyleClass().add("table-input");
-            textField.setAlignment(javafx.geometry.Pos.CENTER);
-            textField.setPrefWidth(60);
-            textField.setOnAction(e -> commitEdit(getItem()));
-            textField.focusedProperty().addListener((obs, old, focused) -> {
-                if (!focused && isEditing())
-                    commitEdit(getItem());
-            });
-            textField.setOnKeyPressed(e -> {
-                if (e.getCode() == KeyCode.ESCAPE)
-                    cancelEdit();
-                else if (e.getCode() == KeyCode.ENTER) {
-                    commitEdit(getItem());
-                    moveFocusNext(getIndex(), colQty);
-                    e.consume();
-                } else if (e.getCode() == KeyCode.TAB) {
-                    commitEdit(getItem());
-                    if (e.isShiftDown())
-                        moveToPrevious();
-                    else
-                        moveToNext();
-                    e.consume();
-                }
-            });
-        }
-
-        @Override
-        public void commitEdit(CartItem item) {
-            if (textField != null && item != null) {
-                try {
-                    int newQty = Integer.parseInt(textField.getText().trim());
-                    if (newQty < 1)
-                        newQty = 1;
-                    item.quantity = newQty;
-                    refreshCurrentBill();
-                } catch (NumberFormatException e) {
-                }
-            }
-            super.commitEdit(item);
-        }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { int n = Integer.parseInt(tf.getText().trim()); it.quantity = Math.max(1, n); refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
     }
 
     private class EditablePriceCell extends TableCell<CartItem, CartItem> {
-        private TextField textField;
-
-        @Override
-        public void startEdit() {
-            super.startEdit();
-            if (textField == null)
-                createTextField();
-            setText(null);
-            setGraphic(textField);
-            textField.selectAll();
-            textField.requestFocus();
+        private TextField tf;
+        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); tf.selectAll(); tf.requestFocus(); }
+        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(getItem().pricePerUnit.toString()); setGraphic(null); }
+        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(it.pricePerUnit.toString()); setText(null); setGraphic(tf); } else { setText(it.pricePerUnit.toString()); setGraphic(null); } }
+        private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
+            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colPrice); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
+            return f;
         }
-
-        @Override
-        public void cancelEdit() {
-            super.cancelEdit();
-            if (getItem() != null) {
-                setText(getItem().pricePerUnit.toString());
-            }
-            setGraphic(null);
-        }
-
-        @Override
-        public void updateItem(CartItem item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-                setGraphic(null);
-            } else {
-                if (isEditing()) {
-                    if (textField != null)
-                        textField.setText(item.pricePerUnit.toString());
-                    setText(null);
-                    setGraphic(textField);
-                } else {
-                    setText(item.pricePerUnit.toString());
-                    setGraphic(null);
-                }
-            }
-        }
-
-        private void createTextField() {
-            textField = new TextField();
-            textField.getStyleClass().add("table-input");
-            textField.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-            textField.setOnAction(e -> commitEdit(getItem()));
-            textField.focusedProperty().addListener((obs, old, focused) -> {
-                if (!focused && isEditing())
-                    commitEdit(getItem());
-            });
-            textField.setOnKeyPressed(e -> {
-                if (e.getCode() == KeyCode.ESCAPE)
-                    cancelEdit();
-                else if (e.getCode() == KeyCode.ENTER) {
-                    commitEdit(getItem());
-                    moveFocusNext(getIndex(), colPrice);
-                    e.consume();
-                } else if (e.getCode() == KeyCode.TAB) {
-                    commitEdit(getItem());
-                    if (e.isShiftDown())
-                        moveToPrevious();
-                    else
-                        moveToNext();
-                    e.consume();
-                }
-            });
-        }
-
-        @Override
-        public void commitEdit(CartItem item) {
-            if (textField != null && item != null) {
-                try {
-                    BigDecimal val = new BigDecimal(textField.getText().replace("$", "").replace(",", "").trim());
-                    val = val.max(BigDecimal.ZERO);
-
-                    // Validate: Price should not exceed MRP
-                    BigDecimal mrp = item.variant.price();
-                    if (val.compareTo(mrp) > 0) {
-                        NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(mrp) + ")");
-                        val = mrp;
-                    }
-
-                    item.pricePerUnit = val;
-                    refreshCurrentBill();
-                } catch (Exception e) {
-                }
-            }
-            super.commitEdit(item);
-        }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { BigDecimal v = new BigDecimal(tf.getText().replace("$", "").replace(",", "").trim()).max(BigDecimal.ZERO); BigDecimal m = it.variant.price(); if (v.compareTo(m) > 0) { NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(m) + ")"); v = m; } it.pricePerUnit = v; refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
     }
 
     private class EditableDiscountPctCell extends TableCell<CartItem, CartItem> {
-        private TextField textField;
-
-        @Override
-        public void startEdit() {
-            super.startEdit();
-            if (textField == null)
-                createTextField();
-            setText(null);
-            setGraphic(textField);
-            CartItem item = getItem();
-            BigDecimal lineTotal = item.pricePerUnit.multiply(BigDecimal.valueOf(item.quantity));
-            BigDecimal pct = item.discountType.equals("pct") ? item.discountValue
-                    : (lineTotal.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO
-                            : item.discountAmount.multiply(BigDecimal.valueOf(100)).divide(lineTotal, 2,
-                                    RoundingMode.HALF_UP));
-            textField.setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "" : pct.toString());
-            textField.selectAll();
-            textField.requestFocus();
+        private TextField tf;
+        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); CartItem it = getItem(); BigDecimal lT = it.pricePerUnit.multiply(BigDecimal.valueOf(it.quantity)); BigDecimal pct = it.discountType.equals("pct") ? it.discountValue : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.discountAmount.multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); tf.setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "" : pct.toString()); tf.selectAll(); tf.requestFocus(); }
+        @Override public void cancelEdit() { super.cancelEdit(); updateDisplay(); }
+        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { setGraphic(tf); setText(null); } else updateDisplay(); }
+        private void updateDisplay() { CartItem it = getItem(); if (it != null) { BigDecimal lT = it.pricePerUnit.multiply(BigDecimal.valueOf(it.quantity)); BigDecimal pct = it.discountType.equals("pct") ? it.discountValue : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.discountAmount.multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "0%" : pct + "%"); } setGraphic(null); }
+        private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
+            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountPct); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
+            return f;
         }
-
-        @Override
-        public void cancelEdit() {
-            super.cancelEdit();
-            updateDisplay();
-        }
-
-        @Override
-        public void updateItem(CartItem item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-                setGraphic(null);
-            } else {
-                if (isEditing()) {
-                    setGraphic(textField);
-                    setText(null);
-                } else
-                    updateDisplay();
-            }
-        }
-
-        private void updateDisplay() {
-            CartItem item = getItem();
-            if (item != null) {
-                BigDecimal lineTotal = item.pricePerUnit.multiply(BigDecimal.valueOf(item.quantity));
-                BigDecimal pct = item.discountType.equals("pct") ? item.discountValue
-                        : (lineTotal.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO
-                                : item.discountAmount.multiply(BigDecimal.valueOf(100)).divide(lineTotal, 2,
-                                        RoundingMode.HALF_UP));
-                setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "0%" : pct + "%");
-            }
-            setGraphic(null);
-        }
-
-        private void createTextField() {
-            textField = new TextField();
-            textField.getStyleClass().add("table-input");
-            textField.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-            textField.setOnAction(e -> commitEdit(getItem()));
-            textField.focusedProperty().addListener((obs, old, focus) -> {
-                if (!focus && isEditing())
-                    commitEdit(getItem());
-            });
-            textField.setOnKeyPressed(e -> {
-                if (e.getCode() == KeyCode.ENTER) {
-                    commitEdit(getItem());
-                    moveFocusNext(getIndex(), colDiscountPct);
-                    e.consume();
-                } else if (e.getCode() == KeyCode.TAB) {
-                    commitEdit(getItem());
-                    if (e.isShiftDown())
-                        moveToPrevious();
-                    else
-                        moveToNext();
-                    e.consume();
-                } else if (e.getCode() == KeyCode.ESCAPE)
-                    cancelEdit();
-            });
-        }
-
-        @Override
-        public void commitEdit(CartItem item) {
-            if (textField != null && item != null) {
-                try {
-                    String val = textField.getText().trim();
-                    item.discountValue = val.isEmpty() ? BigDecimal.ZERO : new BigDecimal(val);
-                    item.discountType = "pct";
-                    refreshCurrentBill();
-                } catch (Exception e) {
-                }
-            }
-            super.commitEdit(item);
-        }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "pct"; refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
     }
 
     private class EditableDiscountAmtCell extends TableCell<CartItem, CartItem> {
-        private TextField textField;
-
-        @Override
-        public void startEdit() {
-            super.startEdit();
-            if (textField == null)
-                createTextField();
-            setText(null);
-            setGraphic(textField);
-            BigDecimal amt = getItem().discountAmount;
-            textField.setText(amt.compareTo(BigDecimal.ZERO) == 0 ? "" : amt.toString());
-            textField.selectAll();
-            textField.requestFocus();
+        private TextField tf;
+        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); BigDecimal a = getItem().discountAmount; tf.setText(a.compareTo(BigDecimal.ZERO) == 0 ? "" : a.toString()); tf.selectAll(); tf.requestFocus(); }
+        @Override public void cancelEdit() { super.cancelEdit(); updateDisplay(); }
+        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { setGraphic(tf); setText(null); } else updateDisplay(); }
+        private void updateDisplay() { CartItem it = getItem(); if (it != null) setText(it.discountAmount.compareTo(BigDecimal.ZERO) == 0 ? "0" : currencyFormat.format(it.discountAmount)); setGraphic(null); }
+        private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
+            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountAmt); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
+            return f;
         }
-
-        @Override
-        public void cancelEdit() {
-            super.cancelEdit();
-            updateDisplay();
-        }
-
-        @Override
-        public void updateItem(CartItem item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-                setGraphic(null);
-            } else {
-                if (isEditing()) {
-                    setGraphic(textField);
-                    setText(null);
-                } else
-                    updateDisplay();
-            }
-        }
-
-        private void updateDisplay() {
-            CartItem item = getItem();
-            if (item != null) {
-                setText(item.discountAmount.compareTo(BigDecimal.ZERO) == 0 ? "0"
-                        : currencyFormat.format(item.discountAmount));
-            }
-            setGraphic(null);
-        }
-
-        private void createTextField() {
-            textField = new TextField();
-            textField.getStyleClass().add("table-input");
-            textField.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
-            textField.setOnAction(e -> commitEdit(getItem()));
-            textField.focusedProperty().addListener((obs, old, focus) -> {
-                if (!focus && isEditing())
-                    commitEdit(getItem());
-            });
-            textField.setOnKeyPressed(e -> {
-                if (e.getCode() == KeyCode.ENTER) {
-                    commitEdit(getItem());
-                    moveFocusNext(getIndex(), colDiscountAmt);
-                    e.consume();
-                } else if (e.getCode() == KeyCode.TAB) {
-                    commitEdit(getItem());
-                    if (e.isShiftDown())
-                        moveToPrevious();
-                    else
-                        moveToNext();
-                    e.consume();
-                } else if (e.getCode() == KeyCode.ESCAPE)
-                    cancelEdit();
-            });
-        }
-
-        @Override
-        public void commitEdit(CartItem item) {
-            if (textField != null && item != null) {
-                try {
-                    String val = textField.getText().trim();
-                    item.discountValue = val.isEmpty() ? BigDecimal.ZERO : new BigDecimal(val);
-                    item.discountType = "fixed";
-                    refreshCurrentBill();
-                } catch (Exception e) {
-                }
-            }
-            super.commitEdit(item);
-        }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "fixed"; refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
     }
 
-    private void moveFocusNext(int row, TableColumn<CartItem, ?> currentColumn) {
+    private void moveFocusNext(int row, TableColumn<CartItem, ?> cur) {
         Platform.runLater(() -> {
-            if (currentColumn == colQty) {
-                cartTable.getSelectionModel().select(row, colPrice);
-                cartTable.edit(row, colPrice);
-            } else if (currentColumn == colPrice) {
-                cartTable.getSelectionModel().select(row, colDiscountPct);
-                cartTable.edit(row, colDiscountPct);
-            } else if (currentColumn == colDiscountPct) {
-                cartTable.getSelectionModel().select(row, colDiscountAmt);
-                cartTable.edit(row, colDiscountAmt);
-            } else if (currentColumn == colDiscountAmt) {
-                searchField.requestFocus();
-                searchField.selectAll();
-            }
+            if (cur == colQty) { cartTable.getTableView().getSelectionModel().select(row, colPrice); cartTable.getTableView().edit(row, colPrice); }
+            else if (cur == colPrice) { cartTable.getTableView().getSelectionModel().select(row, colDiscountPct); cartTable.getTableView().edit(row, colDiscountPct); }
+            else if (cur == colDiscountPct) { cartTable.getTableView().getSelectionModel().select(row, colDiscountAmt); cartTable.getTableView().edit(row, colDiscountAmt); }
+            else if (cur == colDiscountAmt) { searchField.requestFocus(); searchField.selectAll(); }
         });
     }
 
-    private void moveDown() {
-        TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
-        if (pos != null && pos.getRow() < cartTable.getItems().size() - 1) {
-            cartTable.getSelectionModel().select(pos.getRow() + 1, pos.getTableColumn());
-            cartTable.edit(pos.getRow() + 1, pos.getTableColumn());
-        }
-    }
-
     private void moveToNext() {
-        TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+        TablePosition<CartItem, ?> pos = cartTable.getTableView().getFocusModel().getFocusedCell();
         if (pos != null) {
-            int col = cartTable.getVisibleLeafIndex(pos.getTableColumn());
-            if (col < cartTable.getVisibleLeafColumns().size() - 1) {
-                cartTable.getSelectionModel().select(pos.getRow(), cartTable.getVisibleLeafColumn(col + 1));
-                cartTable.edit(pos.getRow(), cartTable.getVisibleLeafColumn(col + 1));
-            } else if (pos.getRow() < cartTable.getItems().size() - 1) {
-                cartTable.getSelectionModel().select(pos.getRow() + 1, cartTable.getVisibleLeafColumn(0));
-                cartTable.edit(pos.getRow() + 1, cartTable.getVisibleLeafColumn(0));
-            }
+            int c = cartTable.getTableView().getVisibleLeafIndex(pos.getTableColumn());
+            if (c < cartTable.getTableView().getVisibleLeafColumns().size() - 1) { cartTable.getTableView().getSelectionModel().select(pos.getRow(), cartTable.getTableView().getVisibleLeafColumn(c + 1)); cartTable.getTableView().edit(pos.getRow(), cartTable.getTableView().getVisibleLeafColumn(c + 1)); }
+            else if (pos.getRow() < cartTable.getTableView().getItems().size() - 1) { cartTable.getTableView().getSelectionModel().select(pos.getRow() + 1, cartTable.getTableView().getVisibleLeafColumn(0)); cartTable.getTableView().edit(pos.getRow() + 1, cartTable.getTableView().getVisibleLeafColumn(0)); }
         }
     }
 
     private void moveToPrevious() {
-        TablePosition<CartItem, ?> pos = cartTable.getFocusModel().getFocusedCell();
+        TablePosition<CartItem, ?> pos = cartTable.getTableView().getFocusModel().getFocusedCell();
         if (pos != null) {
-            int col = cartTable.getVisibleLeafIndex(pos.getTableColumn());
-            if (col > 0) {
-                cartTable.getSelectionModel().select(pos.getRow(), cartTable.getVisibleLeafColumn(col - 1));
-                cartTable.edit(pos.getRow(), cartTable.getVisibleLeafColumn(col - 1));
-            } else if (pos.getRow() > 0) {
-                int lastCol = cartTable.getVisibleLeafColumns().size() - 1;
-                cartTable.getSelectionModel().select(pos.getRow() - 1, cartTable.getVisibleLeafColumn(lastCol));
-                cartTable.edit(pos.getRow() - 1, cartTable.getVisibleLeafColumn(lastCol));
-            }
+            int c = cartTable.getTableView().getVisibleLeafIndex(pos.getTableColumn());
+            if (c > 0) { cartTable.getTableView().getSelectionModel().select(pos.getRow(), cartTable.getTableView().getVisibleLeafColumn(c - 1)); cartTable.getTableView().edit(pos.getRow(), cartTable.getTableView().getVisibleLeafColumn(c - 1)); }
+            else if (pos.getRow() > 0) { int l = cartTable.getTableView().getVisibleLeafColumns().size() - 1; cartTable.getTableView().getSelectionModel().select(pos.getRow() - 1, cartTable.getTableView().getVisibleLeafColumn(l)); cartTable.getTableView().edit(pos.getRow() - 1, cartTable.getTableView().getVisibleLeafColumn(l)); }
         }
     }
 
     private void setupQuickAddAutocomplete() {
-        quickProductResultsView.getStyleClass().add("search-results-list");
-        applyPopupListStyles(quickProductResultsView);
-        quickProductPopup.getContent().add(quickProductResultsView);
-        quickProductPopup.setAutoHide(true);
-
+        quickProductResultsView.getStyleClass().add("search-results-list"); applyPopupListStyles(quickProductResultsView);
+        quickProductPopup.getContent().add(quickProductResultsView); quickProductPopup.setAutoHide(true);
         quickProductResultsView.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Variant item, boolean empty) {
+            @Override protected void updateItem(Variant item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-
-                } else {
-                    VBox box = new VBox(2);
-                    box.getStyleClass().add("search-item-box");
-                    Label name = new Label(item.productName());
-                    name.getStyleClass().add("search-item-name");
-                    Label details = new Label(item.categoryName() != null ? item.categoryName() : "No Category");
-                    details.getStyleClass().add("search-item-details");
-                    box.getChildren().addAll(name, details);
-                    setGraphic(box);
+                if (empty || item == null) { setText(null); setGraphic(null); }
+                else {
+                    VBox b = new VBox(2); b.getStyleClass().add("search-item-box");
+                    Label n = new Label(item.productName()); n.getStyleClass().add("search-item-name");
+                    Label d = new Label(item.categoryName() != null ? item.categoryName() : "No Category"); d.getStyleClass().add("search-item-details");
+                    b.getChildren().addAll(n, d); setGraphic(b);
                 }
             }
         });
-
-        quickProductName.textProperty().addListener((obs, old, query) -> {
-            if (isAutofilling)
-                return;
-            showQuickProductAutocompletePopup(query != null ? query.trim() : "");
-        });
-
-        quickProductResultsView.setOnMouseClicked(e -> {
-            Variant v = quickProductResultsView.getSelectionModel().getSelectedItem();
-            if (v != null) {
-                selectProductForQuickAdd(v);
-            }
-        });
-
-        quickProductResultsView.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                Variant v = quickProductResultsView.getSelectionModel().getSelectedItem();
-                if (v != null)
-                    selectProductForQuickAdd(v);
-            }
-        });
+        quickProductName.textProperty().addListener((o, ol, q) -> { if (!isAutofilling) showQuickProductAutocompletePopup(q != null ? q.trim() : ""); });
+        quickProductResultsView.setOnMouseClicked(e -> { Variant v = quickProductResultsView.getSelectionModel().getSelectedItem(); if (v != null) selectProductForQuickAdd(v); });
+        quickProductResultsView.setOnKeyPressed(e -> { if (e.getCode() == KeyCode.ENTER) { Variant v = quickProductResultsView.getSelectionModel().getSelectedItem(); if (v != null) selectProductForQuickAdd(v); } });
     }
 
     private void selectProductForQuickAdd(Variant v) {
         isAutofilling = true;
-        try {
-            quickProductName.setText(v.productName());
-            selectedProductIdForQuickAdd = v.productId();
-
-            // Auto-select category
-            if (v.categoryName() != null) {
-                categoryService.getAllCategories().stream()
-                        .filter(c -> c.name().equalsIgnoreCase(v.categoryName()))
-                        .findFirst()
-                        .ifPresent(this::selectCategoryForQuickAdd);
-            }
-
-            quickProductPopup.hide();
-            quickVariantName.requestFocus();
-        } finally {
-            isAutofilling = false;
-        }
+        try { quickProductName.setText(v.productName()); selectedProductIdForQuickAdd = v.productId();
+            if (v.categoryName() != null) categoryService.getAllCategories().stream().filter(c -> c.name().equalsIgnoreCase(v.categoryName())).findFirst().ifPresent(this::selectCategoryForQuickAdd);
+            quickProductPopup.hide(); quickVariantName.requestFocus();
+        } finally { isAutofilling = false; }
     }
 
     private void showQuickProductAutocompletePopup(String query) {
-        if (query.isEmpty()) {
-            quickProductPopup.hide();
-            selectedProductIdForQuickAdd = null;
-            return;
-        }
-
-        // We only want unique products in the quick add autocomplete
-        List<Variant> results = searchIndex.searchByName(query).stream()
-                .filter(distinctByKey(Variant::productId))
-                .limit(10)
-                .toList();
-
-        if (!results.isEmpty()) {
-            quickProductResultsView.getItems().setAll(results);
-            quickProductResultsView.setPrefHeight(Math.min(results.size() * 52 + 10, 300));
-            quickProductResultsView.setPrefWidth(Math.max(quickProductName.getWidth(), 300));
-
-            javafx.geometry.Point2D pos = quickProductName.localToScreen(0, quickProductName.getHeight() + 2);
-            if (pos != null)
-                quickProductPopup.show(quickProductName, pos.getX(), pos.getY());
-        } else {
-            quickProductPopup.hide();
-            selectedProductIdForQuickAdd = null;
-        }
+        if (query.isEmpty()) { quickProductPopup.hide(); selectedProductIdForQuickAdd = null; return; }
+        List<Variant> res = searchIndex.searchByName(query).stream().filter(distinctByKey(Variant::productId)).limit(10).toList();
+        if (!res.isEmpty()) {
+            quickProductResultsView.getItems().setAll(res); quickProductResultsView.setPrefHeight(Math.min(res.size() * 52 + 10, 300)); quickProductResultsView.setPrefWidth(Math.max(quickProductName.getWidth(), 300));
+            javafx.geometry.Point2D p = quickProductName.localToScreen(0, quickProductName.getHeight() + 2); if (p != null) quickProductPopup.show(quickProductName, p.getX(), p.getY());
+        } else { quickProductPopup.hide(); selectedProductIdForQuickAdd = null; }
     }
 
     private void setupCategoryAutocomplete() {
-        quickCategoryResultsView.getStyleClass().add("search-results-list");
-        applyPopupListStyles(quickCategoryResultsView);
-        quickCategoryPopup.getContent().add(quickCategoryResultsView);
-        quickCategoryPopup.setAutoHide(true);
-
+        quickCategoryResultsView.getStyleClass().add("search-results-list"); applyPopupListStyles(quickCategoryResultsView);
+        quickCategoryPopup.getContent().add(quickCategoryResultsView); quickCategoryPopup.setAutoHide(true);
         quickCategoryResultsView.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Category item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    VBox box = new VBox(2);
-                    box.getStyleClass().add("search-item-box");
-                    Label name = new Label(item.name());
-                    name.getStyleClass().add("search-item-name");
-                    box.getChildren().add(name);
-                    setGraphic(box);
-                    setText(null);
-                }
+            @Override protected void updateItem(Category it, boolean e) {
+                super.updateItem(it, e);
+                if (e || it == null) { setText(null); setGraphic(null); }
+                else { VBox b = new VBox(2); b.getStyleClass().add("search-item-box"); Label n = new Label(it.name()); n.getStyleClass().add("search-item-name"); b.getChildren().add(n); setGraphic(b); setText(null); }
             }
         });
-
-        quickCategorySearch.textProperty().addListener((obs, old, query) -> {
-            if (isAutofilling)
-                return;
-            showCategoryAutocompletePopup(query != null ? query.trim() : "");
-        });
-
-        quickCategoryResultsView.setOnMouseClicked(e -> {
-            Category c = quickCategoryResultsView.getSelectionModel().getSelectedItem();
-            if (c != null)
-                selectCategoryForQuickAdd(c);
-        });
-
-        quickCategoryResultsView.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                Category c = quickCategoryResultsView.getSelectionModel().getSelectedItem();
-                if (c != null)
-                    selectCategoryForQuickAdd(c);
-            }
-        });
+        quickCategorySearch.textProperty().addListener((o, ol, q) -> { if (!isAutofilling) showCategoryAutocompletePopup(q != null ? q.trim() : ""); });
+        quickCategoryResultsView.setOnMouseClicked(e -> { Category c = quickCategoryResultsView.getSelectionModel().getSelectedItem(); if (c != null) selectCategoryForQuickAdd(c); });
+        quickCategoryResultsView.setOnKeyPressed(e -> { if (e.getCode() == KeyCode.ENTER) { Category c = quickCategoryResultsView.getSelectionModel().getSelectedItem(); if (c != null) selectCategoryForQuickAdd(c); } });
     }
 
-    private void selectCategoryForQuickAdd(Category c) {
-        isAutofilling = true;
-        try {
-            quickCategorySearch.setText(c.name());
-            selectedCategoryForQuickAdd = c;
-            quickCategoryPopup.hide();
-        } finally {
-            isAutofilling = false;
-        }
-    }
+    private void selectCategoryForQuickAdd(Category c) { isAutofilling = true; try { quickCategorySearch.setText(c.name()); selectedCategoryForQuickAdd = c; quickCategoryPopup.hide(); } finally { isAutofilling = false; } }
 
     private void showCategoryAutocompletePopup(String query) {
-        if (query.isEmpty()) {
-            quickCategoryPopup.hide();
-            selectedCategoryForQuickAdd = null;
-            return;
-        }
-
-        List<Category> results = categoryService.getAllCategories().stream()
-                .filter(c -> c.name().toLowerCase().contains(query.toLowerCase()))
-                .limit(10)
-                .toList();
-
-        if (!results.isEmpty()) {
-            quickCategoryResultsView.getItems().setAll(results);
-            quickCategoryResultsView.setPrefHeight(Math.min(results.size() * 36 + 10, 250));
-            quickCategoryResultsView.setPrefWidth(Math.max(quickCategorySearch.getWidth(), 250));
-
-            javafx.geometry.Point2D pos = quickCategorySearch.localToScreen(0, quickCategorySearch.getHeight() + 2);
-            if (pos != null)
-                quickCategoryPopup.show(quickCategorySearch, pos.getX(), pos.getY());
-        } else {
-            quickCategoryPopup.hide();
-            selectedCategoryForQuickAdd = null;
-        }
+        if (query.isEmpty()) { quickCategoryPopup.hide(); selectedCategoryForQuickAdd = null; return; }
+        List<Category> res = categoryService.getAllCategories().stream().filter(c -> c.name().toLowerCase().contains(query.toLowerCase())).limit(10).toList();
+        if (!res.isEmpty()) {
+            quickCategoryResultsView.getItems().setAll(res); quickCategoryResultsView.setPrefHeight(Math.min(res.size() * 36 + 10, 250)); quickCategoryResultsView.setPrefWidth(Math.max(quickCategorySearch.getWidth(), 250));
+            javafx.geometry.Point2D p = quickCategorySearch.localToScreen(0, quickCategorySearch.getHeight() + 2); if (p != null) quickCategoryPopup.show(quickCategorySearch, p.getX(), p.getY());
+        } else { quickCategoryPopup.hide(); selectedCategoryForQuickAdd = null; }
     }
 
-    private static <T> java.util.function.Predicate<T> distinctByKey(
-            java.util.function.Function<? super T, ?> keyExtractor) {
-        java.util.Set<Object> seen = java.util.concurrent.ConcurrentHashMap.newKeySet();
-        return t -> seen.add(keyExtractor.apply(t));
-    }
+    private static <T> java.util.function.Predicate<T> distinctByKey(java.util.function.Function<? super T, ?> k) { java.util.Set<Object> s = java.util.concurrent.ConcurrentHashMap.newKeySet(); return t -> s.add(k.apply(t)); }
 
-    private void applyPopupListStyles(ListView<?> listView) {
-        String stylesheet = Objects.requireNonNull(
-                getClass().getResource("/styles/pos.css"),
-                "Missing stylesheet: /styles/pos.css").toExternalForm();
-        if (!listView.getStylesheets().contains(stylesheet)) {
-            listView.getStylesheets().add(stylesheet);
-        }
+    private void applyPopupListStyles(ListView<?> lv) {
+        String s = Objects.requireNonNull(getClass().getResource("/styles/pos.css")).toExternalForm();
+        if (!lv.getStylesheets().contains(s)) lv.getStylesheets().add(s);
     }
 }

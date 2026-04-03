@@ -5,12 +5,12 @@ import com.possum.application.reports.ReportsService;
 import com.possum.application.reports.dto.SalesReportSummary;
 import com.possum.application.reports.dto.TopProduct;
 import com.possum.domain.model.Variant;
+import com.possum.ui.common.controls.DataTableView;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -25,21 +25,20 @@ public class DashboardController {
     @FXML private Label dailySalesLabel;
     @FXML private Label transactionsLabel;
     @FXML private Label lowStockLabel;
-    @FXML private TableView<TopProduct> topProductsTable;
-    @FXML private TableView<Variant> lowStockTable;
+    @FXML private DataTableView<TopProduct> topProductsTable;
+    @FXML private DataTableView<Variant> lowStockTable;
     
     private ReportsService reportsService;
     private InventoryService inventoryService;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public DashboardController(ReportsService reportsService, InventoryService inventoryService) {
-this.reportsService = reportsService;
+        this.reportsService = reportsService;
         this.inventoryService = inventoryService;
     }
 
     @FXML
     public void initialize() {
-        
         setupTopProductsTable();
         setupLowStockTable();
         loadDashboardData();
@@ -57,7 +56,7 @@ this.reportsService = reportsService;
         
         TableColumn<TopProduct, BigDecimal> revenueCol = new TableColumn<>("Revenue");
         revenueCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalRevenue()));
-        revenueCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+        revenueCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
@@ -65,7 +64,9 @@ this.reportsService = reportsService;
             }
         });
         
-        topProductsTable.getColumns().addAll(nameCol, variantCol, qtyCol, revenueCol);
+        topProductsTable.getTableView().getColumns().setAll(nameCol, variantCol, qtyCol, revenueCol);
+        topProductsTable.setEmptyMessage("No data available");
+        topProductsTable.setEmptySubtitle("Top selling products will appear here.");
     }
 
     private void setupLowStockTable() {
@@ -84,7 +85,9 @@ this.reportsService = reportsService;
         TableColumn<Variant, Integer> alertCol = new TableColumn<>("Alert Level");
         alertCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stockAlertCap()));
         
-        lowStockTable.getColumns().addAll(nameCol, variantCol, skuCol, stockCol, alertCol);
+        lowStockTable.getTableView().getColumns().setAll(nameCol, variantCol, skuCol, stockCol, alertCol);
+        lowStockTable.setEmptyMessage("Inventory healthy");
+        lowStockTable.setEmptySubtitle("No products are currently low on stock.");
     }
 
     private void loadDashboardData() {

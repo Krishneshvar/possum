@@ -2,6 +2,7 @@ package com.possum.ui.settings.tax;
 
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.domain.model.TaxProfile;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.dialogs.DialogStyler;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,11 +14,11 @@ import java.time.LocalDateTime;
 
 public class TaxProfilesController {
 
-    @FXML private TableView<TaxProfile> profilesTable;
-    @FXML private TableColumn<TaxProfile, String> nameColumn;
-    @FXML private TableColumn<TaxProfile, String> regionColumn;
-    @FXML private TableColumn<TaxProfile, String> modeColumn;
-    @FXML private TableColumn<TaxProfile, String> statusColumn;
+    @FXML private DataTableView<TaxProfile> profilesTable;
+    private TableColumn<TaxProfile, String> nameColumn;
+    private TableColumn<TaxProfile, String> regionColumn;
+    private TableColumn<TaxProfile, String> modeColumn;
+    private TableColumn<TaxProfile, String> statusColumn;
 
     @FXML private TextField nameField;
     @FXML private TextField countryCodeField;
@@ -43,6 +44,15 @@ public class TaxProfilesController {
     }
 
     private void setupTable() {
+        nameColumn = new TableColumn<>("Profile Name");
+        regionColumn = new TableColumn<>("Region Code");
+        modeColumn = new TableColumn<>("Pricing Mode");
+        statusColumn = new TableColumn<>("Active Status");
+
+        profilesTable.getTableView().getColumns().setAll(nameColumn, regionColumn, modeColumn, statusColumn);
+        profilesTable.setEmptyMessage("No tax profiles created yet");
+        profilesTable.setEmptySubtitle("Create one from the details pane.");
+
         nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().name()));
         regionColumn.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().regionCode() != null ? data.getValue().regionCode() : "All"));
@@ -51,7 +61,7 @@ public class TaxProfilesController {
         statusColumn.setCellValueFactory(data ->
             new SimpleStringProperty(Boolean.TRUE.equals(data.getValue().active()) ? "Active" : "Inactive"));
 
-        profilesTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+        profilesTable.getTableView().getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             selectedProfile = newVal;
             if (newVal != null) {
                 populateForm(newVal);
@@ -111,7 +121,7 @@ public class TaxProfilesController {
         clearFieldError(pricingModeCombo, pricingModeErrorLabel);
 
         selectedProfile = null;
-        profilesTable.getSelectionModel().clearSelection();
+        profilesTable.getTableView().getSelectionModel().clearSelection();
     }
 
     @FXML

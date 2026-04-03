@@ -42,12 +42,12 @@
     <HBox spacing="20" VBox.vgrow="ALWAYS">
         <VBox spacing="10" HBox.hgrow="ALWAYS">
             <Label text="Top Selling Products" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-            <TableView fx:id="topProductsTable" VBox.vgrow="ALWAYS"/>
+            <com.possum.ui.common.controls.DataTableView fx:id="topProductsTable" VBox.vgrow="ALWAYS"/>
         </VBox>
         
         <VBox spacing="10" HBox.hgrow="ALWAYS">
             <Label text="Low Stock Items" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-            <TableView fx:id="lowStockTable" VBox.vgrow="ALWAYS"/>
+            <com.possum.ui.common.controls.DataTableView fx:id="lowStockTable" VBox.vgrow="ALWAYS"/>
         </VBox>
     </HBox>
 

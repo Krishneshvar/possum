@@ -3,6 +3,7 @@ package com.possum.ui.categories;
 import com.possum.application.categories.CategoryService;
 import com.possum.application.categories.CategoryService.CategoryTreeNode;
 import com.possum.domain.model.Category;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -21,14 +22,14 @@ import java.util.HashMap;
 public class CategoriesController {
 
     @FXML private TreeView<String> categoryTreeView;
-    @FXML private TableView<Category> categoryTableView;
+    @FXML private DataTableView<Category> categoryTableView;
     @FXML private javafx.scene.control.TextField searchField;
     @FXML private javafx.scene.control.Button addButton;
     @FXML private javafx.scene.control.Button refreshButton;
-    @FXML private TableColumn<Category, String> idCol;
-    @FXML private TableColumn<Category, String> nameCol;
-    @FXML private TableColumn<Category, String> parentCol;
-    @FXML private TableColumn<Category, Category> actionsCol;
+    private TableColumn<Category, String> idCol;
+    private TableColumn<Category, String> nameCol;
+    private TableColumn<Category, String> parentCol;
+    private TableColumn<Category, Category> actionsCol;
 
     private final CategoryService categoryService;
     private final WorkspaceManager workspaceManager;
@@ -53,6 +54,15 @@ public class CategoriesController {
             refreshIcon.setIconSize(16);
             refreshButton.setGraphic(refreshIcon);
         }
+
+        idCol = new TableColumn<>("ID");
+        nameCol = new TableColumn<>("Name");
+        parentCol = new TableColumn<>("Parent Category");
+        actionsCol = new TableColumn<>("Actions");
+
+        categoryTableView.getTableView().getColumns().setAll(idCol, nameCol, parentCol, actionsCol);
+        categoryTableView.setEmptyMessage("No categories found");
+        categoryTableView.setEmptySubtitle("Add your first category to get started.");
         
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().id())));
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
@@ -181,7 +191,7 @@ public class CategoriesController {
 
     @FXML
     private void handleEditCategory() {
-        Category selected = categoryTableView.getSelectionModel().getSelectedItem();
+        Category selected = categoryTableView.getTableView().getSelectionModel().getSelectedItem();
         if (selected != null) {
             handleEdit(selected);
         }

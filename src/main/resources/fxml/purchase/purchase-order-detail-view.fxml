@@ -39,12 +39,8 @@
         <!-- Items Table -->
         <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="card">
             <Label text="Items Ordered" styleClass="card-title"/>
-            <TableView fx:id="itemsTable" VBox.vgrow="ALWAYS" styleClass="data-table"
-                       accessibleText="Items ordered in this purchase order">
-                <columnResizePolicy>
-                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                </columnResizePolicy>
-            </TableView>
+            <com.possum.ui.common.controls.DataTableView fx:id="itemsTable" VBox.vgrow="ALWAYS"
+                       accessibleText="Items ordered in this purchase order" />
         </VBox>
         
         <!-- Sidebar -->

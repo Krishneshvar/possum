@@ -3,86 +3,71 @@ package com.possum.ui.common.controls;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Side;
+import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.Region;
 import javafx.util.Callback;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Cursor;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.List;
 
+/**
+ * A reusable, standardized table component for the Possum UI.
+ * Wraps a standard TableView with loading overlays and empty states.
+ */
 public class DataTableView<T> extends StackPane {
-    private final TableView<T> tableView;
-    private final VBox emptyState;
-    private final StackPane loadingOverlay;
+    
+    @FXML private TableView<T> tableView;
+    @FXML private VBox emptyState;
+    @FXML private Label emptyIcon;
+    @FXML private Label emptyMessage;
+    @FXML private Label emptySubtitle;
+    @FXML private StackPane loadingOverlay;
+    
     private final BooleanProperty loading = new SimpleBooleanProperty(false);
 
     public DataTableView() {
-        this.tableView = new TableView<>();
-        this.emptyState = createEmptyState();
-        this.loadingOverlay = createLoadingOverlay();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/common/controls/data-table-view.fxml"));
+        loader.setRoot(this);
+        loader.setController(this);
 
+        try {
+            loader.load();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load DataTableView FXML", e);
+        }
+    }
+
+    @FXML
+    public void initialize() {
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        tableView.getStyleClass().add("data-table");
         tableView.setAccessibleText("Data table");
         
         // Use TableView's built-in placeholder support
         tableView.setPlaceholder(emptyState);
         
-        getChildren().addAll(tableView, loadingOverlay);
-        
-        loadingOverlay.setVisible(false);
-        
         loading.addListener((obs, old, isLoading) -> {
             loadingOverlay.setVisible(isLoading);
             loadingOverlay.setManaged(isLoading);
-            // Hide placeholder while loading to avoid flickering
+            
+            // Toggle visibility of table and placeholder during loading
             if (isLoading) {
-                tableView.setPlaceholder(new Region());
+                tableView.setPlaceholder(new Label("")); // Temporary empty placeholder
             } else {
                 tableView.setPlaceholder(emptyState);
             }
         });
-    }
-
-    private VBox createEmptyState() {
-        Label icon = new Label("📦");
-        icon.getStyleClass().add("empty-state-icon");
-        icon.setStyle("-fx-font-size: 48px; -fx-opacity: 0.4;");
-
-        Label label = new Label("No data available");
-        label.getStyleClass().add("empty-state-title");
-        label.setStyle("-fx-font-size: 18px; -fx-font-weight: 700;");
-
-        Label subtitle = new Label("New records will appear here once available.");
-        subtitle.getStyleClass().add("empty-state-subtitle");
-        subtitle.setStyle("-fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center; -fx-max-width: 400;");
-        subtitle.setWrapText(true);
-
-        Region spacer = new Region();
-        spacer.setMinHeight(8);
-
-        VBox box = new VBox(12, icon, label, spacer, subtitle);
-        box.getStyleClass().add("empty-state-view");
-        box.setAlignment(Pos.CENTER);
-        box.setStyle("-fx-padding: 48 24;");
-        box.setAccessibleText("Empty state view");
-        return box;
-    }
-
-    private StackPane createLoadingOverlay() {
-        ProgressIndicator spinner = new ProgressIndicator();
-        spinner.setMaxSize(50, 50);
-        StackPane overlay = new StackPane(spinner);
-        overlay.getStyleClass().add("table-loading-overlay");
-        overlay.setAccessibleText("Loading data");
-        return overlay;
+        
+        // Hide overlay initially
+        loadingOverlay.setVisible(false);
+        loadingOverlay.setManaged(false);
     }
 
     @SuppressWarnings("unchecked")
@@ -122,7 +107,6 @@ public class DataTableView<T> extends StackPane {
                 if (empty || item == null) {
                     setGraphic(null);
                 } else {
-                    setAlignment(Pos.CENTER);
                     setGraphic(button);
                 }
             }
@@ -164,7 +148,6 @@ public class DataTableView<T> extends StackPane {
                     actionsMenu.hide();
                     setGraphic(null);
                 } else {
-                    setAlignment(Pos.CENTER);
                     setGraphic(menuButton);
                 }
             }
@@ -184,28 +167,43 @@ public class DataTableView<T> extends StackPane {
         this.loading.set(loading);
     }
 
+    public boolean isLoading() {
+        return loading.get();
+    }
+
+    public BooleanProperty loadingProperty() {
+        return loading;
+    }
+
     public TableView<T> getTableView() {
         return tableView;
     }
 
     public void setEmptyMessage(String message) {
-        ((Label) emptyState.getChildren().get(1)).setText(message);
+        emptyMessage.setText(message);
+        checkPlaceholderVisibility();
     }
 
     public String getEmptyMessage() {
-        return ((Label) emptyState.getChildren().get(1)).getText();
+        return emptyMessage.getText();
     }
 
     public void setEmptySubtitle(String subtitle) {
-        ((Label) emptyState.getChildren().get(3)).setText(subtitle);
+        emptySubtitle.setText(subtitle);
     }
 
     public void setEmptyIcon(String icon) {
-        ((Label) emptyState.getChildren().get(0)).setText(icon);
+        emptyIcon.setText(icon);
     }
 
     public void setEmptyIconStyle(String style) {
-        emptyState.getChildren().get(0).setStyle(style);
+        emptyIcon.setStyle(style);
     }
-
+    
+    private void checkPlaceholderVisibility() {
+        // Force refresh placeholder if necessary
+        if (!isLoading() && (getItems() == null || getItems().isEmpty())) {
+            tableView.setPlaceholder(emptyState);
+        }
+    }
 }

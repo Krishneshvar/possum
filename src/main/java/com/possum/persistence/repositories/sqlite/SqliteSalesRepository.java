@@ -385,6 +385,20 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         return "WHERE " + joiner;
     }
 
+    @Override
+    public int updateTransactionPaymentMethod(long saleId, long newPaymentMethodId) {
+        return executeUpdate(
+                "UPDATE transactions SET payment_method_id = ? WHERE sale_id = ? AND type = 'payment'",
+                newPaymentMethodId,
+                saleId
+        );
+    }
+
+    @Override
+    public int updateSaleCustomer(long saleId, Long customerId) {
+        return executeUpdate("UPDATE sales SET customer_id = ? WHERE id = ?", customerId, saleId);
+    }
+
 }
 
 

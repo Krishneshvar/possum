@@ -445,10 +445,21 @@
 }
 
 /* DataTable */
+.table-shadow-wrapper {
+    -fx-background-color: -color-surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-effect: -shadow-sm;
+    -fx-padding: 0;
+}
+
 .table-view,
 .data-table,
 .pos-table {
     -fx-background-color: transparent;
+    -fx-background-radius: 8;
     -fx-border-color: transparent;
 }
 

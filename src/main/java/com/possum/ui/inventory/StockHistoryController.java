@@ -6,6 +6,7 @@ import com.possum.domain.enums.InventoryReason;
 import com.possum.domain.model.User;
 import com.possum.shared.dto.UserFilter;
 import com.possum.shared.dto.StockHistoryDto;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.PaginationBar;
 import javafx.application.Platform;
@@ -26,14 +27,14 @@ public class StockHistoryController {
 
     @FXML private VBox container;
     @FXML private FilterBar filterBar;
-    @FXML private TableView<StockHistoryDto> historyTable;
-    @FXML private TableColumn<StockHistoryDto, String> productCol;
-    @FXML private TableColumn<StockHistoryDto, String> variantCol;
-    @FXML private TableColumn<StockHistoryDto, String> skuCol;
-    @FXML private TableColumn<StockHistoryDto, String> changeCol;
-    @FXML private TableColumn<StockHistoryDto, String> reasonCol;
-    @FXML private TableColumn<StockHistoryDto, String> adjustedByCol;
-    @FXML private TableColumn<StockHistoryDto, String> dateCol;
+    @FXML private DataTableView<StockHistoryDto> historyTable;
+    private TableColumn<StockHistoryDto, String> productCol;
+    private TableColumn<StockHistoryDto, String> variantCol;
+    private TableColumn<StockHistoryDto, String> skuCol;
+    private TableColumn<StockHistoryDto, String> changeCol;
+    private TableColumn<StockHistoryDto, String> reasonCol;
+    private TableColumn<StockHistoryDto, String> adjustedByCol;
+    private TableColumn<StockHistoryDto, String> dateCol;
     @FXML private PaginationBar paginationBar;
     @FXML private Button refreshButton;
 
@@ -63,7 +64,8 @@ public class StockHistoryController {
             refreshButton.setGraphic(refreshIcon);
             refreshButton.setText("Refresh");
         }
-        historyTable.setPlaceholder(new javafx.scene.control.Label("No stock history found for the current selection."));
+        historyTable.setEmptyMessage("No stock history found");
+        historyTable.setEmptySubtitle("Try adjusting filters or search terms.");
         setupTable();
         setupFilters();
         setupPagination();
@@ -76,7 +78,16 @@ public class StockHistoryController {
     }
 
     private void setupTable() {
-        historyTable.setItems(historyList);
+        productCol = new TableColumn<>("Product");
+        variantCol = new TableColumn<>("Variant");
+        skuCol = new TableColumn<>("SKU");
+        changeCol = new TableColumn<>("Change");
+        reasonCol = new TableColumn<>("Reason");
+        adjustedByCol = new TableColumn<>("Adjusted By");
+        dateCol = new TableColumn<>("Date & Time");
+
+        historyTable.getTableView().getColumns().setAll(productCol, variantCol, skuCol, changeCol, reasonCol, adjustedByCol, dateCol);
+        historyTable.getTableView().setItems(historyList);
 
         productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
         variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().variantName()));

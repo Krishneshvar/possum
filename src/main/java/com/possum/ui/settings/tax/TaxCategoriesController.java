@@ -2,6 +2,7 @@ package com.possum.ui.settings.tax;
 
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.domain.model.TaxCategory;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.dialogs.DialogStyler;
 import javafx.beans.property.SimpleObjectProperty;
@@ -12,10 +13,10 @@ import javafx.scene.control.*;
 
 public class TaxCategoriesController {
 
-    @FXML private TableView<TaxCategory> categoriesTable;
-    @FXML private TableColumn<TaxCategory, String> nameColumn;
-    @FXML private TableColumn<TaxCategory, String> descriptionColumn;
-    @FXML private TableColumn<TaxCategory, Integer> productCountColumn;
+    @FXML private DataTableView<TaxCategory> categoriesTable;
+    private TableColumn<TaxCategory, String> nameColumn;
+    private TableColumn<TaxCategory, String> descriptionColumn;
+    private TableColumn<TaxCategory, Integer> productCountColumn;
 
     @FXML private TextField nameField;
     @FXML private TextArea descriptionArea;
@@ -36,11 +37,19 @@ public class TaxCategoriesController {
     }
 
     private void setupTable() {
+        nameColumn = new TableColumn<>("Category Name");
+        descriptionColumn = new TableColumn<>("Description");
+        productCountColumn = new TableColumn<>("Products Assigned");
+
+        categoriesTable.getTableView().getColumns().setAll(nameColumn, descriptionColumn, productCountColumn);
+        categoriesTable.setEmptyMessage("No tax categories found");
+        categoriesTable.setEmptySubtitle("Add a new category to link it with products.");
+
         nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().name()));
         descriptionColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().description()));
         productCountColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().productCount()));
 
-        categoriesTable.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+        categoriesTable.getTableView().getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             selectedCategory = newVal;
             if (newVal != null) {
                 populateForm(newVal);
@@ -73,7 +82,7 @@ public class TaxCategoriesController {
         descriptionArea.clear();
         clearFieldError(nameField, nameErrorLabel);
         selectedCategory = null;
-        categoriesTable.getSelectionModel().clearSelection();
+        categoriesTable.getTableView().getSelectionModel().clearSelection();
     }
 
     @FXML

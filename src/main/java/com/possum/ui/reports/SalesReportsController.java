@@ -3,17 +3,25 @@ package com.possum.ui.reports;
 import com.possum.application.reports.ReportsService;
 import com.possum.application.reports.dto.BreakdownItem;
 import com.possum.application.sales.SalesService;
+import com.possum.ui.common.controls.DataTableView;
+import com.possum.ui.common.controls.MultiSelectFilter;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class SalesReportsController {
 
@@ -23,20 +31,21 @@ public class SalesReportsController {
     @FXML private ComboBox<String> amountFilterColCombo;
     @FXML private TextField minAmountField;
     @FXML private TextField maxAmountField;
-    @FXML private TableView<BreakdownItem> breakdownTable;
-    @FXML private TableColumn<BreakdownItem, String> periodCol;
-    @FXML private TableColumn<BreakdownItem, Integer> transactionsCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> salesCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> cashCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> upiCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> debitCardCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> creditCardCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> giftCardCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> refundsCol;
-    @FXML private TableColumn<BreakdownItem, BigDecimal> netSalesCol;
+    @FXML private DataTableView<BreakdownItem> breakdownTable;
+    
+    private TableColumn<BreakdownItem, String> periodCol;
+    private TableColumn<BreakdownItem, Integer> transactionsCol;
+    private TableColumn<BreakdownItem, BigDecimal> salesCol;
+    private TableColumn<BreakdownItem, BigDecimal> cashCol;
+    private TableColumn<BreakdownItem, BigDecimal> upiCol;
+    private TableColumn<BreakdownItem, BigDecimal> debitCardCol;
+    private TableColumn<BreakdownItem, BigDecimal> creditCardCol;
+    private TableColumn<BreakdownItem, BigDecimal> giftCardCol;
+    private TableColumn<BreakdownItem, BigDecimal> refundsCol;
+    private TableColumn<BreakdownItem, BigDecimal> netSalesCol;
 
-    @FXML private javafx.scene.layout.VBox columnFilterContainer;
-    private com.possum.ui.common.controls.MultiSelectFilter<TableColumn<BreakdownItem, ?>> columnFilter;
+    @FXML private VBox columnFilterContainer;
+    private MultiSelectFilter<TableColumn<BreakdownItem, ?>> columnFilter;
 
     @FXML private Label totalLabel;
     @FXML private Label totalTransactionsLabel;
@@ -76,7 +85,7 @@ public class SalesReportsController {
         java.io.File file = fileChooser.showSaveDialog(breakdownTable.getScene().getWindow());
         if (file == null) return;
 
-        List<BreakdownItem> items = breakdownTable.getItems();
+        List<BreakdownItem> items = breakdownTable.getTableView().getItems();
         
         try {
             if (extension.equals(".csv")) {
@@ -94,14 +103,13 @@ public class SalesReportsController {
             writer.println("Period,Transactions,Cash,UPI,Debit Card,Credit Card,Gift Card,Gross Sales,Refunds,Net Sales");
             for (BreakdownItem item : items) {
                 if (item == null) continue;
-                writer.printf("%s,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%n",
+                writer.printf("%s,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%n",
                     item.name(), item.totalTransactions(), 
                     cashCol.isVisible() ? item.cash() : BigDecimal.ZERO,
                     upiCol.isVisible() ? item.upi() : BigDecimal.ZERO,
                     debitCardCol.isVisible() ? item.debitCard() : BigDecimal.ZERO,
                     creditCardCol.isVisible() ? item.creditCard() : BigDecimal.ZERO,
                     giftCardCol.isVisible() ? item.giftCard() : BigDecimal.ZERO,
-                    item.cash(), item.upi(), item.debitCard(), item.creditCard(), item.giftCard(),
                     calculateDynamicGrossSales(item),
                     item.refunds(),
                     calculateDynamicNetSales(item));
@@ -151,7 +159,6 @@ public class SalesReportsController {
         reportTypeCombo.setItems(FXCollections.observableArrayList("Daily", "Monthly", "Yearly"));
         reportTypeCombo.setValue("Daily");
 
-        // Initial range: This month
         startDatePicker.setValue(LocalDate.now().withDayOfMonth(1));
         endDatePicker.setValue(LocalDate.now());
 
@@ -160,32 +167,43 @@ public class SalesReportsController {
         ));
         amountFilterColCombo.setValue("None");
 
-        // Add change listeners for real-time filtering
         minAmountField.textProperty().addListener((obs, oldVal, newVal) -> handleRefresh());
         maxAmountField.textProperty().addListener((obs, oldVal, newVal) -> handleRefresh());
         amountFilterColCombo.setOnAction(e -> handleRefresh());
     }
 
     private void setupTable() {
-        periodCol.setCellValueFactory(cellData -> {
-            if (cellData.getValue() == null) return new javafx.beans.property.SimpleStringProperty("");
-            return new javafx.beans.property.SimpleStringProperty(cellData.getValue().name());
-        });
-        transactionsCol.setCellValueFactory(cellData -> {
-            if (cellData.getValue() == null) return new javafx.beans.property.SimpleObjectProperty<>(null);
-            return new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().totalTransactions());
-        });
-        cashCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().cash()));
-        upiCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().upi()));
-        debitCardCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().debitCard()));
-        creditCardCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().creditCard()));
-        giftCardCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().giftCard()));
-        salesCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(calculateDynamicGrossSales(cellData.getValue())));
-        refundsCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().refunds()));
-        netSalesCol.setCellValueFactory(cellData -> cellData.getValue() == null ? new javafx.beans.property.SimpleObjectProperty<>(null) : new javafx.beans.property.SimpleObjectProperty<>(calculateDynamicNetSales(cellData.getValue())));
+        periodCol = new TableColumn<>("Date");
+        transactionsCol = new TableColumn<>("Transactions");
+        cashCol = new TableColumn<>("Cash");
+        upiCol = new TableColumn<>("UPI");
+        debitCardCol = new TableColumn<>("Debit Card");
+        creditCardCol = new TableColumn<>("Credit Card");
+        giftCardCol = new TableColumn<>("Gift Card");
+        salesCol = new TableColumn<>("Gross Sales");
+        refundsCol = new TableColumn<>("Refunds");
+        netSalesCol = new TableColumn<>("Net Sales");
+
+        breakdownTable.getTableView().getColumns().setAll(
+            periodCol, transactionsCol, cashCol, upiCol, debitCardCol, 
+            creditCardCol, giftCardCol, salesCol, refundsCol, netSalesCol
+        );
         
-        // Custom cell formatters for currency
-        javafx.util.Callback<TableColumn<BreakdownItem, BigDecimal>, javafx.scene.control.TableCell<BreakdownItem, BigDecimal>> currencyCellFactory = column -> new javafx.scene.control.TableCell<>() {
+        breakdownTable.setEmptyMessage("No analytics records found");
+        breakdownTable.setEmptySubtitle("Try adjusting your date range or filter criteria.");
+
+        periodCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
+        transactionsCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().totalTransactions()));
+        cashCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().cash()));
+        upiCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().upi()));
+        debitCardCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().debitCard()));
+        creditCardCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().creditCard()));
+        giftCardCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().giftCard()));
+        salesCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(calculateDynamicGrossSales(cellData.getValue())));
+        refundsCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().refunds()));
+        netSalesCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(calculateDynamicNetSales(cellData.getValue())));
+        
+        Callback<TableColumn<BreakdownItem, BigDecimal>, TableCell<BreakdownItem, BigDecimal>> currencyCellFactory = column -> new TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
@@ -201,7 +219,7 @@ public class SalesReportsController {
         salesCol.setCellFactory(currencyCellFactory);
         refundsCol.setCellFactory(currencyCellFactory);
         
-        netSalesCol.setCellFactory(column -> new javafx.scene.control.TableCell<>() {
+        netSalesCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
@@ -214,19 +232,27 @@ public class SalesReportsController {
                 }
             }
         });
-        
-        // Custom row styling for consistent height
-        breakdownTable.setRowFactory(tv -> new javafx.scene.control.TableRow<>() {
-            @Override
-            protected void updateItem(BreakdownItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setStyle("");
-                } else {
-                    setStyle("-fx-background-color: white;");
-                }
-            }
-        });
+
+        transactionsCol.setStyle("-fx-alignment: CENTER;");
+        cashCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        upiCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        debitCardCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        creditCardCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        giftCardCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        salesCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        refundsCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+        netSalesCol.setStyle("-fx-alignment: CENTER-RIGHT;");
+
+        periodCol.setPrefWidth(150);
+        transactionsCol.setPrefWidth(100);
+        cashCol.setPrefWidth(100);
+        upiCol.setPrefWidth(100);
+        debitCardCol.setPrefWidth(100);
+        creditCardCol.setPrefWidth(100);
+        giftCardCol.setPrefWidth(100);
+        salesCol.setPrefWidth(120);
+        refundsCol.setPrefWidth(100);
+        netSalesCol.setPrefWidth(120);
     }
 
     private void setupColumnFilter() {
@@ -235,28 +261,25 @@ public class SalesReportsController {
             giftCardCol, salesCol, refundsCol, netSalesCol
         );
         
-        columnFilter = new com.possum.ui.common.controls.MultiSelectFilter<>(
+        columnFilter = new MultiSelectFilter<>(
             "All Columns",
             TableColumn::getText
         );
         columnFilter.setItems(columns);
         columnFilter.setPrefWidth(160);
-        
-        // Initial state: all visible
         columnFilter.selectItems(columns);
         
-        columnFilter.getSelectedItems().addListener((javafx.collections.ListChangeListener<TableColumn<BreakdownItem, ?>>) c -> {
+        columnFilter.getSelectedItems().addListener((ListChangeListener<TableColumn<BreakdownItem, ?>>) c -> {
             List<TableColumn<BreakdownItem, ?>> selected = columnFilter.getSelectedItems();
             for (TableColumn<BreakdownItem, ?> col : columns) {
                 col.setVisible(selected.contains(col));
             }
-            breakdownTable.refresh();
+            breakdownTable.getTableView().refresh();
             calculateTotals(breakdownTable.getItems());
         });
         
         columnFilterContainer.getChildren().add(columnFilter);
         
-        // Sync totals bar labels visibility with columns
         totalLabel.visibleProperty().bind(periodCol.visibleProperty());
         totalLabel.managedProperty().bind(periodCol.visibleProperty());
         totalTransactionsLabel.visibleProperty().bind(transactionsCol.visibleProperty());
@@ -280,7 +303,6 @@ public class SalesReportsController {
     }
 
     private void bindTotalsToTable() {
-        // Bind widths
         totalLabel.prefWidthProperty().bind(periodCol.widthProperty());
         totalTransactionsLabel.prefWidthProperty().bind(transactionsCol.widthProperty());
         totalCashLabel.prefWidthProperty().bind(cashCol.widthProperty());
@@ -292,8 +314,6 @@ public class SalesReportsController {
         totalRefundsLabel.prefWidthProperty().bind(refundsCol.widthProperty());
         totalNetSalesLabel.prefWidthProperty().bind(netSalesCol.widthProperty());
 
-        // Helper to bind alignment since TableColumn alignment is a style-based or complicated thing to get natively sometimes
-        // But we can set the labels to match the preferred alignment of the standard columns
         totalTransactionsLabel.setAlignment(Pos.CENTER);
         totalCashLabel.setAlignment(Pos.CENTER_RIGHT);
         totalUpiLabel.setAlignment(Pos.CENTER_RIGHT);
@@ -347,7 +367,6 @@ public class SalesReportsController {
             breakdown = reportsService.getYearlyReport(startDate, endDate, null).breakdown();
         }
 
-        // Apply column-based price/amount range filtering
         String filteredCol = amountFilterColCombo.getValue();
         if (filteredCol != null && !"None".equals(filteredCol)) {
             final BigDecimal min = parseAmount(minAmountField.getText(), null);
@@ -363,10 +382,10 @@ public class SalesReportsController {
                     
                     return matchesMin && matchesMax;
                 })
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
         }
 
-        breakdownTable.setItems(FXCollections.observableArrayList(breakdown));
+        breakdownTable.getTableView().setItems(FXCollections.observableArrayList(breakdown));
         calculateTotals(breakdown);
     }
 
@@ -420,9 +439,9 @@ public class SalesReportsController {
         BigDecimal debit = BigDecimal.ZERO;
         BigDecimal credit = BigDecimal.ZERO;
         BigDecimal gift = BigDecimal.ZERO;
-        BigDecimal totalSales = BigDecimal.ZERO;
-        BigDecimal refunds = BigDecimal.ZERO;
-        BigDecimal netSales = BigDecimal.ZERO;
+        BigDecimal totalSalesSum = BigDecimal.ZERO;
+        BigDecimal totalRefundsSum = BigDecimal.ZERO;
+        BigDecimal totalNetSalesSum = BigDecimal.ZERO;
 
         for (BreakdownItem item : items) {
             if (item == null) continue;
@@ -433,9 +452,9 @@ public class SalesReportsController {
             if (creditCardCol.isVisible()) credit = credit.add(item.creditCard() != null ? item.creditCard() : BigDecimal.ZERO);
             if (giftCardCol.isVisible()) gift = gift.add(item.giftCard() != null ? item.giftCard() : BigDecimal.ZERO);
             
-            totalSales = totalSales.add(calculateDynamicGrossSales(item));
-            if (refundsCol.isVisible()) refunds = refunds.add(item.refunds() != null ? item.refunds() : BigDecimal.ZERO);
-            netSales = netSales.add(calculateDynamicNetSales(item));
+            totalSalesSum = totalSalesSum.add(calculateDynamicGrossSales(item));
+            if (refundsCol.isVisible()) totalRefundsSum = totalRefundsSum.add(item.refunds() != null ? item.refunds() : BigDecimal.ZERO);
+            totalNetSalesSum = totalNetSalesSum.add(calculateDynamicNetSales(item));
         }
 
         totalTransactionsLabel.setText(String.valueOf(totalTransactions));
@@ -444,8 +463,8 @@ public class SalesReportsController {
         totalDebitLabel.setText(currencyFormat.format(debit));
         totalCreditLabel.setText(currencyFormat.format(credit));
         totalGiftLabel.setText(currencyFormat.format(gift));
-        totalSalesLabel.setText(currencyFormat.format(totalSales));
-        totalRefundsLabel.setText(currencyFormat.format(refunds));
-        totalNetSalesLabel.setText(currencyFormat.format(netSales));
+        totalSalesLabel.setText(currencyFormat.format(totalSalesSum));
+        totalRefundsLabel.setText(currencyFormat.format(totalRefundsSum));
+        totalNetSalesLabel.setText(currencyFormat.format(totalNetSalesSum));
     }
 }

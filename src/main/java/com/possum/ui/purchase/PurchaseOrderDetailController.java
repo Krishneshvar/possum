@@ -3,27 +3,26 @@ package com.possum.ui.purchase;
 import com.possum.application.auth.AuthContext;
 import com.possum.application.purchase.PurchaseService;
 import com.possum.domain.model.PurchaseOrderItem;
+import com.possum.shared.util.TimeUtil;
+import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.common.dialogs.DialogStyler;
 import com.possum.ui.navigation.Parameterizable;
 import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.math.BigDecimal;
-import java.time.format.DateTimeFormatter;
-import com.possum.shared.util.TimeUtil;
 import java.util.Map;
 
 public class PurchaseOrderDetailController implements Parameterizable {
@@ -34,14 +33,13 @@ public class PurchaseOrderDetailController implements Parameterizable {
     @FXML private Label supplierNameLabel;
     @FXML private Label createdByLabel;
     @FXML private Label receivedDateLabel;
-    @FXML private TableView<PurchaseOrderItem> itemsTable;
+    @FXML private DataTableView<PurchaseOrderItem> itemsTable;
     @FXML private Label totalItemsLabel;
     @FXML private Label totalQuantityLabel;
     @FXML private Label totalCostLabel;
     @FXML private Button receiveButton;
     @FXML private Button editButton;
     @FXML private Button cancelButton;
-    @FXML private HBox actionButtonsBox;
 
     private PurchaseService purchaseService;
     private WorkspaceManager workspaceManager;
@@ -70,8 +68,6 @@ public class PurchaseOrderDetailController implements Parameterizable {
     }
 
     private void setupItemsTable() {
-        if (itemsTable == null) return;
-
         TableColumn<PurchaseOrderItem, String> productCol = new TableColumn<>("Product | Variant");
         productCol.setPrefWidth(300);
         productCol.setCellFactory(col -> new TableCell<>() {
@@ -94,7 +90,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
         });
 
         TableColumn<PurchaseOrderItem, Integer> qtyCol = new TableColumn<>("Quantity");
-        qtyCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().quantity()));
+        qtyCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().quantity()));
         qtyCol.setPrefWidth(100);
         qtyCol.setStyle("-fx-alignment: CENTER;");
         qtyCol.setCellFactory(col -> new TableCell<>() {
@@ -111,7 +107,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
         });
 
         TableColumn<PurchaseOrderItem, BigDecimal> costCol = new TableColumn<>("Unit Cost");
-        costCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().unitCost()));
+        costCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().unitCost()));
         costCol.setPrefWidth(120);
         costCol.setStyle("-fx-alignment: CENTER-RIGHT;");
         costCol.setCellFactory(col -> new TableCell<>() {
@@ -145,10 +141,9 @@ public class PurchaseOrderDetailController implements Parameterizable {
             }
         });
 
-        itemsTable.getColumns().addAll(productCol, qtyCol, costCol, totalCol);
-        Label emptyLabel = new Label("No items in this purchase order");
-        emptyLabel.setStyle("-fx-text-fill: gray; -fx-font-style: italic;");
-        itemsTable.setPlaceholder(emptyLabel);
+        itemsTable.getTableView().getColumns().setAll(productCol, qtyCol, costCol, totalCol);
+        itemsTable.setEmptyMessage("No items in this purchase order");
+        itemsTable.setEmptySubtitle("This order contains no product records.");
     }
 
     private void loadOrderDetails(long orderId) {
@@ -201,10 +196,8 @@ public class PurchaseOrderDetailController implements Parameterizable {
             receivedDateLabel.setVisible(false);
         }
 
-        // Items
         itemsTable.setItems(FXCollections.observableArrayList(orderDetail.items()));
 
-        // Summary
         int totalQty = orderDetail.items().stream().mapToInt(PurchaseOrderItem::quantity).sum();
         BigDecimal totalCost = orderDetail.items().stream()
                 .map(item -> item.unitCost().multiply(BigDecimal.valueOf(item.quantity())))
@@ -214,7 +207,6 @@ public class PurchaseOrderDetailController implements Parameterizable {
         totalQuantityLabel.setText(String.valueOf(totalQty));
         totalCostLabel.setText(String.format("$%.2f", totalCost));
 
-        // Action buttons visibility
         boolean isPending = "pending".equals(orderDetail.purchaseOrder().status());
         receiveButton.setVisible(isPending);
         receiveButton.setManaged(isPending);
