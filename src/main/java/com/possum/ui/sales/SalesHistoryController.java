@@ -115,7 +115,7 @@ public class SalesHistoryController {
                 } else {
                     String status = item;
                     Label badge = new Label(formatStatus(status));
-                    badge.getStyleClass().add("badge-status");
+                    badge.getStyleClass().addAll("badge", "badge-status");
                     switch (status.toLowerCase()) {
                         case "paid" -> badge.getStyleClass().add("badge-success");
                         case "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");

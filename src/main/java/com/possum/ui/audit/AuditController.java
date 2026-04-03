@@ -61,12 +61,12 @@ this.auditService = auditService;
                 } else {
                     Label badge = new Label(item.toUpperCase());
                     badge.getStyleClass().add("badge");
+                    badge.getStyleClass().add("badge-status");
                     
                     String colorClass = switch (item.toUpperCase()) {
-                        case "CREATE" -> "badge-success";
+                        case "CREATE", "LOGIN" -> "badge-success";
                         case "UPDATE" -> "badge-info";
                         case "DELETE" -> "badge-danger";
-                        case "LOGIN" -> "badge-primary";
                         case "LOGOUT" -> "badge-secondary";
                         default -> "badge-warning";
                     };

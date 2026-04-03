@@ -183,7 +183,7 @@ public class ProductsController {
                     setText(null);
                 } else {
                     Label badge = new Label(formatStatus(status));
-                    badge.getStyleClass().add("badge-status");
+                    badge.getStyleClass().addAll("badge", "badge-status");
                     applyStatusClass(badge, status);
                     setGraphic(badge);
                     setText(null);

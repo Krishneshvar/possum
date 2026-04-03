@@ -12,9 +12,7 @@ import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TableColumn;
+import javafx.scene.control.*;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import com.possum.ui.common.dialogs.DialogStyler;
@@ -56,10 +54,26 @@ public class UsersController {
         usernameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().username()));
         
         TableColumn<User, String> statusCol = new TableColumn<>("Status");
-        statusCol.setSortable(false);
-        statusCol.setCellValueFactory(cellData -> {
-            boolean active = cellData.getValue().active();
-            return new SimpleStringProperty(active ? "Active" : "Inactive");
+        statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().active() ? "Active" : "Inactive"));
+        statusCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Label badge = new Label(status);
+                    badge.getStyleClass().addAll("badge", "badge-status");
+                    if ("Active".equalsIgnoreCase(status)) {
+                        badge.getStyleClass().add("badge-success");
+                    } else {
+                        badge.getStyleClass().add("badge-neutral");
+                    }
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
         });
         
         TableColumn<User, java.time.LocalDateTime> createdCol = new TableColumn<>("Created At");

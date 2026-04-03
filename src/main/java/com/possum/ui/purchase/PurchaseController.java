@@ -133,7 +133,7 @@ public class PurchaseController {
                     setGraphic(null);
                 } else {
                     Label badge = new Label(status.toUpperCase());
-                    badge.getStyleClass().add("badge-status");
+                    badge.getStyleClass().addAll("badge", "badge-status");
                     
                     switch (status.toLowerCase()) {
                         case "pending" -> badge.getStyleClass().add("badge-warning");

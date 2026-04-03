@@ -126,6 +126,21 @@ public class StockHistoryController {
             }
             return new SimpleStringProperty(titleCase.toString().trim());
         });
+        reasonCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(item);
+                    badge.getStyleClass().addAll("badge", "badge-status", "badge-info");
+                    setGraphic(badge);
+                    setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+                }
+            }
+        });
         reasonCol.setSortable(false);
         adjustedByCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().adjustedByName()));
         adjustedByCol.setSortable(false);

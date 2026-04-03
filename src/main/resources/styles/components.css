@@ -695,60 +695,58 @@
 
 .badge {
     -fx-padding: 3 10;
-    -fx-background-radius: 12;
+    -fx-background-radius: 6;
     -fx-font-size: 11;
     -fx-font-weight: 800;
     -fx-text-transform: uppercase;
+    -fx-letter-spacing: 0.5;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-alignment: center;
+}
+
+.badge-status {
+    -fx-min-width: 80;
+    -fx-pref-width: 90;
+    -fx-alignment: center;
 }
 
 .badge-success {
     -fx-background-color: -color-success-bg;
     -fx-text-fill: -color-success-text;
-    -fx-border-color: -color-success;
-    -fx-border-width: 0.5;
-    -fx-border-radius: 12;
+    -fx-border-color: derive(-color-success-bg, -10%);
 }
 
 .badge-info {
     -fx-background-color: -color-info-bg;
     -fx-text-fill: -color-info-text;
-    -fx-border-color: -color-info;
-    -fx-border-width: 0.5;
-    -fx-border-radius: 12;
+    -fx-border-color: derive(-color-info-bg, -15%);
 }
 
 .badge-warning {
     -fx-background-color: -color-warning-bg;
     -fx-text-fill: -color-warning-text;
-    -fx-border-color: -color-warning;
-    -fx-border-width: 0.5;
-    -fx-border-radius: 12;
+    -fx-border-color: derive(-color-warning-bg, -15%);
 }
 
 .badge-error,
 .badge-danger {
     -fx-background-color: -color-error-bg;
     -fx-text-fill: -color-error-text;
-    -fx-border-color: -color-error;
-    -fx-border-width: 0.5;
-    -fx-border-radius: 12;
+    -fx-border-color: derive(-color-error-bg, -15%);
 }
 
 .badge-primary {
     -fx-background-color: -color-accent-subtle;
     -fx-text-fill: -color-accent-dark;
-    -fx-border-color: -color-accent;
-    -fx-border-width: 0.5;
-    -fx-border-radius: 12;
+    -fx-border-color: derive(-color-accent-subtle, -15%);
 }
 
 .badge-secondary,
 .badge-neutral {
-    -fx-background-color: -color-bg-canvas;
-    -fx-text-fill: -color-text-muted;
-    -fx-border-color: -color-border;
-    -fx-border-width: 0.5;
-    -fx-border-radius: 12;
+    -fx-background-color: #F8FAFC;
+    -fx-text-fill: -color-text-secondary;
+    -fx-border-color: #E2E8F0;
 }
 
 .toggle-group-neon {
