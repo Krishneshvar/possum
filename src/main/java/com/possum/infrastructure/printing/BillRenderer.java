@@ -232,30 +232,7 @@ public class BillRenderer {
     }
 
     private static String formatDate(LocalDateTime dateTime, BillSettings billSettings) {
-        String dateFormat = billSettings.getDateFormat();
-        String timeFormat = billSettings.getTimeFormat();
-
-        DateTimeFormatter dateFormatter;
-        switch (dateFormat) {
-            case "ISO":
-                dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                break;
-            case "short":
-                dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy");
-                break;
-            case "long":
-                dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
-                break;
-            default:
-                dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                break;
-        }
-
-        DateTimeFormatter timeFormatter = timeFormat.equals("24h") 
-            ? DateTimeFormatter.ofPattern("HH:mm") 
-            : DateTimeFormatter.ofPattern("hh:mm a");
-
-        return dateTime.format(dateFormatter) + " " + dateTime.format(timeFormatter);
+        return com.possum.shared.util.TimeUtil.formatStandard(com.possum.shared.util.TimeUtil.toLocal(dateTime));
     }
 
     private static String formatCurrency(BigDecimal amount, String currency) {

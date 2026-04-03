@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 public final class ReportsService {
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMM yyyy");
 
     private final ReportsRepository reportsRepository;
@@ -206,7 +205,7 @@ public final class ReportsService {
     private String formatDate(String dateStr) {
 
         LocalDate date = LocalDate.parse(dateStr);
-        return date.format(DATE_FORMATTER);
+        return com.possum.shared.util.TimeUtil.getDateFormatter().format(date);
     }
 
     private String formatMonth(String monthStr) {

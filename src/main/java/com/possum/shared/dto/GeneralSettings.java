@@ -5,6 +5,8 @@ public class GeneralSettings {
     private String storeName = "";
     private String language = "en";
     private String currencyCode = "INR";
+    private String dateFormat = "DD/MM/YYYY";
+    private String timeFormat = "12 hour format";
 
     public String getStoreName() {
         return storeName;
@@ -28,5 +30,21 @@ public class GeneralSettings {
 
     public void setCurrencyCode(String currencyCode) {
         this.currencyCode = currencyCode;
+    }
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
+
+    public String getTimeFormat() {
+        return timeFormat;
+    }
+
+    public void setTimeFormat(String timeFormat) {
+        this.timeFormat = timeFormat;
     }
 }

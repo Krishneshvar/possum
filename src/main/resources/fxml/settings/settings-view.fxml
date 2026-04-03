@@ -32,6 +32,18 @@
                                       styleClass="combo-box" accessibleText="System Currency"/>
                             <Label text="Used for financial reports and default billing" styleClass="field-helper"/>
                         </VBox>
+                        <VBox styleClass="form-group">
+                            <Label text="Date Format" styleClass="form-label"/>
+                            <ComboBox fx:id="dateFormatCombo" prefWidth="400" maxWidth="400"
+                                      styleClass="combo-box" accessibleText="Date Format"/>
+                            <Label text="Format for displaying dates across the app" styleClass="field-helper"/>
+                        </VBox>
+                        <VBox styleClass="form-group">
+                            <Label text="Time Format" styleClass="form-label"/>
+                            <ComboBox fx:id="timeFormatCombo" prefWidth="400" maxWidth="400"
+                                      styleClass="combo-box" accessibleText="Time Format"/>
+                            <Label text="Format for displaying times across the app" styleClass="field-helper"/>
+                        </VBox>
                         <HBox alignment="CENTER_LEFT" spacing="10">
                             <Button text="Save Settings" onAction="#handleSaveGeneral" styleClass="primary-button"
                                     defaultButton="true" accessibleText="Save Settings"/>

@@ -229,12 +229,10 @@ public class StockHistoryController {
 
     private void setupDatePickerFormat(DatePicker picker) {
         picker.setConverter(new javafx.util.StringConverter<java.time.LocalDate>() {
-            java.time.format.DateTimeFormatter dateFormatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
             @Override
             public String toString(java.time.LocalDate date) {
                 if (date != null) {
-                    return dateFormatter.format(date);
+                    return com.possum.shared.util.TimeUtil.getDateFormatter().format(date);
                 } else {
                     return "";
                 }
@@ -244,7 +242,7 @@ public class StockHistoryController {
             public java.time.LocalDate fromString(String string) {
                 if (string != null && !string.isEmpty()) {
                     try {
-                        return java.time.LocalDate.parse(string, dateFormatter);
+                        return java.time.LocalDate.parse(string, com.possum.shared.util.TimeUtil.getDateFormatter());
                     } catch (Exception e) {
                         return null;
                     }

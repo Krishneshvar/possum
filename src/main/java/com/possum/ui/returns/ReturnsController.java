@@ -1,5 +1,6 @@
 package com.possum.ui.returns;
 
+import com.possum.shared.util.TimeUtil;
 import com.possum.application.returns.ReturnsService;
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
@@ -112,16 +113,14 @@ public class ReturnsController {
         TableColumn<Return, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
         dateCol.setCellFactory(col -> new TableCell<Return, LocalDateTime>() {
-            private final java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    java.time.ZonedDateTime utcZoned = item.atZone(java.time.ZoneId.of("UTC"));
-                    java.time.ZonedDateTime localZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.systemDefault());
-                    setText(localZoned.format(formatter));
+                    LocalDateTime localZoned = TimeUtil.toLocal(item);
+                    setText(localZoned != null ? TimeUtil.formatStandard(localZoned) : null);
                 }
             }
         });

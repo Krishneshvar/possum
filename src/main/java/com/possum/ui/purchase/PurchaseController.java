@@ -104,6 +104,24 @@ public class PurchaseController {
             }
         });
         
+        TableColumn<PurchaseOrder, LocalDateTime> dateCol = new TableColumn<>("Order Date");
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().orderDate()));
+        dateCol.setPrefWidth(150);
+        dateCol.setCellFactory(col -> {
+            return new TableCell<>() {
+                @Override
+                protected void updateItem(LocalDateTime item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        LocalDateTime localTime = TimeUtil.toLocal(item);
+                        setText(localTime != null ? TimeUtil.formatStandard(localTime) : "");
+                        setStyle("-fx-text-fill: gray;");
+                    }
+                }
+            };
+        });
         TableColumn<PurchaseOrder, String> paymentCol = new TableColumn<>("Payment Method");
         paymentCol.setSortable(false);
         paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(
@@ -150,17 +168,15 @@ public class PurchaseController {
         dateCol.setPrefWidth(150);
         dateCol.setCellFactory(col -> {
             return new TableCell<>() {
-                private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
                 @Override
                 protected void updateItem(LocalDateTime item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
                         setText(null);
                     } else {
-                        java.time.ZonedDateTime utcZoned = item.atZone(java.time.ZoneId.of("UTC"));
-                        java.time.ZonedDateTime localZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.systemDefault());
-                        setText(localZoned.format(formatter));
-                        setStyle("-fx-text-fill: -color-text-muted;");
+                        LocalDateTime localTime = TimeUtil.toLocal(item);
+                        setText(localTime != null ? TimeUtil.formatStandard(localTime) : "");
+                        setStyle("-fx-text-fill: gray;");
                     }
                 }
             };
