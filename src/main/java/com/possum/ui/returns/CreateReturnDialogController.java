@@ -12,11 +12,6 @@ import com.possum.persistence.repositories.interfaces.SalesRepository;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.navigation.Parameterizable;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -209,57 +204,93 @@ public class CreateReturnDialogController implements Parameterizable {
 
     private class ReturnItemRow {
         final SaleItem item;
+        final CheckBox checkBox;
+        final TextField qtyField;
+        final Label lineTotalLabel;
         final int maxQty;
         final VBox node;
-        final CheckBox checkBox;
-        final Spinner<Integer> qtySpinner;
-        final Label lineTotalLabel;
+        private int currentQty;
 
         ReturnItemRow(SaleItem item, int maxQty) {
             this.item = item;
             this.maxQty = maxQty;
+            this.currentQty = maxQty;
 
             checkBox = new CheckBox();
-            checkBox.setStyle("-fx-font-size: 16px; -fx-cursor: hand;");
+            checkBox.getStyleClass().add("custom-checkbox");
 
             Label nameLabel = new Label(item.productName());
-            nameLabel.setStyle("-fx-font-weight: 700; -fx-font-size: 14px; -fx-text-fill: -color-text-main;");
+            nameLabel.setStyle("-fx-font-weight: 700; -fx-font-size: 14px; -fx-text-fill: #0f172a;");
             
             Label variantLabel = new Label(item.variantName() != null ? item.variantName() : "Standard Variant");
-            variantLabel.setStyle("-fx-text-fill: -color-text-secondary; -fx-font-size: 12px;");
+            variantLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
             
             Label detailsLabel = new Label(String.format("Unit Price: %s  |  Available: %d", 
                 currencyFormat.format(item.pricePerUnit()), maxQty));
-            detailsLabel.setStyle("-fx-text-fill: -color-text-muted; -fx-font-size: 11px;");
+            detailsLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px;");
 
             VBox nameArea = new VBox(2, nameLabel, variantLabel, detailsLabel);
-            HBox itemInfo = new HBox(12, checkBox, nameArea);
+            HBox itemInfo = new HBox(15, checkBox, nameArea);
             itemInfo.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-            qtySpinner = new Spinner<>(1, maxQty, maxQty);
-            qtySpinner.setPrefWidth(90);
-            qtySpinner.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
-            qtySpinner.setDisable(true);
-            qtySpinner.valueProperty().addListener((obs, old, val) -> updateLineTotal());
+            // Custom Quantity Controls
+            qtyField = new TextField(String.valueOf(currentQty));
+            qtyField.setPrefWidth(45);
+            qtyField.setAlignment(javafx.geometry.Pos.CENTER);
+            qtyField.setEditable(false);
+            qtyField.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 4; -fx-padding: 4; -fx-font-weight: bold;");
+
+            Button minusBtn = new Button("-");
+            minusBtn.setPrefSize(30, 30);
+            minusBtn.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-font-weight: 800; -fx-cursor: hand; -fx-background-radius: 4;");
+            
+            Button plusBtn = new Button("+");
+            plusBtn.setPrefSize(30, 30);
+            plusBtn.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-font-weight: 800; -fx-cursor: hand; -fx-background-radius: 4;");
+
+            minusBtn.setOnAction(e -> {
+                if (currentQty > 1) {
+                    currentQty--;
+                    qtyField.setText(String.valueOf(currentQty));
+                    updateLineTotal();
+                    updateSummary();
+                }
+            });
+
+            plusBtn.setOnAction(e -> {
+                if (currentQty < maxQty) {
+                    currentQty++;
+                    qtyField.setText(String.valueOf(currentQty));
+                    updateLineTotal();
+                    updateSummary();
+                }
+            });
+
+            HBox qtyControls = new HBox(5, minusBtn, qtyField, plusBtn);
+            qtyControls.setAlignment(javafx.geometry.Pos.CENTER);
+            qtyControls.setDisable(true);
+            qtyControls.setOpacity(0.5);
 
             lineTotalLabel = new Label("");
-            lineTotalLabel.setStyle("-fx-font-weight: 800; -fx-text-fill: -color-error-text; -fx-font-size: 15px;");
+            lineTotalLabel.setStyle("-fx-font-weight: 800; -fx-text-fill: #ef4444; -fx-font-size: 16px; -fx-min-width: 100;");
+            lineTotalLabel.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
 
-            VBox actionArea = new VBox(4, new Label("Qty to Return"), qtySpinner);
-            ((Label)actionArea.getChildren().get(0)).setStyle("-fx-font-size: 10px; -fx-text-fill: -color-text-muted; -fx-font-weight: 700;");
+            VBox actionArea = new VBox(4, new Label("Qty to Return"), qtyControls);
+            ((Label)actionArea.getChildren().get(0)).setStyle("-fx-font-size: 10px; -fx-text-fill: #94a3b8; -fx-font-weight: 800; -fx-letter-spacing: 0.5;");
             actionArea.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
             
-            HBox mainRow = new HBox(15, itemInfo, new Region(), actionArea, lineTotalLabel);
+            HBox mainRow = new HBox(20, itemInfo, new Region(), actionArea, lineTotalLabel);
             mainRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             HBox.setHgrow(mainRow.getChildren().get(1), Priority.ALWAYS);
             
-            mainRow.setStyle("-fx-background-color: -color-bg-canvas; -fx-border-color: -color-border; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 14;");
+            mainRow.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 16;");
 
             checkBox.selectedProperty().addListener((obs, old, selected) -> {
-                qtySpinner.setDisable(!selected);
+                qtyControls.setDisable(!selected);
+                qtyControls.setOpacity(selected ? 1.0 : 0.5);
                 mainRow.setStyle(selected 
-                    ? "-fx-background-color: #fef2f2; -fx-border-color: -color-error; -fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 14;" 
-                    : "-fx-background-color: -color-bg-canvas; -fx-border-color: -color-border; -fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 14;");
+                    ? "-fx-background-color: #fff1f2; -fx-border-color: #fecaca; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 16;" 
+                    : "-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 16;");
                 updateLineTotal();
                 updateSummary();
             });
@@ -269,7 +300,7 @@ public class CreateReturnDialogController implements Parameterizable {
         }
 
         void updateLineTotal() {
-            BigDecimal amount = item.pricePerUnit().multiply(BigDecimal.valueOf(qtySpinner.getValue()));
+            BigDecimal amount = item.pricePerUnit().multiply(BigDecimal.valueOf(currentQty));
             lineTotalLabel.setText(isSelected() ? currencyFormat.format(amount) : "");
         }
 
@@ -278,11 +309,11 @@ public class CreateReturnDialogController implements Parameterizable {
         }
 
         int getQuantity() {
-            return qtySpinner.getValue();
+            return currentQty;
         }
 
         BigDecimal getRefundAmount() {
-            return item.pricePerUnit().multiply(BigDecimal.valueOf(qtySpinner.getValue()));
+            return item.pricePerUnit().multiply(BigDecimal.valueOf(currentQty));
         }
     }
 }

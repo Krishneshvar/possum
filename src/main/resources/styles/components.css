@@ -693,21 +693,19 @@
     -fx-border-color: -color-error;
 }
 
-.badge {
-    -fx-padding: 3 10;
-    -fx-background-radius: 6;
-    -fx-font-size: 11;
+ .badge {
+    -fx-padding: 4 12;
+    -fx-background-radius: 12;
     -fx-font-weight: 800;
     -fx-text-transform: uppercase;
-    -fx-letter-spacing: 0.5;
+    -fx-letter-spacing: 0.8;
     -fx-border-width: 1;
-    -fx-border-radius: 6;
+    -fx-border-radius: 12;
     -fx-alignment: center;
+    -fx-font-size: 11;
 }
 
 .badge-status {
-    -fx-min-width: 80;
-    -fx-pref-width: 90;
     -fx-alignment: center;
 }
 

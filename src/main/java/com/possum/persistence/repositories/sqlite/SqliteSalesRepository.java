@@ -399,6 +399,45 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         return executeUpdate("UPDATE sales SET customer_id = ? WHERE id = ?", customerId, saleId);
     }
 
+    @Override
+    public int deleteSaleItem(long itemId) {
+        return executeUpdate("DELETE FROM sale_items WHERE id = ?", itemId);
+    }
+
+    @Override
+    public int updateSaleItem(SaleItem item) {
+        return executeUpdate(
+                """
+                UPDATE sale_items SET 
+                  quantity = ?, price_per_unit = ?, cost_per_unit = ?, 
+                  tax_rate = ?, tax_amount = ?, discount_amount = ?,
+                  applied_tax_rate = ?, applied_tax_amount = ?, tax_rule_snapshot = ?
+                WHERE id = ?
+                """,
+                item.quantity(),
+                item.pricePerUnit(),
+                item.costPerUnit(),
+                item.taxRate(),
+                item.taxAmount(),
+                item.discountAmount(),
+                item.appliedTaxRate(),
+                item.appliedTaxAmount(),
+                item.taxRuleSnapshot(),
+                item.id()
+        );
+    }
+
+    @Override
+    public int updateSaleTotals(long saleId, BigDecimal totalAmount, BigDecimal totalTax, BigDecimal discount) {
+        return executeUpdate(
+                "UPDATE sales SET total_amount = ?, total_tax = ?, discount = ? WHERE id = ?",
+                totalAmount,
+                totalTax,
+                discount,
+                saleId
+        );
+    }
+
 }
 
 

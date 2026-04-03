@@ -114,7 +114,7 @@ public class SalesHistoryController {
                     setGraphic(null);
                 } else {
                     String status = item;
-                    Label badge = new Label(formatStatus(status));
+                    Label badge = new Label(status.replace("_", " ").toUpperCase());
                     badge.getStyleClass().addAll("badge", "badge-status");
                     switch (status.toLowerCase()) {
                         case "paid" -> badge.getStyleClass().add("badge-success");
@@ -159,15 +159,28 @@ public class SalesHistoryController {
             items.add(returnItem);
 
             if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.SALES_MANAGE)) {
+                MenuItem editItem = new MenuItem("✏️ Edit Bill");
+                editItem.setOnAction(e -> handleEdit(sale));
+
                 MenuItem cancelItem = new MenuItem("❌ Cancel Sale");
-                cancelItem.setStyle("-fx-text-fill: red;");
+                cancelItem.getStyleClass().add("logout-menu-item"); // Use consistent red style from app-shell.css
                 cancelItem.setOnAction(e -> handleCancel(sale));
+                
                 items.add(new SeparatorMenuItem());
+                items.add(editItem);
                 items.add(cancelItem);
             }
         }
 
         return items;
+    }
+
+    private void handleEdit(Sale sale) {
+        if (sale == null) return;
+        Map<String, Object> params = new HashMap<>();
+        params.put("sale", sale);
+        params.put("editing", true);
+        workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
     }
 
     private void handleReturn(Sale sale) {

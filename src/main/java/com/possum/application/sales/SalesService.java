@@ -358,19 +358,119 @@ public class SalesService {
     }
 
     /**
-     * Add item to existing sale - NOT IMPLEMENTED
-     * Original TypeScript implementation creates sales atomically
+     * Updates all items of a sale in a single batch.
+     * This restores stock for missing items and deducts for new ones,
+     * recalculates all taxes, and updates the sale totals.
      */
-    public void addItemToSale(long saleId, CreateSaleItemRequest item, long userId) {
-        throw new UnsupportedOperationException("Adding items to existing sales is not supported. Create a new sale instead.");
+    public void updateSaleItems(long saleId, List<UpdateSaleItemRequest> itemRequests, long userId) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SALES_MANAGE);
+        
+        transactionManager.runInTransaction(() -> {
+            Sale sale = salesRepository.findSaleById(saleId)
+                    .orElseThrow(() -> new NotFoundException("Sale not found: " + saleId));
+
+            if ("cancelled".equals(sale.status()) || "refunded".equals(sale.status())) {
+                throw new ValidationException("Cannot edit items for a " + sale.status() + " sale");
+            }
+
+            List<SaleItem> oldItems = salesRepository.findSaleItems(saleId);
+            
+            // 1. Restore stock for all old items
+            for (SaleItem oldItem : oldItems) {
+                inventoryService.restoreStock(
+                        oldItem.variantId(),
+                        "sale_item",
+                        oldItem.id(),
+                        oldItem.quantity(),
+                        userId,
+                        InventoryReason.CORRECTION,
+                        "bill_edit_restoration",
+                        saleId
+                );
+                salesRepository.deleteSaleItem(oldItem.id());
+            }
+
+            // 2. Fetch variants and validate stock for new items
+            List<Long> variantIds = itemRequests.stream().map(UpdateSaleItemRequest::variantId).toList();
+            Map<Long, Variant> variantMap = fetchVariantsBatch(variantIds);
+
+            for (UpdateSaleItemRequest req : itemRequests) {
+                int currentStock = inventoryService.getVariantStock(req.variantId());
+                if (currentStock < req.quantity()) {
+                    throw new InsufficientStockException(currentStock, req.quantity());
+                }
+            }
+
+            // 3. Recalculate Taxes and insert new items
+            taxEngine.init();
+            List<TaxableItem> calculationItems = new ArrayList<>();
+            for (UpdateSaleItemRequest req : itemRequests) {
+                Variant v = variantMap.get(req.variantId());
+                Product p = productRepository.findProductById(v.productId()).orElseThrow();
+                
+                calculationItems.add(new TaxableItem(
+                        p.name(), v.name(), req.pricePerUnit(), req.quantity(),
+                        p.taxCategoryId(), v.id(), p.id()
+                ));
+            }
+
+            Customer customer = sale.customerId() != null ? customerRepository.findCustomerById(sale.customerId()).orElse(null) : null;
+            TaxCalculationResult taxResult = taxEngine.calculate(new TaxableInvoice(calculationItems), customer);
+
+            List<SaleItem> newItems = new ArrayList<>();
+            for (int i = 0; i < itemRequests.size(); i++) {
+                UpdateSaleItemRequest req = itemRequests.get(i);
+                TaxableItem calculated = taxResult.getItemByIndex(i);
+                Variant v = variantMap.get(req.variantId());
+                Product p = productRepository.findProductById(v.productId()).orElseThrow();
+
+                SaleItem item = new SaleItem(
+                        null, saleId, v.id(), v.name(), v.sku(), p.name(),
+                        req.quantity(), req.pricePerUnit(), v.costPrice(),
+                        calculated.getTaxRate(), calculated.getTaxAmount(),
+                        calculated.getTaxRate(), calculated.getTaxAmount(),
+                        calculated.getTaxRuleSnapshot(), req.discount(), null
+                );
+                long newItemId = salesRepository.insertSaleItem(item);
+                
+                // Deduct stock for new item
+                inventoryService.deductStock(
+                        v.id(), req.quantity(), userId, InventoryReason.SALE,
+                        "sale_item", newItemId
+                );
+            }
+
+            // 4. Update Sale Header Totals
+            salesRepository.updateSaleTotals(
+                    saleId, 
+                    taxResult.grandTotal(), 
+                    taxResult.totalTax(), 
+                    sale.discount() // Keep existing global discount for now
+            );
+
+            // 5. Audit the change
+            Map<String, Object> oldSummary = Map.of("item_count", oldItems.size(), "total", sale.totalAmount());
+            Map<String, Object> newSummary = Map.of("item_count", itemRequests.size(), "total", taxResult.grandTotal());
+            
+            AuditLog auditLog = new AuditLog(
+                    null, userId, "UPDATE", "sales", saleId,
+                    jsonService.toJson(oldSummary), jsonService.toJson(newSummary),
+                    jsonService.toJson(Map.of("reason", "Line item correction")),
+                    null, TimeUtil.nowUTC()
+            );
+            auditRepository.insertAuditLog(auditLog);
+
+            return null;
+        });
     }
 
-    /**
-     * Remove item from existing sale - NOT IMPLEMENTED
-     * Original TypeScript implementation creates sales atomically
-     */
+    public void addItemToSale(long saleId, CreateSaleItemRequest item, long userId) {
+         // Reusing update logic would be better, but for single add:
+         throw new UnsupportedOperationException("Use updateSaleItems for batch modifications.");
+    }
+
     public void removeItemFromSale(long saleId, long saleItemId, long userId) {
-        throw new UnsupportedOperationException("Removing items from existing sales is not supported. Cancel the sale instead.");
+         throw new UnsupportedOperationException("Use updateSaleItems for batch modifications.");
     }
 
     public void cancelSale(long saleId, long userId) {

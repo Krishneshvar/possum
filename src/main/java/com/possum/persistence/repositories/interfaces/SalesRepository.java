@@ -51,6 +51,12 @@ public interface SalesRepository {
     int updateTransactionPaymentMethod(long saleId, long newPaymentMethodId);
 
     int updateSaleCustomer(long saleId, Long customerId);
+    
+    int deleteSaleItem(long itemId);
+
+    int updateSaleItem(SaleItem item);
+
+    int updateSaleTotals(long saleId, BigDecimal totalAmount, BigDecimal totalTax, BigDecimal discount);
 
 }
 

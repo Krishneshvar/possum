@@ -12,7 +12,6 @@ import com.possum.persistence.repositories.interfaces.*;
 import com.possum.ui.common.toast.ToastService;
 import com.possum.ui.navigation.NavigationManager;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 public class DependencyInjector {
@@ -182,7 +181,8 @@ public class DependencyInjector {
                 salesService,
                 workspaceManager,
                 serviceLocator.getSettingsStore(),
-                serviceLocator.getPrinterService()
+                serviceLocator.getPrinterService(),
+                productSearchIndex
             );
         } else if (type.equals(com.possum.ui.products.ProductFormController.class)) {
             return new com.possum.ui.products.ProductFormController(
