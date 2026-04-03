@@ -11,6 +11,9 @@ public record ProductFlow(
         Long referenceId,
         String variantName,
         String productName,
+        String customerName,
+        Long billRefId,
+        String billRefNumber,
         String paymentMethodNames,
         LocalDateTime eventDate
 ) {

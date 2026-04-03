@@ -27,18 +27,25 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
     }
 
     @Override
-    public List<ProductFlow> findFlowByVariantId(long variantId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods) {
+    public List<ProductFlow> findFlowByVariantId(long variantId, int limit, int offset, String startDate, String endDate, List<String> eventTypes) {
         List<Object> params = new ArrayList<>();
         params.add(variantId);
 
         StringBuilder sql = new StringBuilder("""
                 SELECT
-                  pf.*, v.name AS variant_name, p.name AS product_name, GROUP_CONCAT(DISTINCT pm.name) AS payment_method_names
+                  pf.*, v.name AS variant_name, p.name AS product_name, 
+                  COALESCE(s.id, po.id) AS bill_ref_id,
+                  COALESCE(s.invoice_number, po.invoice_number) AS bill_ref_number,
+                  COALESCE(c.name, supp.name) as customer_name,
+                  GROUP_CONCAT(DISTINCT pm.name) AS payment_method_names
                 FROM product_flow pf
                 JOIN variants v ON pf.variant_id = v.id
                 JOIN products p ON v.product_id = p.id
                 LEFT JOIN sale_items si ON (pf.reference_type = 'sale_item' AND pf.reference_id = si.id)
                 LEFT JOIN sales s ON si.sale_id = s.id
+                LEFT JOIN customers c ON s.customer_id = c.id
+                LEFT JOIN purchase_orders po ON (pf.reference_type = 'purchase_order' AND pf.reference_id = po.id)
+                LEFT JOIN suppliers supp ON po.supplier_id = supp.id
                 LEFT JOIN transactions t ON (s.id = t.sale_id AND t.type = 'payment' AND t.status = 'completed')
                 LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 WHERE pf.variant_id = ?
@@ -52,10 +59,10 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
             sql.append(" AND pf.event_date <= ?");
             params.add(endDate);
         }
-        if (paymentMethods != null && !paymentMethods.isEmpty()) {
-            String placeholders = "?,".repeat(paymentMethods.size()).replaceAll(",$", "");
-            sql.append(" AND pm.name IN (").append(placeholders).append(")");
-            params.addAll(paymentMethods);
+        if (eventTypes != null && !eventTypes.isEmpty()) {
+            String placeholders = "?,".repeat(eventTypes.size()).replaceAll(",$", "");
+            sql.append(" AND pf.event_type IN (").append(placeholders).append(")");
+            params.addAll(eventTypes.stream().map(String::toLowerCase).toList());
         }
 
         sql.append(" GROUP BY pf.id ORDER BY pf.event_date DESC LIMIT ? OFFSET ?");
@@ -72,7 +79,7 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
                         rs.getString("reference_type"),
                         rs.getLong("reference_id"),
                         rs.getString("variant_name"),
-                        rs.getString("product_name"),
+                        rs.getString("product_name"), rs.getString("customer_name"), rs.getLong("bill_ref_id"), rs.getString("bill_ref_number"),
                         rs.getString("payment_method_names"),
                         com.possum.shared.util.SqlMapperUtils.getLocalDateTime(rs, "event_date")
                 ),
@@ -116,18 +123,25 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
     }
 
     @Override
-    public List<ProductFlow> findFlowByProductId(long productId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods) {
+    public List<ProductFlow> findFlowByProductId(long productId, int limit, int offset, String startDate, String endDate, List<String> eventTypes) {
         List<Object> params = new ArrayList<>();
         params.add(productId);
 
         StringBuilder sql = new StringBuilder("""
                 SELECT
-                  pf.*, v.name AS variant_name, p.name AS product_name, GROUP_CONCAT(DISTINCT pm.name) AS payment_method_names
+                  pf.*, v.name AS variant_name, p.name AS product_name, 
+                  COALESCE(s.id, po.id) AS bill_ref_id,
+                  COALESCE(s.invoice_number, po.invoice_number) AS bill_ref_number,
+                  COALESCE(c.name, supp.name) as customer_name,
+                  GROUP_CONCAT(DISTINCT pm.name) AS payment_method_names
                 FROM product_flow pf
                 JOIN variants v ON pf.variant_id = v.id
                 JOIN products p ON v.product_id = p.id
                 LEFT JOIN sale_items si ON (pf.reference_type = 'sale_item' AND pf.reference_id = si.id)
                 LEFT JOIN sales s ON si.sale_id = s.id
+                LEFT JOIN customers c ON s.customer_id = c.id
+                LEFT JOIN purchase_orders po ON (pf.reference_type = 'purchase_order' AND pf.reference_id = po.id)
+                LEFT JOIN suppliers supp ON po.supplier_id = supp.id
                 LEFT JOIN transactions t ON (s.id = t.sale_id AND t.type = 'payment' AND t.status = 'completed')
                 LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 WHERE p.id = ?
@@ -141,10 +155,10 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
             sql.append(" AND pf.event_date <= ?");
             params.add(endDate);
         }
-        if (paymentMethods != null && !paymentMethods.isEmpty()) {
-            String placeholders = "?,".repeat(paymentMethods.size()).replaceAll(",$", "");
-            sql.append(" AND pm.name IN (").append(placeholders).append(")");
-            params.addAll(paymentMethods);
+        if (eventTypes != null && !eventTypes.isEmpty()) {
+            String placeholders = "?,".repeat(eventTypes.size()).replaceAll(",$", "");
+            sql.append(" AND pf.event_type IN (").append(placeholders).append(")");
+            params.addAll(eventTypes.stream().map(String::toLowerCase).toList());
         }
 
         sql.append(" GROUP BY pf.id ORDER BY pf.event_date DESC LIMIT ? OFFSET ?");
@@ -161,7 +175,7 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
                         rs.getString("reference_type"),
                         rs.getLong("reference_id"),
                         rs.getString("variant_name"),
-                        rs.getString("product_name"),
+                        rs.getString("product_name"), rs.getString("customer_name"), rs.getLong("bill_ref_id"), rs.getString("bill_ref_number"),
                         rs.getString("payment_method_names"),
                         com.possum.shared.util.SqlMapperUtils.getLocalDateTime(rs, "event_date")
                 ),
@@ -209,7 +223,8 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
     public List<ProductFlow> findFlowByReference(String referenceType, long referenceId) {
         return queryList(
                 """
-                SELECT pf.*, NULL AS variant_name, NULL AS product_name, NULL AS payment_method_names
+                SELECT pf.*, NULL AS variant_name, NULL AS product_name, NULL AS payment_method_names,
+                       NULL AS bill_ref_id, NULL AS bill_ref_number, NULL AS customer_name
                 FROM product_flow pf
                 WHERE reference_type = ? AND reference_id = ?
                 ORDER BY event_date DESC
@@ -222,7 +237,8 @@ public final class SqliteProductFlowRepository extends BaseSqliteRepository impl
                         rs.getString("reference_type"),
                         rs.getLong("reference_id"),
                         rs.getString("variant_name"),
-                        rs.getString("product_name"),
+                        rs.getString("product_name"), rs.getString("customer_name"),
+                        rs.getLong("bill_ref_id"), rs.getString("bill_ref_number"),
                         rs.getString("payment_method_names"),
                         com.possum.shared.util.SqlMapperUtils.getLocalDateTime(rs, "event_date")
                 ),

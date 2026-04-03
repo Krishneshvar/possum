@@ -32,18 +32,23 @@ public class DataTableView<T> extends StackPane {
         tableView.getStyleClass().add("data-table");
         tableView.setAccessibleText("Data table");
         
-        getChildren().addAll(tableView, emptyState, loadingOverlay);
+        // Use TableView's built-in placeholder support
+        tableView.setPlaceholder(emptyState);
         
-        emptyState.setVisible(false);
+        getChildren().addAll(tableView, loadingOverlay);
+        
         loadingOverlay.setVisible(false);
         
         loading.addListener((obs, old, isLoading) -> {
             loadingOverlay.setVisible(isLoading);
             loadingOverlay.setManaged(isLoading);
+            // Hide placeholder while loading to avoid flickering
+            if (isLoading) {
+                tableView.setPlaceholder(new Region());
+            } else {
+                tableView.setPlaceholder(emptyState);
+            }
         });
-        
-        tableView.itemsProperty().addListener((obs, old, items) -> refreshEmptyState());
-        tableView.getItems().addListener((javafx.collections.ListChangeListener<T>) change -> refreshEmptyState());
     }
 
     private VBox createEmptyState() {
@@ -169,7 +174,6 @@ public class DataTableView<T> extends StackPane {
 
     public void setItems(ObservableList<T> items) {
         tableView.setItems(items);
-        refreshEmptyState();
     }
 
     public ObservableList<T> getItems() {
@@ -178,7 +182,6 @@ public class DataTableView<T> extends StackPane {
 
     public void setLoading(boolean loading) {
         this.loading.set(loading);
-        refreshEmptyState();
     }
 
     public TableView<T> getTableView() {
@@ -197,10 +200,12 @@ public class DataTableView<T> extends StackPane {
         ((Label) emptyState.getChildren().get(3)).setText(subtitle);
     }
 
-    private void refreshEmptyState() {
-        boolean isEmpty = tableView.getItems() == null || tableView.getItems().isEmpty();
-        boolean shouldShow = isEmpty && !loading.get();
-        emptyState.setVisible(shouldShow);
-        emptyState.setManaged(shouldShow);
+    public void setEmptyIcon(String icon) {
+        ((Label) emptyState.getChildren().get(0)).setText(icon);
     }
+
+    public void setEmptyIconStyle(String style) {
+        emptyState.getChildren().get(0).setStyle(style);
+    }
+
 }

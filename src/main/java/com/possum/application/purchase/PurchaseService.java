@@ -158,7 +158,7 @@ public class PurchaseService {
                 inventoryRepository.insertInventoryAdjustment(adjustment);
 
                 ProductFlow flow = new ProductFlow(null, item.variantId(), FlowEventType.PURCHASE.getValue(),
-                        item.quantity(), "purchase_order_item", item.id(), null, null, null, TimeUtil.nowUTC());
+                        item.quantity(), "purchase_order_item", item.id(), null, null, null, existingPo.purchaseOrder().id(), existingPo.purchaseOrder().invoiceNumber(), null, TimeUtil.nowUTC());
                 productFlowRepository.insertProductFlow(flow);
             }
 

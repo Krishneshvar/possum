@@ -117,10 +117,10 @@ public final class ReportsService {
 
     public ProductFlowReport getProductFlowReport(long variantId, int limit, int offset, 
                                                    String startDate, String endDate, 
-                                                   List<String> paymentMethods) {
+                                                   List<String> eventTypes) {
         Map<String, Object> summary = productFlowRepository.getFlowSummary(variantId);
         List<ProductFlow> flows = productFlowRepository.findFlowByVariantId(
-                variantId, limit, offset, startDate, endDate, paymentMethods
+                variantId, limit, offset, startDate, endDate, eventTypes
         );
         return new ProductFlowReport(variantId, summary, flows);
     }

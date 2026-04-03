@@ -190,7 +190,7 @@ public class AppShellController {
             {"Audit Log", "/fxml/audit/audit-view.fxml", com.possum.application.auth.Permissions.AUDIT_VIEW}
         });
         createNavButton("Settings", "bx-cog", "Settings", "/fxml/settings/settings-view.fxml", com.possum.application.auth.Permissions.SETTINGS_VIEW);
-        createNavButton("UI Kit", "bx-palette", "Component Demo", "/fxml/design/component-demo-view.fxml", com.possum.application.auth.Permissions.SETTINGS_VIEW);
+
     }
 
     private void createNavButton(String label, String iconName, String title, String fxmlPath, String permission) {

@@ -29,6 +29,7 @@ public class FilterBar extends VBox {
     private final HBox topRow;
     private final HBox rightActions;
     private final HBox bottomRow;
+    private final Button resetButton;
     private boolean isResetting = false;
     private final PauseTransition searchDebounce = new PauseTransition(Duration.millis(220));
 
@@ -67,7 +68,7 @@ public class FilterBar extends VBox {
             }
         });
 
-        Button resetButton = new Button("Reset");
+        resetButton = new Button("Reset");
         FontIcon resetIcon = new FontIcon("bx-reset");
         resetIcon.setIconSize(16);
         resetButton.setGraphic(resetIcon);
@@ -213,8 +214,27 @@ public class FilterBar extends VBox {
         return searchField.getText();
     }
 
-    public Object getFilterValue(String key) {
-        ComboBox<?> combo = filters.get(key);
-        return combo != null ? combo.getValue() : null;
+    public void setSearchVisible(boolean visible) {
+        searchField.setVisible(visible);
+        searchField.setManaged(visible);
     }
+
+    public void setTopRowVisible(boolean visible) {
+        topRow.setVisible(visible);
+        topRow.setManaged(visible);
+    }
+
+    public void setResetInBottomRow(boolean bottom) {
+        topRow.getChildren().remove(resetButton);
+        bottomRow.getChildren().remove(resetButton);
+        if (bottom) {
+            bottomRow.getChildren().add(resetButton);
+        } else {
+            topRow.getChildren().add(1, resetButton);
+        }
+    }
+
+    public HBox getTopRow() { return topRow; }
+    public HBox getBottomRow() { return bottomRow; }
+    public HBox getRightActions() { return rightActions; }
 }

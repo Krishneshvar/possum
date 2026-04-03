@@ -2,157 +2,219 @@ package com.possum.ui.insights;
 
 import com.possum.application.inventory.ProductFlowService;
 import com.possum.application.products.ProductService;
-import com.possum.application.variants.VariantService;
 import com.possum.domain.model.Product;
 import com.possum.domain.model.ProductFlow;
 import com.possum.domain.model.Variant;
-import com.possum.shared.dto.ProductFilter;
-import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.common.controls.*;
+import com.possum.ui.sales.ProductSearchIndex;
+import com.possum.shared.util.TimeUtil;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
-import javafx.util.StringConverter;
+import javafx.scene.layout.VBox;
+import javafx.stage.Popup;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import com.possum.domain.model.Sale;
+import com.possum.application.sales.SalesService;
+import com.possum.application.sales.dto.SaleResponse;
+import com.possum.ui.workspace.WorkspaceManager;
+import org.kordamp.ikonli.javafx.FontIcon;
+import java.util.Objects;
+import java.util.HashMap;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import com.possum.shared.util.TimeUtil;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+
+
 public class ProductFlowController {
 
-    @FXML private ComboBox<String> selectionTypeCombo;
-    @FXML private ComboBox<Object> itemSelector;
-    @FXML private ComboBox<String> dateRangeCombo;
-    @FXML private DatePicker startDatePicker;
-    @FXML private DatePicker endDatePicker;
-    @FXML private HBox customDateRange;
-
+    @FXML private VBox root;
+    @FXML private FilterBar filterBar;
+    @FXML private DataTableView<ProductFlow> flowTable;
+    @FXML private PaginationBar paginationBar;
+    
     @FXML private Label totalSoldLabel;
     @FXML private Label totalPurchasedLabel;
     @FXML private Label totalReturnedLabel;
     @FXML private Label netMovementLabel;
 
-    @FXML private TableView<ProductFlow> flowTable;
-    @FXML private TableColumn<ProductFlow, LocalDateTime> dateCol;
-    @FXML private TableColumn<ProductFlow, String> typeCol;
-    @FXML private TableColumn<ProductFlow, Integer> quantityCol;
-    @FXML private TableColumn<ProductFlow, Long> refIdCol;
-    @FXML private TableColumn<ProductFlow, String> refTypeCol;
-    @FXML private TableColumn<ProductFlow, String> variantNameCol;
+    private ComboBox<String> selectionTypeCombo;
+    private MultiSelectFilter<String> eventTypeFilter;
+    private DatePicker startDatePicker;
+    private DatePicker endDatePicker;
 
+    @FXML private HBox searchDock;
+    @FXML private TextField searchField;
+    private Popup searchPopup = new Popup();
+    private ListView<Object> searchResultsView = new ListView<>(FXCollections.observableArrayList());
+
+    private final ProductSearchIndex searchIndex;
     private final ProductFlowService productFlowService;
     private final ProductService productService;
-    private final VariantService variantService;
+    private final SalesService salesService;
+    private final WorkspaceManager workspaceManager;
+    private Object selectedItem;
 
     public ProductFlowController(ProductFlowService productFlowService,
                                  ProductService productService,
-                                 VariantService variantService) {
+                                 SalesService salesService,
+                                 WorkspaceManager workspaceManager,
+                                 ProductSearchIndex searchIndex) {
         this.productFlowService = productFlowService;
         this.productService = productService;
-        this.variantService = variantService;
+        this.salesService = salesService;
+        this.workspaceManager = workspaceManager;
+        this.searchIndex = searchIndex;
     }
 
     @FXML
     public void initialize() {
-        flowTable.setPlaceholder(new javafx.scene.control.Label("No data found for the current selection and date range."));
-        setupSelectionType();
-        setupItemSelector();
-        setupDateFilters();
+        setupFilters();
         setupTable();
-        
-        selectionTypeCombo.getSelectionModel().select("Variant");
-        dateRangeCombo.getSelectionModel().select("This Month");
+        setupKeyboardShortcuts();
+        loadData();
     }
 
-    private void setupSelectionType() {
-        selectionTypeCombo.setItems(FXCollections.observableArrayList("Product", "Variant"));
+    @FXML
+    public void handleRefresh() {
+        loadData();
+    }
+
+    private void setupFilters() {
+        filterBar.setSearchVisible(false);
+        filterBar.setResetInBottomRow(false);
+        
+        // 1. Setup Top Row: [ Search Dock | Analyze By | Reset ]
+        selectionTypeCombo = filterBar.addFilter("analyzeBy", "Analyze By");
+        selectionTypeCombo.getItems().addAll("Product", "Variant");
+        selectionTypeCombo.setValue("Product");
+        
+        HBox topRow = filterBar.getTopRow();
+        // Move Translate UI components to Top Row while preserving Right Actions/Spacer
+        filterBar.getBottomRow().getChildren().remove(selectionTypeCombo);
+        
+        // Remove standard components we want to replace/reorder
+        topRow.getChildren().remove(searchDock); // in case it was already there
+        topRow.getChildren().remove(selectionTypeCombo);
+        
+        filterBar.setResetInBottomRow(false); 
+        // topRow now has: [originalSearchField (hidden), resetButton, spacer, rightActions]
+        
+        // Final Arrangement: [searchDock, selectionTypeCombo, resetButton, spacer, rightActions]
+        topRow.getChildren().add(0, searchDock);
+        topRow.getChildren().add(1, selectionTypeCombo);
+        // resetButton is already at index 2 (was index 1 before our adds)
+        
+        // 2. Setup Bottom Row: [ From Date | To Date | Event Type ]
+        startDatePicker = filterBar.addDateFilter("startDate", "From Date");
+        endDatePicker = filterBar.addDateFilter("endDate", "To Date");
+        
+        eventTypeFilter = filterBar.addMultiSelectFilter("eventTypes", "Event Type",
+            List.of("SALE", "PURCHASE", "RETURN", "ADJUSTMENT"),
+            s -> s
+        );
+
+        setupSearchAutocomplete();
+
         selectionTypeCombo.setOnAction(e -> {
-            updateItemSelector();
+            selectedItem = null;
+            searchField.clear();
+            searchPopup.hide();
             clearData();
         });
+
+        filterBar.setOnFilterChange(filters -> loadData());
+        paginationBar.setOnPageChange((page, size) -> loadData());
     }
 
-    private void setupItemSelector() {
-        itemSelector.setConverter(new StringConverter<Object>() {
-            @Override
-            public String toString(Object object) {
-                if (object == null) return "";
-                if (object instanceof Product p) return p.name();
-                if (object instanceof Variant v) return v.name();
-                return object.toString();
-            }
 
-            @Override
-            public Object fromString(String string) {
-                return null;
-            }
-        });
-        itemSelector.setOnAction(e -> loadData());
-    }
-
-    private void updateItemSelector() {
-        String type = selectionTypeCombo.getValue();
-        if ("Product".equals(type)) {
-            List<Product> products = productService.getProducts(new ProductFilter(null, null, null, null, 1, 1000, "name", "asc")).items();
-            itemSelector.setItems(FXCollections.observableArrayList(products));
-        } else {
-            List<Variant> variants = variantService.getVariants(new com.possum.application.variants.VariantService.VariantFilterCriteria(
-                "", null, null, null, null, null, null, null, "v.name", "ASC", 1, 1000
-            )).items();
-            itemSelector.setItems(FXCollections.observableArrayList(variants));
-        }
-    }
-
-    private void setupDateFilters() {
-        dateRangeCombo.setItems(FXCollections.observableArrayList(
-                "Today", "Yesterday", "This Week", "This Month", "Last 30 Days", "This Year", "All Time", "Custom"
-        ));
-        dateRangeCombo.setOnAction(e -> {
-            String range = dateRangeCombo.getValue();
-            boolean isCustom = "Custom".equals(range);
-            customDateRange.setVisible(isCustom);
-            customDateRange.setManaged(isCustom);
-            if (!isCustom) {
-                updateDatesFromRange(range);
-                loadData();
-            }
-        });
-
-        startDatePicker.setOnAction(e -> loadData());
-        endDatePicker.setOnAction(e -> loadData());
-    }
-
-    private void updateDatesFromRange(String range) {
-        LocalDate today = LocalDate.now();
-        switch (range) {
-            case "Today" -> { startDatePicker.setValue(today); endDatePicker.setValue(today); }
-            case "Yesterday" -> { startDatePicker.setValue(today.minusDays(1)); endDatePicker.setValue(today.minusDays(1)); }
-            case "This Week" -> { startDatePicker.setValue(today.minusDays(today.getDayOfWeek().getValue() - 1)); endDatePicker.setValue(today); }
-            case "This Month" -> { startDatePicker.setValue(today.withDayOfMonth(1)); endDatePicker.setValue(today); }
-            case "Last 30 Days" -> { startDatePicker.setValue(today.minusDays(30)); endDatePicker.setValue(today); }
-            case "This Year" -> { startDatePicker.setValue(today.withDayOfYear(1)); endDatePicker.setValue(today); }
-            case "All Time" -> { startDatePicker.setValue(today.minusYears(10)); endDatePicker.setValue(today); }
-        }
-    }
 
     private void setupTable() {
-        dateCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().eventDate()));
-        dateCol.setCellFactory(column -> new TableCell<>() {
+        flowTable.setEmptyIcon("⌕");
+        flowTable.setEmptyIconStyle("-fx-font-size: 48px; -fx-opacity: 0.4; -fx-text-fill: -color-text-muted; -fx-font-family: 'Segoe UI Symbol';");
+        flowTable.setEmptyMessage("Select a product to analyze its flow");
+        flowTable.setEmptySubtitle("Search for a product or variant above to monitor its stock history and performance.");
+
+        TableColumn<ProductFlow, String> billIdCol = new TableColumn<>("Bill ID");
+        billIdCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+            cellData.getValue().billRefNumber() != null ? cellData.getValue().billRefNumber() : "-"
+        ));
+        billIdCol.setPrefWidth(120);
+        billIdCol.setCellFactory(col -> new TableCell<ProductFlow, String>() {
             @Override
-            protected void updateItem(LocalDateTime item, boolean empty) {
+            protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? "" : TimeUtil.formatStandard(TimeUtil.toLocal(item)));
+                if (empty || item == null || "-".equals(item)) {
+                    setText(item);
+                    setGraphic(null);
+                } else {
+                    HBox container = new HBox(8);
+                    container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                    
+                    Label label = new Label(item);
+                    label.setStyle("-fx-font-family: -font-family-mono; -fx-font-weight: bold;");
+                    
+                    Button viewBtn = new Button();
+                    FontIcon viewIcon = new FontIcon("bx-show-alt");
+                    viewIcon.setIconSize(14);
+                    viewBtn.setGraphic(viewIcon);
+                    viewBtn.getStyleClass().add("btn-edit-stock");
+                    viewBtn.setTooltip(new Tooltip("View Details"));
+                    
+                    ProductFlow flow = getTableView().getItems().get(getIndex());
+                    viewBtn.setOnAction(e -> handleViewBill(flow));
+                    
+                    container.getChildren().addAll(label, viewBtn);
+                    setGraphic(container);
+                    setText(null);
+                }
             }
         });
 
-        typeCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().eventType()));
-        typeCol.setCellFactory(column -> new TableCell<>() {
+        TableColumn<ProductFlow, String> customerCol = new TableColumn<>("Customer");
+        customerCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+            cellData.getValue().customerName() != null ? cellData.getValue().customerName() : "-"
+        ));
+        customerCol.setPrefWidth(140);
+
+        TableColumn<ProductFlow, String> productCol = new TableColumn<>("Product");
+        productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
+        productCol.setPrefWidth(160);
+
+        TableColumn<ProductFlow, String> variantCol = new TableColumn<>("Variant");
+        variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().variantName()));
+        variantCol.setPrefWidth(140);
+
+        TableColumn<ProductFlow, Integer> quantityCol = new TableColumn<>("Quantity");
+        quantityCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().quantity()));
+        quantityCol.setCellFactory(column -> new TableCell<ProductFlow, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("");
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    setText(item > 0 ? "+" + item : String.valueOf(item));
+                    setStyle("-fx-text-fill: " + (item > 0 ? "#10b981" : "#ef4444") + "; -fx-font-weight: bold;");
+                    setAlignment(javafx.geometry.Pos.CENTER);
+                }
+            }
+        });
+
+        TableColumn<ProductFlow, String> typeCol = new TableColumn<>("Event Type");
+        typeCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().eventType()));
+        typeCol.setPrefWidth(120);
+        typeCol.setCellFactory(column -> new TableCell<ProductFlow, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -160,70 +222,219 @@ public class ProductFlowController {
                     setText("");
                     setGraphic(null);
                 } else {
-                    setText(item.toUpperCase());
-                    getStyleClass().removeAll("badge-sale", "badge-purchase", "badge-return", "badge-adjustment");
-                    switch (item.toLowerCase()) {
-                        case "sale" -> getStyleClass().add("badge-sale");
-                        case "purchase" -> getStyleClass().add("badge-purchase");
-                        case "return" -> getStyleClass().add("badge-return");
-                        case "adjustment" -> getStyleClass().add("badge-adjustment");
-                    }
+                    Label badge = new Label(item.toUpperCase());
+                    badge.getStyleClass().add("badge");
+                    
+                    if ("SALE".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-sale");
+                    else if ("PURCHASE".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-purchase");
+                    else if ("RETURN".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-return");
+                    else if ("ADJUSTMENT".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-adjustment");
+                    
+                    setGraphic(badge);
+                    setText(null);
                 }
             }
         });
 
-        quantityCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().quantity()));
-        quantityCol.setCellFactory(column -> new TableCell<>() {
+        TableColumn<ProductFlow, LocalDateTime> dateCol = new TableColumn<>("Date & Time");
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().eventDate()));
+        dateCol.setPrefWidth(180);
+        dateCol.setCellFactory(column -> new TableCell<ProductFlow, LocalDateTime>() {
             @Override
-            protected void updateItem(Integer item, boolean empty) {
+            protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText("");
-                    setStyle("");
                 } else {
-                    setText(item > 0 ? "+" + item : String.valueOf(item));
-                    setStyle("-fx-text-fill: " + (item > 0 ? "#10b981" : "#ef4444") + "; -fx-font-weight: bold;");
+                    setText(TimeUtil.formatStandard(TimeUtil.toLocal(item)));
                 }
             }
         });
 
-        variantNameCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().variantName()));
-        refIdCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().referenceId()));
-        refTypeCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().referenceType()));
+        flowTable.getTableView().getColumns().setAll(List.of(
+            billIdCol, customerCol, productCol, variantCol, quantityCol, typeCol, dateCol
+        ));
     }
+
 
     private void loadData() {
-        Object selectedItem = itemSelector.getValue();
-        if (selectedItem == null) return;
+        if (selectedItem == null) {
+            clearData();
+            return;
+        }
 
-        String type = selectionTypeCombo.getValue();
-        LocalDate start = startDatePicker.getValue();
-        LocalDate end = endDatePicker.getValue();
-        
-        String startStr = start != null ? start.atStartOfDay().toString() : null;
-        String endStr = end != null ? end.atTime(23, 59, 59).toString() : null;
+        flowTable.setLoading(true);
+        Platform.runLater(() -> {
+            try {
+                String type = selectionTypeCombo.getValue();
+                LocalDate start = startDatePicker.getValue();
+                LocalDate end = endDatePicker.getValue();
+                
+                String startStr = start != null ? start.atStartOfDay().toString() : null;
+                String endStr = end != null ? end.atTime(23, 59, 59).toString() : null;
 
-        try {
-            List<ProductFlow> flow;
-            Map<String, Object> summary;
+                List<String> eventTypes = eventTypeFilter.getSelectedItems();
+                List<ProductFlow> flow;
+                Map<String, Object> summary;
+                
+                if ("Product".equals(type)) {
+                    Product p = (Product) selectedItem;
+                    flow = productFlowService.getProductTimeline(p.id(), paginationBar.getPageSize(), paginationBar.getCurrentPage() * paginationBar.getPageSize(), startStr, endStr, eventTypes);
+                    summary = productFlowService.getProductFlowSummary(p.id());
+                } else {
+                    Variant v = (Variant) selectedItem;
+                    flow = productFlowService.getVariantTimeline(v.id(), paginationBar.getPageSize(), paginationBar.getCurrentPage() * paginationBar.getPageSize(), startStr, endStr, eventTypes);
+                    summary = productFlowService.getVariantFlowSummary(v.id());
+                }
 
-            if ("Product".equals(type)) {
-                Product p = (Product) selectedItem;
-                flow = productFlowService.getProductTimeline(p.id(), 1000, 0, startStr, endStr, null);
-                summary = productFlowService.getProductFlowSummary(p.id());
-            } else {
-                Variant v = (Variant) selectedItem;
-                flow = productFlowService.getVariantTimeline(v.id(), 1000, 0, startStr, endStr, null);
-                summary = productFlowService.getVariantFlowSummary(v.id());
+                flowTable.setItems(FXCollections.observableArrayList(flow));
+                // For now, if we have results, assume there might be more or just show actual count
+                paginationBar.setTotalItems(flow.size() < paginationBar.getPageSize() ? (paginationBar.getCurrentPage() * paginationBar.getPageSize() + flow.size()) : 1000); 
+                
+                updateSummary(summary);
+                flowTable.setLoading(false);
+            } catch (Exception e) {
+                flowTable.setLoading(false);
+                NotificationService.error("Failed to load flow data");
             }
+        });
+    }
 
-            flowTable.setItems(FXCollections.observableArrayList(flow));
-            updateSummary(summary);
-        } catch (Exception e) {
-            e.printStackTrace();
-            NotificationService.error("Failed to load flow data: " + e.getMessage());
+    private void setupSearchAutocomplete() {
+        searchResultsView.setPrefWidth(500);
+        searchResultsView.setPrefHeight(300);
+        searchResultsView.getStyleClass().add("search-results-list");
+        applyPopupListStyles(searchResultsView);
+
+        searchPopup.getContent().add(searchResultsView);
+        searchPopup.setAutoHide(true);
+
+        searchResultsView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Object item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
+                    VBox box = new VBox(2);
+                    box.getStyleClass().add("search-item-box");
+                    Label nameLabel = new Label();
+                    nameLabel.getStyleClass().add("search-item-name");
+                    Label detailsLabel = new Label();
+                    detailsLabel.getStyleClass().add("search-item-details");
+
+                    if (item instanceof Product p) {
+                        nameLabel.setText(p.name());
+                        detailsLabel.setText("Product - ID: " + p.id());
+                    } else if (item instanceof Variant v) {
+                        nameLabel.setText(v.productName() + (v.name().equalsIgnoreCase("Standard") ? "" : " - " + v.name()));
+                        detailsLabel.setText("Variant - SKU: " + v.sku() + " | Price: " + v.price());
+                    }
+
+                    box.getChildren().addAll(nameLabel, detailsLabel);
+                    setGraphic(box);
+                }
+            }
+        });
+
+        searchField.textProperty().addListener((obs, old, val) -> {
+            if (val == null || val.trim().isEmpty()) {
+                searchPopup.hide();
+                return;
+            }
+            showAutocompletePopup(val.trim());
+        });
+
+        searchField.setOnMouseClicked(e -> {
+            String query = searchField.getText().trim();
+            if (!query.isEmpty()) showAutocompletePopup(query);
+        });
+
+        searchResultsView.setOnMouseClicked(e -> {
+            Object selected = searchResultsView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                selectItem(selected);
+            }
+        });
+
+        searchField.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.DOWN && searchPopup.isShowing()) {
+                searchResultsView.requestFocus();
+                searchResultsView.getSelectionModel().selectFirst();
+            }
+        });
+
+        searchResultsView.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                Object selected = searchResultsView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    selectItem(selected);
+                }
+            } else if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                searchPopup.hide();
+                searchField.requestFocus();
+            }
+        });
+    }
+
+    private void showAutocompletePopup(String query) {
+        String type = selectionTypeCombo.getValue();
+        List<Variant> variants = searchIndex.searchByName(query);
+        
+        List<Object> results = new java.util.ArrayList<>();
+        if ("Product".equals(type)) {
+            // Group variants by product and map to Product objects
+            java.util.Set<Long> productIds = new java.util.HashSet<>();
+            for (Variant v : variants) {
+                if (productIds.add(v.productId())) {
+                    try {
+                        Product p = productService.getProductById(v.productId());
+                        if (p != null) results.add(p);
+                    } catch (Exception e) {}
+                }
+            }
+        } else {
+            results.addAll(variants);
+        }
+
+        if (results.isEmpty()) {
+            searchPopup.hide();
+            return;
+        }
+
+        searchResultsView.getItems().setAll(results);
+        javafx.geometry.Point2D pos = searchField.localToScreen(0, searchField.getHeight());
+        if (pos != null) {
+            searchPopup.show(searchField, pos.getX(), pos.getY());
         }
     }
+
+    private void selectItem(Object item) {
+        this.selectedItem = item;
+        if (item instanceof Product p) {
+            searchField.setText(p.name());
+        } else if (item instanceof Variant v) {
+            searchField.setText(v.productName() + (v.name().equalsIgnoreCase("Standard") ? "" : " - " + v.name()));
+        }
+        searchPopup.hide();
+        loadData();
+    }
+
+    private void setupKeyboardShortcuts() {
+        Platform.runLater(() -> {
+            if (root == null || root.getScene() == null) {
+                return;
+            }
+            root.getScene().addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+                if ((e.isControlDown() || e.isMetaDown()) && e.getCode() == KeyCode.K) {
+                    searchField.requestFocus();
+                    e.consume();
+                }
+            });
+        });
+    }
+
+
 
     private void updateSummary(Map<String, Object> summary) {
         if (summary == null || summary.isEmpty()) {
@@ -239,6 +450,15 @@ public class ProductFlowController {
         netMovementLabel.setStyle("-fx-text-fill: " + (net >= 0 ? "#2563eb" : "#ef4444") + ";");
     }
 
+    private void applyPopupListStyles(ListView<?> listView) {
+        String stylesheet = Objects.requireNonNull(
+                getClass().getResource("/styles/views/pos.css"),
+                "Missing stylesheet: /styles/views/pos.css").toExternalForm();
+        if (!listView.getStylesheets().contains(stylesheet)) {
+            listView.getStylesheets().add(stylesheet);
+        }
+    }
+
     private void clearData() {
         flowTable.setItems(FXCollections.observableArrayList());
         clearSummary();
@@ -250,5 +470,27 @@ public class ProductFlowController {
         totalReturnedLabel.setText("0");
         netMovementLabel.setText("0");
         netMovementLabel.setStyle("");
+    }
+    private void handleViewBill(ProductFlow flow) {
+        if (flow.billRefId() == null) return;
+        
+        try {
+            long billId = flow.billRefId();
+            if ("sale_item".equalsIgnoreCase(flow.referenceType()) || "sale".equalsIgnoreCase(flow.eventType())) {
+                SaleResponse saleResponse = salesService.getSaleDetails(billId);
+                Sale sale = saleResponse.sale();
+                if (sale != null) {
+                    Map<String, Object> params = new HashMap<>();
+                    params.put("sale", sale);
+                    workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
+                }
+            } else if ("purchase_order".equalsIgnoreCase(flow.referenceType()) || "purchase".equalsIgnoreCase(flow.eventType())) {
+                Map<String, Object> params = new HashMap<>();
+                params.put("id", billId);
+                workspaceManager.openOrFocusWindow("PO: " + flow.billRefNumber(), "/fxml/purchase/purchase-order-detail.fxml", params);
+            }
+        } catch (Exception e) {
+            NotificationService.error("Could not open document details");
+        }
     }
 }

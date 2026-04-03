@@ -111,6 +111,10 @@ public class ProductService {
         return productRepository.getProductStats();
     }
 
+    public Product getProductById(long id) {
+        return productRepository.findProductById(id).orElse(null);
+    }
+
     public void updateProduct(long productId, UpdateProductCommand command) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
         transactionManager.runInTransaction(() -> {

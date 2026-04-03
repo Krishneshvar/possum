@@ -8,10 +8,10 @@ import java.util.Map;
 public interface ProductFlowRepository {
     long insertProductFlow(ProductFlow flow);
 
-    List<ProductFlow> findFlowByVariantId(long variantId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods);
+    List<ProductFlow> findFlowByVariantId(long variantId, int limit, int offset, String startDate, String endDate, List<String> eventTypes);
     Map<String, Object> getFlowSummary(long variantId);
 
-    List<ProductFlow> findFlowByProductId(long productId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods);
+    List<ProductFlow> findFlowByProductId(long productId, int limit, int offset, String startDate, String endDate, List<String> eventTypes);
     Map<String, Object> getProductFlowSummary(long productId);
 
     List<ProductFlow> findFlowByReference(String referenceType, long referenceId);

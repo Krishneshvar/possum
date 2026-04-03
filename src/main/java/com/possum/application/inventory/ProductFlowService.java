@@ -16,16 +16,16 @@ public class ProductFlowService {
         this.productFlowRepository = productFlowRepository;
     }
 
-    public List<ProductFlow> getVariantTimeline(long variantId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods) {
-        return productFlowRepository.findFlowByVariantId(variantId, limit, offset, startDate, endDate, paymentMethods);
+    public List<ProductFlow> getVariantTimeline(long variantId, int limit, int offset, String startDate, String endDate, List<String> eventTypes) {
+        return productFlowRepository.findFlowByVariantId(variantId, limit, offset, startDate, endDate, eventTypes);
     }
 
     public Map<String, Object> getVariantFlowSummary(long variantId) {
         return productFlowRepository.getFlowSummary(variantId);
     }
 
-    public List<ProductFlow> getProductTimeline(long productId, int limit, int offset, String startDate, String endDate, List<String> paymentMethods) {
-        return productFlowRepository.findFlowByProductId(productId, limit, offset, startDate, endDate, paymentMethods);
+    public List<ProductFlow> getProductTimeline(long productId, int limit, int offset, String startDate, String endDate, List<String> eventTypes) {
+        return productFlowRepository.findFlowByProductId(productId, limit, offset, startDate, endDate, eventTypes);
     }
 
     public Map<String, Object> getProductFlowSummary(long productId) {
@@ -44,6 +44,9 @@ public class ProductFlowService {
                 quantity,
                 referenceType,
                 referenceId,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,
