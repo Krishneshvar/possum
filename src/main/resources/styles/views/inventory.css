@@ -264,18 +264,17 @@
 
 /* Drawing indentation guides using repeating linear gradient */
 .tree-view .tree-cell:filled {
-    -fx-background-image: linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px);
+    -fx-background-color: linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px);
     -fx-background-repeat: repeat-x;
     -fx-background-size: 28px 100%; /* Matches -fx-indent */
     -fx-background-position: left;
 }
 
 .tree-view .tree-cell:selected {
-    -fx-background-color: linear-gradient(to right, -color-accent-subtle, transparent);
-    /* Keep indentation guides visible on selection but more subtle if needed */
-    -fx-background-image: linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px), 
-                          linear-gradient(to right, -color-accent-subtle, transparent);
-    -fx-background-size: 28px 100%, 100% 100%;
+    -fx-background-color: 
+        linear-gradient(to right, -color-accent-subtle, transparent),
+        linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px);
+    -fx-background-size: 100% 100%, 28px 100%;
     -fx-text-fill: -color-accent-dark;
     -fx-font-weight: 700;
     -fx-border-color: transparent transparent transparent -color-accent;

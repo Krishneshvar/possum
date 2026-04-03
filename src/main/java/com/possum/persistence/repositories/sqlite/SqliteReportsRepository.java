@@ -24,15 +24,29 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
     }
 
     @Override
-    public Map<String, Object> getSalesReportSummary(String startDate, String endDate, Long paymentMethodId) {
-        String paymentFilter = paymentMethodId == null ? "" : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)";
-        String refundPaymentFilter = paymentMethodId == null ? "" : "AND t.payment_method_id = ?";
+    public Map<String, Object> getSalesReportSummary(String startDate, String endDate, List<Long> paymentMethodIds) {
+        String paymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
+            ? "" 
+            : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
         
-        Object[] params;
-        if (paymentMethodId == null) {
-            params = new Object[]{startDate, endDate, startDate, endDate};
-        } else {
-            params = new Object[]{startDate, endDate, paymentMethodId, startDate, endDate, paymentMethodId};
+        String refundPaymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
+            ? "" 
+            : "AND t.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
+        
+        List<Object> params = new ArrayList<>();
+        // For total_transactions, total_sales, total_tax, total_discount, total_collected (5 counts)
+        for (int i = 0; i < 5; i++) {
+            params.add(startDate);
+            params.add(endDate);
+            if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
+                params.addAll(paymentMethodIds);
+            }
+        }
+        // For total_refunds
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
+            params.addAll(paymentMethodIds);
         }
 
         return queryOne(
@@ -64,34 +78,39 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                         : BigDecimal.ZERO);
                     return map;
                 },
-                paymentMethodId == null 
-                    ? new Object[]{startDate, endDate, startDate, endDate, startDate, endDate, startDate, endDate, startDate, endDate, startDate, endDate}
-                    : new Object[]{startDate, endDate, paymentMethodId, startDate, endDate, paymentMethodId, startDate, endDate, paymentMethodId, startDate, endDate, paymentMethodId, startDate, endDate, paymentMethodId, startDate, endDate, paymentMethodId}
+                params.toArray()
         ).orElse(Map.of());
     }
 
-
     @Override
-    public List<Map<String, Object>> getDailyBreakdown(String startDate, String endDate, Long paymentMethodId) {
-        return groupedBreakdown("date(sale_date)", "date", startDate, endDate, paymentMethodId);
+    public List<Map<String, Object>> getDailyBreakdown(String startDate, String endDate, List<Long> paymentMethodIds) {
+        return groupedBreakdown("date(sale_date)", "date", startDate, endDate, paymentMethodIds);
     }
 
     @Override
-    public List<Map<String, Object>> getMonthlyBreakdown(String startDate, String endDate, Long paymentMethodId) {
-        return groupedBreakdown("strftime('%Y-%m', sale_date)", "month", startDate, endDate, paymentMethodId);
+    public List<Map<String, Object>> getMonthlyBreakdown(String startDate, String endDate, List<Long> paymentMethodIds) {
+        return groupedBreakdown("strftime('%Y-%m', sale_date)", "month", startDate, endDate, paymentMethodIds);
     }
 
     @Override
-    public List<Map<String, Object>> getYearlyBreakdown(String startDate, String endDate, Long paymentMethodId) {
-        return groupedBreakdown("strftime('%Y', sale_date)", "year", startDate, endDate, paymentMethodId);
+    public List<Map<String, Object>> getYearlyBreakdown(String startDate, String endDate, List<Long> paymentMethodIds) {
+        return groupedBreakdown("strftime('%Y', sale_date)", "year", startDate, endDate, paymentMethodIds);
     }
 
     @Override
-    public List<Map<String, Object>> getTopSellingProducts(String startDate, String endDate, int limit, Long paymentMethodId) {
-        String paymentFilter = paymentMethodId == null ? "" : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)";
-        Object[] params = paymentMethodId == null
-                ? new Object[]{startDate, endDate, limit}
-                : new Object[]{startDate, endDate, paymentMethodId, limit};
+    public List<Map<String, Object>> getTopSellingProducts(String startDate, String endDate, int limit, List<Long> paymentMethodIds) {
+        String paymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
+            ? "" 
+            : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
+        
+        List<Object> params = new ArrayList<>();
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
+            params.addAll(paymentMethodIds);
+        }
+        params.add(limit);
+        
         return queryList(
                 """
                 SELECT
@@ -122,7 +141,7 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                     map.put("total_revenue", rs.getBigDecimal("total_revenue"));
                     return map;
                 },
-                params
+                params.toArray()
         );
     }
 
@@ -222,9 +241,18 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                                                        String alias,
                                                        String startDate,
                                                        String endDate,
-                                                       Long paymentMethodId) {
-        String paymentFilter = paymentMethodId == null ? "" : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id = ?)";
-        Object[] params = paymentMethodId == null ? new Object[]{startDate, endDate} : new Object[]{startDate, endDate, paymentMethodId};
+                                                       List<Long> paymentMethodIds) {
+        String paymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
+            ? "" 
+            : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
+        
+        List<Object> params = new ArrayList<>();
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
+            params.addAll(paymentMethodIds);
+        }
+        
         return queryList(
                 """
                 SELECT
@@ -261,7 +289,12 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                     map.put("refunds", rs.getBigDecimal("refunds"));
                     return map;
                 },
-                params
+                params.toArray()
         );
+    }
+    
+    private String buildInPlaceholders(int count) {
+        if (count <= 0) return "";
+        return "?,".repeat(count).replaceAll(",$", "");
     }
 }

@@ -164,6 +164,15 @@ public class MultiSelectFilter<T> extends MenuButton {
         updateButtonText();
     }
 
+    public void selectItems(List<T> items) {
+        if (items == null) return;
+        for (FilterableItem<T> item : allItems) {
+            if (items.contains(item.item())) {
+                item.checkBox().setSelected(true);
+            }
+        }
+    }
+
     private void updateButtonText() {
         if (selectedItems.isEmpty()) {
             setText(baseTitle);

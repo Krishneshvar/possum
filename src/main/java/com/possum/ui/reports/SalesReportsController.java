@@ -4,7 +4,6 @@ import com.possum.application.reports.ReportsService;
 import com.possum.application.reports.dto.BreakdownItem;
 import com.possum.application.sales.SalesService;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
@@ -42,6 +41,9 @@ public class SalesReportsController {
     @FXML private TableColumn<BreakdownItem, BigDecimal> refundsCol;
     @FXML private TableColumn<BreakdownItem, BigDecimal> netSalesCol;
 
+    @FXML private javafx.scene.layout.VBox columnFilterContainer;
+    private com.possum.ui.common.controls.MultiSelectFilter<TableColumn<BreakdownItem, ?>> columnFilter;
+
     @FXML private Label totalLabel;
     @FXML private Label totalTransactionsLabel;
     @FXML private Label totalCashLabel;
@@ -63,9 +65,16 @@ public class SalesReportsController {
     }
 
     @FXML
+    public void handleExport() {
+        // TODO: Implement CSV/PDF export logic
+        System.out.println("Exporting report data...");
+    }
+
+    @FXML
     public void initialize() {
         setupFilters();
         setupTable();
+        setupColumnFilter();
         bindTotalsToTable();
         handleRefresh();
     }
@@ -141,21 +150,71 @@ public class SalesReportsController {
                 }
             }
         });
-
-        // Row factory for highlighting and 'spacing' feel
+        
+        // Custom row styling for consistent height
         breakdownTable.setRowFactory(tv -> new javafx.scene.control.TableRow<>() {
             @Override
             protected void updateItem(BreakdownItem item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item == null || empty) {
-                    setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
-                    setPrefHeight(30); // Visual gap height
+                if (empty) {
+                    setStyle("");
                 } else {
                     setStyle("-fx-background-color: white;");
-                    setPrefHeight(45);
                 }
             }
         });
+    }
+
+    private void setupColumnFilter() {
+        List<TableColumn<BreakdownItem, ?>> columns = List.of(
+            periodCol, transactionsCol, cashCol, upiCol, debitCardCol, creditCardCol, 
+            giftCardCol, salesCol, taxCol, discountCol, refundsCol, netSalesCol
+        );
+        
+        columnFilter = new com.possum.ui.common.controls.MultiSelectFilter<>(
+            "All Columns",
+            TableColumn::getText
+        );
+        columnFilter.setItems(columns);
+        columnFilter.setPrefWidth(160);
+        
+        // Initial state: all visible
+        columnFilter.selectItems(columns);
+        
+        columnFilter.getSelectedItems().addListener((javafx.collections.ListChangeListener<TableColumn<BreakdownItem, ?>>) c -> {
+            List<TableColumn<BreakdownItem, ?>> selected = columnFilter.getSelectedItems();
+            for (TableColumn<BreakdownItem, ?> col : columns) {
+                col.setVisible(selected.contains(col));
+            }
+        });
+        
+        columnFilterContainer.getChildren().add(columnFilter);
+        
+        // Sync totals bar labels visibility with columns
+        totalLabel.visibleProperty().bind(periodCol.visibleProperty());
+        totalLabel.managedProperty().bind(periodCol.visibleProperty());
+        totalTransactionsLabel.visibleProperty().bind(transactionsCol.visibleProperty());
+        totalTransactionsLabel.managedProperty().bind(transactionsCol.visibleProperty());
+        totalCashLabel.visibleProperty().bind(cashCol.visibleProperty());
+        totalCashLabel.managedProperty().bind(cashCol.visibleProperty());
+        totalUpiLabel.visibleProperty().bind(upiCol.visibleProperty());
+        totalUpiLabel.managedProperty().bind(upiCol.visibleProperty());
+        totalDebitLabel.visibleProperty().bind(debitCardCol.visibleProperty());
+        totalDebitLabel.managedProperty().bind(debitCardCol.visibleProperty());
+        totalCreditLabel.visibleProperty().bind(creditCardCol.visibleProperty());
+        totalCreditLabel.managedProperty().bind(creditCardCol.visibleProperty());
+        totalGiftLabel.visibleProperty().bind(giftCardCol.visibleProperty());
+        totalGiftLabel.managedProperty().bind(giftCardCol.visibleProperty());
+        totalSalesLabel.visibleProperty().bind(salesCol.visibleProperty());
+        totalSalesLabel.managedProperty().bind(salesCol.visibleProperty());
+        totalTaxLabel.visibleProperty().bind(taxCol.visibleProperty());
+        totalTaxLabel.managedProperty().bind(taxCol.visibleProperty());
+        totalDiscountLabel.visibleProperty().bind(discountCol.visibleProperty());
+        totalDiscountLabel.managedProperty().bind(discountCol.visibleProperty());
+        totalRefundsLabel.visibleProperty().bind(refundsCol.visibleProperty());
+        totalRefundsLabel.managedProperty().bind(refundsCol.visibleProperty());
+        totalNetSalesLabel.visibleProperty().bind(netSalesCol.visibleProperty());
+        totalNetSalesLabel.managedProperty().bind(netSalesCol.visibleProperty());
     }
 
     private void bindTotalsToTable() {
@@ -249,16 +308,7 @@ public class SalesReportsController {
                 .collect(java.util.stream.Collectors.toList());
         }
 
-        // Add 1 row space (dummy item) between all real reports
-        ObservableList<BreakdownItem> displayItems = FXCollections.observableArrayList();
-        for (int i = 0; i < breakdown.size(); i++) {
-            displayItems.add(breakdown.get(i));
-            if (i < breakdown.size() - 1) {
-                displayItems.add(null); // This null item represents the 'space'
-            }
-        }
-
-        breakdownTable.setItems(displayItems);
+        breakdownTable.setItems(FXCollections.observableArrayList(breakdown));
         calculateTotals(breakdown);
     }
 

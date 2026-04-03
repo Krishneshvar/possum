@@ -22,21 +22,21 @@ public final class ReportsService {
         this.productFlowRepository = productFlowRepository;
     }
 
-    public SalesReportSummary getSalesSummary(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
+    public SalesReportSummary getSalesSummary(LocalDate startDate, LocalDate endDate, List<Long> paymentMethodIds) {
         Map<String, Object> data = reportsRepository.getSalesReportSummary(
                 startDate.toString(),
                 endDate.toString(),
-                paymentMethodId
+                paymentMethodIds
         );
         return mapToSummary(data);
     }
 
-    public DailyReport getSalesAnalytics(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
-        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodId);
+    public DailyReport getSalesAnalytics(LocalDate startDate, LocalDate endDate, List<Long> paymentMethodIds) {
+        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodIds);
         List<Map<String, Object>> rawBreakdown = reportsRepository.getDailyBreakdown(
                 startDate.toString(),
                 endDate.toString(),
-                paymentMethodId
+                paymentMethodIds
         );
         List<BreakdownItem> breakdown = rawBreakdown.stream()
                 .map(item -> mapToBreakdownItem(item, "date", this::formatDate))
@@ -44,12 +44,12 @@ public final class ReportsService {
         return new DailyReport(startDate, endDate, "daily", summary, breakdown);
     }
 
-    public MonthlyReport getMonthlyReport(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
-        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodId);
+    public MonthlyReport getMonthlyReport(LocalDate startDate, LocalDate endDate, List<Long> paymentMethodIds) {
+        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodIds);
         List<Map<String, Object>> rawBreakdown = reportsRepository.getMonthlyBreakdown(
                 startDate.toString(),
                 endDate.toString(),
-                paymentMethodId
+                paymentMethodIds
         );
         List<BreakdownItem> breakdown = rawBreakdown.stream()
                 .map(item -> mapToBreakdownItem(item, "month", this::formatMonth))
@@ -57,12 +57,12 @@ public final class ReportsService {
         return new MonthlyReport(startDate, endDate, "monthly", summary, breakdown);
     }
 
-    public YearlyReport getYearlyReport(LocalDate startDate, LocalDate endDate, Long paymentMethodId) {
-        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodId);
+    public YearlyReport getYearlyReport(LocalDate startDate, LocalDate endDate, List<Long> paymentMethodIds) {
+        SalesReportSummary summary = getSalesSummary(startDate, endDate, paymentMethodIds);
         List<Map<String, Object>> rawBreakdown = reportsRepository.getYearlyBreakdown(
                 startDate.toString(),
                 endDate.toString(),
-                paymentMethodId
+                paymentMethodIds
         );
         List<BreakdownItem> breakdown = rawBreakdown.stream()
                 .map(item -> mapToBreakdownItem(item, "year", period -> period))
@@ -70,12 +70,12 @@ public final class ReportsService {
         return new YearlyReport(startDate, endDate, "yearly", summary, breakdown);
     }
 
-    public List<TopProduct> getTopProducts(LocalDate startDate, LocalDate endDate, int limit, Long paymentMethodId) {
+    public List<TopProduct> getTopProducts(LocalDate startDate, LocalDate endDate, int limit, List<Long> paymentMethodIds) {
         List<Map<String, Object>> rawProducts = reportsRepository.getTopSellingProducts(
                 startDate.toString(),
                 endDate.toString(),
                 limit,
-                paymentMethodId
+                paymentMethodIds
         );
         return rawProducts.stream()
                 .map(this::mapToTopProduct)

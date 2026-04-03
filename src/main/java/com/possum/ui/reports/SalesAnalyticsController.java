@@ -28,9 +28,11 @@ import java.util.Locale;
 
 public class SalesAnalyticsController {
     
-    @FXML private ComboBox<String> dateRangeCombo;
+    @FXML private javafx.scene.control.DatePicker startDatePicker;
+    @FXML private javafx.scene.control.DatePicker endDatePicker;
     @FXML private ComboBox<String> reportTypeCombo;
-    @FXML private ComboBox<String> paymentMethodCombo;
+    @FXML private javafx.scene.layout.VBox paymentMethodContainer;
+    private com.possum.ui.common.controls.MultiSelectFilter<PaymentMethod> paymentMethodFilter;
     @FXML private Label totalSalesLabel;
     @FXML private Label transactionsLabel;
     @FXML private Label avgSaleLabel;
@@ -56,10 +58,19 @@ public class SalesAnalyticsController {
     @FXML
     public void initialize() {
         setupReportTypes();
-        setupDateRanges();
         setupPaymentMethods();
+        setupDatePickers();
         setupInventoryTable();
         loadReports();
+    }
+
+    private void setupDatePickers() {
+        // Default range: This month
+        startDatePicker.setValue(LocalDate.now().withDayOfMonth(1));
+        endDatePicker.setValue(LocalDate.now());
+        
+        startDate = startDatePicker.getValue();
+        endDate = endDatePicker.getValue();
     }
 
     private void setupReportTypes() {
@@ -72,25 +83,21 @@ public class SalesAnalyticsController {
     private void setupPaymentMethods() {
         try {
             List<PaymentMethod> methods = salesService.getPaymentMethods();
-            List<String> methodNames = new java.util.ArrayList<>();
-            methodNames.add("All Methods");
-            for (PaymentMethod m : methods) {
-                methodNames.add(m.name());
-            }
-            paymentMethodCombo.setItems(FXCollections.observableArrayList(methodNames));
-            paymentMethodCombo.setValue("All Methods");
+            paymentMethodFilter = new com.possum.ui.common.controls.MultiSelectFilter<>(
+                "All Methods",
+                PaymentMethod::name
+            );
+            paymentMethodFilter.setItems(methods);
+            paymentMethodFilter.setPrefWidth(180);
+            paymentMethodFilter.getSelectedItems().addListener((javafx.collections.ListChangeListener<PaymentMethod>) c -> loadReports());
+            
+            paymentMethodContainer.getChildren().add(paymentMethodFilter);
         } catch (Exception e) {
             NotificationService.error("Failed to load payment methods");
         }
     }
 
-    private void setupDateRanges() {
-        dateRangeCombo.setItems(FXCollections.observableArrayList(
-            "Today", "This Week", "This Month", "Last 30 Days", "This Year"
-        ));
-        dateRangeCombo.setValue("This Month");
-        updateDateRange("This Month");
-    }
+
 
     private void setupInventoryTable() {
         TableColumn<Variant, String> productCol = new TableColumn<>("Product");
@@ -109,9 +116,22 @@ public class SalesAnalyticsController {
     }
 
     @FXML
-    private void handleDateRangeChange() {
-        String range = dateRangeCombo.getValue();
-        updateDateRange(range);
+    private void handleDateChange() {
+        startDate = startDatePicker.getValue();
+        endDate = endDatePicker.getValue();
+        loadReports();
+    }
+
+    @FXML
+    private void handleReset() {
+        reportTypeCombo.setValue("Daily");
+        if (paymentMethodFilter != null) {
+            paymentMethodFilter.clearSelection();
+        }
+        startDatePicker.setValue(LocalDate.now().withDayOfMonth(1));
+        endDatePicker.setValue(LocalDate.now());
+        startDate = startDatePicker.getValue();
+        endDate = endDatePicker.getValue();
         loadReports();
     }
 
@@ -120,41 +140,14 @@ public class SalesAnalyticsController {
         loadReports();
     }
 
-    @FXML
-    private void handlePaymentMethodChange() {
-        loadReports();
-    }
+
 
     @FXML
     private void handleRefresh() {
         loadReports();
     }
 
-    private void updateDateRange(String range) {
-        LocalDate now = LocalDate.now();
-        switch (range) {
-            case "Today":
-                startDate = now;
-                endDate = now;
-                break;
-            case "This Week":
-                startDate = now.minusDays(7);
-                endDate = now;
-                break;
-            case "This Month":
-                startDate = now.withDayOfMonth(1);
-                endDate = now;
-                break;
-            case "Last 30 Days":
-                startDate = now.minusDays(30);
-                endDate = now;
-                break;
-            case "This Year":
-                startDate = now.withDayOfYear(1);
-                endDate = now;
-                break;
-        }
-    }
+
 
     private void loadReports() {
         try {
@@ -169,8 +162,8 @@ public class SalesAnalyticsController {
     }
 
     private void loadSalesSummary() {
-        Long paymentMethodId = getSelectedPaymentMethodId();
-        SalesReportSummary summary = reportsService.getSalesSummary(startDate, endDate, paymentMethodId);
+        List<Long> paymentMethodIds = getSelectedPaymentMethodIds();
+        SalesReportSummary summary = reportsService.getSalesSummary(startDate, endDate, paymentMethodIds);
         
         totalSalesLabel.setText(currencyFormat.format(summary.totalSales()));
         transactionsLabel.setText(String.valueOf(summary.totalTransactions()));
@@ -178,22 +171,18 @@ public class SalesAnalyticsController {
         totalTaxLabel.setText(currencyFormat.format(summary.totalTax()));
     }
 
-    private Long getSelectedPaymentMethodId() {
-        String selected = paymentMethodCombo.getValue();
-        if (selected == null || "All Methods".equals(selected)) {
+    private List<Long> getSelectedPaymentMethodIds() {
+        if (paymentMethodFilter == null) return null;
+        List<PaymentMethod> selected = paymentMethodFilter.getSelectedItems();
+        if (selected == null || selected.isEmpty()) {
             return null;
         }
-        
-        return salesService.getPaymentMethods().stream()
-                .filter(m -> m.name().equals(selected))
-                .map(PaymentMethod::id)
-                .findFirst()
-                .orElse(null);
+        return selected.stream().map(PaymentMethod::id).toList();
     }
 
     private void loadTopProducts() {
-        Long paymentMethodId = getSelectedPaymentMethodId();
-        List<TopProduct> topProducts = reportsService.getTopProducts(startDate, endDate, 10, paymentMethodId);
+        List<Long> paymentMethodIds = getSelectedPaymentMethodIds();
+        List<TopProduct> topProducts = reportsService.getTopProducts(startDate, endDate, 10, paymentMethodIds);
         
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Quantity Sold");
@@ -209,16 +198,16 @@ public class SalesAnalyticsController {
     }
 
     private void loadSalesTrend() {
-        Long paymentMethodId = getSelectedPaymentMethodId();
+        List<Long> paymentMethodIds = getSelectedPaymentMethodIds();
         String type = reportTypeCombo.getValue();
         List<? extends BreakdownItem> breakdown;
         
         if ("Monthly".equals(type)) {
-            breakdown = reportsService.getMonthlyReport(startDate, endDate, paymentMethodId).breakdown();
+            breakdown = reportsService.getMonthlyReport(startDate, endDate, paymentMethodIds).breakdown();
         } else if ("Yearly".equals(type)) {
-            breakdown = reportsService.getYearlyReport(startDate, endDate, paymentMethodId).breakdown();
+            breakdown = reportsService.getYearlyReport(startDate, endDate, paymentMethodIds).breakdown();
         } else {
-            breakdown = reportsService.getSalesAnalytics(startDate, endDate, paymentMethodId).breakdown();
+            breakdown = reportsService.getSalesAnalytics(startDate, endDate, paymentMethodIds).breakdown();
         }
         
         XYChart.Series<String, Number> series = new XYChart.Series<>();

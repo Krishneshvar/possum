@@ -18,7 +18,39 @@
     -fx-effect: -shadow-card;
 }
 
-.card-title {
+.reports-totals-bar {
+    -fx-background-color: -color-primary-subtle;
+    -fx-border-color: -color-primary transparent transparent transparent;
+    -fx-border-width: 2 0 0 0;
+    -fx-padding: 12 16;
+    -fx-spacing: 20;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5, 0, 0, -2);
+}
+
+.reports-totals-label {
+    -fx-font-weight: 900;
+    -fx-font-size: 11;
+    -fx-text-fill: -color-text-muted;
+}
+
+.reports-totals-value {
+    -fx-font-weight: 700;
+    -fx-text-fill: -color-text-main;
+}
+
+.reports-totals-value-primary {
+    -fx-font-weight: 800;
+    -fx-text-fill: -color-primary;
+}
+
+.reports-totals-value-accent {
+    -fx-font-weight: 900;
+    -fx-text-fill: -color-accent;
+    -fx-font-size: 15;
+}
+
+.card-title,
+.view-title {
     -fx-font-size: 16;
     -fx-font-weight: 700;
     -fx-text-fill: -color-text-main;
@@ -907,4 +939,21 @@
 
 .card-action-btn-destructive:hover .card-action-icon {
     -fx-icon-color: #EF4444; /* Red-500 */
+}
+.view-subtitle {
+    -fx-font-size: 13;
+    -fx-text-fill: -color-text-muted;
+}
+
+.action-button-primary {
+    -fx-background-color: -color-primary;
+    -fx-text-fill: white;
+    -fx-font-weight: 700;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+.action-button-primary:hover {
+    -fx-background-color: -color-primary-dark;
 }
