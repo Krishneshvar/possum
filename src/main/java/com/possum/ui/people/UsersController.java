@@ -65,16 +65,14 @@ public class UsersController {
         TableColumn<User, java.time.LocalDateTime> createdCol = new TableColumn<>("Created At");
         createdCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
         createdCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
-            private final java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
             @Override
             protected void updateItem(java.time.LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    java.time.ZonedDateTime utcZoned = item.atZone(java.time.ZoneId.of("UTC"));
-                    java.time.ZonedDateTime localZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.systemDefault());
-                    setText(localZoned.format(formatter));
+                    java.time.LocalDateTime localTime = com.possum.shared.util.TimeUtil.toLocal(item);
+                    setText(localTime != null ? com.possum.shared.util.TimeUtil.formatStandard(localTime) : "");
                 }
             }
         });

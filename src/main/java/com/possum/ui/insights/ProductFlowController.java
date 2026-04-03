@@ -50,8 +50,6 @@ public class ProductFlowController {
     private final ProductService productService;
     private final VariantService variantService;
 
-    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm");
-
     public ProductFlowController(ProductFlowService productFlowService,
                                  ProductService productService,
                                  VariantService variantService) {
@@ -149,7 +147,7 @@ public class ProductFlowController {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? "" : dateTimeFormatter.format(item));
+                setText(empty || item == null ? "" : TimeUtil.formatStandard(TimeUtil.toLocal(item)));
             }
         });
 

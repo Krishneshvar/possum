@@ -1,5 +1,8 @@
 package com.possum.shared.util;
 
+import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.shared.dto.GeneralSettings;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -10,7 +13,13 @@ public final class TimeUtil {
     private static final ZoneId UTC = ZoneId.of("UTC");
     private static final ZoneId SYSTEM_ZONE = ZoneId.systemDefault();
 
+    private static SettingsStore settingsStore;
+
     private TimeUtil() {
+    }
+
+    public static void initialize(SettingsStore store) {
+        settingsStore = store;
     }
 
     /**
@@ -53,9 +62,86 @@ public final class TimeUtil {
     }
 
     /**
+     * Get the DateTimeFormatter based on the user's settings.
+     */
+    public static DateTimeFormatter getFormatter() {
+        String dateFormat = "dd/MM/yyyy";
+        String timeFormat = "hh:mm a";
+
+        if (settingsStore != null) {
+            GeneralSettings settings = settingsStore.loadGeneralSettings();
+
+            if (settings != null) {
+                switch (settings.getDateFormat()) {
+                    case "MM/DD/YYYY":
+                        dateFormat = "MM/dd/yyyy";
+                        break;
+                    case "YYYY/MM/DD":
+                        dateFormat = "yyyy/MM/dd";
+                        break;
+                    case "Month Date, Year":
+                        dateFormat = "MMMM dd, yyyy";
+                        break;
+                    case "Date Month, Year":
+                        // Assuming "1st Aug, 2026" - let's use "dd MMM, yyyy" as standard format
+                        dateFormat = "dd MMM, yyyy";
+                        break;
+                    case "DD/MM/YYYY":
+                    default:
+                        dateFormat = "dd/MM/yyyy";
+                        break;
+                }
+
+                if ("24 hour format".equals(settings.getTimeFormat())) {
+                    timeFormat = "HH:mm";
+                }
+            }
+        }
+
+        String pattern = dateFormat + " " + timeFormat;
+        return DateTimeFormatter.ofPattern(pattern);
+    }
+
+    /**
      * Standard human-readable format.
      */
     public static String formatStandard(LocalDateTime dateTime) {
-        return format(dateTime, "MMM dd, yyyy hh:mm a");
+        if (dateTime == null) {
+            return "";
+        }
+        return dateTime.format(getFormatter());
+    }
+
+    /**
+     * Get just the date formatter based on settings.
+     */
+    public static DateTimeFormatter getDateFormatter() {
+        String dateFormat = "dd/MM/yyyy";
+
+        if (settingsStore != null) {
+            GeneralSettings settings = settingsStore.loadGeneralSettings();
+
+            if (settings != null) {
+                switch (settings.getDateFormat()) {
+                    case "MM/DD/YYYY":
+                        dateFormat = "MM/dd/yyyy";
+                        break;
+                    case "YYYY/MM/DD":
+                        dateFormat = "yyyy/MM/dd";
+                        break;
+                    case "Month Date, Year":
+                        dateFormat = "MMMM dd, yyyy";
+                        break;
+                    case "Date Month, Year":
+                        dateFormat = "dd MMM, yyyy";
+                        break;
+                    case "DD/MM/YYYY":
+                    default:
+                        dateFormat = "dd/MM/yyyy";
+                        break;
+                }
+            }
+        }
+        return DateTimeFormatter.ofPattern(dateFormat);
     }
 }

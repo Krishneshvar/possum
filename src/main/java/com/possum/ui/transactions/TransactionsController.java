@@ -1,5 +1,6 @@
 package com.possum.ui.transactions;
 
+import com.possum.shared.util.TimeUtil;
 import com.possum.application.auth.AuthContext;
 import com.possum.application.transactions.TransactionService;
 import com.possum.domain.model.Transaction;
@@ -134,16 +135,14 @@ public class TransactionsController {
         TableColumn<Transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().transactionDate()));
         dateCol.setCellFactory(col -> new TableCell<Transaction, LocalDateTime>() {
-            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    ZonedDateTime utcZoned = item.atZone(ZoneId.of("UTC"));
-                    ZonedDateTime localZoned = utcZoned.withZoneSameInstant(ZoneId.systemDefault());
-                    setText(localZoned.format(formatter));
+                    LocalDateTime localZoned = TimeUtil.toLocal(item);
+                    setText(localZoned != null ? TimeUtil.formatStandard(localZoned) : "");
                 }
             }
         });

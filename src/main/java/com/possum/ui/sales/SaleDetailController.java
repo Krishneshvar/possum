@@ -73,7 +73,6 @@ public class SaleDetailController implements Parameterizable {
     private final SettingsStore settingsStore;
     private final PrinterService printerService;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
-    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a");
 
     private Sale currentSale;
     private SaleResponse saleDetails;
@@ -207,7 +206,7 @@ public class SaleDetailController implements Parameterizable {
             statusBadge.setText(currentSale.status().toUpperCase());
             applyStatusStyle(currentSale.status());
             
-            dateLabel.setText("Processed on " + TimeUtil.format(TimeUtil.toLocal(currentSale.saleDate()), "MMMM dd, yyyy 'at' hh:mm a"));
+            dateLabel.setText("Processed on " + TimeUtil.formatStandard(TimeUtil.toLocal(currentSale.saleDate())));
             customerNameLabel.setText(currentSale.customerName() != null ? currentSale.customerName() : "Walk-in Customer");
             customerContactLabel.setText(currentSale.customerPhone() != null ? currentSale.customerPhone() : "No contact info");
             
