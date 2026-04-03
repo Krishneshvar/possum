@@ -18,21 +18,18 @@
                 <Label text="Manage and track your purchase orders from suppliers" styleClass="view-subtitle"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="⟳ Refresh" onAction="#handleRefresh" styleClass="action-button"
+            <Button text="↺ Refresh" onAction="#handleRefresh" styleClass="action-button"
                     accessibleText="Refresh purchase orders list" />
-            <Button fx:id="createButton" text="+ New Purchase Order" onAction="#handleCreate" 
+            <Button fx:id="createButton" text="New Purchase Order" onAction="#handleCreate" 
                     styleClass="action-button, primary-button" defaultButton="true"
                     accessibleText="Create new purchase order" />
         </HBox>
     </VBox>
     
     <!-- Filters -->
-    <FilterBar fx:id="filterBar" styleClass="card"/>
-    
-    <!-- Data Table -->
-    <DataTableView fx:id="purchaseTable" VBox.vgrow="ALWAYS" styleClass="card" />
-    
-    <!-- Pagination -->
-    <PaginationBar fx:id="paginationBar" styleClass="card"/>
-
+    <VBox VBox.vgrow="ALWAYS" styleClass="card">
+        <FilterBar fx:id="filterBar"/>
+        <DataTableView fx:id="purchaseTable" VBox.vgrow="ALWAYS"/>
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 </VBox>

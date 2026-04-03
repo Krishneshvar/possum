@@ -16,9 +16,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import com.possum.ui.common.dialogs.DialogStyler;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,6 +42,8 @@ public class PurchaseController {
     private List<Long> currentPaymentMethodIds = null;
     private java.time.LocalDate currentFromDate = null;
     private java.time.LocalDate currentToDate = null;
+    private java.math.BigDecimal currentMinPrice = null;
+    private java.math.BigDecimal currentMaxPrice = null;
 
     public PurchaseController(PurchaseService purchaseService, 
                               com.possum.application.sales.SalesService salesService,
@@ -55,6 +57,10 @@ public class PurchaseController {
     public void initialize() {
         if (createButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(createButton, com.possum.application.auth.Permissions.PURCHASE_MANAGE);
+            FontIcon plusIcon = new FontIcon("bx-plus");
+            plusIcon.setIconSize(16);
+            plusIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+            createButton.setGraphic(plusIcon);
         }
         setupTable();
         setupFilters();
@@ -65,16 +71,19 @@ public class PurchaseController {
         TableColumn<PurchaseOrder, String> idCol = new TableColumn<>("PO Invoice #");
         idCol.setSortable(false);
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber() != null ? cellData.getValue().invoiceNumber() : ("#" + cellData.getValue().id())));
-        idCol.setPrefWidth(100);
+        idCol.setPrefWidth(120);
         idCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
+                    setGraphic(null);
                 } else {
                     setText(item);
-                    setStyle("-fx-font-weight: bold; -fx-text-fill: #1976d2;");
+                    getStyleClass().add("text-bold");
+                    setStyle("-fx-text-fill: black;");
+                    setGraphic(null);
                 }
             }
         });
@@ -113,57 +122,69 @@ public class PurchaseController {
                 }
             };
         });
+        TableColumn<PurchaseOrder, String> paymentCol = new TableColumn<>("Payment Method");
+        paymentCol.setSortable(false);
+        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().paymentMethodName() != null ? cellData.getValue().paymentMethodName() : "-"));
         
         TableColumn<PurchaseOrder, Integer> itemsCol = new TableColumn<>("Items");
         itemsCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().itemCount()));
         itemsCol.setPrefWidth(80);
         itemsCol.setStyle("-fx-alignment: CENTER;");
         
+        TableColumn<PurchaseOrder, String> priceCol = new TableColumn<>("Price");
+        priceCol.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().totalCost() != null ? String.format("$%.2f", cellData.getValue().totalCost()) : "$0.00"));
+        priceCol.setPrefWidth(100);
+        priceCol.getStyleClass().add("text-bold");
+        priceCol.setStyle("-fx-alignment: CENTER-RIGHT; -fx-text-fill: black;");
+
         TableColumn<PurchaseOrder, String> statusCol = new TableColumn<>("Status");
         statusCol.setSortable(false);
         statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
         statusCol.setPrefWidth(120);
         statusCol.setCellFactory(col -> new TableCell<>() {
             @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
                     setGraphic(null);
                 } else {
-                    HBox box = new HBox(5);
-                    box.setAlignment(Pos.CENTER);
+                    Label badge = new Label(status.toUpperCase());
+                    badge.getStyleClass().add("badge-status");
                     
-                    Circle indicator = new Circle(4);
-                    Label label = new Label(item.toUpperCase());
-                    label.setStyle("-fx-font-size: 10px; -fx-font-weight: bold;");
-                    
-                    switch (item.toLowerCase()) {
-                        case "pending" -> {
-                            indicator.setFill(Color.ORANGE);
-                            label.setStyle(label.getStyle() + "-fx-text-fill: orange;");
-                        }
-                        case "received" -> {
-                            indicator.setFill(Color.GREEN);
-                            label.setStyle(label.getStyle() + "-fx-text-fill: green;");
-                        }
-                        case "cancelled" -> {
-                            indicator.setFill(Color.RED);
-                            label.setStyle(label.getStyle() + "-fx-text-fill: red;");
-                        }
+                    switch (status.toLowerCase()) {
+                        case "pending" -> badge.getStyleClass().add("badge-warning");
+                        case "received" -> badge.getStyleClass().add("badge-success");
+                        case "cancelled" -> badge.getStyleClass().add("badge-error");
                     }
-                    
-                    box.getChildren().addAll(indicator, label);
-                    setGraphic(box);
+                    setGraphic(badge);
                 }
             }
         });
-
-        TableColumn<PurchaseOrder, String> paymentCol = new TableColumn<>("Payment Method");
-        paymentCol.setSortable(false);
-        paymentCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().paymentMethodName() != null ? cellData.getValue().paymentMethodName() : "-"));
         
-        purchaseTable.getTableView().getColumns().addAll(idCol, supplierCol, dateCol, itemsCol, statusCol, paymentCol);
+        TableColumn<PurchaseOrder, LocalDateTime> dateCol = new TableColumn<>("Order Date");
+        dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().orderDate()));
+        dateCol.setPrefWidth(150);
+        dateCol.setCellFactory(col -> {
+            return new TableCell<>() {
+                private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
+                @Override
+                protected void updateItem(LocalDateTime item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        java.time.ZonedDateTime utcZoned = item.atZone(java.time.ZoneId.of("UTC"));
+                        java.time.ZonedDateTime localZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.systemDefault());
+                        setText(localZoned.format(formatter));
+                        setStyle("-fx-text-fill: -color-text-muted;");
+                    }
+                }
+            };
+        });
+
+        purchaseTable.getTableView().getColumns().setAll(java.util.Arrays.asList(idCol, supplierCol, paymentCol, itemsCol, priceCol, statusCol, dateCol));
         purchaseTable.addMenuActionColumn("Actions", this::buildActionsMenu);
         purchaseTable.setEmptyMessage("No purchase orders found. Click '+ New Purchase Order' to create one.");
     }
@@ -182,6 +203,8 @@ public class PurchaseController {
         
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");
+        filterBar.addTextFilter("minPrice", "Min Price");
+        filterBar.addTextFilter("maxPrice", "Max Price");
 
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
@@ -204,6 +227,25 @@ public class PurchaseController {
 
             currentFromDate = (java.time.LocalDate) filters.get("fromDate");
             currentToDate = (java.time.LocalDate) filters.get("toDate");
+
+            currentMinPrice = null;
+            try {
+                String min = (String) filters.get("minPrice");
+                if (min != null && !min.trim().isEmpty()) {
+                    String cleanMin = min.replaceAll("[^\\d.]", "");
+                    if (!cleanMin.isEmpty()) currentMinPrice = new java.math.BigDecimal(cleanMin);
+                }
+            } catch (Exception ignored) {}
+
+            currentMaxPrice = null;
+            try {
+                String max = (String) filters.get("maxPrice");
+                if (max != null && !max.trim().isEmpty()) {
+                    String cleanMax = max.replaceAll("[^\\d.]", "");
+                    if (!cleanMax.isEmpty()) currentMaxPrice = new java.math.BigDecimal(cleanMax);
+                }
+            } catch (Exception ignored) {}
+
             loadPurchaseOrders();
         });
         
@@ -224,7 +266,9 @@ public class PurchaseController {
                     currentToDate != null ? currentToDate.atTime(23, 59, 59).toString() : null,
                     "order_date",
                     "DESC",
-                    currentPaymentMethodIds
+                    currentPaymentMethodIds,
+                    currentMinPrice,
+                    currentMaxPrice
                 );
                 
                 PagedResult<PurchaseOrder> result = purchaseService.getAllPurchaseOrders(filter);
@@ -254,28 +298,40 @@ public class PurchaseController {
     private java.util.List<MenuItem> buildActionsMenu(PurchaseOrder po) {
         java.util.List<MenuItem> items = new java.util.ArrayList<>();
         
-        MenuItem viewItem = new MenuItem("👁 View Details");
+        MenuItem viewItem = new MenuItem("View Details");
+        FontIcon viewIcon = new FontIcon("bx-show");
+        viewIcon.setIconSize(14);
+        viewIcon.getStyleClass().add("table-action-icon");
+        viewItem.setGraphic(viewIcon);
         viewItem.setOnAction(e -> handleView(po));
         items.add(viewItem);
         
-        if ("pending".equals(po.status())) {
-            MenuItem editItem = new MenuItem("✏ Edit Order");
+        if ("pending".equals(po.status().toLowerCase())) {
+            MenuItem editItem = new MenuItem("Edit Order");
+            FontIcon editIcon = new FontIcon("bx-pencil");
+            editIcon.setIconSize(14);
+            editIcon.getStyleClass().add("table-action-icon");
+            editItem.setGraphic(editIcon);
             editItem.setOnAction(e -> handleEdit(po));
             
-            MenuItem receiveItem = new MenuItem("✅ Receive Order");
-            receiveItem.setStyle("-fx-text-fill: green;");
+            MenuItem receiveItem = new MenuItem("Receive Order");
+            FontIcon receiveIcon = new FontIcon("bx-check-double");
+            receiveIcon.setIconSize(14);
+            receiveIcon.getStyleClass().add("table-action-icon-success"); // Ensure this class or similar exists
+            receiveIcon.setIconColor(javafx.scene.paint.Color.valueOf("#10b981"));
+            receiveItem.setGraphic(receiveIcon);
             receiveItem.setOnAction(e -> handleReceive(po));
             
-            MenuItem cancelItem = new MenuItem("❌ Cancel Order");
-            cancelItem.setStyle("-fx-text-fill: red;");
+            MenuItem cancelItem = new MenuItem("Cancel Order");
+            FontIcon cancelIcon = new FontIcon("bx-x-circle");
+            cancelIcon.setIconSize(14);
+            cancelIcon.getStyleClass().add("table-action-icon-danger");
+            cancelIcon.setIconColor(javafx.scene.paint.Color.valueOf("#ef4444"));
+            cancelItem.setGraphic(cancelIcon);
             cancelItem.setOnAction(e -> handleCancelOrder(po));
             
             items.addAll(java.util.Arrays.asList(new SeparatorMenuItem(), editItem, receiveItem, new SeparatorMenuItem(), cancelItem));
         }
-        
-        MenuItem refreshItem = new MenuItem("⟳ Refresh List");
-        refreshItem.setOnAction(e -> loadPurchaseOrders());
-        items.addAll(java.util.Arrays.asList(new SeparatorMenuItem(), refreshItem));
         
         return items;
     }

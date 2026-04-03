@@ -21,7 +21,8 @@ public final class PurchaseOrderMapper implements RowMapper<PurchaseOrder> {
                 SqlMapperUtils.getLocalDateTime(rs, "received_date"),
                 rs.getLong("created_by"),
                 getOptionalColumn(rs, "created_by_name"),
-                getOptionalInt(rs, "item_count")
+                getOptionalInt(rs, "item_count"),
+                SqlMapperUtils.getBigDecimal(rs, "total_cost")
         );
     }
 

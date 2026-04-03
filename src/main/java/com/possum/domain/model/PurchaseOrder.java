@@ -14,6 +14,7 @@ public record PurchaseOrder(
         LocalDateTime receivedDate,
         Long createdBy,
         String createdByName,
-        Integer itemCount
+        Integer itemCount,
+        java.math.BigDecimal totalCost
 ) {
 }
