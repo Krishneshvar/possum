@@ -103,9 +103,13 @@ public final class SqliteAuditRepository extends BaseSqliteRepository implements
             joiner.add("al.user_id = ?");
             params.add(filter.userId());
         }
-        if (filter.action() != null && !filter.action().isBlank()) {
-            joiner.add("al.action = ?");
-            params.add(filter.action());
+        if (filter.actions() != null && !filter.actions().isEmpty()) {
+            StringJoiner inJoiner = new StringJoiner(",", "al.action IN (", ")");
+            for (String action : filter.actions()) {
+                inJoiner.add("?");
+                params.add(action);
+            }
+            joiner.add(inJoiner.toString());
         }
         if (filter.startDate() != null && !filter.startDate().isBlank()) {
             joiner.add("al.created_at >= ?");

@@ -13,16 +13,12 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.cell.PropertyValueFactory;
 import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import com.possum.shared.util.TimeUtil;
 
 public class AuditController {
@@ -33,9 +29,9 @@ public class AuditController {
     
     private AuditService auditService;
     private String currentSearch = "";
-    private String currentAction = null;
-    private String startDate = null;
-    private String endDate = null;
+    private java.util.List<String> currentActions = null;
+    private String startDateStr = null;
+    private String endDateStr = null;
 
     public AuditController(AuditService auditService) {
 this.auditService = auditService;
@@ -55,6 +51,31 @@ this.auditService = auditService;
         
         TableColumn<AuditLog, String> actionCol = new TableColumn<>("Action");
         actionCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().action()));
+        actionCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(item.toUpperCase());
+                    badge.getStyleClass().add("badge");
+                    
+                    String colorClass = switch (item.toUpperCase()) {
+                        case "CREATE" -> "badge-success";
+                        case "UPDATE" -> "badge-info";
+                        case "DELETE" -> "badge-danger";
+                        case "LOGIN" -> "badge-primary";
+                        case "LOGOUT" -> "badge-secondary";
+                        default -> "badge-warning";
+                    };
+                    badge.getStyleClass().add(colorClass);
+                    setGraphic(badge);
+                    setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+                }
+            }
+        });
         
         TableColumn<AuditLog, String> tableCol = new TableColumn<>("Table");
         tableCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().tableName()));
@@ -83,22 +104,24 @@ this.auditService = auditService;
     }
 
     private void setupFilters() {
-        ComboBox<String> actionFilter = filterBar.addFilter("action", "Action");
-        actionFilter.getItems().addAll("All", "CREATE", "UPDATE", "DELETE", "login", "logout");
-        actionFilter.setValue("All");
+        java.util.List<String> actions = java.util.List.of("CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT");
+        filterBar.addMultiSelectFilter("actions", "All Actions", actions, String::toString);
         
-        ComboBox<String> dateFilter = filterBar.addFilter("dateRange", "Date Range");
-        dateFilter.getItems().addAll("All", "Today", "This Week", "This Month");
-        dateFilter.setValue("All");
+        filterBar.addDateFilter("startDate", "From Date");
+        filterBar.addDateFilter("endDate", "To Date");
         
         filterBar.setOnFilterChange(filters -> {
             currentSearch = (String) filters.get("search");
             
-            String action = (String) filters.get("action");
-            currentAction = "All".equals(action) ? null : action;
+            @SuppressWarnings("unchecked")
+            java.util.List<String> selectedActions = (java.util.List<String>) filters.get("actions");
+            currentActions = (selectedActions == null || selectedActions.isEmpty()) ? null : selectedActions;
             
-            String range = (String) filters.get("dateRange");
-            updateDateRange(range);
+            LocalDate start = (LocalDate) filters.get("startDate");
+            LocalDate end = (LocalDate) filters.get("endDate");
+            
+            startDateStr = start != null ? start.toString() : null;
+            endDateStr = end != null ? end.toString() : null;
             
             loadAuditLogs();
         });
@@ -106,25 +129,11 @@ this.auditService = auditService;
         paginationBar.setOnPageChange((page, size) -> loadAuditLogs());
     }
 
-    private void updateDateRange(String range) {
-        LocalDate now = LocalDate.now();
-        switch (range) {
-            case "Today":
-                startDate = now.toString();
-                endDate = now.toString();
-                break;
-            case "This Week":
-                startDate = now.minusDays(7).toString();
-                endDate = now.toString();
-                break;
-            case "This Month":
-                startDate = now.withDayOfMonth(1).toString();
-                endDate = now.toString();
-                break;
-            default:
-                startDate = null;
-                endDate = null;
-        }
+
+
+    @FXML
+    public void handleRefresh() {
+        loadAuditLogs();
     }
 
     private void loadAuditLogs() {
@@ -136,9 +145,9 @@ this.auditService = auditService;
                     null,
                     null,
                     null,
-                    currentAction,
-                    startDate,
-                    endDate,
+                    currentActions,
+                    startDateStr,
+                    endDateStr,
                     currentSearch.isEmpty() ? null : currentSearch,
                     "created_at",
                     "DESC",

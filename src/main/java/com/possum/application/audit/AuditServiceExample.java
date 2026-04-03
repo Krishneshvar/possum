@@ -97,7 +97,7 @@ public class AuditServiceExample {
                 null,           // tableName
                 null,           // rowId
                 null,           // userId
-                null,           // action
+                null,           // actions
                 null,           // startDate
                 null,           // endDate
                 null,           // searchTerm
@@ -118,7 +118,7 @@ public class AuditServiceExample {
                 "products",     // tableName
                 null,           // rowId
                 null,           // userId
-                null,           // action
+                null,           // actions
                 null,           // startDate
                 null,           // endDate
                 null,           // searchTerm
@@ -139,7 +139,7 @@ public class AuditServiceExample {
                 tableName,      // tableName
                 recordId,       // rowId
                 null,           // userId
-                null,           // action
+                null,           // actions
                 null,           // startDate
                 null,           // endDate
                 null,           // searchTerm
@@ -167,7 +167,7 @@ public class AuditServiceExample {
                 null,           // tableName
                 null,           // rowId
                 null,           // userId
-                null,           // action
+                null,           // actions
                 null,           // startDate
                 null,           // endDate
                 searchTerm,     // searchTerm
@@ -188,7 +188,7 @@ public class AuditServiceExample {
                 null,           // tableName
                 null,           // rowId
                 null,           // userId
-                null,           // action
+                null,           // actions
                 startDate,      // startDate (e.g., "2024-01-01")
                 endDate,        // endDate (e.g., "2024-12-31")
                 null,           // searchTerm
@@ -209,7 +209,7 @@ public class AuditServiceExample {
                 null,           // tableName
                 null,           // rowId
                 null,           // userId
-                "login",        // action
+                java.util.List.of("login"), // actions
                 null,           // startDate
                 null,           // endDate
                 null,           // searchTerm

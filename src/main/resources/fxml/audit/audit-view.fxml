@@ -8,19 +8,26 @@
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.audit.AuditController"
-      spacing="20"
-      alignment="TOP_LEFT">
+      styleClass="workspace-view"
+      stylesheets="@../../styles/inventory.css">
     
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <Label text="Audit Log" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <HBox styleClass="view-header" alignment="CENTER_LEFT">
+        <VBox>
+            <Label text="Audit Log" styleClass="view-title"/>
+            <Label text="Review system activities, including record changes and security events" styleClass="view-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="↺ Refresh" onAction="#handleRefresh" styleClass="action-button"/>
+        </HBox>
+    </HBox>
     
-    <FilterBar fx:id="filterBar"/>
-    
-    <DataTableView fx:id="auditTable" VBox.vgrow="ALWAYS"/>
-    
-    <PaginationBar fx:id="paginationBar"/>
+    <VBox VBox.vgrow="ALWAYS" styleClass="card">
+        <FilterBar fx:id="filterBar"/>
+        
+        <DataTableView fx:id="auditTable" VBox.vgrow="ALWAYS"/>
+        
+        <PaginationBar fx:id="paginationBar"/>
+    </VBox>
 
 </VBox>

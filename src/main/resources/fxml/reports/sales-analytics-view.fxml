@@ -112,11 +112,6 @@
                 </VBox>
             </HBox>
             
-            <VBox spacing="10" styleClass="pos-card">
-                <Label text="Inventory Movement - Low Stock Alerts" styleClass="pos-card-title"/>
-                <TableView fx:id="inventoryTable" prefHeight="250" styleClass="pos-table">
-                </TableView>
-            </VBox>
         </VBox>
     </ScrollPane>
 

@@ -682,31 +682,62 @@
     -fx-border-color: -color-error;
 }
 
-.badge-status {
-    -fx-padding: 2 8;
-    -fx-background-radius: 4;
+.badge {
+    -fx-padding: 3 10;
+    -fx-background-radius: 12;
     -fx-font-size: 11;
-    -fx-font-weight: 700;
+    -fx-font-weight: 800;
+    -fx-text-transform: uppercase;
 }
 
 .badge-success {
-    -fx-background-color: #dcfce7;
-    -fx-text-fill: #166534;
+    -fx-background-color: -color-success-bg;
+    -fx-text-fill: -color-success-text;
+    -fx-border-color: -color-success;
+    -fx-border-width: 0.5;
+    -fx-border-radius: 12;
 }
 
-.badge-neutral {
-    -fx-background-color: #e2e8f0;
-    -fx-text-fill: #334155;
+.badge-info {
+    -fx-background-color: -color-info-bg;
+    -fx-text-fill: -color-info-text;
+    -fx-border-color: -color-info;
+    -fx-border-width: 0.5;
+    -fx-border-radius: 12;
 }
 
 .badge-warning {
-    -fx-background-color: #fef3c7;
-    -fx-text-fill: #92400e;
+    -fx-background-color: -color-warning-bg;
+    -fx-text-fill: -color-warning-text;
+    -fx-border-color: -color-warning;
+    -fx-border-width: 0.5;
+    -fx-border-radius: 12;
 }
 
-.badge-error {
-    -fx-background-color: #fee2e2;
-    -fx-text-fill: #b91c1c;
+.badge-error,
+.badge-danger {
+    -fx-background-color: -color-error-bg;
+    -fx-text-fill: -color-error-text;
+    -fx-border-color: -color-error;
+    -fx-border-width: 0.5;
+    -fx-border-radius: 12;
+}
+
+.badge-primary {
+    -fx-background-color: -color-accent-subtle;
+    -fx-text-fill: -color-accent-dark;
+    -fx-border-color: -color-accent;
+    -fx-border-width: 0.5;
+    -fx-border-radius: 12;
+}
+
+.badge-secondary,
+.badge-neutral {
+    -fx-background-color: -color-bg-canvas;
+    -fx-text-fill: -color-text-muted;
+    -fx-border-color: -color-border;
+    -fx-border-width: 0.5;
+    -fx-border-radius: 12;
 }
 
 .toggle-group-neon {

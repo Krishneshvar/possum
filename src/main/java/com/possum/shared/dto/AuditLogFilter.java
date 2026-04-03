@@ -4,7 +4,7 @@ public record AuditLogFilter(
         String tableName,
         Long rowId,
         Long userId,
-        String action,
+        java.util.List<String> actions,
         String startDate,
         String endDate,
         String searchTerm,
