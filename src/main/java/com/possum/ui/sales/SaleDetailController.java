@@ -267,7 +267,13 @@ public class SaleDetailController implements Parameterizable {
                 .map(i -> i.appliedTaxAmount() != null ? i.appliedTaxAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal totalDiscount = currentSale.discount() != null ? currentSale.discount() : BigDecimal.ZERO;
+        BigDecimal lineItemDiscount = saleDetails.items().stream()
+                .map(i -> i.discountAmount() != null ? i.discountAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal billDiscount = currentSale.discount() != null ? currentSale.discount() : BigDecimal.ZERO;
+        BigDecimal totalDiscount = lineItemDiscount.add(billDiscount);
+        
         BigDecimal grandTotal = currentSale.totalAmount() != null ? currentSale.totalAmount() : BigDecimal.ZERO;
         BigDecimal paidAmount = currentSale.paidAmount() != null ? currentSale.paidAmount() : BigDecimal.ZERO;
         
