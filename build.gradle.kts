@@ -44,6 +44,9 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.5.16")
     implementation("org.mindrot:jbcrypt:0.4")
     
+    // Export Support
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
+    
     // Icons
     implementation("org.kordamp.ikonli:ikonli-javafx:12.3.1")
     implementation("org.kordamp.ikonli:ikonli-boxicons-pack:12.3.1")

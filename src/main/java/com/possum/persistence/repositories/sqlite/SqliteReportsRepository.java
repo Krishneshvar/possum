@@ -34,8 +34,16 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
             : "AND t.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
         
         List<Object> params = new ArrayList<>();
-        // For total_transactions, total_sales, total_tax, total_discount, total_collected (5 counts)
+        // For total_transactions, total_sales, total_tax (with subquery), total_discount (with subquery), total_collected
         for (int i = 0; i < 5; i++) {
+            // total_tax (index 2) and total_discount (index 3) now have extra placeholders for their subqueries
+            if (i == 2 || i == 3) {
+                params.add(startDate);
+                params.add(endDate);
+                if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
+                    params.addAll(paymentMethodIds);
+                }
+            }
             params.add(startDate);
             params.add(endDate);
             if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
@@ -54,11 +62,11 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                 SELECT
                   (SELECT COUNT(*) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_transactions,
                   (SELECT COALESCE(SUM(total_amount), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_sales,
-                  (SELECT COALESCE(SUM(total_tax), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_tax,
-                  (SELECT COALESCE(SUM(discount), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_discount,
+                  (SELECT COALESCE(SUM(s.total_tax), 0) + COALESCE((SELECT SUM(si.tax_amount) FROM sale_items si JOIN sales s2 ON si.sale_id = s2.id WHERE date(s2.sale_date) >= ? AND date(s2.sale_date) <= ? AND s2.status NOT IN ('cancelled', 'draft') %s), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_tax,
+                  (SELECT COALESCE(SUM(s.discount), 0) + COALESCE((SELECT SUM(si.discount_amount) FROM sale_items si JOIN sales s2 ON si.sale_id = s2.id WHERE date(s2.sale_date) >= ? AND date(s2.sale_date) <= ? AND s2.status NOT IN ('cancelled', 'draft') %s), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_discount,
                   (SELECT COALESCE(SUM(paid_amount), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_collected,
                   (SELECT COALESCE(SUM(ABS(t.amount)), 0) FROM transactions t WHERE t.type = 'refund' AND t.status = 'completed' AND date(t.transaction_date) >= ? AND date(t.transaction_date) <= ? %s) AS total_refunds
-                """.formatted(paymentFilter, paymentFilter, paymentFilter, paymentFilter, paymentFilter, refundPaymentFilter),
+                """.formatted(paymentFilter, paymentFilter, paymentFilter, paymentFilter, paymentFilter, paymentFilter, paymentFilter, refundPaymentFilter),
                 rs -> {
                     Map<String, Object> map = new HashMap<>();
                     BigDecimal totalSales = rs.getBigDecimal("total_sales");
@@ -259,13 +267,13 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                   %s AS %s,
                   COUNT(DISTINCT s.id) AS total_transactions,
                   COALESCE(SUM(s.total_amount), 0) AS total_sales,
-                  COALESCE(SUM(s.total_tax), 0) AS total_tax,
-                  COALESCE(SUM(s.discount), 0) AS total_discount,
-                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Cash' AND t.status = 'completed')), 0) AS cash,
-                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'UPI' AND t.status = 'completed')), 0) AS upi,
-                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Debit Card' AND t.status = 'completed')), 0) AS debit_card,
-                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Credit Card' AND t.status = 'completed')), 0) AS credit_card,
-                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Gift Card' AND t.status = 'completed')), 0) AS gift_card,
+                   COALESCE(SUM(s.total_tax), 0) + COALESCE(SUM((SELECT SUM(si.tax_amount) FROM sale_items si WHERE si.sale_id = s.id)), 0) AS total_tax,
+                  COALESCE(SUM(s.discount), 0) + COALESCE(SUM((SELECT SUM(si.discount_amount) FROM sale_items si WHERE si.sale_id = s.id)), 0) AS total_discount,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Cash' AND t.status = 'completed' AND t.type = 'payment')), 0) AS cash,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'UPI' AND t.status = 'completed' AND t.type = 'payment')), 0) AS upi,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Debit Card' AND t.status = 'completed' AND t.type = 'payment')), 0) AS debit_card,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Credit Card' AND t.status = 'completed' AND t.type = 'payment')), 0) AS credit_card,
+                  COALESCE(SUM((SELECT SUM(t.amount) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND pm.name = 'Gift Card' AND t.status = 'completed' AND t.type = 'payment')), 0) AS gift_card,
                   COALESCE(SUM((SELECT SUM(ABS(t.amount)) FROM transactions t WHERE t.sale_id = s.id AND t.type = 'refund' AND t.status = 'completed')), 0) AS refunds
                 FROM sales s
                 WHERE date(sale_date) >= ? AND date(sale_date) <= ?

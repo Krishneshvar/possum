@@ -69,14 +69,18 @@
                 </VBox>
             </HBox>
 
-            <Button text="Export" onAction="#handleExport" styleClass="action-button">
+            <MenuButton text="Export" styleClass="action-button" minWidth="110">
+                <items>
+                    <MenuItem text="Export as CSV" onAction="#handleExportCsv"/>
+                    <MenuItem text="Export as XLSX" onAction="#handleExportExcel"/>
+                </items>
                 <graphic>
                     <org.kordamp.ikonli.javafx.FontIcon iconLiteral="bx-download" iconSize="16"/>
                 </graphic>
                 <HBox.margin>
                     <Insets top="15"/>
                 </HBox.margin>
-            </Button>
+            </MenuButton>
         </HBox>
         
         <Separator/>
@@ -93,8 +97,6 @@
                 <TableColumn fx:id="creditCardCol" text="Credit Card" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
                 <TableColumn fx:id="giftCardCol" text="Gift Card" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
                 <TableColumn fx:id="salesCol" text="Gross Sales" prefWidth="120" style="-fx-alignment: CENTER-RIGHT;"/>
-                <TableColumn fx:id="taxCol" text="Total Tax" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
-                <TableColumn fx:id="discountCol" text="Discounts" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
                 <TableColumn fx:id="refundsCol" text="Refunds" prefWidth="100" style="-fx-alignment: CENTER-RIGHT;"/>
                 <TableColumn fx:id="netSalesCol" text="Net Sales" prefWidth="120" style="-fx-alignment: CENTER-RIGHT;"/>
             </columns>
@@ -104,8 +106,7 @@
                 </VBox>
             </placeholder>
         </TableView>
-
-        <!-- Totals Bar -->
+        
         <HBox fx:id="totalsBar" alignment="CENTER_LEFT" styleClass="reports-totals-bar">
             <Label fx:id="totalLabel" text="TOTALS" styleClass="reports-totals-label" style="-fx-padding: 0 0 0 10;"/>
             <Label fx:id="totalTransactionsLabel" text="0" styleClass="reports-totals-value"/>
@@ -115,8 +116,6 @@
             <Label fx:id="totalCreditLabel" text="₹0.00" styleClass="reports-totals-value" style="-fx-padding: 0 5 0 0;"/>
             <Label fx:id="totalGiftLabel" text="₹0.00" styleClass="reports-totals-value" style="-fx-padding: 0 5 0 0;"/>
             <Label fx:id="totalSalesLabel" text="₹0.00" styleClass="reports-totals-value-primary" style="-fx-padding: 0 5 0 0;"/>
-            <Label fx:id="totalTaxLabel" text="₹0.00" styleClass="reports-totals-value" style="-fx-padding: 0 5 0 0;"/>
-            <Label fx:id="totalDiscountLabel" text="₹0.00" styleClass="reports-totals-value" style="-fx-padding: 0 5 0 0;"/>
             <Label fx:id="totalRefundsLabel" text="₹0.00" styleClass="reports-totals-value" style="-fx-padding: 0 5 0 0;"/>
             <Label fx:id="totalNetSalesLabel" text="₹0.00" styleClass="reports-totals-value-accent" style="-fx-padding: 0 10 0 0;"/>
         </HBox>

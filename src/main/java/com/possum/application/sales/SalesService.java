@@ -148,6 +148,8 @@ public class SalesService {
                 CreateSaleItemRequest item = request.items().get(i);
                 TaxableItem calculatedItem = taxResult.getItemByIndex(i);
                 Variant variant = variantMap.get(item.variantId());
+                Product product = productRepository.findProductById(variant.productId())
+                        .orElseThrow(() -> new NotFoundException("Product not found"));
 
                 BigDecimal pricePerUnit = item.pricePerUnit() != null ? item.pricePerUnit() : variant.price();
                 BigDecimal costPerUnit = variant.costPrice() != null ? variant.costPrice() : BigDecimal.ZERO;
@@ -155,6 +157,9 @@ public class SalesService {
 
                 processedItems.add(new ProcessedItem(
                         item.variantId(),
+                        variant.name(),
+                        variant.sku(),
+                        product.name(),
                         item.quantity(),
                         pricePerUnit,
                         costPerUnit,
@@ -200,7 +205,9 @@ public class SalesService {
                         null,
                         saleId,
                         item.variantId,
-                        null, null, null,
+                        item.variantName,
+                        item.sku,
+                        item.productName,
                         item.quantity,
                         item.pricePerUnit,
                         item.costPerUnit,
@@ -228,7 +235,9 @@ public class SalesService {
                         saleItemId,
                         saleId,
                         item.variantId,
-                        null, null, null,
+                        item.variantName,
+                        item.sku,
+                        item.productName,
                         item.quantity,
                         item.pricePerUnit,
                         item.costPerUnit,
@@ -330,7 +339,8 @@ public class SalesService {
     }
 
     private record TempItem(CreateSaleItemRequest item, BigDecimal pricePerUnit, BigDecimal netLineTotal) {}
-    private record ProcessedItem(long variantId, int quantity, BigDecimal pricePerUnit, BigDecimal costPerUnit,
+    private record ProcessedItem(long variantId, String variantName, String sku, String productName, 
+                                  int quantity, BigDecimal pricePerUnit, BigDecimal costPerUnit,
                                   BigDecimal taxRate, BigDecimal taxAmount, BigDecimal discountAmount,
                                   String taxRuleSnapshot) {}
 
