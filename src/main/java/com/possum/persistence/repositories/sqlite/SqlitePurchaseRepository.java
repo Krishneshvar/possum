@@ -37,6 +37,7 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
                 SELECT COUNT(*) AS count
                 FROM purchase_orders po
                 LEFT JOIN suppliers s ON po.supplier_id = s.id
+                LEFT JOIN payment_methods pm ON po.payment_method_id = pm.id
                 %s
                 """.formatted(where),
                 rs -> rs.getInt("count"),
@@ -86,7 +87,8 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
                 """
                 SELECT
                   po.*, s.name AS supplier_name, pm.name AS payment_method_name, u.name AS created_by_name,
-                  (SELECT COUNT(*) FROM purchase_order_items WHERE purchase_order_id = po.id) AS item_count
+                  (SELECT COUNT(*) FROM purchase_order_items WHERE purchase_order_id = po.id) AS item_count,
+                  (SELECT SUM(quantity * unit_cost) FROM purchase_order_items WHERE purchase_order_id = po.id) AS total_cost
                 FROM purchase_orders po
                 LEFT JOIN suppliers s ON po.supplier_id = s.id
                 LEFT JOIN payment_methods pm ON po.payment_method_id = pm.id
@@ -185,8 +187,9 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
         StringJoiner joiner = new StringJoiner(" AND ");
         joiner.add("1=1");
         if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
-            joiner.add("(s.name LIKE ? OR po.id LIKE ? OR po.invoice_number LIKE ?)");
+            joiner.add("(s.name LIKE ? OR po.id LIKE ? OR po.invoice_number LIKE ? OR pm.name LIKE ?)");
             String fuzzy = "%" + filter.searchTerm() + "%";
+            params.add(fuzzy);
             params.add(fuzzy);
             params.add(fuzzy);
             params.add(fuzzy);
@@ -200,15 +203,22 @@ public final class SqlitePurchaseRepository extends BaseSqliteRepository impleme
             params.addAll(filter.paymentMethodIds());
         }
         if (filter.fromDate() != null && !filter.fromDate().isBlank()) {
-            String date = filter.fromDate().substring(0, Math.min(10, filter.fromDate().length()));
             joiner.add("po.order_date >= ?");
-            params.add(date + " 00:00:00");
+            params.add(filter.fromDate());
         }
         if (filter.toDate() != null && !filter.toDate().isBlank()) {
-            String date = filter.toDate().substring(0, Math.min(10, filter.toDate().length()));
             joiner.add("po.order_date <= ?");
-            params.add(date + " 23:59:59");
+            params.add(filter.toDate());
         }
-        return "WHERE " + joiner;
+        
+        if (filter.minPrice() != null) {
+            joiner.add("(SELECT COALESCE(SUM(quantity * unit_cost), 0) FROM purchase_order_items WHERE purchase_order_id = po.id) >= ?");
+            params.add(filter.minPrice().doubleValue());
+        }
+        if (filter.maxPrice() != null) {
+            joiner.add("(SELECT COALESCE(SUM(quantity * unit_cost), 0) FROM purchase_order_items WHERE purchase_order_id = po.id) <= ?");
+            params.add(filter.maxPrice().doubleValue());
+        }
+        return "WHERE " + joiner.toString();
     }
 }

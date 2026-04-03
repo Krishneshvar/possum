@@ -21,6 +21,7 @@
         <HBox fx:id="actionButtonsBox" spacing="10" alignment="CENTER_RIGHT">
             <Button fx:id="cancelButton" text="✕ Cancel Order" onAction="#handleCancel" 
                     styleClass="action-button, danger-button"
+                    style="-fx-border-color: -color-error; -fx-border-width: 1px; -fx-border-radius: 4px;"
                     accessibleText="Cancel this purchase order"/>
             <Button fx:id="editButton" text="✏ Edit Order" onAction="#handleEdit" 
                     styleClass="action-button"

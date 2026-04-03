@@ -11,6 +11,8 @@ public record PurchaseOrderFilter(
         String toDate,
         String sortBy,
         String sortOrder,
-        List<Long> paymentMethodIds
+        List<Long> paymentMethodIds,
+        java.math.BigDecimal minPrice,
+        java.math.BigDecimal maxPrice
 ) {
 }
