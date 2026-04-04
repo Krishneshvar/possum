@@ -580,6 +580,23 @@ public class SalesService {
         return salesRepository.getSaleStats(filter);
     }
 
+    public boolean upsertLegacySale(LegacySale legacySale) {
+        com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SALES_MANAGE);
+        if (legacySale == null) {
+            throw new ValidationException("Legacy sale data is required");
+        }
+        if (legacySale.invoiceNumber() == null || legacySale.invoiceNumber().isBlank()) {
+            throw new ValidationException("Invoice number is required for legacy sale");
+        }
+        if (legacySale.saleDate() == null) {
+            throw new ValidationException("Sale date is required for legacy sale");
+        }
+        if (legacySale.netAmount() == null || legacySale.netAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("Legacy net amount must be zero or greater");
+        }
+        return salesRepository.upsertLegacySale(legacySale);
+    }
+
     public void changeSalePaymentMethod(long saleId, long newPaymentMethodId, long userId) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SALES_MANAGE);
         

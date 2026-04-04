@@ -25,6 +25,7 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
 
     @Override
     public Map<String, Object> getSalesReportSummary(String startDate, String endDate, List<Long> paymentMethodIds) {
+        boolean hasPaymentFilter = paymentMethodIds != null && !paymentMethodIds.isEmpty();
         String paymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
             ? "" 
             : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
@@ -57,7 +58,7 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
             params.addAll(paymentMethodIds);
         }
 
-        return queryOne(
+        Map<String, Object> summary = queryOne(
                 """
                 SELECT
                   (SELECT COUNT(*) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_transactions,
@@ -87,7 +88,52 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                     return map;
                 },
                 params.toArray()
-        ).orElse(Map.of());
+        ).orElseGet(() -> defaultSummaryMap());
+
+        String legacyPaymentFilter = hasPaymentFilter
+                ? "AND ls.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")"
+                : "";
+        List<Object> legacyParams = new ArrayList<>();
+        legacyParams.add(startDate);
+        legacyParams.add(endDate);
+        if (hasPaymentFilter) {
+            legacyParams.addAll(paymentMethodIds);
+        }
+
+        Map<String, Object> legacy = queryOne(
+                """
+                SELECT
+                  COUNT(*) AS total_transactions,
+                  COALESCE(SUM(ls.net_amount), 0) AS total_sales
+                FROM legacy_sales ls
+                WHERE date(ls.sale_date) >= ? AND date(ls.sale_date) <= ?
+                  %s
+                """.formatted(legacyPaymentFilter),
+                rs -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("total_transactions", rs.getInt("total_transactions"));
+                    m.put("total_sales", rs.getBigDecimal("total_sales"));
+                    return m;
+                },
+                legacyParams.toArray()
+        ).orElse(Map.of("total_transactions", 0, "total_sales", BigDecimal.ZERO));
+
+        int mergedTransactions = ((Number) summary.getOrDefault("total_transactions", 0)).intValue()
+                + ((Number) legacy.getOrDefault("total_transactions", 0)).intValue();
+        BigDecimal mergedSales = asBigDecimal(summary.get("total_sales")).add(asBigDecimal(legacy.get("total_sales")));
+        BigDecimal mergedCollected = asBigDecimal(summary.get("total_collected")).add(asBigDecimal(legacy.get("total_sales")));
+        BigDecimal totalTax = asBigDecimal(summary.get("total_tax"));
+        BigDecimal totalRefunds = asBigDecimal(summary.get("total_refunds"));
+
+        summary.put("total_transactions", mergedTransactions);
+        summary.put("total_sales", mergedSales);
+        summary.put("total_collected", mergedCollected);
+        summary.put("net_sales", mergedSales.subtract(totalTax).subtract(totalRefunds));
+        summary.put("average_sale", mergedTransactions > 0
+                ? mergedSales.divide(BigDecimal.valueOf(mergedTransactions), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO);
+
+        return summary;
     }
 
     @Override
@@ -155,7 +201,7 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
 
     @Override
     public List<Map<String, Object>> getSalesByPaymentMethod(String startDate, String endDate) {
-        return queryList(
+        List<Map<String, Object>> liveRows = queryList(
                 """
                 SELECT
                   pm.name AS payment_method,
@@ -178,6 +224,69 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                 startDate,
                 endDate
         );
+
+        List<Map<String, Object>> legacyRows = queryList(
+                """
+                SELECT
+                  COALESCE(NULLIF(trim(ls.payment_method_name), ''), 'Legacy Import') AS payment_method,
+                  COUNT(*) AS total_transactions,
+                  COALESCE(SUM(ls.net_amount), 0) AS total_amount
+                FROM legacy_sales ls
+                WHERE date(ls.sale_date) >= ? AND date(ls.sale_date) <= ?
+                GROUP BY COALESCE(NULLIF(trim(ls.payment_method_name), ''), 'Legacy Import')
+                """,
+                rs -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("payment_method", rs.getString("payment_method"));
+                    map.put("total_transactions", rs.getInt("total_transactions"));
+                    map.put("total_amount", rs.getBigDecimal("total_amount"));
+                    return map;
+                },
+                startDate,
+                endDate
+        );
+
+        Map<String, Map<String, Object>> merged = new HashMap<>();
+        for (Map<String, Object> row : liveRows) {
+            String paymentMethod = (String) row.get("payment_method");
+            if (paymentMethod == null) {
+                continue;
+            }
+            merged.put(canonicalPaymentName(paymentMethod), row);
+        }
+
+        for (Map<String, Object> legacy : legacyRows) {
+            String paymentMethod = (String) legacy.get("payment_method");
+            if (paymentMethod == null) {
+                continue;
+            }
+            String key = canonicalPaymentName(paymentMethod);
+            Map<String, Object> existing = merged.get(key);
+            if (existing == null) {
+                merged.put(key, legacy);
+                continue;
+            }
+            existing.put(
+                    "total_transactions",
+                    ((Number) existing.getOrDefault("total_transactions", 0)).intValue()
+                            + ((Number) legacy.getOrDefault("total_transactions", 0)).intValue()
+            );
+            existing.put(
+                    "total_amount",
+                    asBigDecimal(existing.get("total_amount")).add(asBigDecimal(legacy.get("total_amount")))
+            );
+        }
+
+        return merged.values().stream()
+                .sorted((a, b) -> {
+                    String aMethod = (String) a.get("payment_method");
+                    String bMethod = (String) b.get("payment_method");
+                    if (aMethod == null && bMethod == null) return 0;
+                    if (aMethod == null) return -1;
+                    if (bMethod == null) return 1;
+                    return aMethod.compareToIgnoreCase(bMethod);
+                })
+                .toList();
     }
 
     @Override
@@ -250,9 +359,13 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                                                        String startDate,
                                                        String endDate,
                                                        List<Long> paymentMethodIds) {
+        boolean hasPaymentFilter = paymentMethodIds != null && !paymentMethodIds.isEmpty();
         String paymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
             ? "" 
             : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
+        String legacyPaymentFilter = hasPaymentFilter
+                ? "AND ls.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")"
+                : "";
         
         List<Object> params = new ArrayList<>();
         params.add(startDate);
@@ -261,7 +374,7 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
             params.addAll(paymentMethodIds);
         }
         
-        return queryList(
+        List<Map<String, Object>> liveRows = queryList(
                 """
                 SELECT
                   %s AS %s,
@@ -299,10 +412,144 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                 },
                 params.toArray()
         );
+
+        List<Map<String, Object>> legacyRows = queryList(
+                """
+                SELECT
+                  %s AS %s,
+                  COALESCE(NULLIF(trim(ls.payment_method_name), ''), 'Legacy Import') AS payment_method_name,
+                  COUNT(*) AS legacy_transactions,
+                  COALESCE(SUM(ls.net_amount), 0) AS legacy_sales
+                FROM legacy_sales ls
+                WHERE date(ls.sale_date) >= ? AND date(ls.sale_date) <= ?
+                  %s
+                GROUP BY %s, COALESCE(NULLIF(trim(ls.payment_method_name), ''), 'Legacy Import')
+                """.formatted(expression, alias, legacyPaymentFilter, expression),
+                rs -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put(alias, rs.getString(alias));
+                    map.put("payment_method_name", rs.getString("payment_method_name"));
+                    map.put("legacy_transactions", rs.getInt("legacy_transactions"));
+                    map.put("legacy_sales", rs.getBigDecimal("legacy_sales"));
+                    return map;
+                },
+                buildLegacyBreakdownParams(startDate, endDate, paymentMethodIds, hasPaymentFilter)
+        );
+
+        Map<String, Map<String, Object>> merged = new HashMap<>();
+        for (Map<String, Object> row : liveRows) {
+            String key = (String) row.get(alias);
+            merged.put(key, row);
+        }
+
+        for (Map<String, Object> legacy : legacyRows) {
+            String key = (String) legacy.get(alias);
+            if (key == null) {
+                continue;
+            }
+            Map<String, Object> row = merged.computeIfAbsent(key, k -> createEmptyBreakdownRow(alias, k));
+            int legacyTransactions = ((Number) legacy.getOrDefault("legacy_transactions", 0)).intValue();
+            BigDecimal legacySales = asBigDecimal(legacy.get("legacy_sales"));
+            String legacyPaymentMethodName = (String) legacy.get("payment_method_name");
+
+            row.put("total_transactions", ((Number) row.getOrDefault("total_transactions", 0)).intValue() + legacyTransactions);
+            row.put("total_sales", asBigDecimal(row.get("total_sales")).add(legacySales));
+            addLegacyAmountToPaymentBucket(row, legacySales, legacyPaymentMethodName);
+        }
+
+        return merged.values().stream()
+                .sorted((a, b) -> {
+                    String aKey = (String) a.get(alias);
+                    String bKey = (String) b.get(alias);
+                    if (aKey == null && bKey == null) return 0;
+                    if (aKey == null) return -1;
+                    if (bKey == null) return 1;
+                    return aKey.compareTo(bKey);
+                })
+                .toList();
+    }
+
+    private Object[] buildLegacyBreakdownParams(String startDate,
+                                                String endDate,
+                                                List<Long> paymentMethodIds,
+                                                boolean hasPaymentFilter) {
+        List<Object> params = new ArrayList<>();
+        params.add(startDate);
+        params.add(endDate);
+        if (hasPaymentFilter) {
+            params.addAll(paymentMethodIds);
+        }
+        return params.toArray();
+    }
+
+    private static void addLegacyAmountToPaymentBucket(Map<String, Object> row,
+                                                       BigDecimal amount,
+                                                       String paymentMethodName) {
+        String normalized = canonicalPaymentName(paymentMethodName);
+        switch (normalized) {
+            case "cash" -> row.put("cash", asBigDecimal(row.get("cash")).add(amount));
+            case "upi" -> row.put("upi", asBigDecimal(row.get("upi")).add(amount));
+            case "debit card" -> row.put("debit_card", asBigDecimal(row.get("debit_card")).add(amount));
+            case "credit card" -> row.put("credit_card", asBigDecimal(row.get("credit_card")).add(amount));
+            case "gift card" -> row.put("gift_card", asBigDecimal(row.get("gift_card")).add(amount));
+            default -> {
+                // Keep legacy totals in total_sales/transaction count without misclassifying unknown methods.
+            }
+        }
+    }
+
+    private static String canonicalPaymentName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .trim()
+                .toLowerCase(java.util.Locale.ENGLISH)
+                .replace('_', ' ')
+                .replaceAll("\\s+", " ");
     }
     
     private String buildInPlaceholders(int count) {
         if (count <= 0) return "";
         return "?,".repeat(count).replaceAll(",$", "");
+    }
+
+    private static BigDecimal asBigDecimal(Object value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        if (value instanceof BigDecimal bd) {
+            return bd;
+        }
+        return new BigDecimal(value.toString());
+    }
+
+    private static Map<String, Object> defaultSummaryMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("total_transactions", 0);
+        map.put("total_sales", BigDecimal.ZERO);
+        map.put("total_tax", BigDecimal.ZERO);
+        map.put("total_discount", BigDecimal.ZERO);
+        map.put("total_collected", BigDecimal.ZERO);
+        map.put("total_refunds", BigDecimal.ZERO);
+        map.put("net_sales", BigDecimal.ZERO);
+        map.put("average_sale", BigDecimal.ZERO);
+        return map;
+    }
+
+    private static Map<String, Object> createEmptyBreakdownRow(String alias, String period) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(alias, period);
+        map.put("total_transactions", 0);
+        map.put("total_sales", BigDecimal.ZERO);
+        map.put("total_tax", BigDecimal.ZERO);
+        map.put("total_discount", BigDecimal.ZERO);
+        map.put("cash", BigDecimal.ZERO);
+        map.put("upi", BigDecimal.ZERO);
+        map.put("debit_card", BigDecimal.ZERO);
+        map.put("credit_card", BigDecimal.ZERO);
+        map.put("gift_card", BigDecimal.ZERO);
+        map.put("refunds", BigDecimal.ZERO);
+        return map;
     }
 }

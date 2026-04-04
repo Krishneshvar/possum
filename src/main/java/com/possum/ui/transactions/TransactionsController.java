@@ -81,6 +81,8 @@ public class TransactionsController {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
+                Transaction tx = getTableRow() != null ? getTableRow().getItem() : null;
+                boolean isLegacy = tx != null && "legacy".equalsIgnoreCase(tx.status());
                 if (empty || item == null || "-".equals(item)) {
                     setText(item);
                     setGraphic(null);
@@ -89,15 +91,19 @@ public class TransactionsController {
                     container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                     
                     Label label = new Label(item);
-                    javafx.scene.control.Button viewBtn = new javafx.scene.control.Button();
-                    org.kordamp.ikonli.javafx.FontIcon viewIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-show-alt");
-                    viewIcon.setIconSize(16);
-                    viewBtn.setGraphic(viewIcon);
-                    viewBtn.getStyleClass().add("btn-edit-stock");
-                    viewBtn.setTooltip(new javafx.scene.control.Tooltip("View Bill Details"));
-                    viewBtn.setOnAction(e -> handleViewBill(item));
-                    
-                    container.getChildren().addAll(label, viewBtn);
+                    container.getChildren().add(label);
+
+                    if (!isLegacy) {
+                        javafx.scene.control.Button viewBtn = new javafx.scene.control.Button();
+                        org.kordamp.ikonli.javafx.FontIcon viewIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-show-alt");
+                        viewIcon.setIconSize(16);
+                        viewBtn.setGraphic(viewIcon);
+                        viewBtn.getStyleClass().add("btn-edit-stock");
+                        viewBtn.setTooltip(new javafx.scene.control.Tooltip("View Bill Details"));
+                        viewBtn.setOnAction(e -> handleViewBill(item));
+                        container.getChildren().add(viewBtn);
+                    }
+
                     setGraphic(container);
                     setText(null);
                 }
@@ -163,6 +169,7 @@ public class TransactionsController {
                         case "completed", "success", "paid" -> badge.getStyleClass().add("badge-success");
                         case "pending", "draft", "partially_paid" -> badge.getStyleClass().add("badge-warning");
                         case "failed", "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");
+                        case "legacy" -> badge.getStyleClass().add("badge-neutral");
                         default -> badge.getStyleClass().add("badge-neutral");
                     }
                     setGraphic(badge);
@@ -196,11 +203,11 @@ public class TransactionsController {
     private void handleViewBill(String invoiceNumber) {
         if (invoiceNumber == null || invoiceNumber.isEmpty()) return;
         
-        salesService.findSaleByInvoiceNumber(invoiceNumber).ifPresent(sale -> {
+        salesService.findSaleByInvoiceNumber(invoiceNumber).ifPresentOrElse(sale -> {
             java.util.Map<String, Object> params = new java.util.HashMap<>();
             params.put("sale", sale);
             workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
-        });
+        }, () -> NotificationService.info("This reference is from legacy summary data and has no item-level bill details."));
     }
 
     private void setupFilters() {

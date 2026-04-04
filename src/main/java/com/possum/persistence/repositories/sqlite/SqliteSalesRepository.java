@@ -1,5 +1,6 @@
 package com.possum.persistence.repositories.sqlite;
 
+import com.possum.domain.model.LegacySale;
 import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
@@ -28,6 +29,53 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     private static final Set<String> SORTABLE = Set.of(
             "sale_date", "total_amount", "invoice_number", "paid_amount", "status", "fulfillment_status", "customer_name"
     );
+    private static final String UNIFIED_SALES_CTE = """
+            WITH unified_sales AS (
+              SELECT
+                s.id AS id,
+                s.invoice_number AS invoice_number,
+                s.sale_date AS sale_date,
+                s.total_amount AS total_amount,
+                s.paid_amount AS paid_amount,
+                s.discount AS discount,
+                s.total_tax AS total_tax,
+                s.status AS status,
+                s.fulfillment_status AS fulfillment_status,
+                s.customer_id AS customer_id,
+                s.user_id AS user_id,
+                c.name AS customer_name,
+                c.phone AS customer_phone,
+                c.email AS customer_email,
+                u.name AS biller_name,
+                (SELECT t.payment_method_id FROM transactions t WHERE t.sale_id = s.id AND t.status = 'completed' LIMIT 1) AS payment_method_id,
+                (SELECT GROUP_CONCAT(DISTINCT pm.name) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND t.status = 'completed') AS payment_method_name
+              FROM sales s
+              LEFT JOIN customers c ON s.customer_id = c.id
+              LEFT JOIN users u ON s.user_id = u.id
+
+              UNION ALL
+
+              SELECT
+                -ls.id AS id,
+                ls.invoice_number AS invoice_number,
+                ls.sale_date AS sale_date,
+                ls.net_amount AS total_amount,
+                ls.net_amount AS paid_amount,
+                0 AS discount,
+                0 AS total_tax,
+                'legacy' AS status,
+                'fulfilled' AS fulfillment_status,
+                NULL AS customer_id,
+                NULL AS user_id,
+                CASE WHEN ls.customer_name IS NULL OR trim(ls.customer_name) = '' THEN 'Walk-in Customer' ELSE ls.customer_name END AS customer_name,
+                NULL AS customer_phone,
+                NULL AS customer_email,
+                'Legacy Import' AS biller_name,
+                ls.payment_method_id AS payment_method_id,
+                COALESCE(NULLIF(trim(ls.payment_method_name), ''), 'Legacy Import') AS payment_method_name
+              FROM legacy_sales ls
+            )
+            """;
 
     private final SaleMapper saleMapper = new SaleMapper();
     private final SaleItemMapper saleItemMapper = new SaleItemMapper();
@@ -159,21 +207,21 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     @Override
     public PagedResult<Sale> findSales(SaleFilter filter) {
         List<Object> params = new ArrayList<>();
-        String whereClause = buildWhere(filter, params);
+        String whereClause = buildUnifiedWhere(filter, params);
 
         int total = queryOne(
                 """
-                SELECT COUNT(*) AS count
-                FROM sales s
-                LEFT JOIN customers c ON s.customer_id = c.id
                 %s
-                """.formatted(whereClause),
+                SELECT COUNT(*) AS count
+                FROM unified_sales us
+                %s
+                """.formatted(UNIFIED_SALES_CTE, whereClause),
                 rs -> rs.getInt("count"),
                 params.toArray()
         ).orElse(0);
 
         String sortBy = SORTABLE.contains(filter.sortBy()) ? filter.sortBy() : "sale_date";
-        String sortExpr = "customer_name".equals(sortBy) ? "c.name" : "s." + sortBy;
+        String sortExpr = "customer_name".equals(sortBy) ? "us.customer_name" : "us." + sortBy;
         String sortOrder = "ASC".equalsIgnoreCase(filter.sortOrder()) ? "ASC" : "DESC";
 
         int page = Math.max(1, filter.currentPage());
@@ -185,18 +233,14 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
 
         List<Sale> sales = queryList(
                 """
-                SELECT
-                  s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name,
-                  (SELECT GROUP_CONCAT(DISTINCT pm.name) FROM transactions t JOIN payment_methods pm ON t.payment_method_id = pm.id WHERE t.sale_id = s.id AND t.status = 'completed') AS payment_method_name,
-                  (SELECT t.payment_method_id FROM transactions t WHERE t.sale_id = s.id AND t.status = 'completed' LIMIT 1) AS payment_method_id
-                FROM sales s
-                LEFT JOIN customers c ON s.customer_id = c.id
-                LEFT JOIN users u ON s.user_id = u.id
                 %s
-                GROUP BY s.id
+                SELECT
+                  us.*
+                FROM unified_sales us
+                %s
                 ORDER BY %s %s
                 LIMIT ? OFFSET ?
-                """.formatted(whereClause, sortExpr, sortOrder),
+                """.formatted(UNIFIED_SALES_CTE, whereClause, sortExpr, sortOrder),
                 saleMapper,
                 params.toArray()
         );
@@ -208,19 +252,19 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
     @Override
     public com.possum.application.sales.dto.SaleStats getSaleStats(SaleFilter filter) {
         List<Object> params = new ArrayList<>();
-        String whereClause = buildWhere(filter, params);
+        String whereClause = buildUnifiedWhere(filter, params);
 
         return queryOne(
                 """
+                %s
                 SELECT
                     COUNT(*) AS total_bills,
-                    SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_count,
+                    SUM(CASE WHEN status IN ('paid', 'legacy') THEN 1 ELSE 0 END) AS paid_count,
                     SUM(CASE WHEN status IN ('partially_paid', 'draft') THEN 1 ELSE 0 END) AS partial_count,
                     SUM(CASE WHEN status IN ('cancelled', 'refunded', 'partially_refunded') THEN 1 ELSE 0 END) AS cancelled_count
-                FROM sales s
-                LEFT JOIN customers c ON s.customer_id = c.id
+                FROM unified_sales us
                 %s
-                """.formatted(whereClause),
+                """.formatted(UNIFIED_SALES_CTE, whereClause),
                 rs -> new com.possum.application.sales.dto.SaleStats(
                         rs.getLong("total_bills"),
                         rs.getLong("paid_count"),
@@ -332,51 +376,50 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         throw new IllegalStateException("No sequence row found for payment type: " + paymentTypeCode);
     }
 
-    private static String buildWhere(SaleFilter filter, List<Object> params) {
+    private static String buildUnifiedWhere(SaleFilter filter, List<Object> params) {
         StringJoiner joiner = new StringJoiner(" AND ");
         if (filter.status() != null && !filter.status().isEmpty()) {
-            joiner.add("s.status IN (" + "?,".repeat(filter.status().size()).replaceAll(",$", "") + ")");
+            joiner.add("us.status IN (" + "?,".repeat(filter.status().size()).replaceAll(",$", "") + ")");
             params.addAll(filter.status());
         }
         if (filter.fulfillmentStatus() != null && !filter.fulfillmentStatus().isEmpty()) {
-            joiner.add("s.fulfillment_status IN (" + "?,".repeat(filter.fulfillmentStatus().size()).replaceAll(",$", "") + ")");
+            joiner.add("us.fulfillment_status IN (" + "?,".repeat(filter.fulfillmentStatus().size()).replaceAll(",$", "") + ")");
             params.addAll(filter.fulfillmentStatus());
         }
         if (filter.customerId() != null) {
-            joiner.add("s.customer_id = ?");
+            joiner.add("us.customer_id = ?");
             params.add(filter.customerId());
         }
         if (filter.userId() != null) {
-            joiner.add("s.user_id = ?");
+            joiner.add("us.user_id = ?");
             params.add(filter.userId());
         }
         if (filter.startDate() != null && !filter.startDate().isBlank()) {
             String date = filter.startDate().substring(0, Math.min(10, filter.startDate().length()));
-            joiner.add("s.sale_date >= ?");
+            joiner.add("us.sale_date >= ?");
             params.add(date + " 00:00:00");
         }
         if (filter.endDate() != null && !filter.endDate().isBlank()) {
             String date = filter.endDate().substring(0, Math.min(10, filter.endDate().length()));
-            joiner.add("s.sale_date <= ?");
+            joiner.add("us.sale_date <= ?");
             params.add(date + " 23:59:59");
         }
         if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
             String fuzzy = "%" + filter.searchTerm() + "%";
-            joiner.add("(s.invoice_number LIKE ? OR c.name LIKE ?)");
+            joiner.add("(us.invoice_number LIKE ? OR COALESCE(us.customer_name, '') LIKE ?)");
             params.add(fuzzy);
             params.add(fuzzy);
         }
         if (filter.minAmount() != null) {
-            joiner.add("s.total_amount >= ?");
+            joiner.add("us.total_amount >= ?");
             params.add(filter.minAmount());
         }
         if (filter.maxAmount() != null) {
-            joiner.add("s.total_amount <= ?");
+            joiner.add("us.total_amount <= ?");
             params.add(filter.maxAmount());
         }
         if (filter.paymentMethodIds() != null && !filter.paymentMethodIds().isEmpty()) {
-            joiner.add("EXISTS (SELECT 1 FROM transactions tx WHERE tx.sale_id = s.id AND tx.payment_method_id IN (" 
-                    + "?,".repeat(filter.paymentMethodIds().size()).replaceAll(",$", "") + "))");
+            joiner.add("us.payment_method_id IN (" + "?,".repeat(filter.paymentMethodIds().size()).replaceAll(",$", "") + ")");
             params.addAll(filter.paymentMethodIds());
         }
         if (joiner.length() == 0) {
@@ -438,6 +481,38 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
         );
     }
 
+    @Override
+    public boolean upsertLegacySale(LegacySale legacySale) {
+        String saleDate = legacySale.saleDate() != null
+                ? legacySale.saleDate().toString().replace('T', ' ')
+                : null;
+
+        return executeUpdate(
+                """
+                INSERT INTO legacy_sales (
+                    invoice_number, sale_date, customer_code, customer_name, net_amount,
+                    payment_method_id, payment_method_name, source_file, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(invoice_number) DO UPDATE SET
+                    sale_date = excluded.sale_date,
+                    customer_code = excluded.customer_code,
+                    customer_name = excluded.customer_name,
+                    net_amount = excluded.net_amount,
+                    payment_method_id = excluded.payment_method_id,
+                    payment_method_name = excluded.payment_method_name,
+                    source_file = excluded.source_file,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                legacySale.invoiceNumber(),
+                saleDate,
+                legacySale.customerCode(),
+                legacySale.customerName(),
+                legacySale.netAmount(),
+                legacySale.paymentMethodId(),
+                legacySale.paymentMethodName(),
+                legacySale.sourceFile()
+        ) > 0;
+    }
+
 }
-
-

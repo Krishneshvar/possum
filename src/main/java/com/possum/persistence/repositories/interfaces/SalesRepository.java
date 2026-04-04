@@ -1,6 +1,7 @@
 package com.possum.persistence.repositories.interfaces;
 
 import com.possum.domain.model.PaymentMethod;
+import com.possum.domain.model.LegacySale;
 import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
 import com.possum.domain.model.Transaction;
@@ -58,5 +59,6 @@ public interface SalesRepository {
 
     int updateSaleTotals(long saleId, BigDecimal totalAmount, BigDecimal totalTax, BigDecimal discount);
 
-}
+    boolean upsertLegacySale(LegacySale legacySale);
 
+}
