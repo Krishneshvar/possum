@@ -5,6 +5,7 @@ public class GeneralSettings {
     private String storeName = "";
     private String language = "en";
     private String currencyCode = "INR";
+    private String currencySymbol = "₹";
     private String dateFormat = "DD/MM/YYYY";
     private String timeFormat = "12 hour format";
 
@@ -30,6 +31,14 @@ public class GeneralSettings {
 
     public void setCurrencyCode(String currencyCode) {
         this.currencyCode = currencyCode;
+    }
+
+    public String getCurrencySymbol() {
+        return currencySymbol;
+    }
+
+    public void setCurrencySymbol(String currencySymbol) {
+        this.currencySymbol = currencySymbol;
     }
 
     public String getDateFormat() {

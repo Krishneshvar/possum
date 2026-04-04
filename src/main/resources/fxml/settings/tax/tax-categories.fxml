@@ -10,18 +10,18 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.possum.ui.settings.tax.TaxCategoriesController"
       spacing="20"
-      style="-fx-padding: 20 0 0 0;"
+      style="-fx-padding: 20 0 20 0;"
       stylesheets="@../../../styles/settings.css">
 
     <HBox spacing="20" VBox.vgrow="ALWAYS">
         <!-- Left Side: Categories Table -->
         <VBox spacing="10" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" styleClass="card">
             <Label text="Tax Categories List" styleClass="card-title"/>
-            <DataTableView fx:id="categoriesTable" VBox.vgrow="ALWAYS" />
+            <DataTableView fx:id="categoriesTable" VBox.vgrow="ALWAYS" styleClass="data-table" />
         </VBox>
 
         <!-- Right Side: Category Details Form -->
-        <VBox spacing="15" styleClass="form-section" style="-fx-min-width: 400; -fx-max-width: 400;">
+        <VBox spacing="15" styleClass="form-section" style="-fx-min-width: 480; -fx-max-width: 480;">
             <Label text="Category Details" styleClass="form-section-title"/>
             <Label text="Define product tax categories used by tax rules and product mapping." styleClass="form-section-subtitle"/>
 
@@ -44,17 +44,14 @@
 
             <Separator/>
 
-            <HBox styleClass="form-actions" spacing="10">
-                <Button text="Clear" onAction="#handleClear" styleClass="action-button" accessibleText="Clear form fields" cancelButton="true">
-                    <graphic><FontIcon iconLiteral="bx-reset" iconSize="16"/></graphic>
+            <HBox spacing="10" style="-fx-padding: 10 0 0 0;" styleClass="form-actions">
+                <Button text="Delete" fx:id="deleteButton" onAction="#handleDelete" styleClass="action-button" style="-fx-border-color: -color-error; -fx-border-width: 1; -fx-text-fill: -color-error;" accessibleText="Delete selected category" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                    <graphic><FontIcon iconLiteral="bx-trash" iconSize="16" iconColor="#EF4444"/></graphic>
                 </Button>
-                <Button text="Delete" fx:id="deleteButton" onAction="#handleDelete" styleClass="danger-button" accessibleText="Delete selected category">
-                    <graphic><FontIcon iconLiteral="bx-trash" iconSize="16" iconColor="white"/></graphic>
-                </Button>
-                <Button text="Update" fx:id="updateButton" onAction="#handleUpdate" styleClass="action-button" accessibleText="Update selected category">
+                <Button text="Update" fx:id="updateButton" onAction="#handleUpdate" styleClass="action-button" accessibleText="Update selected category" maxWidth="Infinity" HBox.hgrow="ALWAYS">
                     <graphic><FontIcon iconLiteral="bx-edit" iconSize="16"/></graphic>
                 </Button>
-                <Button text="Add Category" fx:id="addButton" onAction="#handleAdd" styleClass="primary-button" accessibleText="Add new category" defaultButton="true">
+                <Button text="Add Category" fx:id="addButton" onAction="#handleAdd" styleClass="primary-button" accessibleText="Add new category" defaultButton="true" maxWidth="Infinity" HBox.hgrow="ALWAYS">
                     <graphic><FontIcon iconLiteral="bx-plus" iconSize="16" iconColor="white"/></graphic>
                 </Button>
             </HBox>

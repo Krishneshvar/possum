@@ -85,9 +85,18 @@
     -fx-background-radius: 6;
     -fx-text-fill: -color-text-main;
     -fx-font-size: 16;
+    -fx-control-inner-background: -color-surface;
+}
+
+/* Explicit height constraints for single-line inputs */
+.text-field,
+.password-field,
+.combo-box,
+.choice-box,
+.date-picker,
+.menu-button {
     -fx-min-height: 44;
     -fx-pref-height: 44;
-    -fx-control-inner-background: -color-surface;
 }
 
 .text-field,

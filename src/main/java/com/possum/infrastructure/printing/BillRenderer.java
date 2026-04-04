@@ -159,7 +159,7 @@ public class BillRenderer {
             .append("<div><span class=\"bold\">Date:</span> ").append(formatDate(TimeUtil.toLocal(sale.saleDate()), billSettings)).append("</div>");
 
         if (sale.billerName() != null) {
-            html.append("<div><span class=\"bold\">Cashier:</span> ").append(escapeHtml(sale.billerName())).append("</div>");
+            html.append("<div><span class=\"bold\">User:</span> ").append(escapeHtml(sale.billerName())).append("</div>");
         }
         if (sale.customerName() != null) {
             html.append("<div><span class=\"bold\">Customer:</span> ").append(escapeHtml(sale.customerName())).append("</div>");

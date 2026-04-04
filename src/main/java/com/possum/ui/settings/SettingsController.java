@@ -6,25 +6,21 @@ import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
-import com.possum.shared.dto.BillSettings;
 import com.possum.shared.dto.GeneralSettings;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 
 import java.util.List;
 
 public class SettingsController {
     
-    @FXML private TextField storeNameField;
-    @FXML private ComboBox<String> currencyCombo;
+
+    @FXML private TextField currencyField;
     @FXML private ComboBox<String> dateFormatCombo;
     @FXML private ComboBox<String> timeFormatCombo;
     @FXML private ComboBox<String> printerCombo;
@@ -50,7 +46,6 @@ public class SettingsController {
 
     @FXML
     public void initialize() {
-        setupCurrencies();
         setupDateAndTimeFormats();
         loadGeneralSettings();
         loadPrinters();
@@ -58,11 +53,7 @@ public class SettingsController {
         setupTaxSettings();
     }
 
-    private void setupCurrencies() {
-        currencyCombo.setItems(FXCollections.observableArrayList(
-            "USD", "EUR", "GBP", "INR", "JPY", "CNY", "AUD", "CAD"
-        ));
-    }
+
 
     private void setupDateAndTimeFormats() {
         dateFormatCombo.setItems(FXCollections.observableArrayList(
@@ -81,8 +72,7 @@ public class SettingsController {
 
     private void loadGeneralSettings() {
         GeneralSettings settings = settingsStore.loadGeneralSettings();
-        storeNameField.setText(settings.getStoreName());
-        currencyCombo.setValue(settings.getCurrencyCode());
+        currencyField.setText(settings.getCurrencySymbol() != null ? settings.getCurrencySymbol() : "");
 
         String dateFormat = settings.getDateFormat();
         if (dateFormatCombo.getItems().contains(dateFormat)) {
@@ -116,8 +106,7 @@ public class SettingsController {
     private void handleSaveGeneral() {
         try {
             GeneralSettings settings = new GeneralSettings();
-            settings.setStoreName(storeNameField.getText());
-            settings.setCurrencyCode(currencyCombo.getValue());
+            settings.setCurrencySymbol(currencyField.getText());
             settings.setDateFormat(dateFormatCombo.getValue());
             settings.setTimeFormat(timeFormatCombo.getValue());
             

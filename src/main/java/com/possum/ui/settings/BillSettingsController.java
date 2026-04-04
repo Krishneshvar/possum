@@ -1,6 +1,5 @@
 package com.possum.ui.settings;
 
-import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
@@ -11,7 +10,6 @@ import com.possum.shared.dto.BillSettings;
 import com.possum.shared.dto.GeneralSettings;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.application.Platform;
-import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -20,20 +18,24 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 
+import java.io.File;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 public class BillSettingsController {
 
-    @FXML private TabPane tabPane;
     @FXML private VBox sectionsContainer;
     @FXML private ComboBox<String> paperWidthCombo;
     @FXML private ComboBox<String> dateFormatCombo;
     @FXML private ComboBox<String> timeFormatCombo;
-    @FXML private TextField currencyField;
+
     @FXML private WebView previewWebView;
     @FXML private Button saveButton;
 
@@ -54,7 +56,7 @@ public class BillSettingsController {
     }
 
     private void setupFormatOptions() {
-        paperWidthCombo.getItems().addAll("58mm", "80mm");
+        paperWidthCombo.getItems().addAll("2 inch (58 mm)", "3 inch (80 mm)");
         dateFormatCombo.getItems().addAll("standard", "ISO", "short", "long");
         timeFormatCombo.getItems().addAll("12h", "24h");
     }
@@ -63,13 +65,12 @@ public class BillSettingsController {
         billSettings = settingsStore.loadBillSettings();
         generalSettings = settingsStore.loadGeneralSettings();
 
-        paperWidthCombo.setValue(billSettings.getPaperWidth());
+        paperWidthCombo.setValue(formatPaperWidth(billSettings.getPaperWidth()));
         dateFormatCombo.setValue(billSettings.getDateFormat());
         timeFormatCombo.setValue(billSettings.getTimeFormat());
-        currencyField.setText(billSettings.getCurrency());
 
         paperWidthCombo.setOnAction(e -> {
-            billSettings.setPaperWidth(paperWidthCombo.getValue());
+            billSettings.setPaperWidth(parsePaperWidth(paperWidthCombo.getValue()));
             updatePreview();
         });
         dateFormatCombo.setOnAction(e -> {
@@ -80,10 +81,7 @@ public class BillSettingsController {
             billSettings.setTimeFormat(timeFormatCombo.getValue());
             updatePreview();
         });
-        currencyField.textProperty().addListener((obs, old, val) -> {
-            billSettings.setCurrency(val);
-            updatePreview();
-        });
+
     }
 
     private void buildSectionsUI() {
@@ -146,42 +144,52 @@ public class BillSettingsController {
         VBox options = new VBox(15);
         options.setPadding(new Insets(15, 0, 0, 20));
 
-        if (section.getOptions().containsKey("alignment")) {
-            HBox alignBox = new HBox(10);
-            alignBox.getStyleClass().add("form-group");
-            alignBox.setStyle("-fx-alignment: center-left;");
-            Label alignLabel = new Label("Alignment:");
-            alignLabel.getStyleClass().add("form-label");
-            alignLabel.setPrefWidth(100);
-            ComboBox<String> alignCombo = new ComboBox<>();
-            alignCombo.getStyleClass().add("combo-box");
-            alignCombo.getItems().addAll("left", "center", "right");
-            alignCombo.setValue(section.getOptionAsString("alignment", "left"));
-            alignCombo.setOnAction(e -> {
-                section.setOption("alignment", alignCombo.getValue());
-                updatePreview();
-            });
-            alignBox.getChildren().addAll(alignLabel, alignCombo);
-            options.getChildren().add(alignBox);
-        }
+        boolean hasAlignment = section.getOptions().containsKey("alignment");
+        boolean hasFontSize = section.getOptions().containsKey("fontSize");
 
-        if (section.getOptions().containsKey("fontSize")) {
-            HBox sizeBox = new HBox(10);
-            sizeBox.getStyleClass().add("form-group");
-            sizeBox.setStyle("-fx-alignment: center-left;");
-            Label sizeLabel = new Label("Font Size:");
-            sizeLabel.getStyleClass().add("form-label");
-            sizeLabel.setPrefWidth(100);
-            ComboBox<String> sizeCombo = new ComboBox<>();
-            sizeCombo.getStyleClass().add("combo-box");
-            sizeCombo.getItems().addAll("small", "medium", "large");
-            sizeCombo.setValue(section.getOptionAsString("fontSize", "medium"));
-            sizeCombo.setOnAction(e -> {
-                section.setOption("fontSize", sizeCombo.getValue());
-                updatePreview();
-            });
-            sizeBox.getChildren().addAll(sizeLabel, sizeCombo);
-            options.getChildren().add(sizeBox);
+        if (hasAlignment || hasFontSize) {
+            HBox row = new HBox(20);
+            row.setStyle("-fx-alignment: center-left;");
+
+            if (hasAlignment) {
+                VBox alignBox = new VBox(5);
+                alignBox.getStyleClass().add("form-group");
+                HBox.setHgrow(alignBox, Priority.ALWAYS);
+                Label alignLabel = new Label("Alignment:");
+                alignLabel.getStyleClass().add("form-label");
+                ComboBox<String> alignCombo = new ComboBox<>();
+                alignCombo.getStyleClass().add("combo-box");
+                alignCombo.setMaxWidth(Double.MAX_VALUE);
+                alignCombo.getItems().addAll("left", "center", "right");
+                alignCombo.setValue(section.getOptionAsString("alignment", "left"));
+                alignCombo.setOnAction(e -> {
+                    section.setOption("alignment", alignCombo.getValue());
+                    updatePreview();
+                });
+                alignBox.getChildren().addAll(alignLabel, alignCombo);
+                row.getChildren().add(alignBox);
+            }
+
+            if (hasFontSize) {
+                VBox sizeBox = new VBox(5);
+                sizeBox.getStyleClass().add("form-group");
+                HBox.setHgrow(sizeBox, Priority.ALWAYS);
+                Label sizeLabel = new Label("Font Size:");
+                sizeLabel.getStyleClass().add("form-label");
+                ComboBox<String> sizeCombo = new ComboBox<>();
+                sizeCombo.getStyleClass().add("combo-box");
+                sizeCombo.setMaxWidth(Double.MAX_VALUE);
+                sizeCombo.getItems().addAll("small", "medium", "large");
+                sizeCombo.setValue(section.getOptionAsString("fontSize", "medium"));
+                sizeCombo.setOnAction(e -> {
+                    section.setOption("fontSize", sizeCombo.getValue());
+                    updatePreview();
+                });
+                sizeBox.getChildren().addAll(sizeLabel, sizeCombo);
+                row.getChildren().add(sizeBox);
+            }
+
+            options.getChildren().add(row);
         }
 
         if (section.getId().equals("storeHeader")) {
@@ -195,15 +203,19 @@ public class BillSettingsController {
             CheckBox logoCheck = new CheckBox("Show Logo");
             logoCheck.getStyleClass().add("check-box");
             logoCheck.setSelected(section.getOptionAsBoolean("showLogo", false));
+
+            VBox logoPickerBox = buildLogoPickerBox(section);
+            logoPickerBox.setVisible(section.getOptionAsBoolean("showLogo", false));
+            logoPickerBox.setManaged(section.getOptionAsBoolean("showLogo", false));
+
             logoCheck.setOnAction(e -> {
-                section.setOption("showLogo", logoCheck.isSelected());
+                boolean show = logoCheck.isSelected();
+                section.setOption("showLogo", show);
+                logoPickerBox.setVisible(show);
+                logoPickerBox.setManaged(show);
                 updatePreview();
             });
-            options.getChildren().add(logoCheck);
-
-            if (section.getOptionAsBoolean("showLogo", false)) {
-                options.getChildren().add(createTextField("Logo URL:", "logoUrl", section));
-            }
+            options.getChildren().addAll(logoCheck, logoPickerBox);
         }
 
         if (section.getId().equals("footer")) {
@@ -211,6 +223,64 @@ public class BillSettingsController {
         }
 
         return options;
+    }
+
+    private VBox buildLogoPickerBox(BillSection section) {
+        VBox box = new VBox(5);
+        box.getStyleClass().add("form-group");
+        Label label = new Label("Store Logo:");
+        label.getStyleClass().add("form-label");
+
+        HBox controls = new HBox(10);
+        controls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        TextField logoUrlField = new TextField(section.getOptionAsString("logoUrl", ""));
+        logoUrlField.getStyleClass().add("text-field");
+        logoUrlField.setEditable(false);
+        HBox.setHgrow(logoUrlField, Priority.ALWAYS);
+
+        Button browseButton = new Button("Browse...");
+        browseButton.getStyleClass().add("action-button");
+        browseButton.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select Logo Image");
+            fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+            );
+            Window window = box.getScene().getWindow();
+            File selectedFile = fileChooser.showOpenDialog(window);
+            if (selectedFile != null) {
+                try {
+                    byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
+                    String encodedString = Base64.getEncoder().encodeToString(fileContent);
+                    String mimeType = Files.probeContentType(selectedFile.toPath());
+                    String dataUri = "data:" + mimeType + ";base64," + encodedString;
+                    
+                    section.setOption("logoUrl", dataUri);
+                    logoUrlField.setText("Image Selected (Base64)");
+                    updatePreview();
+                } catch (Exception ex) {
+                    NotificationService.error("Failed to load image: " + ex.getMessage());
+                }
+            }
+        });
+
+        Button clearButton = new Button("Clear");
+        clearButton.getStyleClass().add("secondary-button");
+        clearButton.setOnAction(e -> {
+            section.setOption("logoUrl", "");
+            logoUrlField.setText("");
+            updatePreview();
+        });
+
+        controls.getChildren().addAll(logoUrlField, browseButton, clearButton);
+        box.getChildren().addAll(label, controls);
+        
+        if (!section.getOptionAsString("logoUrl", "").isEmpty()) {
+            logoUrlField.setText("Image Selected (Base64)");
+        }
+
+        return box;
     }
 
     private VBox createTextField(String label, String key, BillSection section) {
@@ -236,8 +306,11 @@ public class BillSettingsController {
         lbl.getStyleClass().add("form-label");
         TextArea area = new TextArea(section.getOptionAsString(key, ""));
         area.getStyleClass().add("text-area");
-        area.setPrefRowCount(3);
+        area.setPrefRowCount(4);
+        area.setMinHeight(90);
+        area.setPrefHeight(100);
         area.setPrefWidth(300);
+        area.setWrapText(true);
         area.textProperty().addListener((obs, old, val) -> {
             section.setOption(key, val);
             updatePreview();
@@ -305,5 +378,17 @@ public class BillSettingsController {
         } catch (Exception e) {
             NotificationService.error("Failed to save settings: " + e.getMessage());
         }
+    }
+
+    private String formatPaperWidth(String val) {
+        if ("58mm".equals(val)) return "2 inch (58 mm)";
+        if ("80mm".equals(val)) return "3 inch (80 mm)";
+        return val != null ? val : "3 inch (80 mm)";
+    }
+
+    private String parsePaperWidth(String display) {
+        if ("2 inch (58 mm)".equals(display)) return "58mm";
+        if ("3 inch (80 mm)".equals(display)) return "80mm";
+        return display != null ? display : "80mm";
     }
 }

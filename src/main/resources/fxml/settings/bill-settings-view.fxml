@@ -25,54 +25,40 @@
 
     <HBox spacing="20" VBox.vgrow="ALWAYS">
         <VBox spacing="15" HBox.hgrow="ALWAYS">
-            <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS" styleClass="data-table">
-                <Tab text="Layout &amp; Sections" closable="false">
-                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 16 0 0 0;">
-                        <VBox spacing="15" styleClass="card">
-                            <Label text="Receipt Sections" styleClass="card-title"/>
-                            <Label text="Toggle visibility and reorder sections to customize your receipt layout. Drag or use arrows."
-                                   style="-fx-text-fill: #64748b; -fx-wrap-text: true;"/>
-                            <VBox fx:id="sectionsContainer" spacing="12"/>
-                        </VBox>
-                    </ScrollPane>
-                </Tab>
-
-                <Tab text="General Options" closable="false">
-                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 16 0 0 0;">
-                        <VBox spacing="20" styleClass="card">
-                            <Label text="Format Settings" styleClass="card-title"/>
-                            <Label text="Configure paper size, date/time formats, and currency." style="-fx-text-fill: #64748b;"/>
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="settings-scroll-pane" style="-fx-background-color: transparent;">
+                <VBox spacing="20" style="-fx-padding: 0 10 0 0;">
+                    <!-- General Options -->
+                    <VBox spacing="15" styleClass="card">
+                        <Label text="Format Settings" styleClass="card-title"/>
+                        <Label text="Configure paper size, date format, and time format." style="-fx-text-fill: #64748b;"/>
+                        
+                        <HBox spacing="20">
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Paper Width" styleClass="form-label"/>
+                                <ComboBox fx:id="paperWidthCombo" maxWidth="Infinity" styleClass="combo-box"/>
+                            </VBox>
                             
-                            <GridPane hgap="20" vgap="20" style="-fx-padding: 10 0 0 0;">
-                                <columnConstraints>
-                                    <ColumnConstraints percentWidth="50"/>
-                                    <ColumnConstraints percentWidth="50"/>
-                                </columnConstraints>
-
-                                <VBox styleClass="form-group" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                                    <Label text="Paper Width" styleClass="form-label"/>
-                                    <ComboBox fx:id="paperWidthCombo" maxWidth="Infinity" styleClass="combo-box"/>
-                                </VBox>
-
-                                <VBox styleClass="form-group" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                                    <Label text="Date Format" styleClass="form-label"/>
-                                    <ComboBox fx:id="dateFormatCombo" maxWidth="Infinity" styleClass="combo-box"/>
-                                </VBox>
-
-                                <VBox styleClass="form-group" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                                    <Label text="Time Format" styleClass="form-label"/>
-                                    <ComboBox fx:id="timeFormatCombo" maxWidth="Infinity" styleClass="combo-box"/>
-                                </VBox>
-
-                                <VBox styleClass="form-group" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                    <Label text="Currency Symbol" styleClass="form-label"/>
-                                    <TextField fx:id="currencyField" promptText="e.g. ₹, $, €" styleClass="text-field"/>
-                                </VBox>
-                            </GridPane>
-                        </VBox>
-                    </ScrollPane>
-                </Tab>
-            </TabPane>
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Date Format" styleClass="form-label"/>
+                                <ComboBox fx:id="dateFormatCombo" maxWidth="Infinity" styleClass="combo-box"/>
+                            </VBox>
+                            
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label text="Time Format" styleClass="form-label"/>
+                                <ComboBox fx:id="timeFormatCombo" maxWidth="Infinity" styleClass="combo-box"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+                    
+                    <!-- Layout & Sections -->
+                    <VBox spacing="15" styleClass="card">
+                        <Label text="Receipt Sections" styleClass="card-title"/>
+                        <Label text="Toggle visibility and reorder sections to customize your receipt layout. Drag or use arrows."
+                               style="-fx-text-fill: #64748b; -fx-wrap-text: true;"/>
+                        <VBox fx:id="sectionsContainer" spacing="12"/>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
         </VBox>
 
         <VBox spacing="10" style="-fx-min-width: 380; -fx-max-width: 380;">
