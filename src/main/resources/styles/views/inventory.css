@@ -568,8 +568,8 @@
 }
 
 .btn-remove-variant:hover {
-    -fx-background-color: -color-error-subtle;
-    -fx-text-fill: -color-error-dark;
+    -fx-background-color: -color-error-bg;
+    -fx-text-fill: -color-error-text;
     -fx-border-color: -color-error;
     -fx-border-width: 0 0 0 0;
 }

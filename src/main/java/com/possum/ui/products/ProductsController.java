@@ -1,6 +1,7 @@
 package com.possum.ui.products;
 
 import com.possum.application.auth.AuthContext;
+import com.possum.application.auth.AuthUser;
 import com.possum.application.categories.CategoryService;
 import com.possum.application.products.ProductService;
 import com.possum.domain.model.Category;
@@ -12,7 +13,10 @@ import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.PaginationBar;
 import com.possum.ui.common.dialogs.DialogStyler;
+import com.possum.ui.common.dialogs.ImportProgressDialog;
 import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.shared.util.CsvImportUtil;
+import javafx.concurrent.Task;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -36,9 +40,13 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.ScrollPane;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.io.File;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import javafx.stage.FileChooser;
 
 public class ProductsController {
 
@@ -60,6 +68,8 @@ public class ProductsController {
     private ToggleButton tableViewButton;
     @FXML
     private Button refreshButton;
+    @FXML
+    private Button importButton;
 
     private final ProductService productService;
     private final CategoryService categoryService;
@@ -92,6 +102,10 @@ public class ProductsController {
             addIcon.setIconSize(16);
             addIcon.setIconColor(javafx.scene.paint.Color.WHITE);
             addButton.setGraphic(addIcon);
+        }
+
+        if (importButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(importButton, com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
         }
 
         if (cardsViewButton != null) {
@@ -266,6 +280,211 @@ public class ProductsController {
     private void handleRefresh() {
         loadProducts();
     }
+
+    @FXML
+    private void handleImport() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Products from CSV");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+
+        File file = fileChooser.showOpenDialog(
+                addButton != null ? addButton.getScene().getWindow() : null);
+        if (file == null) return;
+
+        AuthUser currentUser = AuthContext.getCurrentUser();
+        if (currentUser == null) {
+            NotificationService.error("No active user session found. Please sign in again and retry import.");
+            return;
+        }
+
+        javafx.stage.Window owner = addButton != null && addButton.getScene() != null
+                ? addButton.getScene().getWindow()
+                : null;
+        ImportProgressDialog progressDialog = new ImportProgressDialog(owner, "Import Products");
+        progressDialog.show();
+
+        Task<ImportResult> importTask = new Task<>() {
+            @Override
+            protected ImportResult call() throws Exception {
+                AuthContext.setCurrentUser(currentUser);
+                try {
+                    List<List<String>> rows = CsvImportUtil.readCsv(file.toPath());
+                    int headerIndex = CsvImportUtil.findHeaderRowIndex(rows, "Product Name");
+                    if (headerIndex < 0) {
+                        headerIndex = CsvImportUtil.findHeaderRowIndex(rows, "Name");
+                    }
+                    if (headerIndex < 0) {
+                        throw new IllegalArgumentException("Could not find a valid product header row in CSV.");
+                    }
+
+                    Map<String, Integer> headers = CsvImportUtil.buildHeaderIndex(rows.get(headerIndex));
+                    List<ProductImportRow> records = new ArrayList<>();
+
+                    for (int i = headerIndex + 1; i < rows.size(); i++) {
+                        List<String> row = rows.get(i);
+                        if (CsvImportUtil.isRowEmpty(row)) {
+                            continue;
+                        }
+
+                        String name = CsvImportUtil.emptyToNull(CsvImportUtil.getValue(row, headers, "Product Name", "Name"));
+                        if (name == null || "No Of Products".equalsIgnoreCase(name)) {
+                            continue;
+                        }
+
+                        String sku = CsvImportUtil.emptyToNull(CsvImportUtil.getValue(row, headers, "Product Code", "SKU"));
+                        String categoryName = CsvImportUtil.emptyToNull(CsvImportUtil.getValue(
+                                row,
+                                headers,
+                                "Division Name",
+                                "Category Name",
+                                "Category"
+                        ));
+
+                        Integer stockAlert = CsvImportUtil.parseInteger(
+                                CsvImportUtil.getValue(row, headers, "Minimum Stock Level", "Stock Alert", "Stock Alert Cap"),
+                                0
+                        );
+                        if (stockAlert == null || stockAlert < 0) {
+                            stockAlert = 0;
+                        }
+
+                        BigDecimal price = CsvImportUtil.parseDecimal(
+                                CsvImportUtil.getValue(row, headers, "MRP", "MRP/Price", "Price"),
+                                BigDecimal.ZERO
+                        );
+                        if (price.compareTo(BigDecimal.ZERO) < 0) {
+                            price = BigDecimal.ZERO;
+                        }
+
+                        BigDecimal costPrice = CsvImportUtil.parseDecimal(
+                                CsvImportUtil.getValue(row, headers, "Avg Item Cost", "Cost Price", "Cost"),
+                                BigDecimal.ZERO
+                        );
+                        if (costPrice.compareTo(BigDecimal.ZERO) < 0) {
+                            costPrice = BigDecimal.ZERO;
+                        }
+
+                        records.add(new ProductImportRow(name, sku, categoryName, stockAlert, price, costPrice));
+                    }
+
+                    int totalRecords = records.size();
+                    progressDialog.setTotalRecords(totalRecords);
+
+                    List<Category> allCategories = categoryService.getAllCategories();
+                    Map<String, Long> categoryMap = new java.util.HashMap<>();
+                    for (Category c : allCategories) {
+                        categoryMap.put(c.name().trim().toLowerCase(Locale.ROOT), c.id());
+                    }
+
+                    int processed = 0;
+                    int imported = 0;
+                    int skipped = 0;
+                    long actorId = currentUser.id();
+
+                    for (ProductImportRow record : records) {
+                        processed++;
+
+                        Long categoryId;
+                        try {
+                            categoryId = resolveOrCreateCategoryId(record.categoryName(), categoryMap);
+                        } catch (Exception ex) {
+                            skipped++;
+                            progressDialog.updateProgress(processed, imported);
+                            continue;
+                        }
+
+                        try {
+                            ProductService.VariantCommand defaultVariant = new ProductService.VariantCommand(
+                                    null,
+                                    record.name(),
+                                    record.sku(),
+                                    record.price(),
+                                    record.costPrice(),
+                                    record.stockAlert(),
+                                    true,
+                                    "active",
+                                    0,
+                                    "Initial import"
+                            );
+
+                            productService.createProductWithVariants(
+                                    new ProductService.CreateProductCommand(
+                                            record.name(),
+                                            "",
+                                            categoryId,
+                                            "active",
+                                            null,
+                                            List.of(defaultVariant),
+                                            java.util.Collections.emptyList(),
+                                            actorId
+                                    )
+                            );
+                            imported++;
+                        } catch (Exception ex) {
+                            skipped++;
+                        }
+
+                        progressDialog.updateProgress(processed, imported);
+                    }
+
+                    return new ImportResult(totalRecords, imported, skipped);
+                } finally {
+                    AuthContext.clear();
+                }
+            }
+        };
+
+        importTask.setOnSucceeded(event -> {
+            ImportResult result = importTask.getValue();
+            progressDialog.complete(result.totalRecords(), result.imported(), result.skipped());
+            loadProducts();
+
+            if (result.skipped() == 0) {
+                NotificationService.success("Imported " + result.imported() + " product(s) successfully.");
+            } else {
+                NotificationService.warning("Imported " + result.imported() + " product(s). " + result.skipped() + " row(s) skipped.");
+            }
+        });
+
+        importTask.setOnFailed(event -> {
+            Throwable error = importTask.getException();
+            String message = error != null && error.getMessage() != null ? error.getMessage() : "Unknown error";
+            progressDialog.fail(message);
+            NotificationService.error("Failed to import products: " + message);
+        });
+
+        Thread worker = new Thread(importTask, "products-import-task");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private Long resolveOrCreateCategoryId(String categoryName, Map<String, Long> categoryMap) {
+        if (categoryName == null || categoryName.isBlank()) {
+            return null;
+        }
+
+        String key = categoryName.trim().toLowerCase(Locale.ROOT);
+        Long existingId = categoryMap.get(key);
+        if (existingId != null) {
+            return existingId;
+        }
+
+        Category created = categoryService.createCategory(categoryName.trim(), null);
+        categoryMap.put(key, created.id());
+        return created.id();
+    }
+
+    private record ProductImportRow(
+            String name,
+            String sku,
+            String categoryName,
+            Integer stockAlert,
+            BigDecimal price,
+            BigDecimal costPrice
+    ) {}
+
+    private record ImportResult(int totalRecords, int imported, int skipped) {}
 
     @FXML
     private void handleAdd() {

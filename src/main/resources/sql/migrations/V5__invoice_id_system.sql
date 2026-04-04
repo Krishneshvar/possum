@@ -1,6 +1,6 @@
 -- V5: Invoice ID System — Data setup & sequence counters
 -- Part 2 of 2: Data migration for the PTYYMMDDXXXX invoice ID system.
--- Assumes the `code` column was added in V4.
+-- Assumes the `code` column was added in V3.
 
 -- Step 1: Rename the old generic 'Card' to 'Debit Card'.
 UPDATE payment_methods SET name = 'Debit Card' WHERE name = 'Card';

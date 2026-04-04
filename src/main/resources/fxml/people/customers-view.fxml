@@ -20,18 +20,26 @@
             <Label text="Manage your customer base" styleClass="view-subtitle"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Refresh" onAction="#handleRefresh" styleClass="action-button">
-            <graphic><FontIcon iconLiteral="bx-sync" iconSize="16"/></graphic>
-            <tooltip>
-                <Tooltip text="Reload customer list"/>
-            </tooltip>
-        </Button>
-        <Button fx:id="addButton" text="Add Customer" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new customer">
-            <graphic><FontIcon iconLiteral="bx-plus" iconSize="16" iconColor="white"/></graphic>
-            <tooltip>
-                <Tooltip text="Create a new customer record"/>
-            </tooltip>
-        </Button>
+        <HBox spacing="12" alignment="CENTER_RIGHT">
+            <Button text="Refresh" onAction="#handleRefresh" styleClass="action-button">
+                <graphic><FontIcon iconLiteral="bx-sync" iconSize="16"/></graphic>
+                <tooltip>
+                    <Tooltip text="Reload customer list"/>
+                </tooltip>
+            </Button>
+            <Button fx:id="importButton" text="Import CSV" onAction="#handleImport" styleClass="action-button" accessibleText="Import customers from CSV file">
+                <graphic><FontIcon iconLiteral="bx-upload" iconSize="16"/></graphic>
+                <tooltip>
+                    <Tooltip text="Import customers from a CSV file (name, phone, email, address)"/>
+                </tooltip>
+            </Button>
+            <Button fx:id="addButton" text="Add Customer" onAction="#handleAdd" styleClass="action-button, primary-button" accessibleText="Add a new customer">
+                <graphic><FontIcon iconLiteral="bx-plus" iconSize="16" iconColor="white"/></graphic>
+                <tooltip>
+                    <Tooltip text="Create a new customer record"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </HBox>
 
     <!-- Main Content -->

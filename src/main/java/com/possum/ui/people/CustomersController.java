@@ -1,5 +1,7 @@
 package com.possum.ui.people;
 
+import com.possum.application.auth.AuthContext;
+import com.possum.application.auth.AuthUser;
 import com.possum.application.people.CustomerService;
 import com.possum.domain.model.Customer;
 import com.possum.shared.dto.PagedResult;
@@ -8,7 +10,10 @@ import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.PaginationBar;
+import com.possum.ui.common.dialogs.ImportProgressDialog;
 import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.shared.util.CsvImportUtil;
+import javafx.concurrent.Task;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -17,6 +22,12 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.beans.property.SimpleStringProperty;
 import com.possum.ui.common.dialogs.DialogStyler;
+import javafx.stage.FileChooser;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
 
 import java.util.Map;
 
@@ -26,6 +37,7 @@ public class CustomersController {
     @FXML private DataTableView<Customer> customersTable;
     @FXML private PaginationBar paginationBar;
     @FXML private javafx.scene.control.Button addButton;
+    @FXML private javafx.scene.control.Button importButton;
     
     private final CustomerService customerService;
     private final WorkspaceManager workspaceManager;
@@ -40,6 +52,9 @@ public class CustomersController {
     public void initialize() {
         if (addButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(addButton, com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
+        }
+        if (importButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(importButton, com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
         }
         setupTable();
         setupFilters();
@@ -116,6 +131,158 @@ public class CustomersController {
         loadCustomers();
         NotificationService.success("Customer list refreshed");
     }
+
+    @FXML
+    private void handleImport() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Customers from CSV");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+
+        File file = fileChooser.showOpenDialog(addButton != null ? addButton.getScene().getWindow() : null);
+        if (file == null) return;
+
+        AuthUser currentUser = AuthContext.getCurrentUser();
+        if (currentUser == null) {
+            NotificationService.error("No active user session found. Please sign in again and retry import.");
+            return;
+        }
+
+        javafx.stage.Window owner = addButton != null && addButton.getScene() != null
+                ? addButton.getScene().getWindow()
+                : null;
+        ImportProgressDialog progressDialog = new ImportProgressDialog(owner, "Import Customers");
+        progressDialog.show();
+
+        Task<ImportResult> importTask = new Task<>() {
+            @Override
+            protected ImportResult call() throws Exception {
+                AuthContext.setCurrentUser(currentUser);
+                try {
+                    List<List<String>> rows = CsvImportUtil.readCsv(file.toPath());
+                    int headerIndex = CsvImportUtil.findHeaderRowIndex(rows, "Customer Name");
+                    if (headerIndex < 0) {
+                        headerIndex = CsvImportUtil.findHeaderRowIndex(rows, "Name");
+                    }
+                    if (headerIndex < 0) {
+                        throw new IllegalArgumentException("Could not find a valid customer header row in CSV.");
+                    }
+
+                    Map<String, Integer> headers = CsvImportUtil.buildHeaderIndex(rows.get(headerIndex));
+                    List<CustomerImportRow> records = new ArrayList<>();
+
+                    for (int i = headerIndex + 1; i < rows.size(); i++) {
+                        List<String> row = rows.get(i);
+                        if (CsvImportUtil.isRowEmpty(row)) {
+                            continue;
+                        }
+
+                        String name = CsvImportUtil.emptyToNull(CsvImportUtil.getValue(
+                                row,
+                                headers,
+                                "Customer Name",
+                                "Name"
+                        ));
+                        if (name == null) {
+                            continue;
+                        }
+
+                        String phone = CsvImportUtil.emptyToNull(CsvImportUtil.getValue(
+                                row,
+                                headers,
+                                "Contact Number",
+                                "Phone"
+                        ));
+                        String email = CsvImportUtil.emptyToNull(CsvImportUtil.getValue(
+                                row,
+                                headers,
+                                "Email"
+                        ));
+                        String address = buildAddress(
+                                CsvImportUtil.getValue(row, headers, "Customer Address", "Address"),
+                                CsvImportUtil.getValue(row, headers, "City"),
+                                CsvImportUtil.getValue(row, headers, "Pin Code", "Pincode", "Postal Code")
+                        );
+
+                        records.add(new CustomerImportRow(name, phone, email, address));
+                    }
+
+                    int totalRecords = records.size();
+                    progressDialog.setTotalRecords(totalRecords);
+
+                    int processed = 0;
+                    int imported = 0;
+                    int skipped = 0;
+
+                    for (CustomerImportRow record : records) {
+                        processed++;
+                        try {
+                            customerService.createCustomer(record.name(), record.phone(), record.email(), record.address());
+                            imported++;
+                        } catch (Exception ex) {
+                            String message = ex.getMessage() == null ? "" : ex.getMessage();
+                            if (message.contains("UNIQUE constraint failed")) {
+                                skipped++;
+                            } else {
+                                skipped++;
+                            }
+                        }
+                        progressDialog.updateProgress(processed, imported);
+                    }
+
+                    return new ImportResult(totalRecords, imported, skipped);
+                } finally {
+                    AuthContext.clear();
+                }
+            }
+        };
+
+        importTask.setOnSucceeded(event -> {
+            ImportResult result = importTask.getValue();
+            progressDialog.complete(result.totalRecords(), result.imported(), result.skipped());
+            loadCustomers();
+
+            if (result.skipped() == 0) {
+                NotificationService.success("Imported " + result.imported() + " customer(s) successfully.");
+            } else {
+                NotificationService.warning("Imported " + result.imported() + " customer(s). " + result.skipped() + " row(s) skipped.");
+            }
+        });
+
+        importTask.setOnFailed(event -> {
+            Throwable error = importTask.getException();
+            String message = error != null && error.getMessage() != null ? error.getMessage() : "Unknown error";
+            progressDialog.fail(message);
+            NotificationService.error("Failed to import customers: " + message);
+        });
+
+        Thread worker = new Thread(importTask, "customers-import-task");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private String buildAddress(String address, String city, String pinCode) {
+        StringJoiner joiner = new StringJoiner(", ");
+
+        String normalizedAddress = CsvImportUtil.emptyToNull(address);
+        String normalizedCity = CsvImportUtil.emptyToNull(city);
+        String normalizedPin = CsvImportUtil.emptyToNull(pinCode);
+
+        if (normalizedAddress != null) {
+            joiner.add(normalizedAddress);
+        }
+        if (normalizedCity != null) {
+            joiner.add(normalizedCity);
+        }
+        if (normalizedPin != null) {
+            joiner.add(normalizedPin);
+        }
+
+        String merged = joiner.toString();
+        return merged.isEmpty() ? null : merged;
+    }
+
+    private record CustomerImportRow(String name, String phone, String email, String address) {}
+    private record ImportResult(int totalRecords, int imported, int skipped) {}
 
     @FXML
     private void handleAdd() {
