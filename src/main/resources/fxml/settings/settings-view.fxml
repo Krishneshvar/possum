@@ -87,6 +87,39 @@
                             </VBox>
                         </VBox>
                     </VBox>
+
+                    <!-- Inventory Guardrails Card -->
+                    <VBox styleClass="card" spacing="24">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <FontIcon iconLiteral="bx-package" iconSize="20" iconColor="#F59E0B"/>
+                            <VBox spacing="2">
+                                <Label text="Inventory Guardrails" styleClass="card-title"/>
+                                <Label text="Control stock alerts and stock-based sales restrictions" styleClass="field-helper"/>
+                            </VBox>
+                        </HBox>
+
+                        <Separator/>
+
+                        <VBox spacing="12">
+                            <CheckBox fx:id="inventoryAlertsToggle"
+                                      text="Enable inventory alerts and stock restrictions"
+                                      selected="true"
+                                      accessibleText="Toggle inventory alerts and stock restrictions"/>
+                            <Label text="Turn this off to allow sales and deductions even when requested quantity is more than current stock."
+                                   styleClass="field-helper"
+                                   wrapText="true"
+                                   maxWidth="560"/>
+
+                            <CheckBox fx:id="numericalSkuToggle"
+                                      text="Enable numerical SKU generation"
+                                      selected="false"
+                                      accessibleText="Toggle numerical SKU generation"/>
+                            <Label text="When enabled, new variants get sequential numeric SKUs automatically and SKU fields are read-only in product forms."
+                                   styleClass="field-helper"
+                                   wrapText="true"
+                                   maxWidth="560"/>
+                        </VBox>
+                    </VBox>
                     
                     <!-- Save Button -->
                     <HBox alignment="CENTER_LEFT" spacing="12">

@@ -8,6 +8,8 @@ public class GeneralSettings {
     private String currencySymbol = "₹";
     private String dateFormat = "DD/MM/YYYY";
     private String timeFormat = "12 hour format";
+    private boolean inventoryAlertsAndRestrictionsEnabled = true;
+    private boolean numericalSkuGenerationEnabled = false;
 
     public String getStoreName() {
         return storeName;
@@ -55,5 +57,21 @@ public class GeneralSettings {
 
     public void setTimeFormat(String timeFormat) {
         this.timeFormat = timeFormat;
+    }
+
+    public boolean isInventoryAlertsAndRestrictionsEnabled() {
+        return inventoryAlertsAndRestrictionsEnabled;
+    }
+
+    public void setInventoryAlertsAndRestrictionsEnabled(boolean inventoryAlertsAndRestrictionsEnabled) {
+        this.inventoryAlertsAndRestrictionsEnabled = inventoryAlertsAndRestrictionsEnabled;
+    }
+
+    public boolean isNumericalSkuGenerationEnabled() {
+        return numericalSkuGenerationEnabled;
+    }
+
+    public void setNumericalSkuGenerationEnabled(boolean numericalSkuGenerationEnabled) {
+        this.numericalSkuGenerationEnabled = numericalSkuGenerationEnabled;
     }
 }

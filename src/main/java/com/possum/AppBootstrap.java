@@ -140,7 +140,8 @@ public final class AppBootstrap {
         applicationModule = new ApplicationModule(
             userRepository, sessionRepository, productRepository, variantRepository,
             categoryRepository, inventoryRepository, productFlowRepository, auditRepository,
-            customerRepository, transactionManager, passwordHasher, jsonService, appPaths
+            customerRepository, transactionManager, passwordHasher, jsonService, appPaths,
+            serviceLocator.getSettingsStore()
         );
 
         // Other repositories required
@@ -155,7 +156,7 @@ public final class AppBootstrap {
                 com.possum.persistence.repositories.sqlite.SqliteTaxRepository taxRepository1 = new com.possum.persistence.repositories.sqlite.SqliteTaxRepository(databaseManager);
         com.possum.application.sales.TaxEngine taxEngine = new com.possum.application.sales.TaxEngine(taxRepository1, jsonService);
         com.possum.application.sales.PaymentService paymentService = new com.possum.application.sales.PaymentService(salesRepository);
-        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository, auditRepository, applicationModule.getInventoryService(), taxEngine, paymentService, transactionManager, jsonService);
+        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository, auditRepository, applicationModule.getInventoryService(), taxEngine, paymentService, transactionManager, jsonService, serviceLocator.getSettingsStore());
         productSearchIndex = new ProductSearchIndex(variantRepository);
         transactionService = new com.possum.application.transactions.TransactionServiceImpl(transactionRepo, salesRepository);
 

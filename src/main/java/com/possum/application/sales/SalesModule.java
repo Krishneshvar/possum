@@ -1,6 +1,7 @@
 package com.possum.application.sales;
 
 import com.possum.application.inventory.InventoryService;
+import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.persistence.repositories.interfaces.*;
@@ -18,7 +19,8 @@ public class SalesModule {
                        TaxRepository taxRepository,
                        InventoryService inventoryService,
                        TransactionManager transactionManager,
-                       JsonService jsonService) {
+                       JsonService jsonService,
+                       SettingsStore settingsStore) {
         
         this.taxEngine = new TaxEngine(taxRepository, jsonService);
         this.paymentService = new PaymentService(salesRepository);
@@ -32,7 +34,8 @@ public class SalesModule {
                 taxEngine,
                 paymentService,
                 transactionManager,
-                jsonService
+                jsonService,
+                settingsStore
         );
     }
 

@@ -9,6 +9,7 @@ import com.possum.application.products.ProductModule;
 import com.possum.application.products.ProductService;
 import com.possum.application.variants.VariantService;
 import com.possum.infrastructure.filesystem.AppPaths;
+import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.security.PasswordHasher;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
@@ -38,7 +39,8 @@ public final class ApplicationModule {
                             TransactionManager transactionManager,
                             PasswordHasher passwordHasher,
                             JsonService jsonService,
-                            AppPaths appPaths) {
+                            AppPaths appPaths,
+                            SettingsStore settingsStore) {
         this.authModule = new AuthModule(userRepository, sessionRepository, transactionManager, passwordHasher);
         this.userService = new com.possum.application.people.UserService(userRepository, passwordHasher);
         this.customerService = new com.possum.application.people.CustomerService(customerRepository);
@@ -52,7 +54,8 @@ public final class ApplicationModule {
                 productFlowService,
                 auditRepository,
                 transactionManager,
-                jsonService
+                jsonService,
+                settingsStore
         );
         
         this.productModule = new ProductModule(
@@ -61,7 +64,8 @@ public final class ApplicationModule {
                 inventoryRepository,
                 auditRepository,
                 transactionManager,
-                appPaths
+                appPaths,
+                settingsStore
         );
         
         this.categoryService = new CategoryService(categoryRepository);

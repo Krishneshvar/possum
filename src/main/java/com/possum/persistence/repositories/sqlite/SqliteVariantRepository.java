@@ -83,6 +83,34 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
     }
 
     @Override
+    public int getNextGeneratedNumericSku() {
+        return queryOne(
+                """
+                SELECT
+                    COUNT(*) AS total_variants,
+                    COALESCE(
+                        MAX(
+                            CASE
+                                WHEN sku IS NOT NULL
+                                     AND TRIM(sku) <> ''
+                                     AND TRIM(sku) NOT GLOB '*[^0-9]*'
+                                THEN CAST(TRIM(sku) AS INTEGER)
+                            END
+                        ),
+                        0
+                    ) AS max_numeric_sku
+                FROM variants
+                WHERE deleted_at IS NULL
+                """,
+                rs -> {
+                    int totalVariants = rs.getInt("total_variants");
+                    int maxNumericSku = rs.getInt("max_numeric_sku");
+                    return Math.max(totalVariants + 1, maxNumericSku + 1);
+                }
+        ).orElse(1);
+    }
+
+    @Override
     public PagedResult<Variant> findVariants(String searchTerm,
                                              Long categoryId,
                                              List<Long> categories,

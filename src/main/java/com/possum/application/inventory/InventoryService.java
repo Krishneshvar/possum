@@ -7,6 +7,7 @@ import com.possum.domain.model.AuditLog;
 import com.possum.domain.model.InventoryAdjustment;
 import com.possum.domain.model.InventoryLot;
 import com.possum.domain.model.Variant;
+import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.persistence.repositories.interfaces.AuditRepository;
@@ -26,17 +27,20 @@ public class InventoryService {
     private final AuditRepository auditRepository;
     private final TransactionManager transactionManager;
     private final JsonService jsonService;
+    private final SettingsStore settingsStore;
 
     public InventoryService(InventoryRepository inventoryRepository,
                             ProductFlowService productFlowService,
                             AuditRepository auditRepository,
                             TransactionManager transactionManager,
-                            JsonService jsonService) {
+                            JsonService jsonService,
+                            SettingsStore settingsStore) {
         this.inventoryRepository = inventoryRepository;
         this.productFlowService = productFlowService;
         this.auditRepository = auditRepository;
         this.transactionManager = transactionManager;
         this.jsonService = jsonService;
+        this.settingsStore = settingsStore;
     }
 
     public int getVariantStock(long variantId) {
@@ -107,7 +111,7 @@ public class InventoryService {
         }
 
         int currentStock = inventoryRepository.getStockByVariantId(variantId);
-        if (currentStock < quantity) {
+        if (isInventoryRestrictionsEnabled() && currentStock < quantity) {
             throw new InsufficientStockException(currentStock, quantity);
         }
 
@@ -163,7 +167,7 @@ public class InventoryService {
     public AdjustInventoryResult adjustInventory(long variantId, Long lotId, int quantityChange,
                                                  InventoryReason reason, String referenceType,
                                                  Long referenceId, long userId) {
-        if (quantityChange < 0) {
+        if (quantityChange < 0 && isInventoryRestrictionsEnabled()) {
             int currentStock = inventoryRepository.getStockByVariantId(variantId);
             if (currentStock + quantityChange < 0) {
                 throw new InsufficientStockException(currentStock, Math.abs(quantityChange));
@@ -240,4 +244,12 @@ public class InventoryService {
     public record DeductStockResult(boolean success, int deducted) {}
     public record RestoreStockResult(boolean success, int restored) {}
     public record AdjustInventoryResult(long id, long variantId, int quantityChange, InventoryReason reason, int newStock) {}
+
+    private boolean isInventoryRestrictionsEnabled() {
+        try {
+            return settingsStore.loadGeneralSettings().isInventoryAlertsAndRestrictionsEnabled();
+        } catch (Exception ex) {
+            return true;
+        }
+    }
 }

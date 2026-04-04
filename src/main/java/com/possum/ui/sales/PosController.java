@@ -584,7 +584,10 @@ public class PosController {
     private void addToCart(Variant variant) {
         Optional<CartItem> exists = currentBill.items.stream().filter(i -> i.variant.id().equals(variant.id())).findFirst();
         int nQty = exists.map(i -> i.quantity + 1).orElse(1);
-        if (variant.stock() != null && nQty > variant.stock()) { NotificationService.warning("Insufficient stock! Available: " + variant.stock()); return; }
+        if (isInventoryRestrictionsEnabled() && variant.stock() != null && nQty > variant.stock()) {
+            NotificationService.warning("Insufficient stock! Available: " + variant.stock());
+            return;
+        }
         if (exists.isPresent()) exists.get().quantity = nQty;
         else currentBill.items.add(new CartItem(variant, 1));
         refreshCurrentBill();
@@ -772,7 +775,22 @@ public class PosController {
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colQty); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
             return f;
         }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { int n = Integer.parseInt(tf.getText().trim()); it.quantity = Math.max(1, n); refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
+        @Override public void commitEdit(CartItem it) {
+            if (tf != null && it != null) {
+                try {
+                    int n = Integer.parseInt(tf.getText().trim());
+                    int newQty = Math.max(1, n);
+                    if (isInventoryRestrictionsEnabled() && it.variant.stock() != null && newQty > it.variant.stock()) {
+                        NotificationService.warning("Insufficient stock! Available: " + it.variant.stock());
+                        tf.setText(String.valueOf(it.quantity));
+                    } else {
+                        it.quantity = newQty;
+                        refreshCurrentBill();
+                    }
+                } catch (Exception e) {}
+            }
+            super.commitEdit(it);
+        }
     }
 
     private class EditablePriceCell extends TableCell<CartItem, CartItem> {
@@ -908,5 +926,13 @@ public class PosController {
     private void applyPopupListStyles(ListView<?> lv) {
         String s = Objects.requireNonNull(getClass().getResource("/styles/pos.css")).toExternalForm();
         if (!lv.getStylesheets().contains(s)) lv.getStylesheets().add(s);
+    }
+
+    private boolean isInventoryRestrictionsEnabled() {
+        try {
+            return settingsStore.loadGeneralSettings().isInventoryAlertsAndRestrictionsEnabled();
+        } catch (Exception ex) {
+            return true;
+        }
     }
 }

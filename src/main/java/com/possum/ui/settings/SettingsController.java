@@ -23,6 +23,8 @@ public class SettingsController {
     @FXML private TextField currencyField;
     @FXML private ComboBox<String> dateFormatCombo;
     @FXML private ComboBox<String> timeFormatCombo;
+    @FXML private CheckBox inventoryAlertsToggle;
+    @FXML private CheckBox numericalSkuToggle;
     @FXML private ComboBox<String> printerCombo;
     @FXML private AnchorPane taxSettingsTabContent;
     @FXML private AnchorPane billSettingsTabContent;
@@ -87,6 +89,14 @@ public class SettingsController {
         } else {
             timeFormatCombo.setValue("12 hour format");
         }
+
+        if (inventoryAlertsToggle != null) {
+            inventoryAlertsToggle.setSelected(settings.isInventoryAlertsAndRestrictionsEnabled());
+        }
+
+        if (numericalSkuToggle != null) {
+            numericalSkuToggle.setSelected(settings.isNumericalSkuGenerationEnabled());
+        }
     }
 
     private void loadPrinters() {
@@ -105,10 +115,16 @@ public class SettingsController {
     @FXML
     private void handleSaveGeneral() {
         try {
-            GeneralSettings settings = new GeneralSettings();
+            GeneralSettings settings = settingsStore.loadGeneralSettings();
             settings.setCurrencySymbol(currencyField.getText());
             settings.setDateFormat(dateFormatCombo.getValue());
             settings.setTimeFormat(timeFormatCombo.getValue());
+            settings.setInventoryAlertsAndRestrictionsEnabled(
+                    inventoryAlertsToggle == null || inventoryAlertsToggle.isSelected()
+            );
+            settings.setNumericalSkuGenerationEnabled(
+                    numericalSkuToggle != null && numericalSkuToggle.isSelected()
+            );
             
             settingsStore.saveGeneralSettings(settings);
             NotificationService.success("General settings saved");

@@ -189,7 +189,9 @@ public class DependencyInjector {
                 applicationModule.getProductService(),
                 applicationModule.getCategoryService(),
                 taxRepository,
-                workspaceManager
+                workspaceManager,
+                serviceLocator.getSettingsStore(),
+                productSearchIndex
             );
         } else if (type.equals(com.possum.ui.inventory.VariantsController.class)) {
             return new com.possum.ui.inventory.VariantsController(

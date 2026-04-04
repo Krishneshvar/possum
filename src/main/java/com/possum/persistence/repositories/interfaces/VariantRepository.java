@@ -15,6 +15,8 @@ public interface VariantRepository {
 
     int softDeleteVariant(long id);
 
+    int getNextGeneratedNumericSku();
+
     PagedResult<Variant> findVariants(String searchTerm,
                                       Long categoryId,
                                       java.util.List<Long> categories,

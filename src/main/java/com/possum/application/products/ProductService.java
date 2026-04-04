@@ -7,10 +7,12 @@ import com.possum.domain.model.Product;
 import com.possum.domain.model.TaxRule;
 import com.possum.domain.model.Variant;
 import com.possum.infrastructure.filesystem.AppPaths;
+import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.persistence.repositories.interfaces.AuditRepository;
 import com.possum.persistence.repositories.interfaces.ProductRepository;
+import com.possum.persistence.repositories.interfaces.VariantRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ProductFilter;
 
@@ -24,20 +26,26 @@ import java.util.Map;
 public class ProductService {
     private final ProductRepository productRepository;
     private final VariantService variantService;
+    private final VariantRepository variantRepository;
     private final AuditRepository auditRepository;
     private final TransactionManager transactionManager;
     private final AppPaths appPaths;
+    private final SettingsStore settingsStore;
 
     public ProductService(ProductRepository productRepository,
                           VariantService variantService,
+                          VariantRepository variantRepository,
                           AuditRepository auditRepository,
                           TransactionManager transactionManager,
-                          AppPaths appPaths) {
+                          AppPaths appPaths,
+                          SettingsStore settingsStore) {
         this.productRepository = productRepository;
         this.variantService = variantService;
+        this.variantRepository = variantRepository;
         this.auditRepository = auditRepository;
         this.transactionManager = transactionManager;
         this.appPaths = appPaths;
+        this.settingsStore = settingsStore;
     }
 
     public long createProductWithVariants(CreateProductCommand command) {
@@ -47,6 +55,9 @@ public class ProductService {
         }
 
         return transactionManager.runInTransaction(() -> {
+            boolean autoNumericSku = isNumericSkuGenerationEnabled();
+            int nextGeneratedSku = autoNumericSku ? variantRepository.getNextGeneratedNumericSku() : -1;
+
             Product product = new Product(
                     null,
                     command.name(),
@@ -66,10 +77,11 @@ public class ProductService {
             long productId = productRepository.insertProduct(product);
 
             for (var variantCmd : command.variants()) {
+                String effectiveSku = autoNumericSku ? String.valueOf(nextGeneratedSku++) : variantCmd.sku();
                 variantService.addVariantWithoutTransaction(new VariantService.AddVariantCommand(
                         productId,
                         variantCmd.name(),
-                        variantCmd.sku(),
+                        effectiveSku,
                         variantCmd.price(),
                         variantCmd.costPrice(),
                         variantCmd.stockAlertCap(),
@@ -118,6 +130,9 @@ public class ProductService {
     public void updateProduct(long productId, UpdateProductCommand command) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
         transactionManager.runInTransaction(() -> {
+            boolean autoNumericSku = isNumericSkuGenerationEnabled();
+            int nextGeneratedSku = autoNumericSku ? variantRepository.getNextGeneratedNumericSku() : -1;
+
             Product oldProduct = productRepository.findProductById(productId)
                     .orElseThrow(() -> new NotFoundException("Product not found"));
 
@@ -132,10 +147,20 @@ public class ProductService {
                 for (var variantCmd : command.variants()) {
                     if (variantCmd.id() != null) {
                         variantService.validateVariantOwnership(variantCmd.id(), productId);
+                        String effectiveSku = variantCmd.sku();
+                        if (autoNumericSku) {
+                            Variant existingVariant = variantRepository.findVariantByIdSync(variantCmd.id())
+                                    .orElseThrow(() -> new NotFoundException("Variant not found: " + variantCmd.id()));
+                            if (existingVariant.sku() == null || existingVariant.sku().trim().isEmpty()) {
+                                effectiveSku = String.valueOf(nextGeneratedSku++);
+                            } else {
+                                effectiveSku = existingVariant.sku();
+                            }
+                        }
                         variantService.updateVariantWithoutTransaction(new VariantService.UpdateVariantCommand(
                                 variantCmd.id(),
                                 variantCmd.name(),
-                                variantCmd.sku(),
+                                effectiveSku,
                                 variantCmd.price(),
                                 variantCmd.costPrice(),
                                 variantCmd.stockAlertCap(),
@@ -146,10 +171,11 @@ public class ProductService {
                                 command.userId()
                         ));
                     } else {
+                        String effectiveSku = autoNumericSku ? String.valueOf(nextGeneratedSku++) : variantCmd.sku();
                         variantService.addVariantWithoutTransaction(new VariantService.AddVariantCommand(
                                 productId,
                                 variantCmd.name(),
-                                variantCmd.sku(),
+                                effectiveSku,
                                 variantCmd.price(),
                                 variantCmd.costPrice(),
                                 variantCmd.stockAlertCap(),
@@ -198,6 +224,10 @@ public class ProductService {
 
             return null;
         });
+    }
+
+    public int getNextGeneratedNumericSku() {
+        return variantRepository.getNextGeneratedNumericSku();
     }
 
     public void deleteProduct(long id, long userId) {
@@ -269,6 +299,14 @@ public class ProductService {
         return new com.possum.domain.model.AuditLog(null, userId, action, tableName, rowId, oldData, newData, null, null, null);
     }
 
+    private boolean isNumericSkuGenerationEnabled() {
+        try {
+            return settingsStore.loadGeneralSettings().isNumericalSkuGenerationEnabled();
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
     public record CreateProductCommand(
             String name,
             String description,
@@ -310,4 +348,3 @@ public class ProductService {
             List<TaxRule> taxes
     ) {}
 }
-

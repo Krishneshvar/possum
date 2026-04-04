@@ -7,6 +7,7 @@ import com.possum.domain.exceptions.InsufficientStockException;
 import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.exceptions.ValidationException;
 import com.possum.domain.model.*;
+import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.persistence.repositories.interfaces.*;
@@ -28,6 +29,7 @@ public class SalesService {
     private final PaymentService paymentService;
     private final TransactionManager transactionManager;
     private final JsonService jsonService;
+    private final SettingsStore settingsStore;
 
     public SalesService(SalesRepository salesRepository,
                         VariantRepository variantRepository,
@@ -38,7 +40,8 @@ public class SalesService {
                         TaxEngine taxEngine,
                         PaymentService paymentService,
                         TransactionManager transactionManager,
-                        JsonService jsonService) {
+                        JsonService jsonService,
+                        SettingsStore settingsStore) {
         this.salesRepository = salesRepository;
         this.variantRepository = variantRepository;
         this.productRepository = productRepository;
@@ -49,6 +52,7 @@ public class SalesService {
         this.paymentService = paymentService;
         this.transactionManager = transactionManager;
         this.jsonService = jsonService;
+        this.settingsStore = settingsStore;
     }
 
     public SaleResponse createSale(CreateSaleRequest request, long userId) {
@@ -64,6 +68,7 @@ public class SalesService {
 
         List<Long> variantIds = request.items().stream().map(CreateSaleItemRequest::variantId).toList();
         Map<Long, Variant> variantMap = fetchVariantsBatch(variantIds);
+        boolean enforceInventoryRestrictions = isInventoryRestrictionsEnabled();
 
         return transactionManager.runInTransaction(() -> {
             // Stock validation inside transaction
@@ -73,9 +78,11 @@ public class SalesService {
                     throw new NotFoundException("Variant not found: " + item.variantId());
                 }
 
-                int currentStock = inventoryService.getVariantStock(item.variantId());
-                if (currentStock < item.quantity()) {
-                    throw new InsufficientStockException(currentStock, item.quantity());
+                if (enforceInventoryRestrictions) {
+                    int currentStock = inventoryService.getVariantStock(item.variantId());
+                    if (currentStock < item.quantity()) {
+                        throw new InsufficientStockException(currentStock, item.quantity());
+                    }
                 }
             }
 
@@ -394,10 +401,13 @@ public class SalesService {
             List<Long> variantIds = itemRequests.stream().map(UpdateSaleItemRequest::variantId).toList();
             Map<Long, Variant> variantMap = fetchVariantsBatch(variantIds);
 
+            boolean enforceInventoryRestrictions = isInventoryRestrictionsEnabled();
             for (UpdateSaleItemRequest req : itemRequests) {
-                int currentStock = inventoryService.getVariantStock(req.variantId());
-                if (currentStock < req.quantity()) {
-                    throw new InsufficientStockException(currentStock, req.quantity());
+                if (enforceInventoryRestrictions) {
+                    int currentStock = inventoryService.getVariantStock(req.variantId());
+                    if (currentStock < req.quantity()) {
+                        throw new InsufficientStockException(currentStock, req.quantity());
+                    }
                 }
             }
 
@@ -542,6 +552,14 @@ public class SalesService {
 
             return null;
         });
+    }
+
+    private boolean isInventoryRestrictionsEnabled() {
+        try {
+            return settingsStore.loadGeneralSettings().isInventoryAlertsAndRestrictionsEnabled();
+        } catch (Exception ex) {
+            return true;
+        }
     }
 
     public List<PaymentMethod> getPaymentMethods() {

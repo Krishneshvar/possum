@@ -2,6 +2,7 @@ package com.possum.application.products;
 
 import com.possum.application.variants.VariantService;
 import com.possum.infrastructure.filesystem.AppPaths;
+import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.persistence.repositories.interfaces.AuditRepository;
 import com.possum.persistence.repositories.interfaces.InventoryRepository;
@@ -17,7 +18,8 @@ public class ProductModule {
                          InventoryRepository inventoryRepository,
                          AuditRepository auditRepository,
                          TransactionManager transactionManager,
-                         AppPaths appPaths) {
+                         AppPaths appPaths,
+                         SettingsStore settingsStore) {
         this.variantService = new VariantService(
                 variantRepository,
                 inventoryRepository,
@@ -28,9 +30,11 @@ public class ProductModule {
         this.productService = new ProductService(
                 productRepository,
                 variantService,
+                variantRepository,
                 auditRepository,
                 transactionManager,
-                appPaths
+                appPaths,
+                settingsStore
         );
     }
 
