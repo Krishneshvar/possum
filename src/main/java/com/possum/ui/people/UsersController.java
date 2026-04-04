@@ -55,6 +55,7 @@ public class UsersController {
         
         TableColumn<User, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().active() ? "Active" : "Inactive"));
+        statusCol.setSortable(false);
         statusCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
             @Override
             protected void updateItem(String status, boolean empty) {
@@ -160,15 +161,15 @@ public class UsersController {
         java.util.List<javafx.scene.control.MenuItem> items = new java.util.ArrayList<>();
 
         if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.USERS_MANAGE)) {
-            javafx.scene.control.MenuItem editItem = new javafx.scene.control.MenuItem("Edit");
+            javafx.scene.control.MenuItem editItem = new javafx.scene.control.MenuItem("✏️ Edit");
             editItem.setOnAction(e -> workspaceManager.openDialog("Edit Employee: " + user.name(), "/fxml/people/user-form-view.fxml", Map.of("userId", user.id(), "mode", "edit")));
             items.add(editItem);
 
-            javafx.scene.control.MenuItem rolesItem = new javafx.scene.control.MenuItem("Roles & Permissions");
+            javafx.scene.control.MenuItem rolesItem = new javafx.scene.control.MenuItem("🛡️ Roles & Permissions");
             rolesItem.setOnAction(e -> workspaceManager.openWindow("Roles & Permissions: " + user.name(), "/fxml/people/user-roles-view.fxml", Map.of("userId", user.id())));
             items.add(rolesItem);
 
-            javafx.scene.control.MenuItem deleteItem = new javafx.scene.control.MenuItem("Delete");
+            javafx.scene.control.MenuItem deleteItem = new javafx.scene.control.MenuItem("🗑️ Delete");
             deleteItem.setStyle("-fx-text-fill: red;");
             deleteItem.setOnAction(e -> handleDelete(user));
             items.add(new javafx.scene.control.SeparatorMenuItem());

@@ -70,7 +70,8 @@ public class TaxRulesController {
         typeColumn = new TableColumn<>("Scope");
         priorityColumn = new TableColumn<>("Priority");
 
-        rulesTable.getTableView().getColumns().setAll(categoryColumn, rateColumn, typeColumn, priorityColumn);
+        rulesTable.getTableView().getColumns().clear();
+        rulesTable.getTableView().getColumns().addAll(List.of(categoryColumn, rateColumn, typeColumn, priorityColumn));
         rulesTable.setEmptyMessage("No tax rules found for this profile");
         rulesTable.setEmptySubtitle("Add a new rule using the form.");
 

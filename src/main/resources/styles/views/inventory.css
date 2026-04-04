@@ -181,8 +181,14 @@
 .workspace-view .data-table .column-header {
     -fx-background-color: transparent !important;
     -fx-padding: 12 16;
-    -fx-border-color: transparent -color-brand-dark-hover transparent transparent;
+    -fx-border-color: -color-brand-dark-hover;
     -fx-border-width: 0 1 0 0;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.workspace-view .table-view .column-header:last-visible,
+.workspace-view .data-table .column-header:last-visible {
+    -fx-border-width: 0;
 }
 
 .workspace-view .table-view .column-header .label,
@@ -198,8 +204,8 @@
 .workspace-view .table-view .table-row-cell,
 .workspace-view .data-table .table-row-cell {
     -fx-background-color: -color-surface;
-    -fx-border-color: transparent transparent #CBD5E1 transparent;
-    -fx-border-width: 1;
+    -fx-border-color: #CBD5E1;
+    -fx-border-width: 0 0 1 0;
     -fx-padding: 2 0;
 }
 
@@ -223,15 +229,23 @@
 .workspace-view .table-view .table-row-cell:selected,
 .workspace-view .data-table .table-row-cell:selected {
     -fx-background-color: -color-accent-subtle;
-    -fx-border-color: transparent transparent -color-accent transparent;
+    -fx-border-color: -color-accent;
+    -fx-border-width: 0 0 1 0;
 }
 
 .workspace-view .table-view .table-cell,
 .workspace-view .data-table .table-cell {
     -fx-text-fill: -color-text-main;
     -fx-font-size: 14;
-    -fx-padding: 6 16;
+    -fx-padding: 8 16; /* Increased padding slightly for better touch/click targets */
     -fx-alignment: center-left;
+    -fx-border-color: transparent -color-border transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.workspace-view .table-view .table-cell:last-visible,
+.workspace-view .data-table .table-cell:last-visible {
+    -fx-border-width: 0;
 }
 
 .workspace-view .table-view .table-cell .table-action-btn,
@@ -262,22 +276,20 @@
     -fx-indent: 28;
 }
 
-/* Drawing indentation guides using repeating linear gradient */
+/* Indentation guides removed to resolve layout crash */
 .tree-view .tree-cell:filled {
-    -fx-background-color: linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px);
+    -fx-background-color: transparent;
     -fx-background-repeat: repeat-x;
-    -fx-background-size: 28px 100%; /* Matches -fx-indent */
+    -fx-background-size: 28px 100%;
     -fx-background-position: left;
 }
 
 .tree-view .tree-cell:selected {
-    -fx-background-color: 
-        linear-gradient(to right, -color-accent-subtle, transparent),
-        linear-gradient(to right, transparent 10px, rgba(203, 213, 225, 0.5) 10px, rgba(203, 213, 225, 0.5) 11px, transparent 11px);
-    -fx-background-size: 100% 100%, 28px 100%;
+    -fx-background-color: -color-accent-subtle;
+    -fx-background-size: 100% 100%;
     -fx-text-fill: -color-accent-dark;
     -fx-font-weight: 700;
-    -fx-border-color: transparent transparent transparent -color-accent;
+    -fx-border-color: -color-accent;
     -fx-border-width: 0 0 0 3;
 }
 
@@ -583,12 +595,14 @@
 
 .multi-select-option-btn {
     -fx-background-color: transparent;
+    -fx-border-color: transparent;
     -fx-padding: 8 12;
     -fx-text-fill: -color-text-main;
     -fx-alignment: center-left;
     -fx-cursor: hand;
     -fx-font-size: 14;
     -fx-background-radius: 4;
+    -fx-border-radius: 4;
 }
 
 .multi-select-option-btn:hover {
@@ -599,12 +613,12 @@
     -fx-background-color: -color-accent-subtle;
 }
 
-/* Product Form View Specific Styling */
-.product-form-container {
-    -fx-background-color: -color-surface; /* White background for the form container */
+/* Shared Form View Container Styling */
+.form-container {
+    -fx-background-color: -color-surface;
 }
 
-.product-form-container .viewport {
+.form-container .viewport {
     -fx-background-color: -color-surface;
 }
 

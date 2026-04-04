@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -46,7 +47,9 @@
                         </VBox>
                         <HBox alignment="CENTER_LEFT" spacing="10">
                             <Button text="Save Settings" onAction="#handleSaveGeneral" styleClass="primary-button"
-                                    defaultButton="true" accessibleText="Save Settings"/>
+                                    defaultButton="true" accessibleText="Save Settings">
+                                <graphic><FontIcon iconLiteral="bx-save" iconSize="16" iconColor="white"/></graphic>
+                            </Button>
                         </HBox>
                     </VBox>
                 </VBox>
@@ -67,7 +70,9 @@
                                 <Label text="Select default printer for POS receipts" styleClass="field-helper"/>
                             </VBox>
                             <Button text="Refresh Printers" onAction="#handleRefreshPrinters" styleClass="action-button"
-                                    accessibleText="Refresh connected printers list"/>
+                                    accessibleText="Refresh connected printers list">
+                                <graphic><FontIcon iconLiteral="bx-sync" iconSize="16"/></graphic>
+                            </Button>
                         </HBox>
                         <Separator/>
                         <VBox styleClass="form-group" spacing="15">
@@ -77,8 +82,9 @@
                                           accessibleText="Select Default Printer"/>
                             </VBox>
                             <HBox alignment="CENTER_LEFT" spacing="10">
-                                <Button fx:id="testPrintBtn" text="Test Print" onAction="#handleTestPrint" styleClass="action-button"
-                                        accessibleText="Send a test print to selected printer"/>
+                                <Button fx:id="testPrintBtn" text="Test Print" onAction="#handleTestPrint" styleClass="action-button" accessibleText="Send a test print to selected printer">
+                                    <graphic><FontIcon iconLiteral="bx-printer" iconSize="16"/></graphic>
+                                </Button>
                             </HBox>
                         </VBox>
                     </VBox>

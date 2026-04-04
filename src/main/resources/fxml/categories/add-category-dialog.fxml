@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx"
@@ -51,6 +54,7 @@
                 </tooltip>
             </Button>
             <Button fx:id="saveButton" text="Save Category" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save new category" accessibleRole="BUTTON">
+                <graphic><FontIcon iconLiteral="bx-save" iconSize="16" iconColor="white"/></graphic>
                 <tooltip>
                     <Tooltip text="Create the category (Enter)"/>
                 </tooltip>

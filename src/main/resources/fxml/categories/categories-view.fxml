@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import com.possum.ui.common.controls.DataTableView?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -20,8 +21,11 @@
         <Region HBox.hgrow="ALWAYS" />
         <HBox spacing="10" alignment="CENTER_RIGHT">
             <TextField fx:id="searchField" promptText="Search categories..." prefWidth="250" styleClass="search-field" />
-            <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button" />
+            <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="action-button">
+                <graphic><FontIcon iconLiteral="bx-sync" iconSize="16"/></graphic>
+            </Button>
             <Button fx:id="addButton" text="Add Category" onAction="#handleAddCategory" styleClass="action-button, primary-button" accessibleText="Create a new category">
+                <graphic><FontIcon iconLiteral="bx-plus" iconSize="16" iconColor="white"/></graphic>
                 <tooltip>
                     <Tooltip text="Add a new category" />
                 </tooltip>

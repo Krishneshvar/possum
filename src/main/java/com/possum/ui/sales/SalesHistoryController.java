@@ -25,14 +25,11 @@ import com.possum.ui.common.dialogs.DialogStyler;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 
 public class SalesHistoryController {
@@ -163,7 +160,7 @@ public class SalesHistoryController {
                 editItem.setOnAction(e -> handleEdit(sale));
 
                 MenuItem cancelItem = new MenuItem("❌ Cancel Sale");
-                cancelItem.getStyleClass().add("logout-menu-item"); // Use consistent red style from app-shell.css
+                cancelItem.getStyleClass().add("logout-menu-item");
                 cancelItem.setOnAction(e -> handleCancel(sale));
                 
                 items.add(new SeparatorMenuItem());
@@ -346,17 +343,5 @@ public class SalesHistoryController {
                         return null;
                     });
         }
-    }
-
-    private String formatStatus(String status) {
-        if (status == null || status.trim().isEmpty()) return "Unknown";
-        String[] words = status.toLowerCase().split("_");
-        StringBuilder sb = new StringBuilder();
-        for (String word : words) {
-            if (!word.isEmpty()) {
-                sb.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1)).append(" ");
-            }
-        }
-        return sb.toString().trim();
     }
 }

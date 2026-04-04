@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
@@ -27,7 +30,7 @@
                 
                 <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
                     <VBox alignment="CENTER" spacing="10" style="-fx-padding: 40 10;">
-                        <Label text="📦" style="-fx-font-size: 40px;"/>
+                        <FontIcon iconLiteral="bx-package" iconSize="48" iconColor="#cbd5e1" styleClass="empty-state-icon"/>
                         <Label text="No products available" style="-fx-text-fill: #64748b; -fx-font-size: 14px; -fx-font-weight: 600;"/>
                         <Label text="Search for a product to add it to the cart." style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
                     </VBox>
@@ -40,7 +43,7 @@
                 
                 <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
                     <VBox alignment="CENTER" spacing="10" style="-fx-padding: 40 10;">
-                        <Label text="🛒" style="-fx-font-size: 40px;"/>
+                        <FontIcon iconLiteral="bx-cart" iconSize="48" iconColor="#cbd5e1" styleClass="empty-state-icon"/>
                         <Label text="Cart is empty" style="-fx-text-fill: #64748b; -fx-font-size: 14px; -fx-font-weight: 600;"/>
                         <Label text="Add items to see them here." style="-fx-text-fill: #94a3b8; -fx-font-size: 12px;"/>
                     </VBox>

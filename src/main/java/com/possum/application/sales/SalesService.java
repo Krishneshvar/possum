@@ -417,7 +417,6 @@ public class SalesService {
             Customer customer = sale.customerId() != null ? customerRepository.findCustomerById(sale.customerId()).orElse(null) : null;
             TaxCalculationResult taxResult = taxEngine.calculate(new TaxableInvoice(calculationItems), customer);
 
-            List<SaleItem> newItems = new ArrayList<>();
             for (int i = 0; i < itemRequests.size(); i++) {
                 UpdateSaleItemRequest req = itemRequests.get(i);
                 TaxableItem calculated = taxResult.getItemByIndex(i);

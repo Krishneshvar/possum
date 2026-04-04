@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
+ 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -9,16 +10,23 @@
             fitToWidth="true"
             fitToHeight="true"
             stylesheets="@../../styles/inventory.css"
-            styleClass="workspace-view"
-            style="-fx-background-color: -color-surface;">
+            styleClass="workspace-view, form-container">
 
     <VBox spacing="20" alignment="TOP_LEFT">
-        <!-- Header -->
-        <HBox styleClass="view-header">
+        <!-- Header Section -->
+        <HBox styleClass="view-header" alignment="CENTER_LEFT">
+            <Button onAction="#handleCancel" styleClass="back-link" accessibleText="Go back to purchase orders list">
+                <graphic><FontIcon iconLiteral="bx-arrow-back" iconSize="16"/></graphic>
+            </Button>
             <VBox spacing="5" HBox.hgrow="ALWAYS">
                 <Label fx:id="titleLabel" text="Purchase Order Form" styleClass="view-title"/>
                 <Label text="Order new stock from suppliers" styleClass="view-subtitle"/>
             </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true"
+                    accessibleText="Cancel purchase order creation"/>
+            <Button fx:id="saveButton" text="Save Purchase Order" onAction="#handleSave" styleClass="action-button, primary-button"
+                    accessibleText="Save purchase order information"/>
         </HBox>
 
         <HBox spacing="20" VBox.vgrow="ALWAYS">
@@ -87,14 +95,7 @@
                         
                         <Region VBox.vgrow="ALWAYS"/>
 
-                        <VBox spacing="10">
-                            <Button fx:id="saveButton" text="Save Purchase Order" onAction="#handleSave" 
-                                    maxWidth="Infinity" styleClass="action-button, primary-button" defaultButton="true"
-                                    accessibleText="Save purchase order"/>
-                            <Button text="Close" onAction="#handleCancel" 
-                                    maxWidth="Infinity" styleClass="action-button" cancelButton="true"
-                                    accessibleText="Cancel purchase order"/>
-                        </VBox>
+                        <Region VBox.vgrow="ALWAYS"/>
                     </VBox>
                 </VBox>
             </VBox>

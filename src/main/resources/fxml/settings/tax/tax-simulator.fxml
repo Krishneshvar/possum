@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -49,9 +50,13 @@
             <Separator/>
 
             <HBox spacing="10" alignment="CENTER_RIGHT">
-                <Button text="Reset Form" onAction="#handleClear" styleClass="action-button" accessibleText="Reset Simulator Form" cancelButton="true"/>
+                <Button text="Reset Form" onAction="#handleClear" styleClass="action-button" accessibleText="Reset Simulator Form" cancelButton="true">
+                    <graphic><FontIcon iconLiteral="bx-reset" iconSize="16"/></graphic>
+                </Button>
                 <Button fx:id="calculateButton" text="Run Calculation" onAction="#handleCalculate" styleClass="primary-button"
-                        defaultButton="true" accessibleText="Calculate Tax Results"/>
+                        defaultButton="true" accessibleText="Calculate Tax Results">
+                    <graphic><FontIcon iconLiteral="bx-play-circle" iconSize="16" iconColor="white"/></graphic>
+                </Button>
             </HBox>
         </VBox>
 

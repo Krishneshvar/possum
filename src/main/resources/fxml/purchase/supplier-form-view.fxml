@@ -2,16 +2,21 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.possum.ui.purchase.SupplierFormController"
             fitToWidth="true"
             stylesheets="@../../styles/inventory.css"
-            styleClass="workspace-view">
+            styleClass="workspace-view, form-container">
 
-    <VBox spacing="20" alignment="TOP_LEFT">
-        <HBox styleClass="view-header">
+    <VBox spacing="25" alignment="TOP_CENTER" style="-fx-padding: 30 40;">
+        <VBox spacing="25" maxWidth="1000" alignment="TOP_LEFT">
+        <HBox styleClass="view-header" alignment="CENTER_LEFT">
+            <Button onAction="#handleCancel" styleClass="back-link" accessibleText="Go back to suppliers list">
+                <graphic><FontIcon iconLiteral="bx-arrow-back" iconSize="16"/></graphic>
+            </Button>
             <VBox spacing="5" HBox.hgrow="ALWAYS">
                 <Label fx:id="titleLabel" text="Add Supplier" styleClass="view-title"/>
                 <Label text="Enter supplier details and payment terms" styleClass="view-subtitle"/>
@@ -69,6 +74,7 @@
                               accessibleText="Physical Address"/>
                 </VBox>
             </VBox>
+        </VBox>
         </VBox>
     </VBox>
 </ScrollPane>

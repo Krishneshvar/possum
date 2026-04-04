@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import com.possum.ui.common.controls.*?>
 
 <VBox xmlns="http://javafx.com/javafx"
@@ -18,11 +21,15 @@
                 <Label text="Manage and track your purchase orders from suppliers" styleClass="view-subtitle"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="↺ Refresh" onAction="#handleRefresh" styleClass="action-button"
-                    accessibleText="Refresh purchase orders list" />
+            <Button text="Refresh" onAction="#handleRefresh" styleClass="action-button"
+                    accessibleText="Refresh purchase orders list">
+                <graphic><FontIcon iconLiteral="bx-sync" iconSize="16"/></graphic>
+            </Button>
             <Button fx:id="createButton" text="New Purchase Order" onAction="#handleCreate" 
                     styleClass="action-button, primary-button" defaultButton="true"
-                    accessibleText="Create new purchase order" />
+                    accessibleText="Create new purchase order">
+                <graphic><FontIcon iconLiteral="bx-plus" iconSize="16" iconColor="white"/></graphic>
+            </Button>
         </HBox>
     </VBox>
     

@@ -7,12 +7,12 @@
 .root {
     -fx-background-color: -color-bg-canvas;
     -fx-text-fill: -color-text-main;
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }
 
 .label {
     -fx-text-fill: -color-text-main;
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
 }
 
 .view-title {
@@ -22,17 +22,18 @@
 }
 
 .view-subtitle {
-    -fx-font-size: 14px;
+    -fx-font-size: 16px;
     -fx-text-fill: -color-text-muted;
 }
 
 .helper-text {
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
     -fx-text-fill: -color-text-muted;
 }
 
 .workspace-view {
     -fx-background-color: -color-bg-canvas;
+    -fx-background: -color-bg-canvas; /* Fix for ScrollPane backgrounds */
     -fx-padding: 24;
     -fx-spacing: 20;
     -fx-alignment: top-left;

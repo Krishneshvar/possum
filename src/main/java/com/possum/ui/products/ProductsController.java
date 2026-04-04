@@ -418,7 +418,8 @@ public class ProductsController {
         switch (status.toLowerCase()) {
             case "active" -> label.getStyleClass().add("badge-success");
             case "inactive" -> label.getStyleClass().add("badge-neutral");
-            default -> label.getStyleClass().add("badge-warning");
+            case "discontinued" -> label.getStyleClass().add("badge-warning");
+            default -> label.getStyleClass().add("badge-neutral");
         }
     }
 

@@ -21,7 +21,8 @@
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
         <HBox spacing="10" alignment="CENTER_RIGHT">
-            <Button text="↺ Refresh" accessibleText="Refresh Bill History" onAction="#loadHistory" styleClass="action-button">
+            <Button text="Refresh" onAction="#loadHistory" styleClass="action-button" accessibleText="Refresh Bill History">
+                <graphic><FontIcon iconLiteral="bx-sync" iconSize="16"/></graphic>
                 <tooltip>
                     <Tooltip text="Refresh the bill history list"/>
                 </tooltip>

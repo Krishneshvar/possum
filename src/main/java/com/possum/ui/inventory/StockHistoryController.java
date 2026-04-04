@@ -86,7 +86,8 @@ public class StockHistoryController {
         adjustedByCol = new TableColumn<>("Adjusted By");
         dateCol = new TableColumn<>("Date & Time");
 
-        historyTable.getTableView().getColumns().setAll(productCol, variantCol, skuCol, changeCol, reasonCol, adjustedByCol, dateCol);
+        historyTable.getTableView().getColumns().clear();
+        historyTable.getTableView().getColumns().addAll(List.of(productCol, variantCol, skuCol, changeCol, reasonCol, adjustedByCol, dateCol));
         historyTable.getTableView().setItems(historyList);
 
         productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));

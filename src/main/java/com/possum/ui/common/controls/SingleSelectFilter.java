@@ -116,10 +116,9 @@ public class SingleSelectFilter<T> extends MenuButton {
         for (T item : safeItems) {
             String label = labelExtractor.apply(item);
             Button itemBtn = new Button(label);
-            itemBtn.getStyleClass().add("multi-select-option-btn"); // Need CSS for this
+            itemBtn.getStyleClass().add("multi-select-option-btn");
             itemBtn.setMaxWidth(Double.MAX_VALUE);
             itemBtn.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            itemBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 8 12; -fx-text-fill: #1e293b;");
             
             itemBtn.setOnAction(e -> {
                 setSelectedItem(item);

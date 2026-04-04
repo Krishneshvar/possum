@@ -10,6 +10,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import java.util.List;
 
 public class TaxCategoriesController {
 
@@ -41,7 +42,8 @@ public class TaxCategoriesController {
         descriptionColumn = new TableColumn<>("Description");
         productCountColumn = new TableColumn<>("Products Assigned");
 
-        categoriesTable.getTableView().getColumns().setAll(nameColumn, descriptionColumn, productCountColumn);
+        categoriesTable.getTableView().getColumns().clear();
+        categoriesTable.getTableView().getColumns().addAll(List.of(nameColumn, descriptionColumn, productCountColumn));
         categoriesTable.setEmptyMessage("No tax categories found");
         categoriesTable.setEmptySubtitle("Add a new category to link it with products.");
 

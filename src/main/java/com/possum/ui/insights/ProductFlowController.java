@@ -462,6 +462,7 @@ public class ProductFlowController {
     private void clearData() {
         flowTable.setItems(FXCollections.observableArrayList());
         clearSummary();
+        paginationBar.setTotalItems(0);
     }
 
     private void clearSummary() {

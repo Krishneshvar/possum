@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Cursor;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -26,7 +27,7 @@ public class DataTableView<T> extends StackPane {
     
     @FXML private TableView<T> tableView;
     @FXML private VBox emptyState;
-    @FXML private Label emptyIcon;
+    @FXML private FontIcon emptyIcon;
     @FXML private Label emptyMessage;
     @FXML private Label emptySubtitle;
     @FXML private StackPane loadingOverlay;
@@ -47,7 +48,7 @@ public class DataTableView<T> extends StackPane {
 
     @FXML
     public void initialize() {
-        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         tableView.setAccessibleText("Data table");
         
         // Use TableView's built-in placeholder support
@@ -84,7 +85,6 @@ public class DataTableView<T> extends StackPane {
         column.setSortable(false);
         column.setMinWidth(132);
         column.setPrefWidth(152);
-        column.setMaxWidth(220);
         column.setCellValueFactory(features -> new ReadOnlyObjectWrapper<>(features.getValue()));
         column.setCellFactory(col -> new TableCell<T, T>() {
             private final Button button = new Button(title);
@@ -119,7 +119,6 @@ public class DataTableView<T> extends StackPane {
         column.setSortable(false);
         column.setMinWidth(132);
         column.setPrefWidth(152);
-        column.setMaxWidth(220);
         column.setCellValueFactory(features -> new ReadOnlyObjectWrapper<>(features.getValue()));
         column.setCellFactory(col -> new TableCell<T, T>() {
             private final Button menuButton = new Button(title + " \u25BE");

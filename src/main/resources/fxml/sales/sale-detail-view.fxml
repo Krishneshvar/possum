@@ -17,18 +17,16 @@
     <!-- Header Section -->
     <HBox styleClass="view-header" alignment="CENTER_LEFT" spacing="20">
         <VBox spacing="4" HBox.hgrow="ALWAYS">
-            <HBox spacing="10" alignment="BASELINE_LEFT">
-                <Label fx:id="invoiceLabel" text="#INV-001" styleClass="view-title"/>
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <Label fx:id="invoiceLabel" text="Bill #2024-001" styleClass="view-title"/>
                 <Label fx:id="statusBadge" text="PAID" styleClass="badge, badge-status"/>
             </HBox>
             <Label fx:id="dateLabel" text="Processed on March 25, 2026 at 10:30 AM" styleClass="view-subtitle"/>
         </VBox>
         
-        <HBox spacing="10">
-            <Button text="🖨 Print Receipt" accessibleText="Print Receipt" onAction="#handlePrint" styleClass="action-button">
-                <graphic>
-                    <FontIcon iconLiteral="fas-print" iconSize="16"/>
-                </graphic>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button text="Print Receipt" accessibleText="Print Receipt" onAction="#handlePrint" styleClass="action-button">
+                <graphic><FontIcon iconLiteral="fas-print" iconSize="16"/></graphic>
                 <tooltip>
                     <Tooltip text="Print receipt for this sale"/>
                 </tooltip>
@@ -42,7 +40,7 @@
                         <Tooltip text="Edit details of this bill"/>
                     </tooltip>
                 </Button>
-                <HBox fx:id="editActionsDock" spacing="8" visible="false" managed="false">
+                <HBox fx:id="editActionsDock" spacing="8" visible="false" managed="false" alignment="CENTER_RIGHT">
                     <Button text="Save Changes" onAction="#handleSave" styleClass="action-button, primary-button">
                         <graphic><FontIcon iconLiteral="fas-check" iconSize="14" iconColor="white"/></graphic>
                     </Button>
@@ -51,10 +49,8 @@
                     </Button>
                 </HBox>
             </StackPane>
-            <Button fx:id="createReturnButton" text="Return Items" accessibleText="Return Items" onAction="#handleReturn" styleClass="action-button, danger-button" style="-fx-border-color: #EF4444; -fx-border-width: 1;">
-                <graphic>
-                    <FontIcon iconLiteral="fas-undo" iconSize="16" iconColor="#EF4444"/>
-                </graphic>
+            <Button fx:id="createReturnButton" text="Return Items" accessibleText="Return Items" onAction="#handleReturn" styleClass="action-button, danger-button" style="-fx-border-color: rgba(239, 68, 68, 0.5); -fx-border-width: 1; -fx-border-radius: 6; -fx-background-color: rgba(239, 68, 68, 0.05); -fx-background-radius: 6;">
+                <graphic><FontIcon iconLiteral="bx-undo" iconSize="16" iconColor="#EF4444"/></graphic>
                 <tooltip>
                     <Tooltip text="Process a return for items in this bill"/>
                 </tooltip>
@@ -131,7 +127,7 @@
             <!-- Payment Info -->
             <VBox spacing="10" styleClass="card">
                 <HBox alignment="CENTER_LEFT" spacing="8">
-                    <Label text="💳" style="-fx-text-fill: #94a3b8;"/>
+                    <FontIcon iconLiteral="bx-credit-card" iconSize="14" iconColor="#94a3b8"/>
                     <Label text="PAYMENT INFO" styleClass="form-label" style="-fx-font-size: 11;"/>
                 </HBox>
                 <StackPane alignment="TOP_LEFT">
@@ -148,7 +144,7 @@
             <!-- Order Summary Sidebar -->
             <VBox spacing="15" styleClass="card" VBox.vgrow="ALWAYS">
                 <HBox alignment="CENTER_LEFT" spacing="8">
-                    <Label text="📋" style="-fx-text-fill: #94a3b8;"/>
+                    <FontIcon iconLiteral="bx-detail" iconSize="14" iconColor="#94a3b8"/>
                     <Label text="ORDER SUMMARY" styleClass="form-label" style="-fx-font-size: 11;"/>
                 </HBox>
                 
@@ -164,6 +160,10 @@
                     <HBox alignment="CENTER_LEFT">
                         <Label text="Discount" style="-fx-text-fill: #64748b;" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                         <Label fx:id="discountTotalLabel" text="-0.00" style="-fx-font-weight: 600; -fx-text-fill: #ef4444;"/>
+                    </HBox>
+                    <HBox fx:id="refundSummaryRow" alignment="CENTER_LEFT" visible="false" managed="false">
+                        <Label text="Refund Made" style="-fx-text-fill: #64748b;" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Label fx:id="refundTotalLabel" text="-0.00" style="-fx-font-weight: 600; -fx-text-fill: #ef4444;"/>
                     </HBox>
                     
                     <Separator style="-fx-padding: 10 0;"/>

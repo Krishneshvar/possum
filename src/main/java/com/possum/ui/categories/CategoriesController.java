@@ -5,14 +5,13 @@ import com.possum.application.categories.CategoryService.CategoryTreeNode;
 import com.possum.domain.model.Category;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.workspace.WorkspaceManager;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.List;
@@ -30,6 +29,11 @@ public class CategoriesController {
     private TableColumn<Category, String> nameCol;
     private TableColumn<Category, String> parentCol;
     private TableColumn<Category, Category> actionsCol;
+    
+    private final ObservableList<Category> masterData = FXCollections.observableArrayList();
+    private FilteredList<Category> filteredData;
+    private SortedList<Category> sortedData;
+    private final Map<Long, String> categoryNameMap = new HashMap<>();
 
     private final CategoryService categoryService;
     private final WorkspaceManager workspaceManager;
@@ -50,7 +54,7 @@ public class CategoriesController {
         }
         
         if (refreshButton != null) {
-            FontIcon refreshIcon = new FontIcon("bx-refresh");
+            FontIcon refreshIcon = new FontIcon("bx-sync");
             refreshIcon.setIconSize(16);
             refreshButton.setGraphic(refreshIcon);
         }
@@ -67,9 +71,39 @@ public class CategoriesController {
         idCol.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().id())));
         nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().name()));
         
+        parentCol.setCellValueFactory(cellData -> {
+            Long parentId = cellData.getValue().parentId();
+            if (parentId == null) {
+                return new SimpleStringProperty("-");
+            }
+            String parentName = categoryNameMap.get(parentId);
+            return new SimpleStringProperty(parentName != null ? parentName : String.valueOf(parentId));
+        });
+
+        actionsCol.setSortable(false);
         setupActionsColumn();
-        
-        Platform.runLater(this::loadData);
+
+        filteredData = new FilteredList<>(masterData, p -> true);
+        sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(categoryTableView.getTableView().comparatorProperty());
+        categoryTableView.getTableView().setItems(sortedData);
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(category -> {
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+                String lowerCaseFilter = newValue.toLowerCase();
+                if (category.name().toLowerCase().contains(lowerCaseFilter)) {
+                    return true;
+                } else if (String.valueOf(category.id()).contains(lowerCaseFilter)) {
+                    return true;
+                }
+                return false;
+            });
+        });
+
+        loadData();
     }
 
     private void setupActionsColumn() {
@@ -77,7 +111,7 @@ public class CategoriesController {
         actionsCol.setCellFactory(col -> new TableCell<>() {
             private final Button editBtn = new Button("Edit");
             {
-                FontIcon editIcon = new FontIcon("bx-pencil");
+                FontIcon editIcon = new FontIcon("bx-edit");
                 editIcon.setIconSize(14);
                 editIcon.getStyleClass().add("table-action-icon");
                 editBtn.setGraphic(editIcon);
@@ -107,39 +141,12 @@ public class CategoriesController {
     public void loadData() {
         List<Category> allCategories = categoryService.getAllCategories();
 
-        Map<Long, String> categoryNameMap = new HashMap<>();
+        categoryNameMap.clear();
         for (Category c : allCategories) {
             categoryNameMap.put(c.id(), c.name());
         }
 
-        parentCol.setCellValueFactory(cellData -> {
-            Long parentId = cellData.getValue().parentId();
-            if (parentId == null) {
-                return new SimpleStringProperty("-");
-            }
-            String parentName = categoryNameMap.get(parentId);
-            return new SimpleStringProperty(parentName != null ? parentName : String.valueOf(parentId));
-        });
-
-        ObservableList<Category> masterData = FXCollections.observableArrayList(allCategories);
-        FilteredList<Category> filteredData = new FilteredList<>(masterData, p -> true);
-
-        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredData.setPredicate(category -> {
-                if (newValue == null || newValue.isEmpty()) {
-                    return true;
-                }
-                String lowerCaseFilter = newValue.toLowerCase();
-                if (category.name().toLowerCase().contains(lowerCaseFilter)) {
-                    return true;
-                } else if (String.valueOf(category.id()).contains(lowerCaseFilter)) {
-                    return true;
-                }
-                return false;
-            });
-        });
-
-        categoryTableView.setItems(filteredData);
+        masterData.setAll(allCategories);
 
         List<CategoryTreeNode> treeNodes = categoryService.getCategoriesAsTree();
         TreeItem<String> rootItem = new TreeItem<>("All Categories");

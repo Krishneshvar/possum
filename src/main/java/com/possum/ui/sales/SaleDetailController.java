@@ -18,6 +18,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import org.kordamp.ikonli.javafx.FontIcon;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
@@ -56,7 +57,7 @@ public class SaleDetailController implements Parameterizable {
     @FXML private Label balanceTypeLabel;
     @FXML private Label balanceAmountLabel;
     @FXML private javafx.scene.control.Button editButton;
-    @FXML private javafx.scene.control.Button returnButton;
+    @FXML private javafx.scene.control.Button createReturnButton;
 
     @FXML private javafx.scene.layout.HBox editActionsDock;
     @FXML private javafx.scene.layout.VBox customerViewBox;
@@ -72,6 +73,8 @@ public class SaleDetailController implements Parameterizable {
     @FXML private Label draftSubtotalLabel;
     @FXML private Label draftTaxLabel;
     @FXML private Label draftTotalLabel;
+    @FXML private Label refundTotalLabel;
+    @FXML private javafx.scene.layout.HBox refundSummaryRow;
 
     private final javafx.collections.ObservableList<SaleItem> editingItems = FXCollections.observableArrayList();
     private boolean isEditingMode = false;
@@ -107,8 +110,8 @@ public class SaleDetailController implements Parameterizable {
         if (editButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(editButton, com.possum.application.auth.Permissions.SALES_MANAGE);
         }
-        if (returnButton != null) {
-            com.possum.ui.common.UIPermissionUtil.requirePermission(returnButton, com.possum.application.auth.Permissions.SALES_REFUND);
+        if (createReturnButton != null) {
+            com.possum.ui.common.UIPermissionUtil.requirePermission(createReturnButton, com.possum.application.auth.Permissions.SALES_REFUND);
         }
         setupActiveItemsTable();
         setupReturnedItemsTable();
@@ -252,7 +255,10 @@ public class SaleDetailController implements Parameterizable {
             private final javafx.scene.control.Button deleteBtn = new javafx.scene.control.Button();
             {
                 deleteBtn.getStyleClass().add("danger-button");
-                deleteBtn.setGraphic(new org.kordamp.ikonli.javafx.FontIcon("fas-trash-alt"));
+                FontIcon trashIcon = new FontIcon("bx-trash");
+                trashIcon.setIconSize(14);
+                trashIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+                deleteBtn.setGraphic(trashIcon);
                 deleteBtn.setOnAction(e -> {
                     int index = getIndex();
                     if (index >= 0 && index < getTableView().getItems().size()) {
@@ -271,7 +277,13 @@ public class SaleDetailController implements Parameterizable {
             }
         });
 
-        itemsTable.getTableView().getColumns().setAll(productCol, qtyCol, priceCol, taxCol, discountCol, totalCol, actionsCol);
+        itemsTable.getTableView().getColumns().clear();
+        itemsTable.getTableView().getColumns().addAll(productCol, qtyCol, priceCol, taxCol, discountCol, totalCol);
+        if (isEditingMode) {
+            itemsTable.getTableView().getColumns().add(actionsCol);
+        }
+        
+        itemsTable.getTableView().setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY);
         itemsTable.setEmptyMessage("No active items in this bill");
     }
 
@@ -423,7 +435,9 @@ public class SaleDetailController implements Parameterizable {
         TableColumn<SaleItem, BigDecimal> retPriceCol = new TableColumn<>("Unit Price");
         TableColumn<SaleItem, BigDecimal> retRefundCol = new TableColumn<>("Refund Amount");
 
-        returnedItemsTable.getTableView().getColumns().setAll(retProductCol, retSkuCol, retQtyCol, retPriceCol, retRefundCol);
+        returnedItemsTable.getTableView().getColumns().clear();
+        returnedItemsTable.getTableView().getColumns().addAll(List.of(retProductCol, retSkuCol, retQtyCol, retPriceCol, retRefundCol));
+        returnedItemsTable.getTableView().setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY);
         returnedItemsTable.setEmptyMessage("No returned items recorded");
 
         retProductCol.setCellValueFactory(data -> new SimpleStringProperty(
@@ -549,15 +563,24 @@ public class SaleDetailController implements Parameterizable {
         subtotalLabel.setText(currencyFormat.format(subtotal));
         taxTotalLabel.setText(currencyFormat.format(totalTax));
         discountTotalLabel.setText("-" + currencyFormat.format(totalDiscount));
-        grandTotalLabel.setText(currencyFormat.format(grandTotal));
-        paidAmountLabel.setText(currencyFormat.format(paidAmount));
-        
         BigDecimal totalRefunded = saleDetails.transactions().stream()
                 .filter(t -> "refund".equals(t.type()) && "completed".equals(t.status()))
                 .map(t -> t.amount().abs())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
+        boolean hasRefund = totalRefunded.compareTo(BigDecimal.ZERO) > 0;
+        if (refundSummaryRow != null) {
+            refundSummaryRow.setVisible(hasRefund);
+            refundSummaryRow.setManaged(hasRefund);
+        }
+        if (refundTotalLabel != null) {
+            refundTotalLabel.setText("-" + currencyFormat.format(totalRefunded));
+        }
+
         BigDecimal effectiveGrandTotal = grandTotal.subtract(totalRefunded).max(BigDecimal.ZERO);
+        grandTotalLabel.setText(currencyFormat.format(effectiveGrandTotal));
+        paidAmountLabel.setText(currencyFormat.format(paidAmount));
+        
         BigDecimal balance = paidAmount.subtract(effectiveGrandTotal);
         
         if (balance.compareTo(BigDecimal.ZERO) >= 0) {

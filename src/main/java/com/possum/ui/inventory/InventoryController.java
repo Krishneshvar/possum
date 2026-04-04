@@ -169,8 +169,10 @@ public class InventoryController {
                         badge.getStyleClass().add("badge-success");
                     } else if ("inactive".equalsIgnoreCase(status)) {
                         badge.getStyleClass().add("badge-neutral");
-                    } else {
+                    } else if ("discontinued".equalsIgnoreCase(status)) {
                         badge.getStyleClass().add("badge-warning");
+                    } else {
+                        badge.getStyleClass().add("badge-neutral");
                     }
                     
                     setGraphic(badge);
@@ -271,7 +273,9 @@ public class InventoryController {
     }
 
     private void handleAdjust(Variant variant) {
-        FormDialog.show("Adjust Stock - " + variant.productName() + " (" + variant.name() + ")", dialog -> {
+        FormDialog.show("Adjust Stock", dialog -> {
+            dialog.setSubtitle("Modify inventory levels for " + variant.productName() + " (" + variant.name() + "). " +
+                             "Choose an adjustment type and enter the value below.");
             var typeCombo = dialog.addComboBox("type", "Adjustment Type", "Add/Subtract");
             typeCombo.getItems().addAll("Add/Subtract", "Set Exact");
             dialog.addTextField("quantity", "Quantity / New Stock", "0");

@@ -176,9 +176,10 @@ public class PosController {
         colDiscountAmt = new TableColumn<>("Disc Amt");
         colTotal = new TableColumn<>("Total");
 
-        cartTable.getTableView().getColumns().setAll(
+        cartTable.getTableView().getColumns().clear();
+        cartTable.getTableView().getColumns().addAll(List.of(
             colSno, colSku, colProduct, colQty, colPrice, colMrp, colDiscountPct, colDiscountAmt, colTotal
-        );
+        ));
 
         colSno.setPrefWidth(48);
         colSno.setResizable(false);

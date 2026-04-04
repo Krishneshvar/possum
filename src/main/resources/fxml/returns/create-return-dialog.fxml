@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx"
@@ -29,6 +32,7 @@
                    styleClass="text-field" style="-fx-pref-height: 44;"/>
         <Button fx:id="findSaleButton" text="Find Sale" accessibleText="Find Sale Button" 
                 defaultButton="true" styleClass="primary-button" style="-fx-pref-height: 44; -fx-min-width: 120;">
+            <graphic><FontIcon iconLiteral="bx-search" iconSize="16" iconColor="white"/></graphic>
             <tooltip>
                 <Tooltip text="Locate sale details (Enter)"/>
             </tooltip>
@@ -97,10 +101,13 @@
     <!-- Footer Actions -->
     <HBox spacing="15" alignment="CENTER_RIGHT" style="-fx-padding: 5 0 0 0;">
         <Button fx:id="cancelButton" text="Discard" accessibleText="Cancel Button" 
-                cancelButton="true" styleClass="action-button" style="-fx-min-width: 100;"/>
+                cancelButton="true" styleClass="action-button" style="-fx-min-width: 100;">
+            <graphic><FontIcon iconLiteral="bx-x" iconSize="16"/></graphic>
+        </Button>
         <Button fx:id="submitButton" text="Authorize Refund" accessibleText="Confirm Return Button" 
                 onAction="#handleSubmit" styleClass="danger-button" 
                 style="-fx-min-width: 160; -fx-pref-height: 46; -fx-border-color: -color-error; -fx-border-width: 1;">
+            <graphic><FontIcon iconLiteral="bx-undo" iconSize="16" iconColor="white"/></graphic>
             <tooltip>
                 <Tooltip text="Complete refund processing"/>
             </tooltip>

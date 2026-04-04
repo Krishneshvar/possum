@@ -17,7 +17,7 @@ import java.util.StringJoiner;
 public final class SqliteTransactionRepository extends BaseSqliteRepository implements TransactionRepository {
 
     private static final Set<String> SORTABLE = Set.of(
-            "transaction_date", "amount", "status", "customer_name", "invoice_number", "supplier_name"
+            "transaction_date", "amount", "status", "customer_name", "invoice_number", "supplier_name", "type"
     );
 
     private final TransactionMapper mapper = new TransactionMapper();
@@ -52,6 +52,7 @@ public final class SqliteTransactionRepository extends BaseSqliteRepository impl
             case "customer_name" -> "c.name";
             case "invoice_number" -> "COALESCE(s.invoice_number, po.invoice_number)";
             case "supplier_name" -> "sup.name";
+            case "type" -> "t.type";
             default -> "t.transaction_date";
         };
         String sortOrder = "ASC".equalsIgnoreCase(filter.sortOrder()) ? "ASC" : "DESC";

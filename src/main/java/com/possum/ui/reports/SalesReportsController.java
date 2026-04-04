@@ -184,10 +184,11 @@ public class SalesReportsController {
         refundsCol = new TableColumn<>("Refunds");
         netSalesCol = new TableColumn<>("Net Sales");
 
-        breakdownTable.getTableView().getColumns().setAll(
+        breakdownTable.getTableView().getColumns().clear();
+        breakdownTable.getTableView().getColumns().addAll(List.of(
             periodCol, transactionsCol, cashCol, upiCol, debitCardCol, 
             creditCardCol, giftCardCol, salesCol, refundsCol, netSalesCol
-        );
+        ));
         
         breakdownTable.setEmptyMessage("No analytics records found");
         breakdownTable.setEmptySubtitle("Try adjusting your date range or filter criteria.");
@@ -270,12 +271,15 @@ public class SalesReportsController {
         columnFilter.selectItems(columns);
         
         columnFilter.getSelectedItems().addListener((ListChangeListener<TableColumn<BreakdownItem, ?>>) c -> {
-            List<TableColumn<BreakdownItem, ?>> selected = columnFilter.getSelectedItems();
-            for (TableColumn<BreakdownItem, ?> col : columns) {
-                col.setVisible(selected.contains(col));
-            }
-            breakdownTable.getTableView().refresh();
-            calculateTotals(breakdownTable.getItems());
+            // Defer to next pulse to avoid modifying column list mid-layout
+            javafx.application.Platform.runLater(() -> {
+                List<TableColumn<BreakdownItem, ?>> selected = new java.util.ArrayList<>(columnFilter.getSelectedItems());
+                for (TableColumn<BreakdownItem, ?> col : columns) {
+                    col.setVisible(selected.contains(col));
+                }
+                breakdownTable.getTableView().refresh();
+                calculateTotals(breakdownTable.getItems());
+            });
         });
         
         columnFilterContainer.getChildren().add(columnFilter);

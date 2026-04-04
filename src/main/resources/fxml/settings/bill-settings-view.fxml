@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.web.WebView?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -17,7 +18,9 @@
             <Label text="Customize the thermal receipt layout and formatting" styleClass="view-subtitle"/>
         </VBox>
         <Button fx:id="saveButton" text="Save Changes" onAction="#handleSave" 
-                styleClass="primary-button" defaultButton="true" accessibleText="Save Bill Settings"/>
+                styleClass="primary-button" defaultButton="true" accessibleText="Save Bill Settings">
+            <graphic><FontIcon iconLiteral="bx-save" iconSize="16" iconColor="white"/></graphic>
+        </Button>
     </HBox>
 
     <HBox spacing="20" VBox.vgrow="ALWAYS">

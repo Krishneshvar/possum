@@ -91,9 +91,9 @@ public class CustomersController {
             try {
                 CustomerFilter filter = new CustomerFilter(
                     currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
-                    paginationBar.getCurrentPage(),
+                    paginationBar.getCurrentPage() + 1,
                     paginationBar.getPageSize(),
-                    paginationBar.getCurrentPage(),
+                    paginationBar.getCurrentPage() + 1,
                     paginationBar.getPageSize(),
                     "name",
                     "ASC"
@@ -126,11 +126,11 @@ public class CustomersController {
         java.util.List<javafx.scene.control.MenuItem> items = new java.util.ArrayList<>();
 
         if (com.possum.ui.common.UIPermissionUtil.hasPermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE)) {
-            javafx.scene.control.MenuItem editItem = new javafx.scene.control.MenuItem("Edit");
+            javafx.scene.control.MenuItem editItem = new javafx.scene.control.MenuItem("✏️ Edit");
             editItem.setOnAction(e -> workspaceManager.openDialog("Edit Customer: " + customer.name(), "/fxml/people/customer-form-view.fxml", Map.of("customerId", customer.id(), "mode", "edit")));
             items.add(editItem);
 
-            javafx.scene.control.MenuItem deleteItem = new javafx.scene.control.MenuItem("Delete");
+            javafx.scene.control.MenuItem deleteItem = new javafx.scene.control.MenuItem("🗑️ Delete");
             deleteItem.setStyle("-fx-text-fill: red;");
             deleteItem.setOnAction(e -> handleDelete(customer));
             items.add(new javafx.scene.control.SeparatorMenuItem());

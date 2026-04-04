@@ -57,11 +57,11 @@
 }
 
 .nav-menu-btn {
-    -fx-min-height: 40;
-    -fx-pref-height: 40;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
     -fx-background-color: transparent;
     -fx-text-fill: white;
-    -fx-font-size: 14;
+    -fx-font-size: 16;
     -fx-font-weight: 700;
     -fx-padding: 0 16;
     -fx-cursor: hand;
@@ -129,7 +129,7 @@
 
 .navbar-user {
     -fx-background-color: transparent;
-    -fx-border-color: transparent transparent transparent -color-brand-dark-hover;
+    -fx-border-color: -color-brand-dark-hover;
     -fx-border-width: 0 0 0 1;
 }
 
@@ -200,7 +200,7 @@
 
 .menu-item .label {
     -fx-text-fill: -color-text-secondary;
-    -fx-font-size: 14;
+    -fx-font-size: 16;
     -fx-font-weight: 500;
 }
 
@@ -219,7 +219,7 @@
 }
 
 .separator-menu-item .line {
-    -fx-border-color: -color-border transparent transparent transparent;
+    -fx-border-color: -color-border;
     -fx-border-width: 1 0 0 0;
 }
 
@@ -239,14 +239,14 @@
 
 .user-menu-header-name {
     -fx-font-weight: 700;
-    -fx-font-size: 14;
+    -fx-font-size: 16;
     -fx-text-fill: -color-text-main;
     -fx-padding: 8 16 2 16;
 }
 
 .user-menu-header-role {
     -fx-text-fill: -color-text-muted;
-    -fx-font-size: 12;
+    -fx-font-size: 14;
     -fx-padding: 0 16 8 16;
 }
 

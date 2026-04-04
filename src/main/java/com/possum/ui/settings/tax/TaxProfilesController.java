@@ -11,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class TaxProfilesController {
 
@@ -49,7 +50,8 @@ public class TaxProfilesController {
         modeColumn = new TableColumn<>("Pricing Mode");
         statusColumn = new TableColumn<>("Active Status");
 
-        profilesTable.getTableView().getColumns().setAll(nameColumn, regionColumn, modeColumn, statusColumn);
+        profilesTable.getTableView().getColumns().clear();
+        profilesTable.getTableView().getColumns().addAll(List.of(nameColumn, regionColumn, modeColumn, statusColumn));
         profilesTable.setEmptyMessage("No tax profiles created yet");
         profilesTable.setEmptySubtitle("Create one from the details pane.");
 

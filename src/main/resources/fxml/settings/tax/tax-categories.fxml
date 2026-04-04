@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import com.possum.ui.common.controls.DataTableView?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -43,11 +44,19 @@
 
             <Separator/>
 
-            <HBox styleClass="form-actions">
-                <Button text="Clear" onAction="#handleClear" styleClass="action-button" accessibleText="Clear form fields" cancelButton="true"/>
-                <Button text="Delete" onAction="#handleDelete" styleClass="danger-button" accessibleText="Delete selected category"/>
-                <Button text="Update" onAction="#handleUpdate" styleClass="action-button" accessibleText="Update selected category"/>
-                <Button text="Add Category" onAction="#handleAdd" styleClass="primary-button" accessibleText="Add new category" defaultButton="true"/>
+            <HBox styleClass="form-actions" spacing="10">
+                <Button text="Clear" onAction="#handleClear" styleClass="action-button" accessibleText="Clear form fields" cancelButton="true">
+                    <graphic><FontIcon iconLiteral="bx-reset" iconSize="16"/></graphic>
+                </Button>
+                <Button text="Delete" fx:id="deleteButton" onAction="#handleDelete" styleClass="danger-button" accessibleText="Delete selected category">
+                    <graphic><FontIcon iconLiteral="bx-trash" iconSize="16" iconColor="white"/></graphic>
+                </Button>
+                <Button text="Update" fx:id="updateButton" onAction="#handleUpdate" styleClass="action-button" accessibleText="Update selected category">
+                    <graphic><FontIcon iconLiteral="bx-edit" iconSize="16"/></graphic>
+                </Button>
+                <Button text="Add Category" fx:id="addButton" onAction="#handleAdd" styleClass="primary-button" accessibleText="Add new category" defaultButton="true">
+                    <graphic><FontIcon iconLiteral="bx-plus" iconSize="16" iconColor="white"/></graphic>
+                </Button>
             </HBox>
         </VBox>
     </HBox>

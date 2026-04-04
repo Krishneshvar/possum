@@ -12,7 +12,9 @@
 
     <VBox spacing="20" alignment="TOP_LEFT">
         <HBox styleClass="view-header">
-            <Button text="← Back" onAction="#handleCancel" styleClass="back-link"/>
+            <Button onAction="#handleCancel" styleClass="back-link" accessibleText="Go back to users list">
+                <graphic><org.kordamp.ikonli.javafx.FontIcon iconLiteral="bx-arrow-back" iconSize="16"/></graphic>
+            </Button>
             <VBox>
                 <Label fx:id="titleLabel" text="Manage Roles &amp; Permissions" styleClass="view-title"/>
                 <Label fx:id="subtitleLabel" text="Assign roles and customize permissions" styleClass="view-subtitle"/>

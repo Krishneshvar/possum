@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import java.net.URL?>
 
 <StackPane fx:id="rootPane" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
@@ -20,7 +24,7 @@
         <center>
             <VBox spacing="16">
                 <HBox fx:id="searchDock" alignment="CENTER_LEFT" spacing="10" styleClass="pos-search-dock">
-                    <Label text="⌕" styleClass="pos-search-icon"/>
+                    <FontIcon iconLiteral="bx-search" iconSize="18" styleClass="pos-search-icon"/>
                     <TextField fx:id="searchField" promptText="Search products, variants, or SKU... (Ctrl+K)" HBox.hgrow="ALWAYS" styleClass="search-field-pos" accessibleText="Product Search Input">
                         <tooltip>
                             <Tooltip text="Search-first workflow: start typing to add items quickly (Ctrl+K)"/>

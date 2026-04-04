@@ -10,7 +10,8 @@
             stylesheets="@../../styles/inventory.css"
             styleClass="workspace-view">
 
-    <VBox spacing="20" alignment="TOP_LEFT">
+    <VBox spacing="25" alignment="TOP_CENTER" style="-fx-padding: 30 40;">
+        <VBox spacing="25" maxWidth="1000" alignment="TOP_LEFT">
         <HBox styleClass="view-header">
             <Label fx:id="titleLabel" text="Add Employee" styleClass="view-title"/>
         </HBox>
@@ -68,6 +69,7 @@
                 <Button text="Cancel" onAction="#handleCancel" styleClass="action-button" cancelButton="true" accessibleText="Cancel and close"/>
                 <Button fx:id="saveButton" text="Save Employee" onAction="#handleSave" styleClass="action-button, primary-button" defaultButton="true" accessibleText="Save employee details"/>
             </HBox>
+        </VBox>
         </VBox>
     </VBox>
 </ScrollPane>

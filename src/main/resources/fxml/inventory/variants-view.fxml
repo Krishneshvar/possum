@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import com.possum.ui.common.controls.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -19,7 +20,8 @@
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
         <HBox spacing="12" alignment="CENTER_RIGHT">
-            <Button fx:id="refreshButton" text="↺ Reload Variants" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh variants table" accessibleRole="BUTTON">
+            <Button fx:id="refreshButton" text="Reload Variants" onAction="#handleRefresh" styleClass="action-button" accessibleText="Refresh variants table" accessibleRole="BUTTON">
+                <graphic><FontIcon iconLiteral="bx-sync" iconSize="16"/></graphic>
                 <tooltip>
                     <Tooltip text="Reload all variants from the database"/>
                 </tooltip>

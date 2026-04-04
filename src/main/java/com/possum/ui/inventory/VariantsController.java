@@ -303,8 +303,10 @@ public class VariantsController {
                         badge.getStyleClass().add("badge-success");
                     } else if ("inactive".equalsIgnoreCase(status)) {
                         badge.getStyleClass().add("badge-neutral");
-                    } else {
+                    } else if ("discontinued".equalsIgnoreCase(status)) {
                         badge.getStyleClass().add("badge-warning");
+                    } else {
+                        badge.getStyleClass().add("badge-neutral");
                     }
                     
                     setGraphic(badge);
@@ -444,9 +446,9 @@ public class VariantsController {
         int stock = variant.stock() == null ? 0 : variant.stock();
         int alertCap = variant.stockAlertCap() == null ? 0 : variant.stockAlertCap();
         if (stock <= 0) {
-            badge.getStyleClass().add("badge-warning");
+            badge.getStyleClass().add("badge-error");
         } else if (stock <= alertCap) {
-            badge.getStyleClass().add("badge-neutral");
+            badge.getStyleClass().add("badge-warning");
         } else {
             badge.getStyleClass().add("badge-success");
         }

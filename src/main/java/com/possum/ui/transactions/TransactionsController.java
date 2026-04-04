@@ -24,9 +24,6 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -48,6 +45,8 @@ public class TransactionsController {
     private java.time.LocalDate toDate = null;
     private BigDecimal currentMinAmount = null;
     private BigDecimal currentMaxAmount = null;
+    private String currentSortBy = "transaction_date";
+    private String currentSortOrder = "DESC";
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public TransactionsController(TransactionService transactionService, 
@@ -174,7 +173,24 @@ public class TransactionsController {
             }
         });
         
+        refCol.setId("invoice_number");
+        typeCol.setId("type");
+        typeCol.setSortable(true);
+        paymentCol.setId("payment_method_name");
+        amountCol.setId("amount");
+        dateCol.setId("transaction_date");
+        
         transactionsTable.getTableView().getColumns().addAll(refCol, typeCol, paymentCol, amountCol, dateCol);
+        
+        // Listen for sort events
+        transactionsTable.getTableView().getSortOrder().addListener((javafx.beans.Observable obs) -> {
+            if (!transactionsTable.getTableView().getSortOrder().isEmpty()) {
+                TableColumn<Transaction, ?> col = transactionsTable.getTableView().getSortOrder().get(0);
+                currentSortBy = col.getId() != null ? col.getId() : "transaction_date";
+                currentSortOrder = col.getSortType() == TableColumn.SortType.DESCENDING ? "DESC" : "ASC";
+                loadTransactions();
+            }
+        });
     }
 
     private void handleViewBill(String invoiceNumber) {
@@ -264,8 +280,8 @@ public class TransactionsController {
                     currentSearch.isEmpty() ? null : currentSearch,
                     paginationBar.getCurrentPage() + 1,
                     paginationBar.getPageSize(),
-                    "transaction_date",
-                    "DESC"
+                    currentSortBy,
+                    currentSortOrder
                 );
                 
                 Set<String> permissions = new HashSet<>(AuthContext.getCurrentUser().permissions());
