@@ -41,6 +41,10 @@ public final class AppPaths {
         return ensureDirectory(appDataRoot.resolve("temp"));
     }
 
+    public Path getBackupsDir() {
+        return ensureDirectory(appDataRoot.resolve("backups"));
+    }
+
     public Path getSettingsDir() {
         return ensureDirectory(appDataRoot.resolve("settings"));
     }

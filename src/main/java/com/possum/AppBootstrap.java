@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import com.possum.infrastructure.filesystem.AppPaths;
+import com.possum.infrastructure.backup.DatabaseBackupService;
 import com.possum.persistence.db.DatabaseManager;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.application.auth.AuthModule;
@@ -45,6 +46,7 @@ public final class AppBootstrap {
 
     private AppPaths appPaths;
     private DatabaseManager databaseManager;
+    private DatabaseBackupService backupService;
     private TransactionManager transactionManager;
     private AuthModule authModule;
     private ServiceLocator serviceLocator;
@@ -98,6 +100,9 @@ public final class AppBootstrap {
     }
 
     public void shutdown() {
+        if (backupService != null) {
+            backupService.stopDailyBackups();
+        }
         if (databaseManager != null) {
             databaseManager.close();
         }
@@ -127,6 +132,8 @@ public final class AppBootstrap {
         
         authModule = new AuthModule(userRepository, sessionRepository, transactionManager, passwordHasher);
         serviceLocator = new ServiceLocator(databaseManager, transactionManager, appPaths);
+        backupService = serviceLocator.getDatabaseBackupService();
+        backupService.startDailyBackups();
         
 
         SqliteProductRepository productRepository = new SqliteProductRepository(databaseManager);

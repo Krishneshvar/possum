@@ -165,6 +165,8 @@ public class DependencyInjector {
             return serviceLocator.getSettingsStore();
         } else if (type.equals(com.possum.infrastructure.printing.PrinterService.class)) {
             return serviceLocator.getPrinterService();
+        } else if (type.equals(com.possum.infrastructure.backup.DatabaseBackupService.class)) {
+            return serviceLocator.getDatabaseBackupService();
         } else if (type.equals(com.possum.ui.navigation.NavigationManager.class)) {
             return navigationManager;
         } else if (type.equals(com.possum.ui.workspace.WorkspaceManager.class)) {

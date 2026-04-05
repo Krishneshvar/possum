@@ -226,6 +226,78 @@
                 </VBox>
             </ScrollPane>
         </Tab>
+
+        <!-- Backup & Restore Tab -->
+        <Tab closable="false">
+            <graphic>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <FontIcon iconLiteral="bx-data" iconSize="16"/>
+                    <Label text="Backup &amp; Restore" style="-fx-font-weight: 600;"/>
+                </HBox>
+            </graphic>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 20 0 0 0;">
+                <VBox spacing="24">
+                    <VBox styleClass="card" spacing="24">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <FontIcon iconLiteral="bx-shield-quarter" iconSize="20" iconColor="#0EA5E9"/>
+                            <VBox spacing="2">
+                                <Label text="Automatic Daily Backups" styleClass="card-title"/>
+                                <Label text="A mandatory backup is created once every day while the app is running" styleClass="field-helper"/>
+                            </VBox>
+                        </HBox>
+
+                        <Separator/>
+
+                        <VBox spacing="14">
+                            <VBox spacing="6">
+                                <Label text="Backup Location" styleClass="form-label"/>
+                                <Label fx:id="backupLocationLabel" text="Loading..." styleClass="field-helper" wrapText="true"/>
+                            </VBox>
+
+                            <VBox spacing="6">
+                                <Label text="Latest Backup" styleClass="form-label"/>
+                                <Label fx:id="latestBackupLabel" text="Checking backups..." styleClass="field-helper" wrapText="true"/>
+                            </VBox>
+                        </VBox>
+                    </VBox>
+
+                    <VBox styleClass="card" spacing="20">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <FontIcon iconLiteral="bx-transfer" iconSize="20" iconColor="#22C55E"/>
+                            <VBox spacing="2">
+                                <Label text="Manual Backup &amp; Restore" styleClass="card-title"/>
+                                <Label text="Create an on-demand backup or restore from a selected backup file" styleClass="field-helper"/>
+                            </VBox>
+                        </HBox>
+
+                        <Separator/>
+
+                        <VBox spacing="12">
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <Button fx:id="createBackupBtn" text="Create Backup Now" onAction="#handleCreateBackupNow" styleClass="primary-button">
+                                    <graphic><FontIcon iconLiteral="bx-save" iconSize="16" iconColor="white"/></graphic>
+                                </Button>
+                                <Label text="Recommended before major imports or updates" styleClass="field-helper"/>
+                            </HBox>
+
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <Button fx:id="openBackupFolderBtn" text="Open Backup Folder" onAction="#handleOpenBackupFolder" styleClass="action-button">
+                                    <graphic><FontIcon iconLiteral="bx-folder-open" iconSize="16"/></graphic>
+                                </Button>
+                                <Label text="View and copy backup files for external storage" styleClass="field-helper"/>
+                            </HBox>
+
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <Button fx:id="restoreBackupBtn" text="Restore From Backup File" onAction="#handleRestoreFromBackup" styleClass="secondary-button">
+                                    <graphic><FontIcon iconLiteral="bx-upload" iconSize="16"/></graphic>
+                                </Button>
+                                <Label text="This replaces current data and should be used carefully" styleClass="field-helper"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </Tab>
         
         <!-- Tax Configuration Tab -->
         <Tab closable="false">

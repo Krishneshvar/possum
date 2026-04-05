@@ -1,5 +1,6 @@
 package com.possum.infrastructure.lazy;
 
+import com.possum.infrastructure.backup.DatabaseBackupService;
 import com.possum.infrastructure.filesystem.AppPaths;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.filesystem.UploadStore;
@@ -22,6 +23,7 @@ public class ServiceLocator {
     private final LazyService<SettingsStore> settingsStore;
     private final LazyService<UploadStore> uploadStore;
     private final LazyService<PrinterService> printerService;
+    private final LazyService<DatabaseBackupService> databaseBackupService;
     
     public ServiceLocator(DatabaseManager databaseManager, TransactionManager transactionManager, AppPaths appPaths) {
         this.databaseManager = databaseManager;
@@ -47,6 +49,11 @@ public class ServiceLocator {
             LOGGER.debug("Initializing PrinterService");
             return new PrinterService();
         });
+
+        this.databaseBackupService = new LazyService<>(() -> {
+            LOGGER.debug("Initializing DatabaseBackupService");
+            return new DatabaseBackupService(appPaths, databaseManager);
+        });
     }
     
     public JsonService getJsonService() {
@@ -63,6 +70,10 @@ public class ServiceLocator {
     
     public PrinterService getPrinterService() {
         return printerService.get();
+    }
+
+    public DatabaseBackupService getDatabaseBackupService() {
+        return databaseBackupService.get();
     }
     
     public DatabaseManager getDatabaseManager() {
