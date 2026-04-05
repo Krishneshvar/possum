@@ -7,6 +7,7 @@ import com.possum.domain.model.SaleItem;
 import com.possum.domain.model.Transaction;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.BillRenderer;
+import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.ui.navigation.Parameterizable;
 import com.possum.ui.workspace.WorkspaceManager;
@@ -596,9 +597,35 @@ public class SaleDetailController implements Parameterizable {
 
     @FXML
     private void handlePrint() {
-        String billHtml = BillRenderer.renderBill(saleDetails, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
-        printerService.printInvoice(billHtml);
-        NotificationService.success("Invoice sent to printer");
+        try {
+            com.possum.shared.dto.GeneralSettings generalSettings = settingsStore.loadGeneralSettings();
+            com.possum.shared.dto.BillSettings billSettings = settingsStore.loadBillSettings();
+            String billHtml = BillRenderer.renderBill(saleDetails, generalSettings, billSettings);
+
+            printerService.printInvoiceDetailed(
+                            billHtml,
+                            generalSettings.getDefaultPrinterName(),
+                            billSettings.getPaperWidth()
+                    )
+                    .thenAccept(this::notifyPrintOutcome)
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> NotificationService.error("Print error: " + ex.getMessage()));
+                        return null;
+                    });
+        } catch (Exception ex) {
+            NotificationService.error("Unable to print invoice: " + ex.getMessage());
+        }
+    }
+
+    private void notifyPrintOutcome(PrintOutcome outcome) {
+        Platform.runLater(() -> {
+            if (outcome.success()) {
+                String printer = outcome.printerName() != null ? outcome.printerName() : "configured printer";
+                NotificationService.success("Invoice sent to " + printer);
+            } else {
+                NotificationService.warning("Print failed: " + outcome.message());
+            }
+        });
     }
 
     @FXML

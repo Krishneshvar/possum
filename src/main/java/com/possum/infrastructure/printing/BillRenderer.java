@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import com.possum.shared.util.TimeUtil;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -63,11 +63,23 @@ public class BillRenderer {
     """;
 
     public static String renderBill(SaleResponse saleResponse, GeneralSettings general, BillSettings billSettings) {
+        if (saleResponse == null || saleResponse.sale() == null) {
+            throw new IllegalArgumentException("saleResponse must contain a sale");
+        }
+        if (general == null) {
+            general = new GeneralSettings();
+        }
+        if (billSettings == null) {
+            billSettings = new BillSettings();
+        }
+
         Sale sale = saleResponse.sale();
         String paperWidth = billSettings.getPaperWidth();
         String currency = billSettings.getCurrency() != null && !billSettings.getCurrency().isEmpty() 
             ? billSettings.getCurrency() 
-            : (general.getCurrencyCode().equals("INR") ? "₹" : "$");
+            : (general.getCurrencySymbol() != null && !general.getCurrencySymbol().isBlank()
+                ? general.getCurrencySymbol()
+                : (general.getCurrencyCode().equals("INR") ? "₹" : "$"));
         
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>")
@@ -156,7 +168,7 @@ public class BillRenderer {
         StringBuilder html = new StringBuilder();
         html.append("<div class=\"").append(commonClasses).append("\">")
             .append("<div><span class=\"bold\">Bill No:</span> ").append(escapeHtml(sale.invoiceNumber())).append("</div>")
-            .append("<div><span class=\"bold\">Date:</span> ").append(formatDate(TimeUtil.toLocal(sale.saleDate()), billSettings)).append("</div>");
+            .append("<div><span class=\"bold\">Date:</span> ").append(formatDate(sale.saleDate(), billSettings)).append("</div>");
 
         if (sale.billerName() != null) {
             html.append("<div><span class=\"bold\">User:</span> ").append(escapeHtml(sale.billerName())).append("</div>");
@@ -179,7 +191,8 @@ public class BillRenderer {
             .append("<th class=\"col-amount\" style=\"text-align: right;\">Amt</th>")
             .append("</tr></thead><tbody>");
 
-        for (SaleItem item : saleResponse.items()) {
+        List<SaleItem> items = saleResponse.items() != null ? saleResponse.items() : Collections.emptyList();
+        for (SaleItem item : items) {
             BigDecimal qty = BigDecimal.valueOf(item.quantity());
             BigDecimal rate = item.pricePerUnit();
             BigDecimal amount = rate.multiply(qty);
@@ -232,7 +245,20 @@ public class BillRenderer {
     }
 
     private static String formatDate(LocalDateTime dateTime, BillSettings billSettings) {
-        return com.possum.shared.util.TimeUtil.formatStandard(com.possum.shared.util.TimeUtil.toLocal(dateTime));
+        LocalDateTime localTime = com.possum.shared.util.TimeUtil.toLocal(dateTime);
+        if (localTime == null) {
+            return "";
+        }
+
+        String datePattern = switch (billSettings.getDateFormat()) {
+            case "ISO" -> "yyyy-MM-dd";
+            case "short" -> "dd/MM/yy";
+            case "long" -> "EEEE, dd MMMM yyyy";
+            default -> "dd/MM/yyyy";
+        };
+        String timePattern = "24h".equals(billSettings.getTimeFormat()) ? "HH:mm" : "hh:mm a";
+
+        return localTime.format(DateTimeFormatter.ofPattern(datePattern + " " + timePattern));
     }
 
     private static String formatCurrency(BigDecimal amount, String currency) {

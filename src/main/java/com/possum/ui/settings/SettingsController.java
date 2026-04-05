@@ -4,6 +4,7 @@ import com.possum.ui.settings.tax.TaxManagementController;
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.infrastructure.backup.DatabaseBackupService;
 import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
@@ -58,7 +59,8 @@ public class SettingsController {
     private TaxManagementService taxService;
     private JsonService jsonService;
     private DatabaseBackupService backupService;
-    private String selectedPrinter;
+    private GeneralSettings generalSettings;
+    private boolean syncingPrinterSelection = false;
 
     public SettingsController(SettingsStore settingsStore, PrinterService printerService, 
                               TaxRepository taxRepository, JsonService jsonService,
@@ -75,6 +77,7 @@ public class SettingsController {
     public void initialize() {
         setupDateAndTimeFormats();
         loadGeneralSettings();
+        configurePrinterSelectionPersistence();
         loadPrinters();
         setupBillSettings();
         setupTaxSettings();
@@ -99,17 +102,17 @@ public class SettingsController {
     }
 
     private void loadGeneralSettings() {
-        GeneralSettings settings = settingsStore.loadGeneralSettings();
-        currencyField.setText(settings.getCurrencySymbol() != null ? settings.getCurrencySymbol() : "");
+        generalSettings = settingsStore.loadGeneralSettings();
+        currencyField.setText(generalSettings.getCurrencySymbol() != null ? generalSettings.getCurrencySymbol() : "");
 
-        String dateFormat = settings.getDateFormat();
+        String dateFormat = generalSettings.getDateFormat();
         if (dateFormatCombo.getItems().contains(dateFormat)) {
             dateFormatCombo.setValue(dateFormat);
         } else {
             dateFormatCombo.setValue("DD/MM/YYYY");
         }
 
-        String timeFormat = settings.getTimeFormat();
+        String timeFormat = generalSettings.getTimeFormat();
         if (timeFormatCombo.getItems().contains(timeFormat)) {
             timeFormatCombo.setValue(timeFormat);
         } else {
@@ -117,24 +120,79 @@ public class SettingsController {
         }
 
         if (inventoryAlertsToggle != null) {
-            inventoryAlertsToggle.setSelected(settings.isInventoryAlertsAndRestrictionsEnabled());
+            inventoryAlertsToggle.setSelected(generalSettings.isInventoryAlertsAndRestrictionsEnabled());
         }
 
         if (numericalSkuToggle != null) {
-            numericalSkuToggle.setSelected(settings.isNumericalSkuGenerationEnabled());
+            numericalSkuToggle.setSelected(generalSettings.isNumericalSkuGenerationEnabled());
         }
     }
 
     private void loadPrinters() {
         List<String> printers = printerService.listPrinters();
         printerCombo.setItems(FXCollections.observableArrayList(printers));
-        if (!printers.isEmpty()) {
-            printerCombo.setValue(printers.get(0));
-            selectedPrinter = printers.get(0);
+        syncingPrinterSelection = true;
+        try {
+            if (printers.isEmpty()) {
+                printerCombo.setValue(null);
+                testPrintBtn.setDisable(true);
+                printerCombo.setPromptText("No printers found");
+                return;
+            }
+
+            String savedPrinter = generalSettings != null ? generalSettings.getDefaultPrinterName() : null;
+            if (savedPrinter != null && !savedPrinter.isBlank()) {
+                if (printers.contains(savedPrinter)) {
+                    printerCombo.setValue(savedPrinter);
+                    printerCombo.setPromptText("Select a printer");
+                    testPrintBtn.setDisable(false);
+                } else {
+                    printerCombo.setValue(null);
+                    printerCombo.setPromptText("Saved printer unavailable - reselect");
+                    testPrintBtn.setDisable(true);
+                }
+                return;
+            }
+
+            String defaultPrinter = printerService.getDefaultPrinterName();
+            if (defaultPrinter != null && printers.contains(defaultPrinter)) {
+                printerCombo.setValue(defaultPrinter);
+            } else {
+                printerCombo.setValue(printers.get(0));
+            }
+            printerCombo.setPromptText("Select a printer");
             testPrintBtn.setDisable(false);
-        } else {
-            testPrintBtn.setDisable(true);
-            printerCombo.setPromptText("No printers found");
+        } finally {
+            syncingPrinterSelection = false;
+        }
+    }
+
+    private void configurePrinterSelectionPersistence() {
+        printerCombo.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if (syncingPrinterSelection || newValue == null || newValue.isBlank() || newValue.equals(oldValue)) {
+                return;
+            }
+
+            try {
+                GeneralSettings settings = settingsStore.loadGeneralSettings();
+                settings.setDefaultPrinterName(newValue);
+                settingsStore.saveGeneralSettings(settings);
+                if (generalSettings != null) {
+                    generalSettings.setDefaultPrinterName(newValue);
+                }
+                testPrintBtn.setDisable(false);
+                NotificationService.success("Default printer saved: " + newValue);
+            } catch (Exception ex) {
+                NotificationService.error("Failed to save default printer: " + ex.getMessage());
+            }
+        });
+    }
+
+    private String resolvePaperWidthForPrinting() {
+        try {
+            return settingsStore.loadBillSettings().getPaperWidth();
+        } catch (Exception ex) {
+            return "80mm";
         }
     }
 
@@ -153,6 +211,7 @@ public class SettingsController {
             );
             
             settingsStore.saveGeneralSettings(settings);
+            generalSettings = settings;
             NotificationService.success("General settings saved");
         } catch (Exception e) {
             NotificationService.error("Failed to save settings: " + e.getMessage());
@@ -162,35 +221,37 @@ public class SettingsController {
     @FXML
     private void handleTestPrint() {
         String printer = printerCombo.getValue();
-        if (printer == null) {
+        if (printer == null || printer.isBlank()) {
             NotificationService.warning("Select a printer before testing.");
             return;
         }
         
         String testHtml = "<html><body><h2>Test Print</h2><p>This is a test receipt from POSSUM POS</p></body></html>";
+        String paperWidth = resolvePaperWidthForPrinting();
         testPrintBtn.setDisable(true);
         testPrintBtn.setText("Printing...");
 
-        printerService.printInvoice(testHtml, printer)
-            .thenAccept(success -> {
-                javafx.application.Platform.runLater(() -> {
-                    testPrintBtn.setDisable(false);
-                    testPrintBtn.setText("Test Print");
-                    if (success) {
-                        NotificationService.success("Test print sent successfully to " + printer);
-                    } else {
-                        NotificationService.error("Print failed to reach the printer.");
-                    }
-                });
-            })
+        printerService.printInvoiceDetailed(testHtml, printer, paperWidth)
+            .thenAccept(outcome -> Platform.runLater(() -> onTestPrintFinished(outcome, printer)))
             .exceptionally(ex -> {
-                javafx.application.Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     testPrintBtn.setDisable(false);
                     testPrintBtn.setText("Test Print");
                     NotificationService.error("Print error: " + ex.getMessage());
                 });
                 return null;
             });
+    }
+
+    private void onTestPrintFinished(PrintOutcome outcome, String fallbackPrinterName) {
+        testPrintBtn.setDisable(false);
+        testPrintBtn.setText("Test Print");
+        if (outcome.success()) {
+            String target = outcome.printerName() != null ? outcome.printerName() : fallbackPrinterName;
+            NotificationService.success("Test print sent successfully to " + target);
+        } else {
+            NotificationService.error("Test print failed: " + outcome.message());
+        }
     }
 
     @FXML

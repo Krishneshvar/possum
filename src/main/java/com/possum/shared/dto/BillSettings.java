@@ -63,42 +63,56 @@ public class BillSettings {
     }
 
     public String getPaperWidth() {
-        return paperWidth;
+        return normalizePaperWidth(paperWidth);
     }
 
     public void setPaperWidth(String paperWidth) {
-        this.paperWidth = paperWidth;
+        this.paperWidth = normalizePaperWidth(paperWidth);
     }
 
     public String getDateFormat() {
-        return dateFormat;
+        return dateFormat != null ? dateFormat : "standard";
     }
 
     public void setDateFormat(String dateFormat) {
-        this.dateFormat = dateFormat;
+        this.dateFormat = dateFormat != null ? dateFormat : "standard";
     }
 
     public String getTimeFormat() {
-        return timeFormat;
+        return timeFormat != null ? timeFormat : "12h";
     }
 
     public void setTimeFormat(String timeFormat) {
-        this.timeFormat = timeFormat;
+        this.timeFormat = timeFormat != null ? timeFormat : "12h";
     }
 
     public String getCurrency() {
-        return currency;
+        return currency != null ? currency : "₹";
     }
 
     public void setCurrency(String currency) {
-        this.currency = currency;
+        this.currency = currency != null ? currency : "₹";
     }
 
     public List<BillSection> getSections() {
+        if (sections == null || sections.isEmpty()) {
+            sections = new ArrayList<>();
+            initializeDefaultSections();
+        }
         return sections;
     }
 
     public void setSections(List<BillSection> sections) {
-        this.sections = sections;
+        this.sections = sections != null ? sections : new ArrayList<>();
+        if (this.sections.isEmpty()) {
+            initializeDefaultSections();
+        }
+    }
+
+    private String normalizePaperWidth(String input) {
+        if (input != null && "58mm".equalsIgnoreCase(input.trim())) {
+            return "58mm";
+        }
+        return "80mm";
     }
 }

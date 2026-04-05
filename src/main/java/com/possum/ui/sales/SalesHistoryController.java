@@ -15,6 +15,7 @@ import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.PaginationBar;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.BillRenderer;
+import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.ui.common.controls.*;
 import com.possum.ui.common.dialogs.ImportProgressDialog;
@@ -360,13 +361,36 @@ public class SalesHistoryController {
             NotificationService.warning("Legacy bills cannot be reprinted because line-item details are unavailable.");
             return;
         }
-        SaleResponse saleResponse = salesService.getSaleDetails(sale.id());
-        String billHtml = BillRenderer.renderBill(saleResponse, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
-        
-        printerService.printInvoice(billHtml)
-            .thenAccept(success -> {
-                if (!success) Platform.runLater(() -> NotificationService.warning("Print failed"));
-            });
+        try {
+            SaleResponse saleResponse = salesService.getSaleDetails(sale.id());
+            com.possum.shared.dto.GeneralSettings generalSettings = settingsStore.loadGeneralSettings();
+            com.possum.shared.dto.BillSettings billSettings = settingsStore.loadBillSettings();
+            String billHtml = BillRenderer.renderBill(saleResponse, generalSettings, billSettings);
+
+            printerService.printInvoiceDetailed(
+                            billHtml,
+                            generalSettings.getDefaultPrinterName(),
+                            billSettings.getPaperWidth()
+                    )
+                    .thenAccept(this::notifyPrintResult)
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> NotificationService.error("Print error: " + ex.getMessage()));
+                        return null;
+                    });
+        } catch (Exception ex) {
+            NotificationService.error("Unable to print this bill: " + ex.getMessage());
+        }
+    }
+
+    private void notifyPrintResult(PrintOutcome outcome) {
+        Platform.runLater(() -> {
+            if (outcome.success()) {
+                String printer = outcome.printerName() != null ? outcome.printerName() : "configured printer";
+                NotificationService.success("Invoice sent to " + printer);
+            } else {
+                NotificationService.warning("Print failed: " + outcome.message());
+            }
+        });
     }
 
     private void handleCancel(Sale sale) {

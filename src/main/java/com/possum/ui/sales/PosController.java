@@ -10,7 +10,10 @@ import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.Variant;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.BillRenderer;
+import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
+import com.possum.shared.dto.BillSettings;
+import com.possum.shared.dto.GeneralSettings;
 import com.possum.ui.common.dialogs.BillPreviewDialog;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
@@ -712,9 +715,30 @@ public class PosController {
     }
 
     private void printReceipt(SaleResponse sale) {
-        String h = BillRenderer.renderBill(sale, settingsStore.loadGeneralSettings(), settingsStore.loadBillSettings());
-        printerService.printInvoice(h).thenAccept(s -> { if (!s) Platform.runLater(() -> NotificationService.warning("Print failed")); });
-        Platform.runLater(() -> { new BillPreviewDialog(h, rootPane.getScene().getWindow()).showAndWait(); });
+        try {
+            GeneralSettings generalSettings = settingsStore.loadGeneralSettings();
+            BillSettings billSettings = settingsStore.loadBillSettings();
+            String html = BillRenderer.renderBill(sale, generalSettings, billSettings);
+            String configuredPrinter = generalSettings.getDefaultPrinterName();
+
+            printerService.printInvoiceDetailed(html, configuredPrinter, billSettings.getPaperWidth())
+                    .thenAccept(this::handlePrintOutcome)
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> NotificationService.error("Print error: " + ex.getMessage()));
+                        return null;
+                    });
+
+            Platform.runLater(() -> { new BillPreviewDialog(html, rootPane.getScene().getWindow()).showAndWait(); });
+        } catch (Exception ex) {
+            NotificationService.error("Failed to prepare receipt for printing: " + ex.getMessage());
+        }
+    }
+
+    private void handlePrintOutcome(PrintOutcome outcome) {
+        if (outcome.success()) {
+            return;
+        }
+        Platform.runLater(() -> NotificationService.warning("Print failed: " + outcome.message()));
     }
 
     @FXML private void handleClearCart() { currentBill.reset(); refreshCurrentBill(); switchBill(currentBill.index); }

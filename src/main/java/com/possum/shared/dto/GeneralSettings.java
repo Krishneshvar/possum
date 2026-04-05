@@ -8,6 +8,7 @@ public class GeneralSettings {
     private String currencySymbol = "₹";
     private String dateFormat = "DD/MM/YYYY";
     private String timeFormat = "12 hour format";
+    private String defaultPrinterName = "";
     private boolean inventoryAlertsAndRestrictionsEnabled = true;
     private boolean numericalSkuGenerationEnabled = false;
 
@@ -57,6 +58,14 @@ public class GeneralSettings {
 
     public void setTimeFormat(String timeFormat) {
         this.timeFormat = timeFormat;
+    }
+
+    public String getDefaultPrinterName() {
+        return defaultPrinterName;
+    }
+
+    public void setDefaultPrinterName(String defaultPrinterName) {
+        this.defaultPrinterName = defaultPrinterName != null ? defaultPrinterName.trim() : "";
     }
 
     public boolean isInventoryAlertsAndRestrictionsEnabled() {
