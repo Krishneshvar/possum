@@ -26,6 +26,15 @@
                         <TextField fx:id="nameField" promptText="e.g., Jane Doe" styleClass="text-field" accessibleText="Full Name Required"/>
                     </VBox>
                 </HBox>
+                <HBox spacing="20">
+                    <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                        <Label text="Customer Type" styleClass="form-label"/>
+                        <ComboBox fx:id="customerTypeCombo" maxWidth="Infinity" styleClass="combo-box" accessibleText="Customer Type"/>
+                    </VBox>
+                    <VBox styleClass="form-group" alignment="BOTTOM_LEFT" HBox.hgrow="ALWAYS">
+                        <CheckBox fx:id="isTaxExemptCheckbox" text="Tax Exempt" accessibleText="Mark customer as tax exempt"/>
+                    </VBox>
+                </HBox>
             </VBox>
 
             <VBox styleClass="card" spacing="15">

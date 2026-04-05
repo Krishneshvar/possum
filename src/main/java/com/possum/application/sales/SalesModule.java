@@ -24,6 +24,7 @@ public class SalesModule {
         
         this.taxEngine = new TaxEngine(taxRepository, jsonService);
         this.paymentService = new PaymentService(salesRepository);
+        InvoiceNumberService invoiceNumberService = new InvoiceNumberService(salesRepository);
         this.salesService = new SalesService(
                 salesRepository,
                 variantRepository,
@@ -35,7 +36,8 @@ public class SalesModule {
                 paymentService,
                 transactionManager,
                 jsonService,
-                settingsStore
+                settingsStore,
+                invoiceNumberService
         );
     }
 

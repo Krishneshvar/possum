@@ -50,6 +50,7 @@ public class ProductService {
 
     public long createProductWithVariants(CreateProductCommand command) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
+        if (command.name() == null || command.name().isBlank()) throw new ValidationException("Product name is required");
         if (command.variants() == null || command.variants().isEmpty()) {
             throw new ValidationException("At least one variant is required");
         }

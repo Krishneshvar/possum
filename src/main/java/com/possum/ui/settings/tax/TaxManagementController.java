@@ -18,8 +18,9 @@ public class TaxManagementController {
 
     public void setServices(com.possum.application.taxes.TaxManagementService taxService, 
                             com.possum.persistence.repositories.interfaces.TaxRepository taxRepository,
-                            com.possum.infrastructure.serialization.JsonService jsonService) {
-        if (taxProfilesController != null) taxProfilesController.setTaxService(taxService);
+                            com.possum.infrastructure.serialization.JsonService jsonService,
+                            com.possum.application.sales.TaxEngine taxEngine) {
+        if (taxProfilesController != null) taxProfilesController.setTaxService(taxService, taxEngine);
         if (taxCategoriesController != null) taxCategoriesController.setTaxService(taxService);
         if (taxRulesController != null) taxRulesController.setTaxService(taxService);
         if (taxSimulatorController != null) {

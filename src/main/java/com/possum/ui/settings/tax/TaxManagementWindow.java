@@ -15,6 +15,8 @@ public class TaxManagementWindow {
     public static void show(TaxRepository taxRepository, JsonService jsonService) {
         try {
             TaxManagementService taxService = new TaxManagementService(taxRepository);
+            com.possum.application.sales.TaxEngine taxEngine =
+                    new com.possum.application.sales.TaxEngine(taxRepository, jsonService);
             
             FXMLLoader loader = new FXMLLoader(
                 TaxManagementWindow.class.getResource("/fxml/settings/tax/tax-management.fxml")
@@ -24,7 +26,7 @@ public class TaxManagementWindow {
             ViewStateEnhancer.enhance(root);
             
             TaxManagementController controller = loader.getController();
-            controller.setServices(taxService, taxRepository, jsonService);
+            controller.setServices(taxService, taxRepository, jsonService, taxEngine);
             
             Stage stage = new Stage();
             stage.setTitle("Tax Management");

@@ -76,6 +76,17 @@ public class SalesReportsController {
     }
 
     private void exportData(String extension) {
+        List<BreakdownItem> items = breakdownTable.getTableView().getItems();
+        if (items == null || items.isEmpty()) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.INFORMATION);
+            alert.setTitle("No Data");
+            alert.setHeaderText(null);
+            alert.setContentText("There is no data to export for the selected filters.");
+            alert.showAndWait();
+            return;
+        }
+
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Sales Report");
         fileChooser.setInitialFileName("sales_report_" + LocalDate.now() + extension);
@@ -85,13 +96,13 @@ public class SalesReportsController {
         java.io.File file = fileChooser.showSaveDialog(breakdownTable.getScene().getWindow());
         if (file == null) return;
 
-        List<BreakdownItem> items = breakdownTable.getTableView().getItems();
+        List<BreakdownItem> exportItems = breakdownTable.getTableView().getItems();
         
         try {
             if (extension.equals(".csv")) {
-                writeCsv(file, items);
+                writeCsv(file, exportItems);
             } else {
-                writeExcel(file, items);
+                writeExcel(file, exportItems);
             }
         } catch (Exception e) {
             e.printStackTrace();

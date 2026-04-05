@@ -32,6 +32,9 @@ public class UserService {
 
     public User createUser(String name, String username, String password, boolean active, List<Long> roleIds) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
+        if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("User name is required");
+        if (username == null || username.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Username is required");
+        if (password == null || password.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Password is required");
         String hashedPassword = passwordHasher.hashPassword(password);
         User newUser = new User(null, name, username, hashedPassword, active, TimeUtil.nowUTC(), TimeUtil.nowUTC(), null);
         return userRepository.insertUserWithRoles(newUser, roleIds);
@@ -39,6 +42,8 @@ public class UserService {
 
     public User updateUser(long id, String name, String username, String password, boolean active, List<Long> roleIds) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
+        if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("User name is required");
+        if (username == null || username.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Username is required");
         User existingUser = userRepository.findUserById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         

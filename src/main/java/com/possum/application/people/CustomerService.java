@@ -23,14 +23,26 @@ public class CustomerService {
     }
 
     public Customer createCustomer(String name, String phone, String email, String address) {
+        return createCustomer(name, phone, email, address, null, false);
+    }
+
+    public Customer createCustomer(String name, String phone, String email, String address,
+                                    String customerType, Boolean isTaxExempt) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
-        return customerRepository.insertCustomer(name, phone, email, address)
+        if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Customer name is required");
+        return customerRepository.insertCustomer(name, phone, email, address, customerType, isTaxExempt)
                 .orElseThrow(() -> new RuntimeException("Failed to create customer"));
     }
 
     public Customer updateCustomer(long id, String name, String phone, String email, String address) {
+        return updateCustomer(id, name, phone, email, address, null, false);
+    }
+
+    public Customer updateCustomer(long id, String name, String phone, String email, String address,
+                                    String customerType, Boolean isTaxExempt) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
-        return customerRepository.updateCustomerById(id, name, phone, email, address)
+        if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Customer name is required");
+        return customerRepository.updateCustomerById(id, name, phone, email, address, customerType, isTaxExempt)
                 .orElseThrow(() -> new RuntimeException("Failed to update customer"));
     }
 

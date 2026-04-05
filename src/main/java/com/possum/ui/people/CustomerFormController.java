@@ -8,19 +8,26 @@ import com.possum.ui.workspace.WorkspaceManager;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
+import java.util.List;
+
 public class CustomerFormController extends AbstractFormController<Customer> {
 
     @FXML private TextField nameField;
     @FXML private TextField phoneField;
     @FXML private TextField emailField;
     @FXML private TextArea addressField;
-    
+    @FXML private ComboBox<String> customerTypeCombo;
+    @FXML private CheckBox isTaxExemptCheckbox;
+
     @FXML private Label nameErrorLabel;
     @FXML private Label phoneErrorLabel;
     @FXML private Label emailErrorLabel;
 
+    private static final List<String> CUSTOMER_TYPES =
+            List.of("Retailer", "Wholesaler", "Government", "NGO", "Other");
+
     private final CustomerService customerService;
-    
+
     private FieldValidator<String> nameValidator;
     private FieldValidator<String> phoneValidator;
     private FieldValidator<String> emailValidator;
@@ -32,6 +39,10 @@ public class CustomerFormController extends AbstractFormController<Customer> {
 
     @FXML
     public void initialize() {
+        if (customerTypeCombo != null) {
+            customerTypeCombo.getItems().setAll(CUSTOMER_TYPES);
+            customerTypeCombo.setPromptText("Select type (optional)");
+        }
         setupValidators();
     }
 
@@ -53,18 +64,12 @@ public class CustomerFormController extends AbstractFormController<Customer> {
 
     @Override
     protected void populateFields(Customer customer) {
-        if (nameField != null) {
-            nameField.setText(customer.name());
-        }
-        if (phoneField != null) {
-            phoneField.setText(customer.phone() != null ? customer.phone() : "");
-        }
-        if (emailField != null) {
-            emailField.setText(customer.email() != null ? customer.email() : "");
-        }
-        if (addressField != null) {
-            addressField.setText(customer.address() != null ? customer.address() : "");
-        }
+        if (nameField != null) nameField.setText(customer.name());
+        if (phoneField != null) phoneField.setText(customer.phone() != null ? customer.phone() : "");
+        if (emailField != null) emailField.setText(customer.email() != null ? customer.email() : "");
+        if (addressField != null) addressField.setText(customer.address() != null ? customer.address() : "");
+        if (customerTypeCombo != null) customerTypeCombo.setValue(customer.customerType());
+        if (isTaxExemptCheckbox != null) isTaxExemptCheckbox.setSelected(Boolean.TRUE.equals(customer.isTaxExempt()));
     }
 
     @Override
@@ -94,38 +99,44 @@ public class CustomerFormController extends AbstractFormController<Customer> {
     @Override
     protected void setFormEditable(boolean editable) {
         if (!editable) {
-            // View mode - replace fields with labels
             if (nameField != null) replaceWithLabel(nameField);
             if (phoneField != null) replaceWithLabel(phoneField);
             if (emailField != null) replaceWithLabel(emailField);
             if (addressField != null) replaceWithLabel(addressField);
+            if (customerTypeCombo != null) replaceWithLabel(customerTypeCombo);
+            if (isTaxExemptCheckbox != null) isTaxExemptCheckbox.setDisable(true);
         } else {
-            // Edit/Create mode - fields are already editable
             if (nameField != null) nameField.setEditable(true);
             if (phoneField != null) phoneField.setEditable(true);
             if (emailField != null) emailField.setEditable(true);
             if (addressField != null) addressField.setEditable(true);
+            if (customerTypeCombo != null) customerTypeCombo.setDisable(false);
+            if (isTaxExemptCheckbox != null) isTaxExemptCheckbox.setDisable(false);
         }
     }
 
     @Override
     protected void createEntity() throws Exception {
         customerService.createCustomer(
-            nameField.getText().trim(),
-            phoneField.getText().trim(),
-            emailField.getText().trim(),
-            addressField.getText().trim()
+                nameField.getText().trim(),
+                phoneField.getText().trim(),
+                emailField.getText().trim(),
+                addressField.getText().trim(),
+                customerTypeCombo != null ? customerTypeCombo.getValue() : null,
+                isTaxExemptCheckbox != null && isTaxExemptCheckbox.isSelected()
         );
     }
 
     @Override
     protected void updateEntity() throws Exception {
         customerService.updateCustomer(
-            getEntityId(),
-            nameField.getText().trim(),
-            phoneField.getText().trim(),
-            emailField.getText().trim(),
-            addressField.getText().trim()
+                getEntityId(),
+                nameField.getText().trim(),
+                phoneField.getText().trim(),
+                emailField.getText().trim(),
+                addressField.getText().trim(),
+                customerTypeCombo != null ? customerTypeCombo.getValue() : null,
+                isTaxExemptCheckbox != null && isTaxExemptCheckbox.isSelected()
         );
     }
 }

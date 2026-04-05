@@ -118,9 +118,9 @@ public class LoginController {
             showError(e.getMessage());
             toastService.error(e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
-            showError("An unexpected error occurred");
-            toastService.error("An unexpected error occurred");
+            String msg = com.possum.ui.common.ErrorHandler.toUserMessage(e);
+            showError(msg);
+            toastService.error(msg);
         }
     }
 

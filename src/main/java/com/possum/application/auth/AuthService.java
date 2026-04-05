@@ -1,14 +1,17 @@
 package com.possum.application.auth;
 
 import com.possum.domain.exceptions.AuthenticationException;
+import com.possum.domain.model.AuditLog;
 import com.possum.domain.model.Role;
 import com.possum.domain.model.SessionRecord;
 import com.possum.domain.model.User;
 import com.possum.infrastructure.security.PasswordHasher;
+import com.possum.persistence.repositories.interfaces.AuditRepository;
 import com.possum.persistence.repositories.interfaces.SessionRepository;
 import com.possum.persistence.repositories.interfaces.UserRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.UserFilter;
+import org.slf4j.MDC;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +31,8 @@ public class AuthService {
     private final SessionRepository sessionRepository;
     private final SessionService sessionService;
     private final PasswordHasher passwordHasher;
+    private final LoginAttemptTracker attemptTracker;
+    private final AuditRepository auditRepository;
     private volatile long lastCleanupTime = 0;
 
     public AuthService(
@@ -36,30 +41,70 @@ public class AuthService {
             SessionService sessionService,
             PasswordHasher passwordHasher
     ) {
+        this(userRepository, sessionRepository, sessionService, passwordHasher, new LoginAttemptTracker(), null);
+    }
+
+    public AuthService(
+            UserRepository userRepository,
+            SessionRepository sessionRepository,
+            SessionService sessionService,
+            PasswordHasher passwordHasher,
+            LoginAttemptTracker attemptTracker
+    ) {
+        this(userRepository, sessionRepository, sessionService, passwordHasher, attemptTracker, null);
+    }
+
+    public AuthService(
+            UserRepository userRepository,
+            SessionRepository sessionRepository,
+            SessionService sessionService,
+            PasswordHasher passwordHasher,
+            LoginAttemptTracker attemptTracker,
+            AuditRepository auditRepository
+    ) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.sessionService = sessionService;
         this.passwordHasher = passwordHasher;
+        this.attemptTracker = attemptTracker;
+        this.auditRepository = auditRepository;
     }
 
     public LoginResponse login(String username, String password) {
+        if (attemptTracker.isLocked(username)) {
+            long seconds = attemptTracker.secondsUntilUnlock(username);
+            throw new AuthenticationException(
+                    "Account temporarily locked. Try again in " + seconds + " seconds.");
+        }
+
         Optional<User> userOpt = userRepository.findUserByUsername(username);
         
         if (userOpt.isEmpty() || userOpt.get().deletedAt() != null) {
             passwordHasher.verifyPassword(password, DUMMY_HASH); // Prevent timing attacks
+            attemptTracker.recordFailure(username);
+            insertSecurityAudit(null, "LOGIN_FAILED", "auth",
+                    java.util.Map.of("username", username, "reason", "user_not_found"));
             throw new AuthenticationException("Invalid username or password");
         }
 
         User user = userOpt.get();
         if (!Boolean.TRUE.equals(user.active())) {
             passwordHasher.verifyPassword(password, DUMMY_HASH); // Prevent timing attacks
+            attemptTracker.recordFailure(username);
+            insertSecurityAudit(user.id(), "LOGIN_FAILED", "auth",
+                    java.util.Map.of("username", username, "reason", "account_inactive"));
             throw new AuthenticationException("Account is inactive. Please contact administrator.");
         }
         boolean isValid = passwordHasher.verifyPassword(password, user.passwordHash());
 
         if (!isValid) {
+            attemptTracker.recordFailure(username);
+            insertSecurityAudit(user.id(), "LOGIN_FAILED", "auth",
+                    java.util.Map.of("username", username, "reason", "wrong_password"));
             throw new AuthenticationException("Invalid username or password");
         }
+
+        attemptTracker.recordSuccess(username);
 
         // Check if this is the legacy default account that needs rotation
         boolean mustRotate = username.equals(LEGACY_DEFAULT_ADMIN_USERNAME) && 
@@ -67,6 +112,9 @@ public class AuthService {
 
         AuthUser userData = sessionService.buildAuthUser(user.id());
         String token = sessionService.createSession(userData);
+
+        MDC.put("userId", String.valueOf(userData.id()));
+        MDC.put("username", userData.username());
 
         return new LoginResponse(userData, token, mustRotate);
     }
@@ -129,6 +177,8 @@ public class AuthService {
 
     public void logout(String token) {
         sessionService.deleteSession(token);
+        MDC.remove("userId");
+        MDC.remove("username");
     }
 
     public AuthUser getCurrentUser(long userId) {
@@ -194,5 +244,18 @@ public class AuthService {
                 .filter(u -> u.active() && u.deletedAt() == null)
                 .map(u -> passwordHasher.verifyPassword(LEGACY_DEFAULT_ADMIN_PASSWORD, u.passwordHash()))
                 .orElse(false);
+    }
+
+    private void insertSecurityAudit(Long userId, String action, String tableName, Object eventDetails) {
+        if (auditRepository == null) return;
+        try {
+            String details = eventDetails instanceof String s ? s
+                    : new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(eventDetails);
+            auditRepository.insertAuditLog(new AuditLog(
+                    null, userId, action, tableName, null, null, null, details, null,
+                    com.possum.shared.util.TimeUtil.nowUTC()));
+        } catch (Exception ignored) {
+            // Audit failures must never break auth flow
+        }
     }
 }

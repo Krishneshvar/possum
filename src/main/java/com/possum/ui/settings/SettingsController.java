@@ -59,17 +59,20 @@ public class SettingsController {
     private TaxManagementService taxService;
     private JsonService jsonService;
     private DatabaseBackupService backupService;
+    private com.possum.application.sales.TaxEngine taxEngine;
     private GeneralSettings generalSettings;
     private boolean syncingPrinterSelection = false;
 
     public SettingsController(SettingsStore settingsStore, PrinterService printerService, 
                               TaxRepository taxRepository, JsonService jsonService,
-                              DatabaseBackupService backupService) {
+                              DatabaseBackupService backupService,
+                              com.possum.application.sales.TaxEngine taxEngine) {
         this.settingsStore = settingsStore;
         this.printerService = printerService;
         this.taxRepository = taxRepository;
         this.jsonService = jsonService;
         this.backupService = backupService;
+        this.taxEngine = taxEngine;
         this.taxService = new TaxManagementService(taxRepository);
     }
 
@@ -266,7 +269,7 @@ public class SettingsController {
             Parent taxSettingsView = loader.load();
             
             TaxManagementController controller = loader.getController();
-            controller.setServices(taxService, taxRepository, jsonService);
+            controller.setServices(taxService, taxRepository, jsonService, taxEngine);
             
             taxSettingsTabContent.getChildren().setAll(taxSettingsView);
             AnchorPane.setTopAnchor(taxSettingsView, 0.0);

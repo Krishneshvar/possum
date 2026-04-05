@@ -13,6 +13,9 @@ import com.possum.ui.common.toast.ToastService;
 import com.possum.ui.navigation.NavigationManager;
 
 import java.lang.reflect.Parameter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class DependencyInjector {
 
@@ -37,6 +40,8 @@ public class DependencyInjector {
     private com.possum.ui.workspace.WorkspaceManager workspaceManager;
     private final ToastService toastService = new ToastService();
 
+    private final Map<Class<?>, Supplier<Object>> registry = new HashMap<>();
+
     public DependencyInjector(ApplicationModule applicationModule, ServiceLocator serviceLocator,
                               SalesService salesService, com.possum.application.sales.TaxEngine taxEngine, ProductSearchIndex productSearchIndex,
                               TransactionService transactionService, ReturnsService returnsService,
@@ -57,8 +62,77 @@ public class DependencyInjector {
         this.supplierRepository = supplierRepository;
         this.taxRepository = taxRepository;
         this.appPaths = appPaths;
+        buildRegistry();
     }
 
+    private void buildRegistry() {
+        // Application services
+        registry.put(com.possum.application.products.ProductService.class, applicationModule::getProductService);
+        registry.put(com.possum.application.variants.VariantService.class, applicationModule::getVariantService);
+        registry.put(com.possum.application.categories.CategoryService.class, applicationModule::getCategoryService);
+        registry.put(com.possum.application.inventory.InventoryService.class, applicationModule::getInventoryService);
+        registry.put(com.possum.application.inventory.ProductFlowService.class, applicationModule::getProductFlowService);
+        registry.put(com.possum.application.auth.AuthService.class, () -> applicationModule.getAuthModule().getAuthService());
+        registry.put(com.possum.application.auth.AuthorizationService.class, com.possum.application.auth.AuthorizationService::new);
+        registry.put(com.possum.application.audit.AuditService.class, applicationModule::getAuditService);
+        registry.put(com.possum.application.people.UserService.class, applicationModule::getUserService);
+        registry.put(com.possum.application.people.CustomerService.class, applicationModule::getCustomerService);
+        registry.put(SalesService.class, () -> salesService);
+        registry.put(com.possum.application.sales.TaxEngine.class, () -> taxEngine);
+        registry.put(ProductSearchIndex.class, () -> productSearchIndex);
+        registry.put(TransactionService.class, () -> transactionService);
+        registry.put(ReturnsService.class, () -> returnsService);
+        registry.put(ReportsService.class, () -> reportsService);
+        registry.put(PurchaseService.class, () -> purchaseService);
+
+        // Repositories
+        registry.put(VariantRepository.class, () -> variantRepository);
+        registry.put(SalesRepository.class, () -> salesRepository);
+        registry.put(SupplierRepository.class, () -> supplierRepository);
+        registry.put(TaxRepository.class, () -> taxRepository);
+
+        // Infrastructure
+        registry.put(ToastService.class, () -> toastService);
+        registry.put(com.possum.infrastructure.serialization.JsonService.class, serviceLocator::getJsonService);
+        registry.put(com.possum.infrastructure.filesystem.SettingsStore.class, serviceLocator::getSettingsStore);
+        registry.put(com.possum.infrastructure.printing.PrinterService.class, serviceLocator::getPrinterService);
+        registry.put(com.possum.infrastructure.backup.DatabaseBackupService.class, serviceLocator::getDatabaseBackupService);
+        registry.put(com.possum.infrastructure.filesystem.AppPaths.class, () -> appPaths);
+
+        // UI
+        registry.put(NavigationManager.class, () -> navigationManager);
+        registry.put(com.possum.ui.workspace.WorkspaceManager.class, () -> workspaceManager);
+        registry.put(com.possum.ui.auth.SessionStore.class,
+                () -> new com.possum.ui.auth.SessionStore(appPaths, serviceLocator.getJsonService()));
+
+        // Composite controllers
+        registry.put(com.possum.ui.sales.SalesHistoryController.class,
+                () -> new com.possum.ui.sales.SalesHistoryController(
+                        salesService, serviceLocator.getSettingsStore(),
+                        serviceLocator.getPrinterService(), workspaceManager));
+        registry.put(com.possum.ui.sales.SaleDetailController.class,
+                () -> new com.possum.ui.sales.SaleDetailController(
+                        salesService, workspaceManager,
+                        serviceLocator.getSettingsStore(), serviceLocator.getPrinterService(), productSearchIndex));
+        registry.put(com.possum.ui.products.ProductFormController.class,
+                () -> new com.possum.ui.products.ProductFormController(
+                        applicationModule.getProductService(), applicationModule.getCategoryService(),
+                        taxRepository, workspaceManager, serviceLocator.getSettingsStore(), productSearchIndex));
+        registry.put(com.possum.ui.inventory.VariantsController.class,
+                () -> new com.possum.ui.inventory.VariantsController(
+                        variantRepository, applicationModule.getCategoryService(), taxRepository, workspaceManager));
+        registry.put(com.possum.ui.returns.CreateReturnDialogController.class,
+                () -> new com.possum.ui.returns.CreateReturnDialogController(
+                        salesService, salesRepository, returnsService));
+        registry.put(com.possum.ui.purchase.PurchaseOrderDetailController.class,
+                () -> new com.possum.ui.purchase.PurchaseOrderDetailController(purchaseService, workspaceManager));
+        registry.put(com.possum.ui.purchase.PurchaseOrderFormController.class,
+                () -> new com.possum.ui.purchase.PurchaseOrderFormController(
+                        purchaseService, supplierRepository, variantRepository,
+                        workspaceManager, productSearchIndex, salesService));
+        registry.put(com.possum.ui.purchase.PurchaseController.class,
+                () -> new com.possum.ui.purchase.PurchaseController(purchaseService, salesService, workspaceManager));
+    }
 
     public com.possum.infrastructure.filesystem.AppPaths getAppPaths() {
         return appPaths;
@@ -93,10 +167,36 @@ public class DependencyInjector {
 
     public void setNavigationManager(NavigationManager navigationManager) {
         this.navigationManager = navigationManager;
+        registry.put(NavigationManager.class, () -> navigationManager);
     }
 
     public void setWorkspaceManager(com.possum.ui.workspace.WorkspaceManager workspaceManager) {
         this.workspaceManager = workspaceManager;
+        registry.put(com.possum.ui.workspace.WorkspaceManager.class, () -> workspaceManager);
+        // Re-register composite controllers that depend on workspaceManager
+        registry.put(com.possum.ui.sales.SalesHistoryController.class,
+                () -> new com.possum.ui.sales.SalesHistoryController(
+                        salesService, serviceLocator.getSettingsStore(),
+                        serviceLocator.getPrinterService(), workspaceManager));
+        registry.put(com.possum.ui.sales.SaleDetailController.class,
+                () -> new com.possum.ui.sales.SaleDetailController(
+                        salesService, workspaceManager,
+                        serviceLocator.getSettingsStore(), serviceLocator.getPrinterService(), productSearchIndex));
+        registry.put(com.possum.ui.products.ProductFormController.class,
+                () -> new com.possum.ui.products.ProductFormController(
+                        applicationModule.getProductService(), applicationModule.getCategoryService(),
+                        taxRepository, workspaceManager, serviceLocator.getSettingsStore(), productSearchIndex));
+        registry.put(com.possum.ui.inventory.VariantsController.class,
+                () -> new com.possum.ui.inventory.VariantsController(
+                        variantRepository, applicationModule.getCategoryService(), taxRepository, workspaceManager));
+        registry.put(com.possum.ui.purchase.PurchaseOrderDetailController.class,
+                () -> new com.possum.ui.purchase.PurchaseOrderDetailController(purchaseService, workspaceManager));
+        registry.put(com.possum.ui.purchase.PurchaseOrderFormController.class,
+                () -> new com.possum.ui.purchase.PurchaseOrderFormController(
+                        purchaseService, supplierRepository, variantRepository,
+                        workspaceManager, productSearchIndex, salesService));
+        registry.put(com.possum.ui.purchase.PurchaseController.class,
+                () -> new com.possum.ui.purchase.PurchaseController(purchaseService, salesService, workspaceManager));
     }
 
     public void injectDependencies(Object controller) {
@@ -108,130 +208,10 @@ public class DependencyInjector {
     }
 
     private Object resolveDependency(Class<?> type) {
-        // Application layer services
-        if (type.equals(com.possum.application.products.ProductService.class)) {
-            return applicationModule.getProductService();
-        } else if (type.equals(com.possum.application.variants.VariantService.class)) {
-            return applicationModule.getVariantService();
-        } else if (type.equals(com.possum.application.categories.CategoryService.class)) {
-            return applicationModule.getCategoryService();
-        } else if (type.equals(com.possum.application.inventory.InventoryService.class)) {
-            return applicationModule.getInventoryService();
-        } else if (type.equals(com.possum.application.inventory.ProductFlowService.class)) {
-            return applicationModule.getProductFlowService();
-        } else if (type.equals(com.possum.application.auth.AuthService.class)) {
-            return applicationModule.getAuthModule().getAuthService();
-        } else if (type.equals(com.possum.application.auth.AuthorizationService.class)) {
-            return new com.possum.application.auth.AuthorizationService();
-        } else if (type.equals(com.possum.application.sales.SalesService.class)) {
-            return salesService;
-        } else if (type.equals(com.possum.application.sales.TaxEngine.class)) {
-            return taxEngine;
-        } else if (type.equals(com.possum.ui.sales.ProductSearchIndex.class)) {
-            return productSearchIndex;
-        } else if (type.equals(com.possum.application.transactions.TransactionService.class)) {
-            return transactionService;
-        } else if (type.equals(com.possum.application.returns.ReturnsService.class)) {
-            return returnsService;
-        } else if (type.equals(com.possum.application.reports.ReportsService.class)) {
-            return reportsService;
-        } else if (type.equals(com.possum.application.purchase.PurchaseService.class)) {
-            return purchaseService;
-        } else if (type.equals(com.possum.application.audit.AuditService.class)) {
-            return applicationModule.getAuditService();
-        } else if (type.equals(com.possum.application.people.UserService.class)) {
-            return applicationModule.getUserService();
-        } else if (type.equals(com.possum.application.people.CustomerService.class)) {
-            return applicationModule.getCustomerService();
-        } else if (type.equals(ToastService.class)) {
-            return toastService;
-        } else if (type.equals(com.possum.infrastructure.serialization.JsonService.class)) {
-            return serviceLocator.getJsonService();
+        Supplier<Object> supplier = registry.get(type);
+        if (supplier != null) {
+            return supplier.get();
         }
-
-        // Repositories
-        else if (type.equals(com.possum.persistence.repositories.interfaces.VariantRepository.class)) {
-            return variantRepository;
-        } else if (type.equals(com.possum.persistence.repositories.interfaces.SalesRepository.class)) {
-            return salesRepository;
-        } else if (type.equals(com.possum.persistence.repositories.interfaces.SupplierRepository.class)) {
-            return supplierRepository;
-        } else if (type.equals(com.possum.persistence.repositories.interfaces.TaxRepository.class)) {
-            return taxRepository;
-        }
-
-        // Infrastructure layer
-        else if (type.equals(com.possum.infrastructure.filesystem.SettingsStore.class)) {
-            return serviceLocator.getSettingsStore();
-        } else if (type.equals(com.possum.infrastructure.printing.PrinterService.class)) {
-            return serviceLocator.getPrinterService();
-        } else if (type.equals(com.possum.infrastructure.backup.DatabaseBackupService.class)) {
-            return serviceLocator.getDatabaseBackupService();
-        } else if (type.equals(com.possum.ui.navigation.NavigationManager.class)) {
-            return navigationManager;
-        } else if (type.equals(com.possum.ui.workspace.WorkspaceManager.class)) {
-            return workspaceManager;
-        } else if (type.equals(com.possum.ui.sales.SalesHistoryController.class)) {
-            return new com.possum.ui.sales.SalesHistoryController(
-                salesService,
-                serviceLocator.getSettingsStore(),
-                serviceLocator.getPrinterService(),
-                workspaceManager
-            );
-        } else if (type.equals(com.possum.ui.sales.SaleDetailController.class)) {
-            return new com.possum.ui.sales.SaleDetailController(
-                salesService,
-                workspaceManager,
-                serviceLocator.getSettingsStore(),
-                serviceLocator.getPrinterService(),
-                productSearchIndex
-            );
-        } else if (type.equals(com.possum.ui.products.ProductFormController.class)) {
-            return new com.possum.ui.products.ProductFormController(
-                applicationModule.getProductService(),
-                applicationModule.getCategoryService(),
-                taxRepository,
-                workspaceManager,
-                serviceLocator.getSettingsStore(),
-                productSearchIndex
-            );
-        } else if (type.equals(com.possum.ui.inventory.VariantsController.class)) {
-            return new com.possum.ui.inventory.VariantsController(
-                variantRepository,
-                applicationModule.getCategoryService(),
-                taxRepository,
-                workspaceManager
-            );
-        } else if (type.equals(com.possum.ui.returns.CreateReturnDialogController.class)) {
-            return new com.possum.ui.returns.CreateReturnDialogController(
-                salesService,
-                salesRepository,
-                returnsService
-            );
-        } else if (type.equals(com.possum.ui.auth.SessionStore.class)) {
-            return new com.possum.ui.auth.SessionStore(appPaths, serviceLocator.getJsonService()); // Or instantiate properly
-        } else if (type.equals(com.possum.ui.purchase.PurchaseOrderDetailController.class)) {
-            return new com.possum.ui.purchase.PurchaseOrderDetailController(
-                purchaseService,
-                workspaceManager
-            );
-        } else if (type.equals(com.possum.ui.purchase.PurchaseOrderFormController.class)) {
-            return new com.possum.ui.purchase.PurchaseOrderFormController(
-                purchaseService,
-                supplierRepository,
-                variantRepository,
-                workspaceManager,
-                productSearchIndex,
-                salesService
-            );
-        } else if (type.equals(com.possum.ui.purchase.PurchaseController.class)) {
-            return new com.possum.ui.purchase.PurchaseController(
-                purchaseService,
-                salesService,
-                workspaceManager
-            );
-        }
-
         System.err.println("Could not resolve dependency of type: " + type.getName());
         return null;
     }

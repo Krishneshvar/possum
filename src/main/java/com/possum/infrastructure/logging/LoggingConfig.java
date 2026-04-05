@@ -16,7 +16,7 @@ import java.nio.file.Path;
 
 public final class LoggingConfig {
 
-    private static final String LOG_PATTERN = "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n";
+    private static final String LOG_PATTERN = "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [user:%X{userId}/%X{username}] - %msg%n";
     private static final String MAX_FILE_SIZE = "10MB";
     private static final String TOTAL_SIZE_CAP = "512MB";
     private static final int MAX_HISTORY_DAYS = 30;

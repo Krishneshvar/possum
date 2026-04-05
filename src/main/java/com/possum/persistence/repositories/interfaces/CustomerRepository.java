@@ -11,9 +11,11 @@ public interface CustomerRepository {
 
     Optional<Customer> findCustomerById(long id);
 
-    Optional<Customer> insertCustomer(String name, String phone, String email, String address);
+    Optional<Customer> insertCustomer(String name, String phone, String email, String address,
+                                       String customerType, Boolean isTaxExempt);
 
-    Optional<Customer> updateCustomerById(long id, String name, String phone, String email, String address);
+    Optional<Customer> updateCustomerById(long id, String name, String phone, String email, String address,
+                                          String customerType, Boolean isTaxExempt);
 
     boolean softDeleteCustomer(long id);
 }

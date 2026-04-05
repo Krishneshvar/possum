@@ -76,27 +76,30 @@ public final class SqliteCustomerRepository extends BaseSqliteRepository impleme
     }
 
     @Override
-    public Optional<Customer> insertCustomer(String name, String phone, String email, String address) {
+    public Optional<Customer> insertCustomer(String name, String phone, String email, String address,
+                                              String customerType, Boolean isTaxExempt) {
         long id = executeInsert(
                 """
                 INSERT INTO customers (name, phone, email, address, customer_type, is_tax_exempt)
-                VALUES (?, ?, ?, ?, NULL, 0)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                name,
-                phone,
-                email,
-                address
+                name, phone, email, address,
+                customerType,
+                Boolean.TRUE.equals(isTaxExempt) ? 1 : 0
         );
         return findCustomerById(id);
     }
 
     @Override
-    public Optional<Customer> updateCustomerById(long id, String name, String phone, String email, String address) {
+    public Optional<Customer> updateCustomerById(long id, String name, String phone, String email, String address,
+                                                  String customerType, Boolean isTaxExempt) {
         UpdateBuilder builder = new UpdateBuilder("customers")
                 .set("name", name)
                 .set("phone", phone)
                 .set("email", email)
                 .set("address", address)
+                .set("customer_type", customerType)
+                .set("is_tax_exempt", Boolean.TRUE.equals(isTaxExempt) ? 1 : 0)
                 .where("id = ? AND deleted_at IS NULL", id);
 
         if (builder.hasFields()) {

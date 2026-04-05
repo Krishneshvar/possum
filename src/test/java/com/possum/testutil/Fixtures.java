@@ -218,4 +218,24 @@ public final class Fixtures {
     public static Role adminRole() {
         return new Role(1L, "admin", "Administrator");
     }
+
+    // -------------------------------------------------------------------------
+    // Variant
+    // -------------------------------------------------------------------------
+
+    public static Variant variant(long id, long productId, String price) {
+        return new Variant(id, productId, "Product", "Default", "SKU-" + id,
+                new BigDecimal(price), new BigDecimal(price),
+                null, true, "active", null, 100, null, null,
+                LocalDateTime.now(), LocalDateTime.now(), null);
+    }
+
+    // -------------------------------------------------------------------------
+    // Product
+    // -------------------------------------------------------------------------
+
+    public static Product product(long id, Long taxCategoryId) {
+        return new Product(id, "Product", null, null, null, taxCategoryId, null,
+                "active", null, 100, LocalDateTime.now(), LocalDateTime.now(), null);
+    }
 }

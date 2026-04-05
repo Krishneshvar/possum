@@ -31,11 +31,17 @@ public class TaxProfilesController {
     @FXML private Label pricingModeErrorLabel;
 
     private TaxManagementService taxService;
+    private com.possum.application.sales.TaxEngine taxEngine;
     private TaxProfile selectedProfile;
 
     public void setTaxService(TaxManagementService taxService) {
         this.taxService = taxService;
         loadProfiles();
+    }
+
+    public void setTaxService(TaxManagementService taxService, com.possum.application.sales.TaxEngine taxEngine) {
+        this.taxEngine = taxEngine;
+        setTaxService(taxService);
     }
 
     @FXML
@@ -218,6 +224,14 @@ public class TaxProfilesController {
     @FXML
     private void handleClear() {
         clearForm();
+    }
+
+    @FXML
+    private void handleReloadTaxSettings() {
+        if (taxEngine != null) {
+            taxEngine.init();
+            NotificationService.success("Tax settings reloaded");
+        }
     }
 
     private boolean validateForm() {

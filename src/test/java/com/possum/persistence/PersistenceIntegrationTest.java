@@ -118,10 +118,10 @@ class PersistenceIntegrationTest {
     void shouldSupportCustomerRepositoryBehavior() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         String phone = "555-" + suffix.substring(0, 4);
-        Customer inserted = customerRepository.insertCustomer("Customer " + suffix, phone, suffix + "@mail.com", "Addr").orElseThrow();
+        Customer inserted = customerRepository.insertCustomer("Customer " + suffix, phone, suffix + "@mail.com", "Addr", null, false).orElseThrow();
         assertNotNull(inserted.id());
 
-        Customer updated = customerRepository.updateCustomerById(inserted.id(), "Updated " + suffix, null, null, null).orElseThrow();
+        Customer updated = customerRepository.updateCustomerById(inserted.id(), "Updated " + suffix, null, null, null, null, false).orElseThrow();
         assertTrue(updated.name().startsWith("Updated"));
 
         assertFalse(customerRepository.findCustomers(new com.possum.shared.dto.CustomerFilter(

@@ -42,6 +42,7 @@ public final class DatabaseManager implements ConnectionProvider, AutoCloseable 
             try (Statement statement = candidate.createStatement()) {
                 statement.execute("PRAGMA foreign_keys = ON");
                 statement.execute("PRAGMA journal_mode = WAL");
+                statement.execute("PRAGMA schema_version"); // startup health check
             }
             connection = candidate;
         } catch (SQLException ex) {
@@ -63,7 +64,7 @@ public final class DatabaseManager implements ConnectionProvider, AutoCloseable 
 
     @Override
     public synchronized Connection getConnection() {
-        if (!isConnectionOpen()) {
+        if (!isConnectionOpen() || isConnectionStale()) {
             initialize();
         }
         return connection;
@@ -81,6 +82,15 @@ public final class DatabaseManager implements ConnectionProvider, AutoCloseable 
             throw new IllegalStateException("Failed to close database connection", ex);
         } finally {
             connection = null;
+        }
+    }
+
+    private boolean isConnectionStale() {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("PRAGMA schema_version");
+            return false;
+        } catch (SQLException ex) {
+            return true;
         }
     }
 

@@ -3,6 +3,7 @@ package com.possum.application.auth;
 import com.possum.application.auth.handlers.AuthHandler;
 import com.possum.infrastructure.security.PasswordHasher;
 import com.possum.persistence.db.TransactionManager;
+import com.possum.persistence.repositories.interfaces.AuditRepository;
 import com.possum.persistence.repositories.interfaces.SessionRepository;
 import com.possum.persistence.repositories.interfaces.UserRepository;
 
@@ -14,9 +15,17 @@ public class AuthModule {
     private final AuthMiddleware authMiddleware;
     private final AuthHandler authHandler;
 
-    public AuthModule(UserRepository userRepository, SessionRepository sessionRepository, TransactionManager transactionManager, PasswordHasher passwordHasher) {
+    public AuthModule(UserRepository userRepository, SessionRepository sessionRepository,
+                      TransactionManager transactionManager, PasswordHasher passwordHasher) {
+        this(userRepository, sessionRepository, transactionManager, passwordHasher, null);
+    }
+
+    public AuthModule(UserRepository userRepository, SessionRepository sessionRepository,
+                      TransactionManager transactionManager, PasswordHasher passwordHasher,
+                      AuditRepository auditRepository) {
         this.sessionService = new SessionService(sessionRepository, userRepository);
-        this.authService = new AuthService(userRepository, sessionRepository, sessionService, passwordHasher);
+        this.authService = new AuthService(userRepository, sessionRepository, sessionService,
+                passwordHasher, new LoginAttemptTracker(), auditRepository);
         this.authorizationService = new AuthorizationService();
         this.authMiddleware = new AuthMiddleware(authService, authorizationService);
         this.authHandler = new AuthHandler(authService);

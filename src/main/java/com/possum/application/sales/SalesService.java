@@ -30,6 +30,7 @@ public class SalesService {
     private final TransactionManager transactionManager;
     private final JsonService jsonService;
     private final SettingsStore settingsStore;
+    private final InvoiceNumberService invoiceNumberService;
 
     public SalesService(SalesRepository salesRepository,
                         VariantRepository variantRepository,
@@ -41,7 +42,8 @@ public class SalesService {
                         PaymentService paymentService,
                         TransactionManager transactionManager,
                         JsonService jsonService,
-                        SettingsStore settingsStore) {
+                        SettingsStore settingsStore,
+                        InvoiceNumberService invoiceNumberService) {
         this.salesRepository = salesRepository;
         this.variantRepository = variantRepository;
         this.productRepository = productRepository;
@@ -53,6 +55,7 @@ public class SalesService {
         this.transactionManager = transactionManager;
         this.jsonService = jsonService;
         this.settingsStore = settingsStore;
+        this.invoiceNumberService = invoiceNumberService;
     }
 
     public SaleResponse createSale(CreateSaleRequest request, long userId) {
@@ -188,7 +191,7 @@ public class SalesService {
 
             // Resolve primary payment method code (use first payment if multiple).
             long primaryPaymentMethodId = payments.isEmpty() ? 0L : payments.get(0).paymentMethodId();
-            String invoiceNumber = generateInvoiceNumber(primaryPaymentMethodId);
+            String invoiceNumber = invoiceNumberService.generate(primaryPaymentMethodId);
 
             Sale sale = new Sale(
                     null,
@@ -320,30 +323,6 @@ public class SalesService {
         } else {
             return "partially_paid";
         }
-    }
-
-    /**
-     * Generates a new invoice number in the format: S{YY}{MM}{DD}{PT}{SEQ:4d}
-     * e.g. S260326CH0001 for Cash on 2026-03-26 (1st cash sale of all time).
-     *
-     * @param primaryPaymentMethodId the ID of the first/primary payment method on the sale
-     */
-    private String generateInvoiceNumber(long primaryPaymentMethodId) {
-        String code = "XX";
-        if (primaryPaymentMethodId > 0) {
-            code = salesRepository.getPaymentMethodCode(primaryPaymentMethodId)
-                    .filter(c -> c != null && !c.isBlank())
-                    .orElse("XX");
-        }
-
-        java.time.LocalDate today = java.time.LocalDate.now();
-        String yy = String.format("%02d", today.getYear() % 100);
-        String mm = String.format("%02d", today.getMonthValue());
-        String dd = String.format("%02d", today.getDayOfMonth());
-
-        long seq = salesRepository.getNextSequenceForPaymentType("S_" + code);
-
-        return String.format("S%s%s%s%s%04d", yy, mm, dd, code, seq);
     }
 
     private record TempItem(CreateSaleItemRequest item, BigDecimal pricePerUnit, BigDecimal netLineTotal) {}
