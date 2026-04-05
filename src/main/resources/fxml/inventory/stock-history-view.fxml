@@ -39,7 +39,7 @@
     <!-- Data Table -->
     <VBox styleClass="card" VBox.vgrow="ALWAYS">
         <FilterBar fx:id="filterBar"/>
-        <DataTableView fx:id="historyTable" VBox.vgrow="ALWAYS" accessibleText="Stock History Table"/>
+        <DataTableView fx:id="dataTable" VBox.vgrow="ALWAYS" accessibleText="Stock History Table"/>
         <PaginationBar fx:id="paginationBar"/>
     </VBox>
 </VBox>

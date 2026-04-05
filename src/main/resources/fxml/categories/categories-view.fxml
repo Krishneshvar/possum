@@ -49,7 +49,7 @@
         <!-- Table View on the right -->
         <VBox styleClass="card">
             <Label text="All Categories" styleClass="card-title" />
-            <DataTableView fx:id="categoryTableView" VBox.vgrow="ALWAYS" styleClass="categories-table" />
+            <DataTableView fx:id="dataTable" VBox.vgrow="ALWAYS" styleClass="categories-table" />
         </VBox>
     </SplitPane>
 

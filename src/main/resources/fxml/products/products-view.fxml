@@ -62,7 +62,7 @@
                 </content>
             </ScrollPane>
 
-            <DataTableView fx:id="productsTable" VBox.vgrow="ALWAYS" styleClass="data-table" visible="false" managed="false"/>
+            <DataTableView fx:id="dataTable" VBox.vgrow="ALWAYS" styleClass="data-table" visible="false" managed="false"/>
         </StackPane>
 
         <PaginationBar fx:id="paginationBar"/>

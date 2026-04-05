@@ -137,17 +137,7 @@ public class SalesHistoryController {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    String status = item;
-                    Label badge = new Label(status.replace("_", " ").toUpperCase());
-                    badge.getStyleClass().addAll("badge", "badge-status");
-                    switch (status.toLowerCase()) {
-                        case "paid" -> badge.getStyleClass().add("badge-success");
-                        case "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");
-                        case "partially_paid", "partially_refunded", "draft" -> badge.getStyleClass().add("badge-warning");
-                        case "legacy" -> badge.getStyleClass().add("badge-neutral");
-                        default -> badge.getStyleClass().add("badge-neutral");
-                    }
-                    setGraphic(badge);
+                    setGraphic(com.possum.ui.common.components.BadgeFactory.createSaleStatusBadge(item));
                     setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                     setAlignment(javafx.geometry.Pos.CENTER);
                     setText(null);

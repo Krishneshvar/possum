@@ -132,15 +132,7 @@ public class PurchaseController {
                 if (empty || status == null) {
                     setGraphic(null);
                 } else {
-                    Label badge = new Label(status.toUpperCase());
-                    badge.getStyleClass().addAll("badge", "badge-status");
-                    
-                    switch (status.toLowerCase()) {
-                        case "pending" -> badge.getStyleClass().add("badge-warning");
-                        case "received" -> badge.getStyleClass().add("badge-success");
-                        case "cancelled" -> badge.getStyleClass().add("badge-error");
-                    }
-                    setGraphic(badge);
+                    setGraphic(com.possum.ui.common.components.BadgeFactory.createPurchaseStatusBadge(status));
                 }
             }
         });

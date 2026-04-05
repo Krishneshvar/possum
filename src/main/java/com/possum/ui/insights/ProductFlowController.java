@@ -222,15 +222,7 @@ public class ProductFlowController {
                     setText("");
                     setGraphic(null);
                 } else {
-                    Label badge = new Label(item.toUpperCase());
-                    badge.getStyleClass().add("badge");
-                    
-                    if ("SALE".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-sale");
-                    else if ("PURCHASE".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-purchase");
-                    else if ("RETURN".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-return");
-                    else if ("ADJUSTMENT".equalsIgnoreCase(item)) badge.getStyleClass().add("badge-adjustment");
-                    
-                    setGraphic(badge);
+                    setGraphic(com.possum.ui.common.components.BadgeFactory.createFlowTypeBadge(item));
                     setText(null);
                 }
             }

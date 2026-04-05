@@ -8,9 +8,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 abstract class BaseSqliteRepository {
 
@@ -82,5 +84,144 @@ abstract class BaseSqliteRepository {
         for (int i = 0; i < params.length; i++) {
             statement.setObject(i + 1, params[i]);
         }
+    }
+
+    // Common utility methods
+
+    /**
+     * Build dynamic UPDATE SQL with only non-null fields.
+     */
+    protected static class UpdateBuilder {
+        private final StringBuilder sql;
+        private final List<Object> params = new ArrayList<>();
+        private boolean hasFields = false;
+
+        public UpdateBuilder(String tableName) {
+            this.sql = new StringBuilder("UPDATE " + tableName + " SET updated_at = CURRENT_TIMESTAMP");
+        }
+
+        public UpdateBuilder set(String column, Object value) {
+            if (value != null) {
+                sql.append(", ").append(column).append(" = ?");
+                params.add(value);
+                hasFields = true;
+            }
+            return this;
+        }
+
+        public UpdateBuilder where(String condition, Object... values) {
+            sql.append(" WHERE ").append(condition);
+            for (Object value : values) {
+                params.add(value);
+            }
+            return this;
+        }
+
+        public String getSql() {
+            return sql.toString();
+        }
+
+        public Object[] getParams() {
+            return params.toArray();
+        }
+
+        public boolean hasFields() {
+            return hasFields;
+        }
+    }
+
+    /**
+     * Build dynamic WHERE clause with search terms.
+     */
+    protected static class WhereBuilder {
+        private final StringJoiner joiner = new StringJoiner(" AND ");
+        private final List<Object> params = new ArrayList<>();
+
+        public WhereBuilder addNotDeleted() {
+            return addNotDeleted(null);
+        }
+
+        public WhereBuilder addNotDeleted(String alias) {
+            String column = (alias != null && !alias.isBlank()) ? alias + ".deleted_at" : "deleted_at";
+            joiner.add(column + " IS NULL");
+            return this;
+        }
+
+        public WhereBuilder addSearch(String searchTerm, String... columns) {
+            if (searchTerm != null && !searchTerm.isBlank()) {
+                String trimmed = searchTerm.trim();
+                StringJoiner orJoiner = new StringJoiner(" OR ");
+                for (String column : columns) {
+                    orJoiner.add(column + " LIKE ?");
+                    params.add("%" + trimmed + "%");
+                }
+                joiner.add("(" + orJoiner + ")");
+            }
+            return this;
+        }
+
+        public WhereBuilder addIn(String column, List<?> values) {
+            if (values != null && !values.isEmpty()) {
+                String placeholders = "?,".repeat(values.size()).replaceAll(",$", "");
+                joiner.add(column + " IN (" + placeholders + ")");
+                params.addAll(values);
+            }
+            return this;
+        }
+
+        public WhereBuilder addCondition(String condition, Object... values) {
+            joiner.add(condition);
+            for (Object value : values) {
+                params.add(value);
+            }
+            return this;
+        }
+
+        public String build() {
+            return joiner.length() > 0 ? "WHERE " + joiner : "";
+        }
+
+        public List<Object> getParams() {
+            return params;
+        }
+    }
+
+    /**
+     * Execute soft delete on a table.
+     */
+    protected int softDelete(String tableName, long id) {
+        return executeUpdate(
+                "UPDATE " + tableName + " SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL",
+                id
+        );
+    }
+
+    /**
+     * Count records with WHERE clause.
+     */
+    protected int count(String tableName, String whereClause, Object... params) {
+        return queryOne(
+                "SELECT COUNT(*) AS count FROM " + tableName + " " + whereClause,
+                rs -> rs.getInt("count"),
+                params
+        ).orElse(0);
+    }
+
+    /**
+     * Parse SQLite datetime string to LocalDateTime.
+     */
+    protected static LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return LocalDateTime.parse(value.replace(' ', 'T'));
+    }
+
+    /**
+     * Convert Boolean to int for SQLite.
+     */
+    protected static int boolToInt(Boolean value, boolean defaultValue) {
+        boolean resolved = value == null ? defaultValue : value;
+        return resolved ? 1 : 0;
     }
 }

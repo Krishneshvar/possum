@@ -2,76 +2,72 @@ package com.possum.ui.inventory;
 
 import com.possum.application.auth.AuthContext;
 import com.possum.application.inventory.InventoryService;
+import com.possum.application.categories.CategoryService;
 import com.possum.domain.enums.InventoryReason;
 import com.possum.domain.model.Variant;
+import com.possum.domain.model.TaxCategory;
+import com.possum.domain.model.Category;
 import com.possum.persistence.repositories.interfaces.VariantRepository;
+import com.possum.persistence.repositories.interfaces.TaxRepository;
 import com.possum.shared.dto.PagedResult;
-import com.possum.ui.common.controls.DataTableView;
-import com.possum.ui.common.controls.FilterBar;
+import com.possum.ui.common.controllers.AbstractCrudController;
+import com.possum.ui.common.components.BadgeFactory;
+import com.possum.ui.common.components.ButtonFactory;
 import com.possum.ui.common.controls.FormDialog;
 import com.possum.ui.common.controls.NotificationService;
-import com.possum.ui.common.controls.PaginationBar;
-import com.possum.domain.model.TaxCategory;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
+import com.possum.ui.workspace.WorkspaceManager;
+import javafx.beans.property.*;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.beans.property.*;
+import javafx.scene.layout.HBox;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.Locale;
 
-public class InventoryController {
+public class InventoryController extends AbstractCrudController<Variant, InventoryFilter> {
     
-    @FXML private FilterBar filterBar;
-    @FXML private DataTableView<Variant> inventoryTable;
-    @FXML private PaginationBar paginationBar;
-    @FXML private javafx.scene.control.Button refreshButton;
+    @FXML private Button refreshButton;
     
-    private InventoryService inventoryService;
-    private VariantRepository variantRepository;
-    private com.possum.application.categories.CategoryService categoryService;
-    private TaxRepository taxRepository;
-    private String currentSearch = "";
-    private java.util.List<Long> currentCategoryFilters = java.util.Collections.emptyList();
-    private java.util.List<Long> currentTaxCategoryFilters = java.util.Collections.emptyList();
-    private java.util.List<String> currentStockFilters = java.util.Collections.emptyList();
-    private java.util.List<String> currentStatusFilters = java.util.Collections.emptyList();
-    private java.math.BigDecimal currentMinPrice = null;
-    private java.math.BigDecimal currentMaxPrice = null;
+    private final InventoryService inventoryService;
+    private final VariantRepository variantRepository;
+    private final CategoryService categoryService;
+    private final TaxRepository taxRepository;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+    
+    private List<Long> currentCategoryFilters = List.of();
+    private List<Long> currentTaxCategoryFilters = List.of();
+    private List<String> currentStockFilters = List.of();
+    private List<String> currentStatusFilters = List.of();
+    private BigDecimal currentMinPrice = null;
+    private BigDecimal currentMaxPrice = null;
 
-    public InventoryController(InventoryService inventoryService, VariantRepository variantRepository, com.possum.application.categories.CategoryService categoryService, TaxRepository taxRepository) {
+    public InventoryController(InventoryService inventoryService, 
+                               VariantRepository variantRepository,
+                               CategoryService categoryService,
+                               TaxRepository taxRepository,
+                               WorkspaceManager workspaceManager) {
+        super(workspaceManager);
         this.inventoryService = inventoryService;
         this.variantRepository = variantRepository;
         this.categoryService = categoryService;
         this.taxRepository = taxRepository;
     }
 
-    @FXML
-    public void initialize() {
+    @Override
+    protected void setupPermissions() {
         if (refreshButton != null) {
-            org.kordamp.ikonli.javafx.FontIcon refreshIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-sync");
-            refreshIcon.setIconSize(16);
-            refreshButton.setGraphic(refreshIcon);
-            refreshButton.setText("Refresh");
+            ButtonFactory.applyRefreshButtonStyle(refreshButton);
         }
-        inventoryTable.getTableView().setPlaceholder(new javafx.scene.control.Label("No inventory records found. Adjust filters to see results."));
-        inventoryTable.setEmptyMessage("No inventory records found");
-        inventoryTable.setEmptySubtitle("Try broader filters or add stock to see live inventory.");
-        setupTable();
-        setupFilters();
-        loadInventory();
     }
 
-    @FXML
-    private void handleRefresh() {
-        loadInventory();
-    }
-
-    private void setupTable() {
+    @Override
+    protected void setupTable() {
+        dataTable.setEmptyMessage("No inventory records found");
+        dataTable.setEmptySubtitle("Try broader filters or add stock to see live inventory.");
+        
         TableColumn<Variant, String> productCol = new TableColumn<>("Product");
         productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
         
@@ -88,14 +84,11 @@ public class InventoryController {
         
         TableColumn<Variant, Integer> stockCol = new TableColumn<>("Current Stock");
         stockCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stock()));
-        stockCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
-            private final javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(5);
-            private final javafx.scene.control.Label textLabel = new javafx.scene.control.Label();
-            private final org.kordamp.ikonli.javafx.FontIcon editIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-pencil");
-            private final javafx.scene.control.Button editBtn = new javafx.scene.control.Button();
+        stockCol.setCellFactory(col -> new TableCell<>() {
+            private final HBox box = new HBox(5);
+            private final Label textLabel = new Label();
+            private final Button editBtn = ButtonFactory.createIconButton("bx-pencil", "Adjust Stock", () -> {});
             {
-                editIcon.setIconSize(16);
-                editBtn.setGraphic(editIcon);
                 editBtn.getStyleClass().add("btn-edit-stock");
                 editBtn.setOnAction(e -> {
                     Variant variant = getTableView().getItems().get(getIndex());
@@ -120,11 +113,11 @@ public class InventoryController {
                     if (variant != null) {
                         int alertCap = variant.stockAlertCap() != null ? variant.stockAlertCap() : 0;
                         if (item <= 0) {
-                            textLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;"); // Red
+                            textLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;");
                         } else if (item <= alertCap) {
-                            textLabel.setStyle("-fx-text-fill: #f59e0b; -fx-font-weight: bold;"); // Yellow/Orange
+                            textLabel.setStyle("-fx-text-fill: #f59e0b; -fx-font-weight: bold;");
                         } else {
-                            textLabel.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold;"); // Green
+                            textLabel.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold;");
                         }
                     } else {
                         textLabel.setStyle("");
@@ -142,7 +135,7 @@ public class InventoryController {
         
         TableColumn<Variant, BigDecimal> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().price()));
-        priceCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+        priceCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
@@ -153,7 +146,7 @@ public class InventoryController {
         TableColumn<Variant, String> statusCol = new TableColumn<>("Status");
         statusCol.setSortable(false);
         statusCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().status()));
-        statusCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+        statusCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String status, boolean empty) {
                 super.updateItem(status, empty);
@@ -161,20 +154,7 @@ public class InventoryController {
                     setGraphic(null);
                     setText(null);
                 } else {
-                    String formatted = status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
-                    Label badge = new Label(formatted);
-                    badge.getStyleClass().add("badge-status");
-                    
-                    if ("active".equalsIgnoreCase(status)) {
-                        badge.getStyleClass().add("badge-success");
-                    } else if ("inactive".equalsIgnoreCase(status)) {
-                        badge.getStyleClass().add("badge-neutral");
-                    } else if ("discontinued".equalsIgnoreCase(status)) {
-                        badge.getStyleClass().add("badge-warning");
-                    } else {
-                        badge.getStyleClass().add("badge-neutral");
-                    }
-                    
+                    Label badge = BadgeFactory.createStatusBadge(status);
                     setGraphic(badge);
                     setText(null);
                 }
@@ -189,87 +169,111 @@ public class InventoryController {
         stockCol.setId("stock");
         priceCol.setId("price");
 
-        inventoryTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, taxCategoryCol, priceCol, stockCol, statusCol);
+        dataTable.getTableView().getColumns().addAll(productCol, variantCol, skuCol, categoryCol, taxCategoryCol, priceCol, stockCol, statusCol);
     }
 
-    private void setupFilters() {
-        java.util.List<com.possum.domain.model.Category> categories = categoryService.getAllCategories();
-        java.util.List<TaxCategory> taxCategories = taxRepository.getAllTaxCategories();
-        filterBar.addMultiSelectFilter("status", "Status", java.util.List.of("active", "inactive", "discontinued"),
+    @Override
+    protected void setupFilters() {
+        List<Category> categories = categoryService.getAllCategories();
+        List<TaxCategory> taxCategories = taxRepository.getAllTaxCategories();
+        
+        filterBar.addMultiSelectFilter("status", "Status", List.of("active", "inactive", "discontinued"),
             item -> item.substring(0, 1).toUpperCase() + item.substring(1).toLowerCase(), false);
-        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", java.util.List.of("in-stock", "low-stock", "out-of-stock"), 
+        filterBar.addMultiSelectFilter("stockStatus", "Stock Status", List.of("in-stock", "low-stock", "out-of-stock"), 
             item -> java.util.Arrays.stream(item.split("-"))
                         .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
                         .collect(java.util.stream.Collectors.joining(" ")));
-        filterBar.addMultiSelectFilter("categories", "Categories", categories, com.possum.domain.model.Category::name);
+        filterBar.addMultiSelectFilter("categories", "Categories", categories, Category::name);
         filterBar.addMultiSelectFilter("taxCategories", "Tax Categories", taxCategories, TaxCategory::name);
         filterBar.addTextFilter("minPrice", "Min Price");
         filterBar.addTextFilter("maxPrice", "Max Price");
-
-        filterBar.setOnFilterChange(filters -> {
-            currentSearch = (String) filters.get("search");
-
-            @SuppressWarnings("unchecked")
-            java.util.List<String> statusFilter = (java.util.List<String>) filters.get("status");
-            currentStatusFilters = statusFilter != null ? statusFilter : java.util.Collections.emptyList();
-
-            @SuppressWarnings("unchecked")
-            java.util.List<String> stockFilter = (java.util.List<String>) filters.get("stockStatus");
-            currentStockFilters = stockFilter != null ? stockFilter : java.util.Collections.emptyList();
-
-            @SuppressWarnings("unchecked")
-            java.util.List<com.possum.domain.model.Category> cats = (java.util.List<com.possum.domain.model.Category>) filters.get("categories");
-            if (cats != null) {
-                currentCategoryFilters = cats.stream().map(com.possum.domain.model.Category::id).toList();
-            } else {
-                currentCategoryFilters = java.util.Collections.emptyList();
-            }
-
-            @SuppressWarnings("unchecked")
-            java.util.List<TaxCategory> tcs = (java.util.List<TaxCategory>) filters.get("taxCategories");
-            if (tcs != null) {
-                currentTaxCategoryFilters = tcs.stream().map(TaxCategory::id).toList();
-            } else {
-                currentTaxCategoryFilters = java.util.Collections.emptyList();
-            }
-
-            currentMinPrice = parseBigDecimal(filters.get("minPrice"));
-            currentMaxPrice = parseBigDecimal(filters.get("maxPrice"));
-
-            loadInventory();
-        });
-        
-        paginationBar.setOnPageChange((page, size) -> loadInventory());
     }
 
-    private void loadInventory() {
-        inventoryTable.setLoading(true);
-        
-        Platform.runLater(() -> {
-            try {
-                PagedResult<Variant> result = variantRepository.findVariants(
-                    currentSearch == null || currentSearch.isEmpty() ? null : currentSearch,
-                    null,
-                    currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
-                    currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
-                    currentStockFilters.isEmpty() ? null : currentStockFilters,
-                    currentStatusFilters.isEmpty() ? null : currentStatusFilters,
-                    currentMinPrice,
-                    currentMaxPrice,
-                    "stock",
-                    "ASC",
-                    paginationBar.getCurrentPage(),
-                    paginationBar.getPageSize()
-                );
-                
-                inventoryTable.setItems(FXCollections.observableArrayList(result.items()));
-                paginationBar.setTotalItems(result.totalCount());
-                inventoryTable.setLoading(false);
-            } catch (Exception e) {
-                inventoryTable.setLoading(false);
-                NotificationService.error("Failed to load inventory");
-            }
-        });
+    @Override
+    protected InventoryFilter buildFilter() {
+        String searchTerm = filterBar.getSearchTerm();
+
+        @SuppressWarnings("unchecked")
+        List<String> statusFilter = (List<String>) filterBar.getFilterValue("status");
+        currentStatusFilters = statusFilter != null ? statusFilter : List.of();
+
+        @SuppressWarnings("unchecked")
+        List<String> stockFilter = (List<String>) filterBar.getFilterValue("stockStatus");
+        currentStockFilters = stockFilter != null ? stockFilter : List.of();
+
+        @SuppressWarnings("unchecked")
+        List<Category> cats = (List<Category>) filterBar.getFilterValue("categories");
+        if (cats != null) {
+            currentCategoryFilters = cats.stream().map(Category::id).toList();
+        } else {
+            currentCategoryFilters = List.of();
+        }
+
+        @SuppressWarnings("unchecked")
+        List<TaxCategory> tcs = (List<TaxCategory>) filterBar.getFilterValue("taxCategories");
+        if (tcs != null) {
+            currentTaxCategoryFilters = tcs.stream().map(TaxCategory::id).toList();
+        } else {
+            currentTaxCategoryFilters = List.of();
+        }
+
+        currentMinPrice = parseBigDecimal(filterBar.getFilterValue("minPrice"));
+        currentMaxPrice = parseBigDecimal(filterBar.getFilterValue("maxPrice"));
+
+        return new InventoryFilter(
+            searchTerm == null || searchTerm.isEmpty() ? null : searchTerm,
+            currentCategoryFilters.isEmpty() ? null : currentCategoryFilters,
+            currentTaxCategoryFilters.isEmpty() ? null : currentTaxCategoryFilters,
+            currentStockFilters.isEmpty() ? null : currentStockFilters,
+            currentStatusFilters.isEmpty() ? null : currentStatusFilters,
+            currentMinPrice,
+            currentMaxPrice,
+            getCurrentPage(),
+            getPageSize()
+        );
+    }
+
+    @Override
+    protected PagedResult<Variant> fetchData(InventoryFilter filter) {
+        return variantRepository.findVariants(
+            filter.searchTerm(),
+            null,
+            filter.categoryIds(),
+            filter.taxCategoryIds(),
+            filter.stockStatuses(),
+            filter.statuses(),
+            filter.minPrice(),
+            filter.maxPrice(),
+            "stock",
+            "ASC",
+            filter.page(),
+            filter.limit()
+        );
+    }
+
+    @Override
+    protected String getEntityName() {
+        return "inventory";
+    }
+
+    @Override
+    protected String getEntityNameSingular() {
+        return "Inventory Item";
+    }
+
+    @Override
+    protected List<MenuItem> buildActionMenu(Variant entity) {
+        return List.of(); // Inventory uses inline adjust button
+    }
+
+    @Override
+    protected void deleteEntity(Variant entity) throws Exception {
+        throw new UnsupportedOperationException("Inventory items cannot be deleted");
+    }
+
+    @Override
+    protected String getEntityIdentifier(Variant entity) {
+        return entity.productName() + " (" + entity.name() + ")";
     }
 
     private void handleAdjust(Variant variant) {
@@ -307,7 +311,7 @@ public class InventoryController {
                 );
                 
                 NotificationService.success("Stock adjusted successfully");
-                loadInventory();
+                loadData();
             } catch (NumberFormatException e) {
                 NotificationService.error("Invalid quantity");
             } catch (Exception e) {
@@ -316,14 +320,27 @@ public class InventoryController {
         });
     }
 
-    private java.math.BigDecimal parseBigDecimal(Object value) {
+    private BigDecimal parseBigDecimal(Object value) {
         if (value == null) return null;
-        if (value instanceof java.math.BigDecimal) return (java.math.BigDecimal) value;
+        if (value instanceof BigDecimal) return (BigDecimal) value;
         try {
             String s = value.toString().replaceAll("[^0-9.\\-]", "");
-            return s.isEmpty() ? null : new java.math.BigDecimal(s);
+            return s.isEmpty() ? null : new BigDecimal(s);
         } catch (Exception e) {
             return null;
         }
     }
 }
+
+// Filter record for inventory
+record InventoryFilter(
+    String searchTerm,
+    List<Long> categoryIds,
+    List<Long> taxCategoryIds,
+    List<String> stockStatuses,
+    List<String> statuses,
+    BigDecimal minPrice,
+    BigDecimal maxPrice,
+    int page,
+    int limit
+) {}

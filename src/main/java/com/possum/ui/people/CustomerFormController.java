@@ -2,143 +2,130 @@ package com.possum.ui.people;
 
 import com.possum.application.people.CustomerService;
 import com.possum.domain.model.Customer;
-import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.common.controllers.AbstractFormController;
+import com.possum.ui.common.validation.FieldValidator;
 import com.possum.ui.workspace.WorkspaceManager;
-import com.possum.ui.navigation.Parameterizable;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 
-import java.util.Map;
+public class CustomerFormController extends AbstractFormController<Customer> {
 
-public class CustomerFormController implements Parameterizable {
-
-    private final CustomerService customerService;
-    private final WorkspaceManager workspaceManager;
-
-    @FXML private Label titleLabel;
     @FXML private TextField nameField;
     @FXML private TextField phoneField;
     @FXML private TextField emailField;
     @FXML private TextArea addressField;
-    @FXML private Button saveButton;
+    
+    @FXML private Label nameErrorLabel;
+    @FXML private Label phoneErrorLabel;
+    @FXML private Label emailErrorLabel;
 
-    private Long customerId = null;
+    private final CustomerService customerService;
+    
+    private FieldValidator<String> nameValidator;
+    private FieldValidator<String> phoneValidator;
+    private FieldValidator<String> emailValidator;
 
     public CustomerFormController(CustomerService customerService, WorkspaceManager workspaceManager) {
+        super(workspaceManager);
         this.customerService = customerService;
-        this.workspaceManager = workspaceManager;
-    }
-
-    @Override
-    public void setParameters(Map<String, Object> params) {
-        if (params != null && params.containsKey("customerId")) {
-            this.customerId = (Long) params.get("customerId");
-            String mode = (String) params.get("mode");
-            boolean isView = "view".equals(mode);
-
-            titleLabel.setText(isView ? "View Customer" : "Edit Customer");
-            loadCustomerDetails(isView);
-        } else {
-            this.customerId = null;
-            titleLabel.setText("Add Customer");
-        }
-    }
-
-    private void loadCustomerDetails(boolean isView) {
-        try {
-            Customer customer = customerService.getCustomerById(customerId)
-                    .orElseThrow(() -> new RuntimeException("Customer not found"));
-
-            nameField.setText(customer.name());
-            phoneField.setText(customer.phone() != null ? customer.phone() : "");
-            emailField.setText(customer.email() != null ? customer.email() : "");
-            addressField.setText(customer.address() != null ? customer.address() : "");
-
-            if (isView) {
-                replaceFieldWithLabel(nameField, customer.name());
-                replaceFieldWithLabel(phoneField, customer.phone());
-                replaceFieldWithLabel(emailField, customer.email());
-                replaceFieldWithLabel(addressField, customer.address());
-                
-                saveButton.setVisible(false);
-                saveButton.setManaged(false);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            NotificationService.error("Failed to load customer details: " + e.getMessage());
-        }
     }
 
     @FXML
     public void initialize() {
+        setupValidators();
     }
 
-    @FXML
-    private void handleSave() {
-        try {
-            validateInputs();
+    @Override
+    protected String getEntityIdParamName() {
+        return "customerId";
+    }
 
-            saveButton.setDisable(true);
-            saveButton.setText("Saving...");
+    @Override
+    protected String getEntityDisplayName() {
+        return "Customer";
+    }
 
-            if (customerId == null) {
-                customerService.createCustomer(
-                        nameField.getText(),
-                        phoneField.getText(),
-                        emailField.getText(),
-                        addressField.getText()
-                );
-                NotificationService.success("Customer created successfully");
-            } else {
-                customerService.updateCustomer(
-                        customerId,
-                        nameField.getText(),
-                        phoneField.getText(),
-                        emailField.getText(),
-                        addressField.getText()
-                );
-                NotificationService.success("Customer updated successfully");
-            }
+    @Override
+    protected Customer loadEntity(Long id) {
+        return customerService.getCustomerById(id)
+            .orElseThrow(() -> new RuntimeException("Customer not found"));
+    }
 
-            workspaceManager.close(titleLabel);
-        } catch (Exception e) {
-            NotificationService.error(e.getMessage());
-            saveButton.setDisable(false);
-            saveButton.setText("Save Customer");
+    @Override
+    protected void populateFields(Customer customer) {
+        if (nameField != null) {
+            nameField.setText(customer.name());
+        }
+        if (phoneField != null) {
+            phoneField.setText(customer.phone() != null ? customer.phone() : "");
+        }
+        if (emailField != null) {
+            emailField.setText(customer.email() != null ? customer.email() : "");
+        }
+        if (addressField != null) {
+            addressField.setText(customer.address() != null ? customer.address() : "");
         }
     }
 
-    private void validateInputs() {
-        if (nameField.getText() == null || nameField.getText().trim().isEmpty()) {
-            throw new IllegalArgumentException("Customer name is required");
+    @Override
+    protected void setupValidators() {
+        if (nameField != null && nameErrorLabel != null) {
+            nameValidator = FieldValidator.forField(nameField, nameErrorLabel)
+                .required("Customer name")
+                .validateOnFocusLost();
+            formValidator.addField(nameValidator);
+        }
+
+        if (phoneField != null && phoneErrorLabel != null) {
+            phoneValidator = FieldValidator.forField(phoneField, phoneErrorLabel)
+                .phone()
+                .validateOnFocusLost();
+            formValidator.addField(phoneValidator);
+        }
+
+        if (emailField != null && emailErrorLabel != null) {
+            emailValidator = FieldValidator.forField(emailField, emailErrorLabel)
+                .email()
+                .validateOnFocusLost();
+            formValidator.addField(emailValidator);
         }
     }
 
-    @FXML
-    private void handleCancel() {
-        workspaceManager.close(titleLabel);
+    @Override
+    protected void setFormEditable(boolean editable) {
+        if (!editable) {
+            // View mode - replace fields with labels
+            if (nameField != null) replaceWithLabel(nameField);
+            if (phoneField != null) replaceWithLabel(phoneField);
+            if (emailField != null) replaceWithLabel(emailField);
+            if (addressField != null) replaceWithLabel(addressField);
+        } else {
+            // Edit/Create mode - fields are already editable
+            if (nameField != null) nameField.setEditable(true);
+            if (phoneField != null) phoneField.setEditable(true);
+            if (emailField != null) emailField.setEditable(true);
+            if (addressField != null) addressField.setEditable(true);
+        }
     }
 
-    private void replaceFieldWithLabel(Control field, String text) {
-        if (field == null || field.getParent() == null) return;
-        Label label = new Label(text != null && !text.isEmpty() ? text : "-");
-        label.setStyle("-fx-font-size: 14px; -fx-text-fill: #1e293b; -fx-padding: 8 12;");
-        label.setWrapText(true);
-        
-        javafx.scene.Parent parent = field.getParent();
-        if (parent instanceof VBox box) {
-            int index = box.getChildren().indexOf(field);
-            if (index != -1) {
-                box.getChildren().set(index, label);
-            }
-        } else if (parent instanceof HBox box) {
-            int index = box.getChildren().indexOf(field);
-            if (index != -1) {
-                box.getChildren().set(index, label);
-            }
-        }
+    @Override
+    protected void createEntity() throws Exception {
+        customerService.createCustomer(
+            nameField.getText().trim(),
+            phoneField.getText().trim(),
+            emailField.getText().trim(),
+            addressField.getText().trim()
+        );
+    }
+
+    @Override
+    protected void updateEntity() throws Exception {
+        customerService.updateCustomer(
+            getEntityId(),
+            nameField.getText().trim(),
+            phoneField.getText().trim(),
+            emailField.getText().trim(),
+            addressField.getText().trim()
+        );
     }
 }

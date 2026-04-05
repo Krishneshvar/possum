@@ -1,67 +1,72 @@
 package com.possum.ui.returns;
 
-import com.possum.shared.util.TimeUtil;
 import com.possum.application.returns.ReturnsService;
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Return;
 import com.possum.domain.model.Sale;
+import com.possum.domain.model.PaymentMethod;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ReturnFilter;
-import com.possum.ui.common.controls.*;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import com.possum.ui.common.controllers.AbstractCrudController;
+import com.possum.ui.common.components.ButtonFactory;
+import com.possum.ui.common.controls.NotificationService;
+import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.shared.util.TimeUtil;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
-public class ReturnsController {
+public class ReturnsController extends AbstractCrudController<Return, ReturnFilter> {
     
-    @FXML private FilterBar filterBar;
-    @FXML private DataTableView<Return> returnsTable;
-    @FXML private PaginationBar paginationBar;
-    @FXML private javafx.scene.control.Button createReturnButton;
+    @FXML private Button createReturnButton;
     
     private final ReturnsService returnsService;
     private final SalesService salesService;
-    private final com.possum.ui.workspace.WorkspaceManager workspaceManager;
-    private String currentSearch = "";
-    private java.time.LocalDate fromDate = null;
-    private java.time.LocalDate toDate = null;
+    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+    
+    private LocalDate fromDate = null;
+    private LocalDate toDate = null;
     private BigDecimal currentMinAmount = null;
     private BigDecimal currentMaxAmount = null;
     private List<Long> currentPaymentMethodIds = null;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public ReturnsController(ReturnsService returnsService, SalesService salesService, com.possum.ui.workspace.WorkspaceManager workspaceManager) {
+    public ReturnsController(ReturnsService returnsService, 
+                            SalesService salesService, 
+                            WorkspaceManager workspaceManager) {
+        super(workspaceManager);
         this.returnsService = returnsService;
         this.salesService = salesService;
-        this.workspaceManager = workspaceManager;
     }
 
-    @FXML
-    public void initialize() {
+    @Override
+    protected void setupPermissions() {
         if (createReturnButton != null) {
-            com.possum.ui.common.UIPermissionUtil.requirePermission(createReturnButton, com.possum.application.auth.Permissions.RETURNS_MANAGE);
+            com.possum.ui.common.UIPermissionUtil.requirePermission(
+                createReturnButton, 
+                com.possum.application.auth.Permissions.RETURNS_MANAGE
+            );
             FontIcon returnIcon = new FontIcon("bx-undo");
             returnIcon.setIconSize(16);
-            returnIcon.setIconColor(javafx.scene.paint.Color.valueOf("#ef4444")); // Matches -color-error
+            returnIcon.setIconColor(javafx.scene.paint.Color.valueOf("#ef4444"));
             createReturnButton.setGraphic(returnIcon);
         }
-        
-        setupTable();
-        setupFilters();
-        loadReturns();
     }
 
-    private void setupTable() {
+    @Override
+    protected void setupTable() {
+        dataTable.setEmptyMessage("No returns found");
+        dataTable.setEmptySubtitle("Returns will appear here when processed.");
+        
         TableColumn<Return, String> invoiceCol = new TableColumn<>("Invoice #");
         invoiceCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
         invoiceCol.setSortable(false);
@@ -73,16 +78,12 @@ public class ReturnsController {
                     setText(item);
                     setGraphic(null);
                 } else {
-                    javafx.scene.layout.HBox container = new javafx.scene.layout.HBox(10);
+                    HBox container = new HBox(10);
                     container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                     
                     Label label = new Label(item);
-                    Button viewBtn = new Button();
-                    FontIcon viewIcon = new FontIcon("bx-show-alt");
-                    viewIcon.setIconSize(16);
-                    viewBtn.setGraphic(viewIcon);
+                    Button viewBtn = ButtonFactory.createIconButton("bx-show-alt", "View Sale Details", () -> {});
                     viewBtn.getStyleClass().add("btn-edit-stock");
-                    viewBtn.setTooltip(new Tooltip("View Sale Details"));
                     
                     Return returnRec = getTableView().getItems().get(getIndex());
                     viewBtn.setOnAction(e -> handleViewDetails(returnRec));
@@ -125,83 +126,89 @@ public class ReturnsController {
             }
         });
         
-        returnsTable.getTableView().getColumns().addAll(invoiceCol, paymentCol, refundCol, reasonCol, dateCol);
+        dataTable.getTableView().getColumns().addAll(invoiceCol, paymentCol, refundCol, reasonCol, dateCol);
     }
 
-    private void setupFilters() {
-        List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
+    @Override
+    protected void setupFilters() {
+        List<PaymentMethod> pms = salesService.getPaymentMethods();
         filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
-                com.possum.domain.model.PaymentMethod::name,
-                false);
+                PaymentMethod::name, false);
 
         filterBar.addDateFilter("fromDate", "From Date");
         filterBar.addDateFilter("toDate", "To Date");
         filterBar.addTextFilter("minAmount", "Min Refund");
         filterBar.addTextFilter("maxAmount", "Max Refund");
-
-        filterBar.setOnFilterChange(filters -> {
-            currentSearch = (String) filters.get("search");
-            fromDate = (java.time.LocalDate) filters.get("fromDate");
-            toDate = (java.time.LocalDate) filters.get("toDate");
-            currentMinAmount = parseBigDecimal(filters.get("minAmount"));
-            currentMaxAmount = parseBigDecimal(filters.get("maxAmount"));
-            
-            List<com.possum.domain.model.PaymentMethod> selectedPms = (List<com.possum.domain.model.PaymentMethod>) filters.get("paymentMethod");
-            if (selectedPms == null || selectedPms.isEmpty()) {
-                currentPaymentMethodIds = null;
-            } else {
-                currentPaymentMethodIds = selectedPms.stream()
-                        .map(com.possum.domain.model.PaymentMethod::id)
-                        .toList();
-            }
-            
-            loadReturns();
-        });
-        
-        paginationBar.setOnPageChange((page, size) -> loadReturns());
     }
 
-    private void loadReturns() {
-        returnsTable.setLoading(true);
+    @Override
+    protected ReturnFilter buildFilter() {
+        String searchTerm = filterBar.getSearchTerm();
+        fromDate = (LocalDate) filterBar.getFilterValue("fromDate");
+        toDate = (LocalDate) filterBar.getFilterValue("toDate");
+        currentMinAmount = parseBigDecimal(filterBar.getFilterValue("minAmount"));
+        currentMaxAmount = parseBigDecimal(filterBar.getFilterValue("maxAmount"));
         
-        Platform.runLater(() -> {
-            try {
-                ReturnFilter filter = new ReturnFilter(
-                    null,
-                    null,
-                    fromDate != null ? fromDate.atStartOfDay().toString() : null,
-                    toDate != null ? toDate.atTime(23, 59, 59).toString() : null,
-                    currentMinAmount,
-                    currentMaxAmount,
-                    currentPaymentMethodIds,
-                    currentSearch.isEmpty() ? null : currentSearch,
-                    paginationBar.getCurrentPage() + 1,
-                    paginationBar.getPageSize(),
-                    "created_at",
-                    "DESC"
-                );
-                
-                PagedResult<Return> result = returnsService.getReturns(filter);
-                
-                returnsTable.setItems(FXCollections.observableArrayList(result.items()));
-                paginationBar.setTotalItems(result.totalCount());
-                returnsTable.setLoading(false);
-            } catch (Exception e) {
-                returnsTable.setLoading(false);
-                NotificationService.error("Failed to load returns");
-            }
-        });
+        @SuppressWarnings("unchecked")
+        List<PaymentMethod> selectedPms = (List<PaymentMethod>) filterBar.getFilterValue("paymentMethod");
+        if (selectedPms == null || selectedPms.isEmpty()) {
+            currentPaymentMethodIds = null;
+        } else {
+            currentPaymentMethodIds = selectedPms.stream()
+                    .map(PaymentMethod::id)
+                    .toList();
+        }
+        
+        return new ReturnFilter(
+            null,
+            null,
+            fromDate != null ? fromDate.atStartOfDay().toString() : null,
+            toDate != null ? toDate.atTime(23, 59, 59).toString() : null,
+            currentMinAmount,
+            currentMaxAmount,
+            currentPaymentMethodIds,
+            searchTerm == null || searchTerm.isEmpty() ? null : searchTerm,
+            getCurrentPage(),
+            getPageSize(),
+            "created_at",
+            "DESC"
+        );
     }
 
-    @FXML
-    private void handleRefresh() {
-        loadReturns();
+    @Override
+    protected PagedResult<Return> fetchData(ReturnFilter filter) {
+        return returnsService.getReturns(filter);
+    }
+
+    @Override
+    protected String getEntityName() {
+        return "returns";
+    }
+
+    @Override
+    protected String getEntityNameSingular() {
+        return "Return";
+    }
+
+    @Override
+    protected List<MenuItem> buildActionMenu(Return entity) {
+        return List.of(); // Returns use inline view button
+    }
+
+    @Override
+    protected void deleteEntity(Return entity) throws Exception {
+        throw new UnsupportedOperationException("Returns cannot be deleted");
+    }
+
+    @Override
+    protected String getEntityIdentifier(Return entity) {
+        return "Invoice #" + entity.invoiceNumber();
     }
 
     @FXML
     private void handleCreateReturn() {
         workspaceManager.openDialog("Process Return", "/fxml/returns/create-return-dialog.fxml");
-        loadReturns();
+        loadData();
     }
 
     private void handleViewDetails(Return returnRecord) {
@@ -209,7 +216,7 @@ public class ReturnsController {
         Sale sale = saleResponse.sale();
         if (sale == null) return;
         
-        java.util.Map<String, Object> params = new java.util.HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("sale", sale);
         workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
     }

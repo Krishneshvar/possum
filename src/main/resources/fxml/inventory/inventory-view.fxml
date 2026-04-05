@@ -38,7 +38,7 @@
     <VBox styleClass="card" VBox.vgrow="ALWAYS">
         <FilterBar fx:id="filterBar"/>
 
-        <DataTableView fx:id="inventoryTable" VBox.vgrow="ALWAYS" styleClass="data-table"/>
+        <DataTableView fx:id="dataTable" VBox.vgrow="ALWAYS" styleClass="data-table"/>
 
         <PaginationBar fx:id="paginationBar"/>
     </VBox>

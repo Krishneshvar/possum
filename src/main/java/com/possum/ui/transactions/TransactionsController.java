@@ -6,17 +6,14 @@ import com.possum.application.transactions.TransactionService;
 import com.possum.domain.model.Transaction;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.TransactionFilter;
-import com.possum.ui.common.controls.DataTableView;
-import com.possum.ui.common.controls.FilterBar;
+import com.possum.ui.common.controllers.AbstractCrudController;
 import com.possum.ui.common.controls.NotificationService;
-import com.possum.ui.common.controls.PaginationBar;
 import com.possum.ui.workspace.WorkspaceManager;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
@@ -29,48 +26,36 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class TransactionsController {
-    
-    @FXML private FilterBar filterBar;
-    @FXML private DataTableView<Transaction> transactionsTable;
-    @FXML private PaginationBar paginationBar;
+public class TransactionsController extends AbstractCrudController<Transaction, TransactionFilter> {
     
     private final TransactionService transactionService;
     private final com.possum.application.sales.SalesService salesService;
-    private final WorkspaceManager workspaceManager;
-    private String currentSearch = "";
+    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+    
     private List<String> currentTypes = null;
     private List<Long> currentPaymentMethodIds = null;
-    private java.time.LocalDate fromDate = null;
-    private java.time.LocalDate toDate = null;
+    private LocalDate fromDate = null;
+    private LocalDate toDate = null;
     private BigDecimal currentMinAmount = null;
     private BigDecimal currentMaxAmount = null;
     private String currentSortBy = "transaction_date";
     private String currentSortOrder = "DESC";
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public TransactionsController(TransactionService transactionService, 
                                   com.possum.application.sales.SalesService salesService,
                                   WorkspaceManager workspaceManager) {
+        super(workspaceManager);
         this.transactionService = transactionService;
         this.salesService = salesService;
-        this.workspaceManager = workspaceManager;
     }
 
-    @FXML
-    public void initialize() {
-        
-        setupTable();
-        setupFilters();
-        loadTransactions();
+    @Override
+    protected void setupPermissions() {
+        // No special permissions needed for viewing transactions
     }
 
-    @FXML
-    private void handleRefresh() {
-        loadTransactions();
-    }
-
-    private void setupTable() {
+    @Override
+    protected void setupTable() {
         TableColumn<Transaction, String> refCol = new TableColumn<>("Reference Bill");
         refCol.setSortable(false);
         refCol.setCellValueFactory(cellData -> {
@@ -115,7 +100,7 @@ public class TransactionsController {
         typeCol.setCellValueFactory(cellData -> {
             String type = cellData.getValue().type();
             if ("payment".equals(type)) return new SimpleStringProperty("Sale");
-            return new SimpleStringProperty(toTitleCase(type));
+            return new SimpleStringProperty(com.possum.shared.util.TextFormatter.toTitleCase(type));
         });
 
         TableColumn<Transaction, String> paymentCol = new TableColumn<>("Payment Method");
@@ -163,16 +148,7 @@ public class TransactionsController {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    Label badge = new Label(toTitleCase(status));
-                    badge.getStyleClass().add("badge-status");
-                    switch (status.toLowerCase()) {
-                        case "completed", "success", "paid" -> badge.getStyleClass().add("badge-success");
-                        case "pending", "draft", "partially_paid" -> badge.getStyleClass().add("badge-warning");
-                        case "failed", "cancelled", "refunded" -> badge.getStyleClass().add("badge-error");
-                        case "legacy" -> badge.getStyleClass().add("badge-neutral");
-                        default -> badge.getStyleClass().add("badge-neutral");
-                    }
-                    setGraphic(badge);
+                    setGraphic(com.possum.ui.common.components.BadgeFactory.createTransactionStatusBadge(status));
                     setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
                     setAlignment(javafx.geometry.Pos.CENTER);
                     setText(null);
@@ -187,17 +163,112 @@ public class TransactionsController {
         amountCol.setId("amount");
         dateCol.setId("transaction_date");
         
-        transactionsTable.getTableView().getColumns().addAll(refCol, typeCol, paymentCol, amountCol, dateCol);
+        dataTable.getTableView().getColumns().addAll(refCol, typeCol, paymentCol, amountCol, dateCol);
         
-        // Listen for sort events
-        transactionsTable.getTableView().getSortOrder().addListener((javafx.beans.Observable obs) -> {
-            if (!transactionsTable.getTableView().getSortOrder().isEmpty()) {
-                TableColumn<Transaction, ?> col = transactionsTable.getTableView().getSortOrder().get(0);
+        dataTable.getTableView().getSortOrder().addListener((javafx.beans.Observable obs) -> {
+            if (!dataTable.getTableView().getSortOrder().isEmpty()) {
+                TableColumn<Transaction, ?> col = dataTable.getTableView().getSortOrder().get(0);
                 currentSortBy = col.getId() != null ? col.getId() : "transaction_date";
                 currentSortOrder = col.getSortType() == TableColumn.SortType.DESCENDING ? "DESC" : "ASC";
-                loadTransactions();
+                loadData();
             }
         });
+    }
+
+    @Override
+    protected void setupFilters() {
+        filterBar.addMultiSelectFilter("type", "All Types", 
+            List.of("Sale", "Refund", "Purchase"),
+            s -> s,
+            false
+        );
+
+        List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
+        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
+            com.possum.domain.model.PaymentMethod::name,
+            false);
+
+        filterBar.addDateFilter("fromDate", "From Date");
+        filterBar.addDateFilter("toDate", "To Date");
+        filterBar.addTextFilter("minAmount", "Min Amount");
+        filterBar.addTextFilter("maxAmount", "Max Amount");
+        
+        setupStandardFilterListener((filters, reload) -> {
+            List<String> types = (List<String>) filters.get("type");
+            if (types == null || types.isEmpty()) {
+                currentTypes = null;
+            } else {
+                currentTypes = types.stream()
+                    .map(t -> "Sale".equals(t) ? "payment" : t.toLowerCase())
+                    .toList();
+            }
+
+            List<com.possum.domain.model.PaymentMethod> selectedPms = (List<com.possum.domain.model.PaymentMethod>) filters.get("paymentMethod");
+            if (selectedPms == null || selectedPms.isEmpty()) {
+                currentPaymentMethodIds = null;
+            } else {
+                currentPaymentMethodIds = selectedPms.stream()
+                    .map(com.possum.domain.model.PaymentMethod::id)
+                    .toList();
+            }
+
+            fromDate = (LocalDate) filters.get("fromDate");
+            toDate = (LocalDate) filters.get("toDate");
+
+            currentMinAmount = parseBigDecimal(filters.get("minAmount"));
+            currentMaxAmount = parseBigDecimal(filters.get("maxAmount"));
+            
+            reload.run();
+        });
+    }
+
+    @Override
+    protected TransactionFilter buildFilter() {
+        return new TransactionFilter(
+            fromDate != null ? fromDate.atStartOfDay().toString() : null,
+            toDate != null ? toDate.atTime(23, 59, 59).toString() : null,
+            currentTypes,
+            currentMinAmount,
+            currentMaxAmount,
+            currentPaymentMethodIds,
+            null,
+            getSearchOrNull(),
+            getCurrentPage(),
+            getPageSize(),
+            currentSortBy,
+            currentSortOrder
+        );
+    }
+
+    @Override
+    protected PagedResult<Transaction> fetchData(TransactionFilter filter) {
+        Set<String> permissions = new HashSet<>(AuthContext.getCurrentUser().permissions());
+        return transactionService.getTransactions(filter, permissions);
+    }
+
+    @Override
+    protected String getEntityName() {
+        return "transactions";
+    }
+
+    @Override
+    protected String getEntityNameSingular() {
+        return "Transaction";
+    }
+
+    @Override
+    protected List<MenuItem> buildActionMenu(Transaction entity) {
+        return List.of(); // No actions for transactions
+    }
+
+    @Override
+    protected void deleteEntity(Transaction entity) throws Exception {
+        throw new UnsupportedOperationException("Transactions cannot be deleted");
+    }
+
+    @Override
+    protected String getEntityIdentifier(Transaction entity) {
+        return entity.invoiceNumber() != null ? entity.invoiceNumber() : String.valueOf(entity.id());
     }
 
     private void handleViewBill(String invoiceNumber) {
@@ -208,56 +279,6 @@ public class TransactionsController {
             params.put("sale", sale);
             workspaceManager.openOrFocusWindow("Bill: " + sale.invoiceNumber(), "/fxml/sales/sale-detail-view.fxml", params);
         }, () -> NotificationService.info("This reference is from legacy summary data and has no item-level bill details."));
-    }
-
-    private void setupFilters() {
-        filterBar.addMultiSelectFilter("type", "All Types", 
-                List.of("Sale", "Refund", "Purchase"),
-                s -> s,
-                false
-        );
-
-        List<com.possum.domain.model.PaymentMethod> pms = salesService.getPaymentMethods();
-        filterBar.addMultiSelectFilter("paymentMethod", "All Payments", pms, 
-                com.possum.domain.model.PaymentMethod::name,
-                false);
-
-        filterBar.addDateFilter("fromDate", "From Date");
-        filterBar.addDateFilter("toDate", "To Date");
-        filterBar.addTextFilter("minAmount", "Min Amount");
-        filterBar.addTextFilter("maxAmount", "Max Amount");
-        
-        filterBar.setOnFilterChange(filters -> {
-            currentSearch = (String) filters.get("search");
-            
-            List<String> types = (List<String>) filters.get("type");
-            if (types == null || types.isEmpty()) {
-                currentTypes = null;
-            } else {
-                currentTypes = types.stream()
-                        .map(t -> "Sale".equals(t) ? "payment" : t.toLowerCase())
-                        .toList();
-            }
-
-            List<com.possum.domain.model.PaymentMethod> selectedPms = (List<com.possum.domain.model.PaymentMethod>) filters.get("paymentMethod");
-            if (selectedPms == null || selectedPms.isEmpty()) {
-                currentPaymentMethodIds = null;
-            } else {
-                currentPaymentMethodIds = selectedPms.stream()
-                        .map(com.possum.domain.model.PaymentMethod::id)
-                        .toList();
-            }
-
-            fromDate = (LocalDate) filters.get("fromDate");
-            toDate = (LocalDate) filters.get("toDate");
-
-            currentMinAmount = parseBigDecimal(filters.get("minAmount"));
-            currentMaxAmount = parseBigDecimal(filters.get("maxAmount"));
-            
-            loadTransactions();
-        });
-        
-        paginationBar.setOnPageChange((page, size) -> loadTransactions());
     }
 
     private BigDecimal parseBigDecimal(Object value) {
@@ -271,48 +292,5 @@ public class TransactionsController {
         }
     }
 
-    private void loadTransactions() {
-        transactionsTable.setLoading(true);
-        
-        Platform.runLater(() -> {
-            try {
-                TransactionFilter filter = new TransactionFilter(
-                    fromDate != null ? fromDate.atStartOfDay().toString() : null,
-                    toDate != null ? toDate.atTime(23, 59, 59).toString() : null,
-                    currentTypes,
-                    currentMinAmount,
-                    currentMaxAmount,
-                    currentPaymentMethodIds,
-                    null,
-                    currentSearch.isEmpty() ? null : currentSearch,
-                    paginationBar.getCurrentPage() + 1,
-                    paginationBar.getPageSize(),
-                    currentSortBy,
-                    currentSortOrder
-                );
-                
-                Set<String> permissions = new HashSet<>(AuthContext.getCurrentUser().permissions());
-                PagedResult<Transaction> result = transactionService.getTransactions(filter, permissions);
-                
-                transactionsTable.setItems(FXCollections.observableArrayList(result.items()));
-                paginationBar.setTotalItems(result.totalCount());
-                transactionsTable.setLoading(false);
-            } catch (Exception e) {
-                transactionsTable.setLoading(false);
-                NotificationService.error("Failed to load transactions");
-            }
-        });
-    }
-    private String toTitleCase(String input) {
-        if (input == null || input.isEmpty()) return "";
-        String[] words = input.toLowerCase().split("_");
-        StringBuilder sb = new StringBuilder();
-        for (String word : words) {
-            if (word.isEmpty()) continue;
-            sb.append(Character.toUpperCase(word.charAt(0)))
-              .append(word.substring(1))
-              .append(" ");
-        }
-        return sb.toString().trim();
-    }
+
 }

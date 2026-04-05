@@ -46,7 +46,7 @@
     <VBox styleClass="card" VBox.vgrow="ALWAYS">
         <FilterBar fx:id="filterBar"/>
 
-        <DataTableView fx:id="customersTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+        <DataTableView fx:id="dataTable" VBox.vgrow="ALWAYS" styleClass="data-table">
             <emptyMessage>No customers found. Click + Add Customer to add a new customer.</emptyMessage>
         </DataTableView>
 

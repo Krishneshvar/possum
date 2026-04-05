@@ -295,21 +295,7 @@ public class VariantsController {
                     setGraphic(null);
                     setText(null);
                 } else {
-                    String formatted = status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
-                    Label badge = new Label(formatted);
-                    badge.getStyleClass().add("badge-status");
-                    
-                    if ("active".equalsIgnoreCase(status)) {
-                        badge.getStyleClass().add("badge-success");
-                    } else if ("inactive".equalsIgnoreCase(status)) {
-                        badge.getStyleClass().add("badge-neutral");
-                    } else if ("discontinued".equalsIgnoreCase(status)) {
-                        badge.getStyleClass().add("badge-warning");
-                    } else {
-                        badge.getStyleClass().add("badge-neutral");
-                    }
-                    
-                    setGraphic(badge);
+                    setGraphic(com.possum.ui.common.components.BadgeFactory.createProductStatusBadge(status));
                     setText(null);
                 }
             }

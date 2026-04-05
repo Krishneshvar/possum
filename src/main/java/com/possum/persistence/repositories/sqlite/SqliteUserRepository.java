@@ -33,26 +33,19 @@ public final class SqliteUserRepository extends BaseSqliteRepository implements 
         int limit = Math.max(1, filter.limit() == null ? 10 : filter.limit());
         int offset = (page - 1) * limit;
 
-        List<Object> params = new ArrayList<>();
-        StringJoiner whereJoiner = new StringJoiner(" AND ");
-        whereJoiner.add("deleted_at IS NULL");
-
-        if (filter.searchTerm() != null && !filter.searchTerm().isBlank()) {
-            whereJoiner.add("(name LIKE ? OR username LIKE ?)");
-            String fuzzy = "%" + filter.searchTerm() + "%";
-            params.add(fuzzy);
-            params.add(fuzzy);
-        }
+        WhereBuilder whereBuilder = new WhereBuilder()
+                .addNotDeleted()
+                .addSearch(filter.searchTerm(), "name", "username");
 
         if (filter.activeStatuses() != null && !filter.activeStatuses().isEmpty()) {
             List<Integer> activeInts = filter.activeStatuses().stream().map(b -> b ? 1 : 0).toList();
-            whereJoiner.add("is_active IN (" + "?,".repeat(activeInts.size()).replaceAll(",$", "") + ")");
-            params.addAll(activeInts);
+            whereBuilder.addIn("is_active", activeInts);
         }
 
-        String where = "WHERE " + whereJoiner;
-        int totalCount = queryOne("SELECT COUNT(id) AS total FROM users " + where, rs -> rs.getInt("total"), params.toArray())
-                .orElse(0);
+        String where = whereBuilder.build();
+        List<Object> params = new ArrayList<>(whereBuilder.getParams());
+
+        int totalCount = count("users", where, params.toArray());
 
         params.add(limit);
         params.add(offset);
@@ -97,7 +90,7 @@ public final class SqliteUserRepository extends BaseSqliteRepository implements 
                 user.name(),
                 user.username(),
                 user.passwordHash(),
-                toInt(user.active(), true)
+                boolToInt(user.active(), true)
         );
         for (Long roleId : roleIds) {
             executeUpdate("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);
@@ -107,27 +100,14 @@ public final class SqliteUserRepository extends BaseSqliteRepository implements 
 
     @Override
     public User updateUserWithRolesById(long id, User userData, List<Long> roleIds) {
-        List<Object> params = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("UPDATE users SET updated_at = CURRENT_TIMESTAMP");
-        if (userData.name() != null) {
-            sql.append(", name = ?");
-            params.add(userData.name());
-        }
-        if (userData.username() != null) {
-            sql.append(", username = ?");
-            params.add(userData.username());
-        }
-        if (userData.passwordHash() != null) {
-            sql.append(", password_hash = ?");
-            params.add(userData.passwordHash());
-        }
-        if (userData.active() != null) {
-            sql.append(", is_active = ?");
-            params.add(toInt(userData.active(), true));
-        }
-        params.add(id);
-        sql.append(" WHERE id = ?");
-        executeUpdate(sql.toString(), params.toArray());
+        UpdateBuilder builder = new UpdateBuilder("users")
+                .set("name", userData.name())
+                .set("username", userData.username())
+                .set("password_hash", userData.passwordHash())
+                .set("is_active", userData.active() != null ? boolToInt(userData.active(), true) : null)
+                .where("id = ?", id);
+
+        executeUpdate(builder.getSql(), builder.getParams());
 
         if (roleIds != null) {
             executeUpdate("DELETE FROM user_roles WHERE user_id = ?", id);
@@ -245,13 +225,9 @@ public final class SqliteUserRepository extends BaseSqliteRepository implements 
                 roleIds.toArray()
         );
     }
+
     @Override
     public void revokeUserSessions(long userId) {
         executeUpdate("DELETE FROM sessions WHERE user_id = ?", userId);
-    }
-
-    private static int toInt(Boolean value, boolean defaultValue) {
-        boolean resolved = value == null ? defaultValue : value;
-        return resolved ? 1 : 0;
     }
 }

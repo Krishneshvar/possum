@@ -214,6 +214,19 @@ public class FilterBar extends VBox {
         return searchField.getText();
     }
 
+    public String getSearchTerm() {
+        return searchField.getText();
+    }
+
+    public Object getFilterValue(String key) {
+        if (filters.containsKey(key)) return filters.get(key).getValue();
+        if (multiSelectFilters.containsKey(key)) return multiSelectFilters.get(key).getSelectedItems();
+        if (dateFilters.containsKey(key)) return dateFilters.get(key).getValue();
+        if (textFilters.containsKey(key)) return textFilters.get(key).getText();
+        if ("search".equals(key)) return searchField.getText();
+        return null;
+    }
+
     public void setSearchVisible(boolean visible) {
         searchField.setVisible(visible);
         searchField.setManaged(visible);

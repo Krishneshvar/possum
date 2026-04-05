@@ -4,54 +4,48 @@ import com.possum.application.audit.AuditService;
 import com.possum.domain.model.AuditLog;
 import com.possum.shared.dto.AuditLogFilter;
 import com.possum.shared.dto.PagedResult;
-import com.possum.ui.common.controls.DataTableView;
-import com.possum.ui.common.controls.FilterBar;
-import com.possum.ui.common.controls.NotificationService;
-import com.possum.ui.common.controls.PaginationBar;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.fxml.FXML;
+import com.possum.ui.common.controllers.AbstractCrudController;
+import com.possum.ui.common.components.BadgeFactory;
+import com.possum.ui.common.dialogs.DialogStyler;
+import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.shared.util.TimeUtil;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import com.possum.ui.common.dialogs.DialogStyler;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import com.possum.shared.util.TimeUtil;
+import java.util.List;
 
-public class AuditController {
+public class AuditController extends AbstractCrudController<AuditLog, AuditLogFilter> {
     
-    @FXML private FilterBar filterBar;
-    @FXML private DataTableView<AuditLog> auditTable;
-    @FXML private PaginationBar paginationBar;
-    
-    private AuditService auditService;
-    private String currentSearch = "";
-    private java.util.List<String> currentActions = null;
+    private final AuditService auditService;
+    private List<String> currentActions = null;
     private String startDateStr = null;
     private String endDateStr = null;
 
-    public AuditController(AuditService auditService) {
-this.auditService = auditService;
+    public AuditController(AuditService auditService, WorkspaceManager workspaceManager) {
+        super(workspaceManager);
+        this.auditService = auditService;
     }
 
-    @FXML
-    public void initialize() {
+    @Override
+    protected void setupPermissions() {
+        // Audit logs are read-only, no special permissions needed
+    }
+
+    @Override
+    protected void setupTable() {
+        dataTable.setEmptyMessage("No audit logs found");
+        dataTable.setEmptySubtitle("Audit events will appear here as they occur.");
         
-        setupTable();
-        setupFilters();
-        loadAuditLogs();
-    }
-
-    private void setupTable() {
         TableColumn<AuditLog, String> userCol = new TableColumn<>("User");
         userCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().userName()));
         
         TableColumn<AuditLog, String> actionCol = new TableColumn<>("Action");
         actionCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().action()));
-        actionCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+        actionCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -59,20 +53,9 @@ this.auditService = auditService;
                     setText(null);
                     setGraphic(null);
                 } else {
-                    Label badge = new Label(item.toUpperCase());
-                    badge.getStyleClass().add("badge");
-                    badge.getStyleClass().add("badge-status");
-                    
-                    String colorClass = switch (item.toUpperCase()) {
-                        case "CREATE", "LOGIN" -> "badge-success";
-                        case "UPDATE" -> "badge-info";
-                        case "DELETE" -> "badge-danger";
-                        case "LOGOUT" -> "badge-secondary";
-                        default -> "badge-warning";
-                    };
-                    badge.getStyleClass().add(colorClass);
+                    Label badge = createActionBadge(item);
                     setGraphic(badge);
-                    setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+                    setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                 }
             }
         });
@@ -85,7 +68,7 @@ this.auditService = auditService;
         
         TableColumn<AuditLog, LocalDateTime> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().createdAt()));
-        dateCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+        dateCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
@@ -98,77 +81,90 @@ this.auditService = auditService;
             }
         });
         
-        auditTable.getTableView().getColumns().addAll(userCol, actionCol, tableCol, rowCol, dateCol);
-        
-        auditTable.addActionColumn("Details", this::showDetails);
+        dataTable.getTableView().getColumns().addAll(userCol, actionCol, tableCol, rowCol, dateCol);
+        dataTable.addActionColumn("Details", this::showDetails);
     }
 
-    private void setupFilters() {
-        java.util.List<String> actions = java.util.List.of("CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT");
+    @Override
+    protected void setupFilters() {
+        List<String> actions = List.of("CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT");
         filterBar.addMultiSelectFilter("actions", "All Actions", actions, String::toString);
-        
         filterBar.addDateFilter("startDate", "From Date");
         filterBar.addDateFilter("endDate", "To Date");
-        
-        filterBar.setOnFilterChange(filters -> {
-            currentSearch = (String) filters.get("search");
-            
-            @SuppressWarnings("unchecked")
-            java.util.List<String> selectedActions = (java.util.List<String>) filters.get("actions");
-            currentActions = (selectedActions == null || selectedActions.isEmpty()) ? null : selectedActions;
-            
-            LocalDate start = (LocalDate) filters.get("startDate");
-            LocalDate end = (LocalDate) filters.get("endDate");
-            
-            startDateStr = start != null ? start.toString() : null;
-            endDateStr = end != null ? end.toString() : null;
-            
-            loadAuditLogs();
-        });
-        
-        paginationBar.setOnPageChange((page, size) -> loadAuditLogs());
     }
 
-
-
-    @FXML
-    public void handleRefresh() {
-        loadAuditLogs();
+    @Override
+    protected AuditLogFilter buildFilter() {
+        String searchTerm = filterBar.getSearchTerm();
+        
+        @SuppressWarnings("unchecked")
+        List<String> selectedActions = (List<String>) filterBar.getFilterValue("actions");
+        currentActions = (selectedActions == null || selectedActions.isEmpty()) ? null : selectedActions;
+        
+        LocalDate start = (LocalDate) filterBar.getFilterValue("startDate");
+        LocalDate end = (LocalDate) filterBar.getFilterValue("endDate");
+        
+        startDateStr = start != null ? start.toString() : null;
+        endDateStr = end != null ? end.toString() : null;
+        
+        return new AuditLogFilter(
+            null,
+            null,
+            null,
+            currentActions,
+            startDateStr,
+            endDateStr,
+            searchTerm == null || searchTerm.isEmpty() ? null : searchTerm,
+            "created_at",
+            "DESC",
+            getCurrentPage(),
+            getPageSize()
+        );
     }
 
-    private void loadAuditLogs() {
-        auditTable.setLoading(true);
-        
-        Platform.runLater(() -> {
-            try {
-                AuditLogFilter filter = new AuditLogFilter(
-                    null,
-                    null,
-                    null,
-                    currentActions,
-                    startDateStr,
-                    endDateStr,
-                    currentSearch.isEmpty() ? null : currentSearch,
-                    "created_at",
-                    "DESC",
-                    paginationBar.getCurrentPage() + 1,
-                    paginationBar.getPageSize()
-                );
-                
-                PagedResult<AuditLog> result = auditService.listAuditEvents(filter);
-                
-                auditTable.setItems(FXCollections.observableArrayList(result.items()));
-                paginationBar.setTotalItems(result.totalCount());
-                auditTable.setLoading(false);
-            } catch (Exception e) {
-                auditTable.setLoading(false);
-                NotificationService.error("Failed to load audit logs");
-            }
-        });
+    @Override
+    protected PagedResult<AuditLog> fetchData(AuditLogFilter filter) {
+        return auditService.listAuditEvents(filter);
+    }
+
+    @Override
+    protected String getEntityName() {
+        return "audit logs";
+    }
+
+    @Override
+    protected String getEntityNameSingular() {
+        return "Audit Log Entry";
+    }
+
+    @Override
+    protected List<MenuItem> buildActionMenu(AuditLog entity) {
+        return List.of(); // Audit logs are read-only
+    }
+
+    @Override
+    protected void deleteEntity(AuditLog entity) throws Exception {
+        throw new UnsupportedOperationException("Audit logs cannot be deleted");
+    }
+
+    @Override
+    protected String getEntityIdentifier(AuditLog entity) {
+        return "Event #" + entity.id();
+    }
+
+    private Label createActionBadge(String action) {
+        String upperAction = action.toUpperCase();
+        return switch (upperAction) {
+            case "CREATE", "LOGIN" -> BadgeFactory.createSuccessBadge(upperAction);
+            case "UPDATE" -> BadgeFactory.createBadge(upperAction, "badge-info");
+            case "DELETE" -> BadgeFactory.createErrorBadge(upperAction);
+            case "LOGOUT" -> BadgeFactory.createBadge(upperAction, "badge-secondary");
+            default -> BadgeFactory.createWarningBadge(upperAction);
+        };
     }
 
     private void showDetails(AuditLog log) {
-        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
         DialogStyler.apply(alert);
         alert.setTitle("Audit Log Details");
         alert.setHeaderText("Event #" + log.id());

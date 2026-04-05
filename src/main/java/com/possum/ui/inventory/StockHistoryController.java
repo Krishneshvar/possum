@@ -6,95 +6,71 @@ import com.possum.domain.enums.InventoryReason;
 import com.possum.domain.model.User;
 import com.possum.shared.dto.UserFilter;
 import com.possum.shared.dto.StockHistoryDto;
-import com.possum.ui.common.controls.DataTableView;
-import com.possum.ui.common.controls.FilterBar;
-import com.possum.ui.common.controls.PaginationBar;
+import com.possum.shared.dto.PagedResult;
+import com.possum.ui.common.controllers.AbstractCrudController;
+import com.possum.ui.common.components.BadgeFactory;
+import com.possum.ui.common.components.ButtonFactory;
+import com.possum.ui.workspace.WorkspaceManager;
+import com.possum.shared.util.TimeUtil;
+import com.possum.shared.util.TextFormatter;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 
-
-import com.possum.shared.util.TimeUtil;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class StockHistoryController {
+public class StockHistoryController extends AbstractCrudController<StockHistoryDto, StockHistoryFilter> {
 
-    @FXML private VBox container;
-    @FXML private FilterBar filterBar;
-    @FXML private DataTableView<StockHistoryDto> historyTable;
-    private TableColumn<StockHistoryDto, String> productCol;
-    private TableColumn<StockHistoryDto, String> variantCol;
-    private TableColumn<StockHistoryDto, String> skuCol;
-    private TableColumn<StockHistoryDto, String> changeCol;
-    private TableColumn<StockHistoryDto, String> reasonCol;
-    private TableColumn<StockHistoryDto, String> adjustedByCol;
-    private TableColumn<StockHistoryDto, String> dateCol;
-    @FXML private PaginationBar paginationBar;
     @FXML private Button refreshButton;
 
     private final InventoryService inventoryService;
     private final UserService userService;
-    private final ObservableList<StockHistoryDto> historyList = FXCollections.observableArrayList();
 
-    private int currentPage = 1;
-    private int pageSize = 20;
-
-    private String currentSearch = "";
     private List<String> currentReasons = null;
-    private java.time.LocalDate currentFromDate = null;
-    private java.time.LocalDate currentToDate = null;
+    private LocalDate currentFromDate = null;
+    private LocalDate currentToDate = null;
     private List<Long> currentUserIds = null;
 
-    public StockHistoryController(InventoryService inventoryService, UserService userService) {
+    public StockHistoryController(InventoryService inventoryService, 
+                                  UserService userService,
+                                  WorkspaceManager workspaceManager) {
+        super(workspaceManager);
         this.inventoryService = inventoryService;
         this.userService = userService;
     }
 
-    @FXML
-    public void initialize() {
+    @Override
+    protected void setupPermissions() {
         if (refreshButton != null) {
-            org.kordamp.ikonli.javafx.FontIcon refreshIcon = new org.kordamp.ikonli.javafx.FontIcon("bx-sync");
-            refreshIcon.setIconSize(16);
-            refreshButton.setGraphic(refreshIcon);
-            refreshButton.setText("Refresh");
+            ButtonFactory.applyRefreshButtonStyle(refreshButton);
         }
-        historyTable.setEmptyMessage("No stock history found");
-        historyTable.setEmptySubtitle("Try adjusting filters or search terms.");
-        setupTable();
-        setupFilters();
-        setupPagination();
-        loadHistory();
     }
 
-    @FXML
-    private void handleRefresh() {
-        loadHistory();
-    }
-
-    private void setupTable() {
-        productCol = new TableColumn<>("Product");
-        variantCol = new TableColumn<>("Variant");
-        skuCol = new TableColumn<>("SKU");
-        changeCol = new TableColumn<>("Change");
-        reasonCol = new TableColumn<>("Reason");
-        adjustedByCol = new TableColumn<>("Adjusted By");
-        dateCol = new TableColumn<>("Date & Time");
-
-        historyTable.getTableView().getColumns().clear();
-        historyTable.getTableView().getColumns().addAll(List.of(productCol, variantCol, skuCol, changeCol, reasonCol, adjustedByCol, dateCol));
-        historyTable.getTableView().setItems(historyList);
+    @Override
+    protected void setupTable() {
+        dataTable.setEmptyMessage("No stock history found");
+        dataTable.setEmptySubtitle("Try adjusting filters or search terms.");
+        
+        TableColumn<StockHistoryDto, String> productCol = new TableColumn<>("Product");
+        TableColumn<StockHistoryDto, String> variantCol = new TableColumn<>("Variant");
+        TableColumn<StockHistoryDto, String> skuCol = new TableColumn<>("SKU");
+        TableColumn<StockHistoryDto, String> changeCol = new TableColumn<>("Change");
+        TableColumn<StockHistoryDto, String> reasonCol = new TableColumn<>("Reason");
+        TableColumn<StockHistoryDto, String> adjustedByCol = new TableColumn<>("Adjusted By");
+        TableColumn<StockHistoryDto, String> dateCol = new TableColumn<>("Date & Time");
 
         productCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().productName()));
         variantCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().variantName()));
         skuCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().sku()));
+        
         changeCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().quantityChange() > 0 ? "+" + cellData.getValue().quantityChange() : String.valueOf(cellData.getValue().quantityChange())));
+                cellData.getValue().quantityChange() > 0 
+                    ? "+" + cellData.getValue().quantityChange() 
+                    : String.valueOf(cellData.getValue().quantityChange())));
         changeCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -104,28 +80,17 @@ public class StockHistoryController {
                     setStyle("");
                 } else {
                     setText(item);
-                    setStyle(item.startsWith("+") ? "-fx-text-fill: green; -fx-font-weight: bold; -fx-alignment: center-right;" : "-fx-text-fill: red; -fx-font-weight: bold; -fx-alignment: center-right;");
+                    setStyle(item.startsWith("+") 
+                        ? "-fx-text-fill: green; -fx-font-weight: bold; -fx-alignment: center-right;" 
+                        : "-fx-text-fill: red; -fx-font-weight: bold; -fx-alignment: center-right;");
                 }
             }
         });
+        
         reasonCol.setCellValueFactory(cellData -> {
             String reason = cellData.getValue().reason();
             if (reason == null) return new SimpleStringProperty("");
-
-            if ("confirm_receive".equalsIgnoreCase(reason)) {
-                return new SimpleStringProperty("Received");
-            }
-
-            String[] words = reason.split("_");
-            StringBuilder titleCase = new StringBuilder();
-            for (String word : words) {
-                if (word.length() > 0) {
-                    titleCase.append(Character.toUpperCase(word.charAt(0)))
-                             .append(word.substring(1).toLowerCase())
-                             .append(" ");
-                }
-            }
-            return new SimpleStringProperty(titleCase.toString().trim());
+            return new SimpleStringProperty(formatReason(reason));
         });
         reasonCol.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -135,36 +100,36 @@ public class StockHistoryController {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    Label badge = new Label(item);
-                    badge.getStyleClass().addAll("badge", "badge-status", "badge-info");
+                    Label badge = BadgeFactory.createBadge(item, "badge-info");
                     setGraphic(badge);
                     setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                 }
             }
         });
         reasonCol.setSortable(false);
+        
         adjustedByCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().adjustedByName()));
         adjustedByCol.setSortable(false);
+        
         dateCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().adjustedAt() != null ? TimeUtil.formatStandard(TimeUtil.toLocal(cellData.getValue().adjustedAt())) : ""));
+                cellData.getValue().adjustedAt() != null 
+                    ? TimeUtil.formatStandard(TimeUtil.toLocal(cellData.getValue().adjustedAt())) 
+                    : ""));
+
+        dataTable.getTableView().getColumns().addAll(
+            productCol, variantCol, skuCol, changeCol, reasonCol, adjustedByCol, dateCol
+        );
     }
 
-    private void setupFilters() {
+    @Override
+    protected void setupFilters() {
         filterBar.addMultiSelectFilter("reasons", "Filter by Reasons", List.of(InventoryReason.values()), 
-            item -> {
-                String val = item.getValue();
-                if ("confirm_receive".equalsIgnoreCase(val)) return "Received";
-                String[] words = val.split("_");
-                StringBuilder sb = new StringBuilder();
-                for (String w : words) {
-                    if (!w.isEmpty()) sb.append(w.substring(0, 1).toUpperCase()).append(w.substring(1).toLowerCase()).append(" ");
-                }
-                return sb.toString().trim();
-            }, false);
+            item -> formatReason(item.getValue()), false);
 
         DatePicker fromDate = filterBar.addDateFilter("fromDate", "From Date");
         DatePicker toDate = filterBar.addDateFilter("toDate", "To Date");
 
+        // Date validation
         toDate.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && fromDate.getValue() != null && newVal.isBefore(fromDate.getValue())) {
                 toDate.setValue(fromDate.getValue());
@@ -177,6 +142,7 @@ public class StockHistoryController {
             }
         });
 
+        // Load users asynchronously
         CompletableFuture.supplyAsync(() -> userService.getUsers(new UserFilter(null, 1, 1000, null, null)).items())
                 .thenAccept(users -> Platform.runLater(() -> {
                     filterBar.addMultiSelectFilter("adjustedBy", "Filter by User", users, User::name, true);
@@ -184,92 +150,127 @@ public class StockHistoryController {
 
         setupDatePickerFormat(fromDate);
         setupDatePickerFormat(toDate);
+    }
 
-        filterBar.setOnFilterChange(filters -> {
-            currentSearch = (String) filters.get("search");
-            Object reasonsObj = filters.get("reasons");
-            if (reasonsObj instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<InventoryReason> selectedReasons = (List<InventoryReason>) reasonsObj;
-                if (!selectedReasons.isEmpty()) {
-                    currentReasons = selectedReasons.stream().map(InventoryReason::getValue).toList();
-                } else {
-                    currentReasons = null;
-                }
+    @Override
+    protected StockHistoryFilter buildFilter() {
+        String searchTerm = filterBar.getSearchTerm();
+        
+        Object reasonsObj = filterBar.getFilterValue("reasons");
+        if (reasonsObj instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<InventoryReason> selectedReasons = (List<InventoryReason>) reasonsObj;
+            if (!selectedReasons.isEmpty()) {
+                currentReasons = selectedReasons.stream().map(InventoryReason::getValue).toList();
             } else {
                 currentReasons = null;
             }
-            currentFromDate = (java.time.LocalDate) filters.get("fromDate");
-            currentToDate = (java.time.LocalDate) filters.get("toDate");
+        } else {
+            currentReasons = null;
+        }
+        
+        currentFromDate = (LocalDate) filterBar.getFilterValue("fromDate");
+        currentToDate = (LocalDate) filterBar.getFilterValue("toDate");
 
-            Object usersObj = filters.get("adjustedBy");
-            if (usersObj instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<User> selectedUsers = (List<User>) usersObj;
-                if (!selectedUsers.isEmpty()) {
-                    currentUserIds = selectedUsers.stream().map(User::id).toList();
-                } else {
-                    currentUserIds = null;
-                }
+        Object usersObj = filterBar.getFilterValue("adjustedBy");
+        if (usersObj instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<User> selectedUsers = (List<User>) usersObj;
+            if (!selectedUsers.isEmpty()) {
+                currentUserIds = selectedUsers.stream().map(User::id).toList();
             } else {
                 currentUserIds = null;
             }
+        } else {
+            currentUserIds = null;
+        }
 
-            paginationBar.reset();
-        });
+        return new StockHistoryFilter(
+            searchTerm,
+            currentReasons != null ? currentReasons : new ArrayList<>(),
+            currentFromDate,
+            currentToDate,
+            currentUserIds,
+            getCurrentPage(),
+            getPageSize()
+        );
     }
 
-    private void setupPagination() {
-        paginationBar.setOnPageChange((page, size) -> {
-            currentPage = page + 1;
-            pageSize = size;
-            loadHistory();
-        });
+    @Override
+    protected PagedResult<StockHistoryDto> fetchData(StockHistoryFilter filter) {
+        String fromDateStr = filter.fromDate() != null 
+            ? filter.fromDate().atStartOfDay().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) 
+            : null;
+        String toDateStr = filter.toDate() != null 
+            ? filter.toDate().atTime(23, 59, 59).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) 
+            : null;
+
+        int offset = (filter.page() - 1) * filter.limit();
+        
+        List<StockHistoryDto> results = inventoryService.getStockHistory(
+            filter.searchTerm(), 
+            filter.reasons(), 
+            fromDateStr, 
+            toDateStr, 
+            filter.userIds(), 
+            filter.limit(), 
+            offset
+        );
+        
+        // Since the service doesn't return total count, we estimate it
+        int totalCount = offset + results.size() + (results.size() == filter.limit() ? 1 : 0);
+        int totalPages = (int) Math.ceil((double) totalCount / filter.limit());
+        
+        return new PagedResult<>(results, totalCount, totalPages, filter.page(), filter.limit());
     }
 
-    private void loadHistory() {
-        List<String> selectedReasons = currentReasons != null ? currentReasons : new ArrayList<>();
+    @Override
+    protected String getEntityName() {
+        return "stock history";
+    }
 
-        int offset = (currentPage - 1) * pageSize;
+    @Override
+    protected String getEntityNameSingular() {
+        return "Stock History Entry";
+    }
 
-        String fromDateStr = currentFromDate != null ? currentFromDate.atStartOfDay().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null;
-        String toDateStr = currentToDate != null ? currentToDate.atTime(23, 59, 59).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null;
+    @Override
+    protected List<MenuItem> buildActionMenu(StockHistoryDto entity) {
+        return List.of(); // Stock history is read-only
+    }
 
-        // Load one extra item to check if there are more pages
-        CompletableFuture.supplyAsync(() -> inventoryService.getStockHistory(currentSearch, selectedReasons, fromDateStr, toDateStr, currentUserIds, pageSize + 1, offset))
-                .thenAccept(results -> Platform.runLater(() -> {
-                    boolean hasMorePages = results.size() > pageSize;
-                    if (hasMorePages) {
-                        historyList.setAll(results.subList(0, pageSize));
-                    } else {
-                        historyList.setAll(results);
-                    }
+    @Override
+    protected void deleteEntity(StockHistoryDto entity) throws Exception {
+        throw new UnsupportedOperationException("Stock history cannot be deleted");
+    }
 
-                    int totalItems = offset + historyList.size() + (hasMorePages ? 1 : 0);
-                    paginationBar.setTotalItems(totalItems);
-                }))
-                .exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return null;
-                });
+    @Override
+    protected String getEntityIdentifier(StockHistoryDto entity) {
+        return entity.productName() + " (" + entity.variantName() + ")";
+    }
+
+    private String formatReason(String reason) {
+        if (reason == null) return "";
+        if ("confirm_receive".equalsIgnoreCase(reason)) return "Received";
+        return TextFormatter.camelCaseToWords(reason.replace("_", " "));
     }
 
     private void setupDatePickerFormat(DatePicker picker) {
-        picker.setConverter(new javafx.util.StringConverter<java.time.LocalDate>() {
+        picker.setConverter(new javafx.util.StringConverter<LocalDate>() {
             @Override
-            public String toString(java.time.LocalDate date) {
+            public String toString(LocalDate date) {
                 if (date != null) {
-                    return com.possum.shared.util.TimeUtil.getDateFormatter().format(date);
+                    return TimeUtil.getDateFormatter().format(date);
                 } else {
                     return "";
                 }
             }
 
             @Override
-            public java.time.LocalDate fromString(String string) {
+            public LocalDate fromString(String string) {
                 if (string != null && !string.isEmpty()) {
                     try {
-                        return java.time.LocalDate.parse(string, com.possum.shared.util.TimeUtil.getDateFormatter());
+                        return LocalDate.parse(string, TimeUtil.getDateFormatter());
                     } catch (Exception e) {
                         return null;
                     }
@@ -282,3 +283,14 @@ public class StockHistoryController {
         picker.setPromptText("DD/MM/YYYY");
     }
 }
+
+// Filter record for stock history
+record StockHistoryFilter(
+    String searchTerm,
+    List<String> reasons,
+    LocalDate fromDate,
+    LocalDate toDate,
+    List<Long> userIds,
+    int page,
+    int limit
+) {}
