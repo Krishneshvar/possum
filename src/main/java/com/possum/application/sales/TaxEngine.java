@@ -42,25 +42,33 @@ public class TaxEngine {
             return zeroTaxResult(invoice);
         }
 
-        // Note: Customer tax exempt check removed - Customer model doesn't have isTaxExempt field
-        // If needed, add Boolean isTaxExempt field to Customer record
+        if (customer != null && Boolean.TRUE.equals(customer.isTaxExempt())) {
+            return zeroTaxResult(invoice);
+        }
+
+        for (TaxableItem item : invoice.items()) {
+            if (item.getPrice() == null || item.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Item price must be non-negative");
+            }
+        }
 
         BigDecimal invoiceTotal = invoice.getSubtotal();
-        BigDecimal totalTax = BigDecimal.ZERO;
+        BigDecimal rawTotalTax = BigDecimal.ZERO;
         List<TaxableItem> updatedItems = new ArrayList<>();
 
         for (TaxableItem item : invoice.items()) {
             List<TaxRule> applicableRules = getApplicableRules(item, invoiceTotal, customer);
             TaxItemResult result = calculateItemTax(item, applicableRules);
 
-            BigDecimal finalTaxAmount = result.taxAmount.setScale(2, RoundingMode.HALF_UP);
-            item.setTaxAmount(finalTaxAmount);
+            item.setTaxAmount(result.taxAmount);
             item.setTaxRate(result.taxRate);
             item.setTaxRuleSnapshot(jsonService.toJson(result.snapshot));
 
             updatedItems.add(item);
-            totalTax = totalTax.add(finalTaxAmount);
+            rawTotalTax = rawTotalTax.add(result.taxAmount);
         }
+
+        BigDecimal totalTax = rawTotalTax.setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal grandTotal;
         if ("INCLUSIVE".equalsIgnoreCase(profile.pricingMode())) {
@@ -71,7 +79,7 @@ public class TaxEngine {
 
         return new TaxCalculationResult(
                 updatedItems,
-                totalTax.setScale(2, RoundingMode.HALF_UP),
+                totalTax,
                 grandTotal.setScale(2, RoundingMode.HALF_UP)
         );
     }
@@ -84,6 +92,7 @@ public class TaxEngine {
 
         return rules.stream()
                 .filter(rule -> {
+                    if (rule.ratePercent() == null || rule.ratePercent().compareTo(BigDecimal.ZERO) < 0) return false;
                     if (rule.taxCategoryId() != null && !rule.taxCategoryId().equals(item.getTaxCategoryId())) {
                         return false;
                     }
@@ -91,7 +100,7 @@ public class TaxEngine {
                     if (rule.maxPrice() != null && itemPrice.compareTo(rule.maxPrice()) > 0) return false;
                     if (rule.minInvoiceTotal() != null && invoiceTotal.compareTo(rule.minInvoiceTotal()) < 0) return false;
                     if (rule.maxInvoiceTotal() != null && invoiceTotal.compareTo(rule.maxInvoiceTotal()) > 0) return false;
-                    if (rule.customerType() != null && customer != null && !rule.customerType().equals(customer.name())) return false;
+                    if (rule.customerType() != null && customer != null && !rule.customerType().equals(customer.customerType())) return false;
                     if (rule.validFrom() != null && rule.validFrom().isAfter(now)) return false;
                     if (rule.validTo() != null && rule.validTo().isBefore(now)) return false;
                     return true;

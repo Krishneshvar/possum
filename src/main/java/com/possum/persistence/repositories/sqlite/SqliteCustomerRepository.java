@@ -48,7 +48,7 @@ public final class SqliteCustomerRepository extends BaseSqliteRepository impleme
         List<Customer> rows = queryList(
                 """
                 SELECT
-                  id, name, phone, email, address, created_at, updated_at, deleted_at
+                  id, name, phone, email, address, customer_type, is_tax_exempt, created_at, updated_at, deleted_at
                 FROM customers
                 %s
                 ORDER BY %s %s
@@ -66,7 +66,7 @@ public final class SqliteCustomerRepository extends BaseSqliteRepository impleme
     public Optional<Customer> findCustomerById(long id) {
         return queryOne(
                 """
-                SELECT id, name, phone, email, address, created_at, updated_at, deleted_at
+                SELECT id, name, phone, email, address, customer_type, is_tax_exempt, created_at, updated_at, deleted_at
                 FROM customers
                 WHERE id = ? AND deleted_at IS NULL
                 """,
@@ -79,8 +79,8 @@ public final class SqliteCustomerRepository extends BaseSqliteRepository impleme
     public Optional<Customer> insertCustomer(String name, String phone, String email, String address) {
         long id = executeInsert(
                 """
-                INSERT INTO customers (name, phone, email, address)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO customers (name, phone, email, address, customer_type, is_tax_exempt)
+                VALUES (?, ?, ?, ?, NULL, 0)
                 """,
                 name,
                 phone,

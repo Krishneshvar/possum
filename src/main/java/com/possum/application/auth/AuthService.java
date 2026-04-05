@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class AuthService {
 
     private static final int SESSION_DURATION_SECONDS = 30 * 60;
+    private static final int CLEANUP_INTERVAL_SECONDS = 10 * 60;
     private static final String DUMMY_HASH = "$2a$10$InCX8UtTmhbQP3NuHPaRAeCdfZeaIngIzsAjWjbAYxjprs6WHcoAG";
     private static final String LEGACY_DEFAULT_ADMIN_USERNAME = "admin";
     private static final String LEGACY_DEFAULT_ADMIN_PASSWORD = "admin123";
@@ -27,6 +28,7 @@ public class AuthService {
     private final SessionRepository sessionRepository;
     private final SessionService sessionService;
     private final PasswordHasher passwordHasher;
+    private volatile long lastCleanupTime = 0;
 
     public AuthService(
             UserRepository userRepository,
@@ -94,7 +96,8 @@ public class AuthService {
 
         long now = System.currentTimeMillis() / 1000;
 
-        if (Math.random() < 0.01) {
+        if (now - lastCleanupTime > CLEANUP_INTERVAL_SECONDS) {
+            lastCleanupTime = now;
             sessionService.deleteExpiredSessions();
         }
 

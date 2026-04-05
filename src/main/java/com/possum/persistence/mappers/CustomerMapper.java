@@ -15,6 +15,8 @@ public final class CustomerMapper implements RowMapper<Customer> {
                 rs.getString("phone"),
                 rs.getString("email"),
                 rs.getString("address"),
+                rs.getString("customer_type"),
+                rs.getInt("is_tax_exempt") == 1,
                 SqlMapperUtils.getLocalDateTime(rs, "created_at"),
                 SqlMapperUtils.getLocalDateTime(rs, "updated_at"),
                 SqlMapperUtils.getLocalDateTime(rs, "deleted_at")

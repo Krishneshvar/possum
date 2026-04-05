@@ -8,6 +8,8 @@ public record Customer(
         String phone,
         String email,
         String address,
+        String customerType,
+        Boolean isTaxExempt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt

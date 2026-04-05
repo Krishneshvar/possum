@@ -641,7 +641,7 @@ public class PosController {
             txIds.add(new TaxableItem(it.variant.productName(), it.variant.name(), eUP, it.quantity, null, it.variant.id(), it.variant.productId()));
         }
         Customer tC = currentBill.selectedCustomer;
-        if (tC == null && (!currentBill.customerName.isEmpty() || !currentBill.customerAddress.isEmpty())) tC = new Customer(null, currentBill.customerName, currentBill.customerPhone, currentBill.customerEmail, currentBill.customerAddress, null, null, null);
+        if (tC == null && (!currentBill.customerName.isEmpty() || !currentBill.customerAddress.isEmpty())) tC = new Customer(null, currentBill.customerName, currentBill.customerPhone, currentBill.customerEmail, currentBill.customerAddress, null, null, null, null, null);
         TaxCalculationResult tR = taxEngine.calculate(new TaxableInvoice(txIds), tC);
         currentBill.subtotal = gT; currentBill.taxAmount = tR.totalTax(); currentBill.total = tR.grandTotal(); updateUI();
     }
