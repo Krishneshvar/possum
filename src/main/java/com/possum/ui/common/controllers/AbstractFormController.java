@@ -145,9 +145,22 @@ public abstract class AbstractFormController<T> implements Parameterizable {
             titleLabel.setText("Edit " + getEntityDisplayName());
         }
         
-        T entity = loadEntity(entityId);
+        T entity = null;
+        try {
+            entity = loadEntity(entityId);
+        } catch (Exception e) {
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Failed to load entity for editing", e);
+            NotificationService.error("Failed to load " + getEntityDisplayName() + ": " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
+            closeForm();
+            return;
+        }
+
         if (entity != null) {
             populateFields(entity);
+        } else {
+            NotificationService.error(getEntityDisplayName() + " not found.");
+            closeForm();
+            return;
         }
         
         setupValidators();
@@ -164,9 +177,22 @@ public abstract class AbstractFormController<T> implements Parameterizable {
             titleLabel.setText("View " + getEntityDisplayName());
         }
         
-        T entity = loadEntity(entityId);
+        T entity = null;
+        try {
+            entity = loadEntity(entityId);
+        } catch (Exception e) {
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Failed to load entity for viewing", e);
+            NotificationService.error("Failed to load " + getEntityDisplayName() + ": " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
+            closeForm();
+            return;
+        }
+
         if (entity != null) {
             populateFields(entity);
+        } else {
+            NotificationService.error(getEntityDisplayName() + " not found.");
+            closeForm();
+            return;
         }
         
         setFormEditable(false);
@@ -208,7 +234,8 @@ public abstract class AbstractFormController<T> implements Parameterizable {
             
             closeForm();
         } catch (Exception e) {
-            NotificationService.error("Failed to save " + getEntityDisplayName() + ": " + e.getMessage());
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Failed to save " + getEntityDisplayName(), e);
+            NotificationService.error("Failed to save " + getEntityDisplayName() + ": " + com.possum.ui.common.ErrorHandler.toUserMessage(e)); 
             
             if (saveButton != null) {
                 saveButton.setDisable(false);

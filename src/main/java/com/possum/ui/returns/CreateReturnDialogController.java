@@ -124,7 +124,8 @@ public class CreateReturnDialogController implements Parameterizable {
 
             sale.ifPresentOrElse(this::loadSaleDetails, () -> NotificationService.error("Sale not found"));
         } catch (Exception e) {
-            NotificationService.error("Error finding sale: " + e.getMessage());
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Error finding sale", e);
+            NotificationService.error("Error finding sale: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 
@@ -198,7 +199,8 @@ public class CreateReturnDialogController implements Parameterizable {
             if (onSuccess != null) onSuccess.onSuccess();
             ((Stage)submitButton.getScene().getWindow()).close();
         } catch (Exception e) {
-            NotificationService.error("Return failed: " + e.getMessage());
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Return failed", e);
+            NotificationService.error("Return failed: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 

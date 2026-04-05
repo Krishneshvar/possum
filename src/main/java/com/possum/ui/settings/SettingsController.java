@@ -4,6 +4,7 @@ import com.possum.ui.settings.tax.TaxManagementController;
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.infrastructure.backup.DatabaseBackupService;
 import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.infrastructure.serialization.JsonService;
@@ -277,8 +278,8 @@ public class SettingsController {
             AnchorPane.setLeftAnchor(taxSettingsView, 0.0);
             AnchorPane.setRightAnchor(taxSettingsView, 0.0);
         } catch (Exception e) {
-            NotificationService.error("Failed to load embedded tax settings: " + e.getMessage());
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to load embedded tax settings: {}", e.getMessage(), e);
+            NotificationService.error("Failed to load embedded tax settings: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 
@@ -295,8 +296,8 @@ public class SettingsController {
             AnchorPane.setLeftAnchor(billSettingsView, 0.0);
             AnchorPane.setRightAnchor(billSettingsView, 0.0);
         } catch (Exception e) {
-            NotificationService.error("Failed to load embedded bill settings: " + e.getMessage());
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to load embedded bill settings: {}", e.getMessage(), e);
+            NotificationService.error("Failed to load embedded bill settings: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 

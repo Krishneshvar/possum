@@ -287,7 +287,8 @@ public class ProductFlowController {
                 flowTable.setLoading(false);
             } catch (Exception e) {
                 flowTable.setLoading(false);
-                NotificationService.error("Failed to load flow data");
+                com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Failed to load flow data", e);
+                NotificationService.error("Failed to load flow data: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
             }
         });
     }
@@ -483,7 +484,8 @@ public class ProductFlowController {
                 workspaceManager.openOrFocusWindow("PO: " + flow.billRefNumber(), "/fxml/purchase/purchase-order-detail.fxml", params);
             }
         } catch (Exception e) {
-            NotificationService.error("Could not open document details");
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Could not open document details", e);
+            NotificationService.error("Could not open document details: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 }

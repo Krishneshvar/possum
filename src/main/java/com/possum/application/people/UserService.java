@@ -8,6 +8,7 @@ import com.possum.infrastructure.security.PasswordHasher;
 import com.possum.persistence.repositories.interfaces.UserRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.UserFilter;
+import com.possum.shared.util.DomainValidators;
 
 import com.possum.shared.util.TimeUtil;
 import java.util.List;
@@ -34,7 +35,13 @@ public class UserService {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("User name is required");
         if (username == null || username.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Username is required");
+        if (username.contains(" ")) throw new com.possum.domain.exceptions.ValidationException("Username cannot contain spaces");
+        if (username.length() < DomainValidators.MIN_USERNAME_LENGTH) throw new com.possum.domain.exceptions.ValidationException("Username must be at least " + DomainValidators.MIN_USERNAME_LENGTH + " characters");
         if (password == null || password.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Password is required");
+        if (password.length() < DomainValidators.MIN_PASSWORD_LENGTH) throw new com.possum.domain.exceptions.ValidationException("Password must be at least " + DomainValidators.MIN_PASSWORD_LENGTH + " characters");
+        if (userRepository.findUserByUsername(username.trim()).isPresent())
+            throw new com.possum.domain.exceptions.ValidationException("Username '" + username.trim() + "' is already taken");
+        
         String hashedPassword = passwordHasher.hashPassword(password);
         User newUser = new User(null, name, username, hashedPassword, active, TimeUtil.nowUTC(), TimeUtil.nowUTC(), null);
         return userRepository.insertUserWithRoles(newUser, roleIds);
@@ -45,7 +52,7 @@ public class UserService {
         if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("User name is required");
         if (username == null || username.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Username is required");
         User existingUser = userRepository.findUserById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new com.possum.domain.exceptions.NotFoundException("User not found: " + id));
         
         String hashedPassword = existingUser.passwordHash();
         if (password != null && !password.trim().isEmpty()) {
@@ -64,7 +71,7 @@ public class UserService {
     public void deleteUser(long id) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.USERS_MANAGE);
         if (!userRepository.softDeleteUser(id)) {
-            throw new RuntimeException("Failed to delete user or user not found");
+            throw new com.possum.domain.exceptions.NotFoundException("User not found: " + id);
         }
     }
 

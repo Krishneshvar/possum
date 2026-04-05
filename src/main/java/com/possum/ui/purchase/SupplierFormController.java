@@ -81,12 +81,8 @@ public class SupplierFormController extends AbstractFormController<Supplier> {
 
     @Override
     protected Supplier loadEntity(Long id) {
-        try {
-            return supplierRepository.findSupplierById(id)
-                    .orElseThrow(() -> new RuntimeException("Supplier not found"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return supplierRepository.findSupplierById(id)
+                .orElseThrow(() -> new com.possum.domain.exceptions.NotFoundException("Supplier not found: " + id));
     }
 
     @Override

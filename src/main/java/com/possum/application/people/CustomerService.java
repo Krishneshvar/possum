@@ -4,6 +4,7 @@ import com.possum.domain.model.Customer;
 import com.possum.persistence.repositories.interfaces.CustomerRepository;
 import com.possum.shared.dto.CustomerFilter;
 import com.possum.shared.dto.PagedResult;
+import com.possum.shared.util.DomainValidators;
 
 import java.util.Optional;
 
@@ -30,8 +31,10 @@ public class CustomerService {
                                     String customerType, Boolean isTaxExempt) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
         if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Customer name is required");
+        if (phone != null && !phone.isBlank() && !DomainValidators.PHONE.matcher(phone.trim()).matches()) throw new com.possum.domain.exceptions.ValidationException("Invalid phone number format");
+        if (email != null && !email.isBlank() && !DomainValidators.EMAIL.matcher(email.trim()).matches()) throw new com.possum.domain.exceptions.ValidationException("Invalid email address format");
         return customerRepository.insertCustomer(name, phone, email, address, customerType, isTaxExempt)
-                .orElseThrow(() -> new RuntimeException("Failed to create customer"));
+                .orElseThrow(() -> new com.possum.domain.exceptions.DomainException("Failed to create customer"));
     }
 
     public Customer updateCustomer(long id, String name, String phone, String email, String address) {
@@ -42,14 +45,16 @@ public class CustomerService {
                                     String customerType, Boolean isTaxExempt) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
         if (name == null || name.isBlank()) throw new com.possum.domain.exceptions.ValidationException("Customer name is required");
+        if (phone != null && !phone.isBlank() && !DomainValidators.PHONE.matcher(phone.trim()).matches()) throw new com.possum.domain.exceptions.ValidationException("Invalid phone number format");
+        if (email != null && !email.isBlank() && !DomainValidators.EMAIL.matcher(email.trim()).matches()) throw new com.possum.domain.exceptions.ValidationException("Invalid email address format");
         return customerRepository.updateCustomerById(id, name, phone, email, address, customerType, isTaxExempt)
-                .orElseThrow(() -> new RuntimeException("Failed to update customer"));
+                .orElseThrow(() -> new com.possum.domain.exceptions.NotFoundException("Customer not found: " + id));
     }
 
     public void deleteCustomer(long id) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.CUSTOMERS_MANAGE);
         if (!customerRepository.softDeleteCustomer(id)) {
-            throw new RuntimeException("Failed to delete customer or customer not found");
+            throw new com.possum.domain.exceptions.NotFoundException("Customer not found: " + id);
         }
     }
 }

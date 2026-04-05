@@ -2,6 +2,7 @@ package com.possum.ui;
 
 import com.possum.application.ApplicationModule;
 import com.possum.infrastructure.lazy.ServiceLocator;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.application.sales.SalesService;
 import com.possum.ui.sales.ProductSearchIndex;
 import com.possum.application.transactions.TransactionService;
@@ -159,7 +160,7 @@ public class DependencyInjector {
                 }
                 return type.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                e.printStackTrace();
+                LoggingConfig.getLogger().error("DependencyInjector failed to instantiate controller of type {}: {}", type.getName(), e.getMessage(), e);
                 return null;
             }
         };
@@ -212,7 +213,7 @@ public class DependencyInjector {
         if (supplier != null) {
             return supplier.get();
         }
-        System.err.println("Could not resolve dependency of type: " + type.getName());
+        LoggingConfig.getLogger().error("Could not resolve dependency of type: {}", type.getName());
         return null;
     }
 }

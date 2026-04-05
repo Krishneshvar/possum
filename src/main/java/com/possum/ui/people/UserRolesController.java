@@ -5,6 +5,7 @@ import com.possum.domain.model.Permission;
 import com.possum.domain.model.Role;
 import com.possum.domain.model.User;
 import com.possum.domain.model.UserPermissionOverride;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.workspace.WorkspaceManager;
 import com.possum.ui.navigation.Parameterizable;
@@ -80,7 +81,7 @@ public class UserRolesController implements Parameterizable {
                 renderPermissions(allPermissions);
                 
             } catch (Exception e) {
-                e.printStackTrace();
+                LoggingConfig.getLogger().error("Failed to load roles and permissions for user {}: {}", userId, e.getMessage(), e);
                 NotificationService.error("Failed to load roles and permissions: " + e.getMessage());
             }
         });
@@ -344,7 +345,7 @@ public class UserRolesController implements Parameterizable {
             NotificationService.success("Roles and permissions updated successfully");
             workspaceManager.close(titleLabel);
         } catch (Exception e) {
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to update roles and permissions for user {}: {}", userId, e.getMessage(), e);
             NotificationService.error("Failed to update roles and permissions: " + e.getMessage());
         } finally {
             saveButton.setDisable(false);

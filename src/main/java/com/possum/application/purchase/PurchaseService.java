@@ -311,7 +311,7 @@ public class PurchaseService {
             stmt.setLong(4, paymentMethodId);
             stmt.executeUpdate();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to insert purchase transaction", e);
+            throw new com.possum.domain.exceptions.DomainException("Failed to record purchase transaction. Please try again.", e);
         }
     }
 

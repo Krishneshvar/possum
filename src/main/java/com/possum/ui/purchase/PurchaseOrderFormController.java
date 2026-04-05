@@ -14,6 +14,8 @@ import com.possum.shared.dto.PagedResult;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.dialogs.DialogStyler;
+import com.possum.ui.common.ErrorHandler;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.ui.navigation.Parameterizable;
 import com.possum.ui.sales.ProductSearchIndex;
 import com.possum.ui.workspace.WorkspaceManager;
@@ -190,11 +192,19 @@ public class PurchaseOrderFormController implements Parameterizable {
                     if (row != null && newVal != null && !newVal.isEmpty()) {
                         try {
                             BigDecimal val = new BigDecimal(newVal.replaceAll("[^\\d.]", ""));
+                            if (val.compareTo(BigDecimal.ZERO) < 0) {
+                                NotificationService.warning("Unit cost must be non-negative.");
+                                textField.setText(oldVal != null ? oldVal : "0");
+                                return;
+                            }
                             if (!val.equals(row.getUnitCost())) {
                                 row.setUnitCost(val);
                                 recalculateTotal();
                             }
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException e) {
+                            NotificationService.warning("Unit cost must be a valid number.");
+                            textField.setText(oldVal != null ? oldVal : "0");
+                        }
                     }
                 });
             }
@@ -480,7 +490,10 @@ public class PurchaseOrderFormController implements Parameterizable {
             NotificationService.success("Purchase order saved");
             if (onSaveCallback != null) onSaveCallback.run();
             workspaceManager.closeActiveWindow();
-        } catch (Exception e) { NotificationService.error("Failed: " + e.getMessage()); }
+        } catch (Exception e) { 
+            LoggingConfig.getLogger().error("Failed to save PO", e);
+            NotificationService.error("Failed to save Purchase Order: " + ErrorHandler.toUserMessage(e)); 
+        }
     }
 
     public static class PurchaseItemRow {

@@ -6,7 +6,9 @@ import com.possum.application.products.ProductService;
 import com.possum.domain.model.Category;
 import com.possum.domain.model.TaxCategory;
 import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.ui.common.ErrorHandler;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.SingleSelectFilter;
 import com.possum.ui.sales.ProductSearchIndex;
@@ -150,9 +152,8 @@ public class ProductFormController implements Parameterizable {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Failed to load product details: " + e.getMessage());
-            NotificationService.error("Failed to load product details: " + e.getMessage());
+            LoggingConfig.getLogger().error("Failed to load product details: {}", e.getMessage(), e);
+            NotificationService.error("Failed to load product details: " + ErrorHandler.toUserMessage(e));
         }
     }
 
@@ -350,45 +351,45 @@ public class ProductFormController implements Parameterizable {
 
     private void validateInputs() {
         if (nameField.getText() == null || nameField.getText().trim().isEmpty()) {
-            throw new IllegalArgumentException("Product name is required");
+            throw new com.possum.domain.exceptions.ValidationException("Product name is required");
         }
 
         if (variantRows.isEmpty()) {
-            throw new IllegalArgumentException("At least one variant is required");
+            throw new com.possum.domain.exceptions.ValidationException("At least one variant is required");
         }
 
         boolean hasDefault = false;
         for (VariantRow row : variantRows) {
             if (row.getName() == null || row.getName().trim().isEmpty()) {
-                throw new IllegalArgumentException("Variant name is required");
+                throw new com.possum.domain.exceptions.ValidationException("Variant name is required");
             }
             if (row.getPrice() == null || row.getPrice().trim().isEmpty()) {
-                throw new IllegalArgumentException("Variant price is required");
+                throw new com.possum.domain.exceptions.ValidationException("Variant price is required");
             }
             if (row.getCostPrice() == null || row.getCostPrice().trim().isEmpty()) {
-                throw new IllegalArgumentException("Variant cost price is required");
+                throw new com.possum.domain.exceptions.ValidationException("Variant cost price is required");
             }
             if (row.getStockAlert() == null || row.getStockAlert().trim().isEmpty()) {
-                throw new IllegalArgumentException("Variant stock alert is required");
+                throw new com.possum.domain.exceptions.ValidationException("Variant stock alert is required");
             }
             try {
                 new BigDecimal(row.getPrice());
                 new BigDecimal(row.getCostPrice());
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Price and Cost Price must be valid numbers");
+                throw new com.possum.domain.exceptions.ValidationException("Price and Cost Price must be valid numbers");
             }
             try {
                 Integer.parseInt(row.getStockAlert());
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Stock Alert must be a valid integer");
+                throw new com.possum.domain.exceptions.ValidationException("Stock Alert must be a valid integer");
             }
             if (row.stockField.getText() == null || row.stockField.getText().trim().isEmpty()) {
-                throw new IllegalArgumentException("Current Stock is required");
+                throw new com.possum.domain.exceptions.ValidationException("Current Stock is required");
             }
             try {
                 Integer.parseInt(row.stockField.getText().trim());
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Current Stock must be a valid integer");
+                throw new com.possum.domain.exceptions.ValidationException("Current Stock must be a valid integer");
             }
             if (row.isDefault()) {
                 hasDefault = true;
@@ -396,7 +397,7 @@ public class ProductFormController implements Parameterizable {
         }
 
         if (!hasDefault) {
-            throw new IllegalArgumentException("One variant must be selected as default");
+            throw new com.possum.domain.exceptions.ValidationException("One variant must be selected as default");
         }
     }
 
@@ -519,6 +520,24 @@ public class ProductFormController implements Parameterizable {
                 createFieldBox("Margin %", marginField)
             );
 
+            com.possum.ui.common.validation.FieldValidator.of(priceField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Price"))
+                .custom(val -> {
+                    try { return new BigDecimal(val.replace("$", "").replace(",", "").trim()).compareTo(BigDecimal.ZERO) >= 0; } catch (Exception e) { return false; }
+                }, "Must be non-negative number")
+                .validateOnFocusLost();
+
+            com.possum.ui.common.validation.FieldValidator.of(costPriceField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Cost Price"))
+                .custom(val -> {
+                    try { return new BigDecimal(val.replace("$", "").replace(",", "").trim()).compareTo(BigDecimal.ZERO) >= 0; } catch (Exception e) { return false; }
+                }, "Must be non-negative number")
+                .validateOnFocusLost();
+
+            com.possum.ui.common.validation.FieldValidator.of(variantNameField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Variant Name"))
+                .validateOnFocusLost();
+
             HBox row3 = new HBox(14);
             row3.getStyleClass().add("variant-field-row");
             stockAlertField = createTextField("Stock Alert Cap", "10");
@@ -558,6 +577,21 @@ public class ProductFormController implements Parameterizable {
             );
 
             view.getChildren().addAll(headerBox, row1, row2, row3, adjustmentReasonBox);
+            
+            com.possum.ui.common.validation.FieldValidator.of(stockAlertField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Stock Alert"))
+                .custom(val -> {
+                    try { Integer.parseInt(val); return true; } catch (Exception e) { return false; }
+                }, "Must be an integer")
+                .validateOnFocusLost();
+
+            com.possum.ui.common.validation.FieldValidator.of(stockField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Stock Level"))
+                .custom(val -> {
+                    try { Integer.parseInt(val); return true; } catch (Exception e) { return false; }
+                }, "Must be an integer")
+                .validateOnFocusLost();
+            
             updateMargin();
         }
 

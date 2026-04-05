@@ -1,6 +1,7 @@
 package com.possum.ui.settings.tax;
 
 import com.possum.application.taxes.TaxManagementService;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
 import com.possum.ui.common.controls.ViewStateEnhancer;
@@ -35,7 +36,7 @@ public class TaxManagementWindow {
             stage.show();
             
         } catch (Exception e) {
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to open tax management window: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to open tax management window", e);
         }
     }

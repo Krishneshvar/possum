@@ -9,11 +9,13 @@ import com.possum.domain.model.Customer;
 import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.Variant;
 import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.shared.dto.BillSettings;
 import com.possum.shared.dto.GeneralSettings;
+import com.possum.ui.common.ErrorHandler;
 import com.possum.ui.common.dialogs.BillPreviewDialog;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
@@ -581,7 +583,10 @@ public class PosController {
                 selectedProductIdForQuickAdd = null; selectedCategoryForQuickAdd = null; NotificationService.success("Added to cart.");
             } else NotificationService.error("Failed to process quick add.");
         } catch (NumberFormatException e) { NotificationService.error("Please enter a valid numeric price/stock."); }
-        catch (Exception e) { NotificationService.error("Quick add failed: " + e.getMessage()); e.printStackTrace(); }
+        catch (Exception e) { 
+            LoggingConfig.getLogger().error("Quick add failed", e);
+            NotificationService.error("Quick add failed: " + ErrorHandler.toUserMessage(e)); 
+        }
     }
 
     private void addToCart(Variant variant) {
@@ -684,6 +689,10 @@ public class PosController {
     @FXML
     private void handleCompleteSale() {
         if (currentBill.items.isEmpty()) return;
+        if (currentBill.selectedPaymentMethod == null) {
+            NotificationService.error("Please select a payment method");
+            return;
+        }
         try {
             List<CreateSaleItemRequest> items = currentBill.items.stream()
                     .map(it -> new CreateSaleItemRequest(it.variant.id(), it.quantity, it.discountAmount, it.pricePerUnit)).toList();
@@ -705,7 +714,10 @@ public class PosController {
             if (confirmPrint()) printReceipt(resp);
             NotificationService.success("Sale completed successfully! Total: " + currencyFormat.format(currentBill.total));
             handleClearCart();
-        } catch (Exception e) { NotificationService.error("Sale failed: " + e.getMessage()); }
+        } catch (Exception e) { 
+            LoggingConfig.getLogger().error("Sale completion failed", e);
+            NotificationService.error("Sale failed: " + ErrorHandler.toUserMessage(e)); 
+        }
     }
 
     private boolean confirmPrint() {
@@ -811,7 +823,11 @@ public class PosController {
                         it.quantity = newQty;
                         refreshCurrentBill();
                     }
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                    cancelEdit();
+                    NotificationService.warning("Quantity must be a positive integer");
+                    return;
+                }
             }
             super.commitEdit(it);
         }
@@ -826,7 +842,7 @@ public class PosController {
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colPrice); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
             return f;
         }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { BigDecimal v = new BigDecimal(tf.getText().replace("$", "").replace(",", "").trim()).max(BigDecimal.ZERO); BigDecimal m = it.variant.price(); if (v.compareTo(m) > 0) { NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(m) + ")"); v = m; } it.pricePerUnit = v; refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { BigDecimal v = new BigDecimal(tf.getText().replace("$", "").replace(",", "").trim()).max(BigDecimal.ZERO); BigDecimal m = it.variant.price(); if (v.compareTo(m) > 0) { NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(m) + ")"); v = m; } it.pricePerUnit = v; refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
     }
 
     private class EditableDiscountPctCell extends TableCell<CartItem, CartItem> {
@@ -839,7 +855,7 @@ public class PosController {
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountPct); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
             return f;
         }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "pct"; refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "pct"; refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
     }
 
     private class EditableDiscountAmtCell extends TableCell<CartItem, CartItem> {
@@ -852,7 +868,7 @@ public class PosController {
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountAmt); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
             return f;
         }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "fixed"; refreshCurrentBill(); } catch (Exception e) {} } super.commitEdit(it); }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "fixed"; refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
     }
 
     private void moveFocusNext(int row, TableColumn<CartItem, ?> cur) {

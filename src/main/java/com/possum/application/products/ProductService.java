@@ -78,6 +78,13 @@ public class ProductService {
             long productId = productRepository.insertProduct(product);
 
             for (var variantCmd : command.variants()) {
+                if (variantCmd.name() == null || variantCmd.name().isBlank())
+                    throw new ValidationException("Variant name is required");
+                if (variantCmd.price() == null || variantCmd.price().compareTo(java.math.BigDecimal.ZERO) < 0)
+                    throw new ValidationException("Variant price must be zero or greater");
+                if (variantCmd.costPrice() == null || variantCmd.costPrice().compareTo(java.math.BigDecimal.ZERO) < 0)
+                    throw new ValidationException("Variant cost price must be zero or greater");
+
                 String effectiveSku = autoNumericSku ? String.valueOf(nextGeneratedSku++) : variantCmd.sku();
                 variantService.addVariantWithoutTransaction(new VariantService.AddVariantCommand(
                         productId,

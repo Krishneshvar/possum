@@ -112,7 +112,8 @@ public abstract class AbstractCrudController<T, F> {
                 dataTable.setLoading(false);
             } catch (Exception e) {
                 dataTable.setLoading(false);
-                NotificationService.error("Failed to load " + getEntityName() + ": " + e.getMessage());
+                com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Failed to load " + getEntityName(), e);
+                NotificationService.error("Failed to load " + getEntityName() + ": " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
             }
         });
     }
@@ -173,7 +174,8 @@ public abstract class AbstractCrudController<T, F> {
                     NotificationService.success(getEntityNameSingular() + " deleted successfully");
                     loadData();
                 } catch (Exception e) {
-                    NotificationService.error("Failed to delete " + getEntityNameSingular() + ": " + e.getMessage());
+                    com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Failed to delete " + getEntityNameSingular(), e);
+                    NotificationService.error("Failed to delete " + getEntityNameSingular() + ": " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
                 }
             }
         });

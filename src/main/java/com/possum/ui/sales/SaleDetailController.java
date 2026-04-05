@@ -6,6 +6,7 @@ import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
 import com.possum.domain.model.Transaction;
 import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
@@ -737,8 +738,8 @@ public class SaleDetailController implements Parameterizable {
             toggleEditMode(); // Exit edit mode
             
         } catch (Exception e) {
-            NotificationService.error("Update failed: " + e.getMessage());
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to save sale details update: {}", e.getMessage(), e);
+            NotificationService.error("Update failed: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 

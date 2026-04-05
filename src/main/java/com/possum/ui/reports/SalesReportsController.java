@@ -3,8 +3,10 @@ package com.possum.ui.reports;
 import com.possum.application.reports.ReportsService;
 import com.possum.application.reports.dto.BreakdownItem;
 import com.possum.application.sales.SalesService;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.MultiSelectFilter;
+import com.possum.ui.common.controls.NotificationService;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -105,7 +107,8 @@ public class SalesReportsController {
                 writeExcel(file, exportItems);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to export sales report: {}", e.getMessage(), e);
+            NotificationService.error("Export failed: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 

@@ -74,6 +74,11 @@ public class InventoryService {
     public ReceiveInventoryResult receiveInventory(long variantId, int quantity, BigDecimal unitCost,
                                                    String batchNumber, LocalDateTime manufacturedDate,
                                                    LocalDateTime expiryDate, Long purchaseOrderItemId, long userId) {
+        if (quantity <= 0)
+            throw new com.possum.domain.exceptions.ValidationException("Quantity must be positive");
+        if (unitCost == null || unitCost.compareTo(BigDecimal.ZERO) < 0)
+            throw new com.possum.domain.exceptions.ValidationException("Unit cost must be zero or greater");
+
         return transactionManager.runInTransaction(() -> {
             InventoryLot lot = new InventoryLot(null, variantId, batchNumber, manufacturedDate, expiryDate,
                     quantity, unitCost, purchaseOrderItemId, TimeUtil.nowUTC());

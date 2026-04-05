@@ -6,6 +6,7 @@ import com.possum.application.sales.dto.TaxableInvoice;
 import com.possum.application.sales.dto.TaxableItem;
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.domain.model.TaxCategory;
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.repositories.interfaces.TaxRepository;
 import com.possum.ui.common.controls.NotificationService;
@@ -128,8 +129,8 @@ public class TaxSimulatorController {
         } catch (NumberFormatException e) {
             NotificationService.error("Invalid number format");
         } catch (Exception e) {
-            NotificationService.error("Calculation failed: " + e.getMessage());
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Tax simulation calculation failed: {}", e.getMessage(), e);
+            NotificationService.error("Calculation failed: " + com.possum.ui.common.ErrorHandler.toUserMessage(e));
         }
     }
 

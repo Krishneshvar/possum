@@ -1,5 +1,6 @@
 package com.possum.ui;
 
+import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.ui.navigation.NavigationManager;
 import com.possum.ui.navigation.RouteGuard;
 import com.possum.ui.workspace.WorkspaceDesktop;
@@ -122,7 +123,7 @@ public class AppShellController {
             String iconPath = getClass().getResource("/icons/icon-shell.png").toExternalForm();
             brandIcon.setImage(new javafx.scene.image.Image(iconPath, 28, 28, true, true, true));
         } catch (Exception e) {
-            System.err.println("Failed to load brand icon: " + e.getMessage());
+            LoggingConfig.getLogger().warn("Failed to load brand icon: {}", e.getMessage());
         }
     }
     
@@ -306,7 +307,7 @@ public class AppShellController {
             stage.setTitle("POSSUM - Login");
             stage.setScene(scene);
         } catch (java.io.IOException e) {
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to load login screen during logout: {}", e.getMessage(), e);
         }
     }
 

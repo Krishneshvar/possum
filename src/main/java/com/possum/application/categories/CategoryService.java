@@ -39,6 +39,9 @@ public class CategoryService {
 
     public void updateCategory(long id, String name, Long parentId) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.CATEGORIES_MANAGE);
+        if (name == null || name.trim().isEmpty()) {
+            throw new ValidationException("Category name is required");
+        }
         boolean parentIdProvided = parentId != null;
         int changes = categoryRepository.updateCategoryById(id, name, parentIdProvided, parentId);
         if (changes == 0) {

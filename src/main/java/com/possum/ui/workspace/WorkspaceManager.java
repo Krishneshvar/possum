@@ -1,5 +1,6 @@
 package com.possum.ui.workspace;
 
+import com.possum.infrastructure.logging.LoggingConfig;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import com.possum.ui.common.accessibility.AccessibilityEnhancer;
@@ -71,8 +72,8 @@ public class WorkspaceManager {
             desktop.addWindow(window);
 
         } catch (Exception e) {
-            System.err.println("Failed to load window: " + fxmlPath);
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to load window '{}': {}", fxmlPath, e.getMessage(), e);
+            NotificationService.error("Failed to open view. Please try again.");
         }
     }
 
@@ -108,8 +109,8 @@ public class WorkspaceManager {
             stage.showAndWait();
 
         } catch (Exception e) {
-            System.err.println("Failed to show dialog: " + fxmlPath);
-            e.printStackTrace();
+            LoggingConfig.getLogger().error("Failed to show dialog '{}': {}", fxmlPath, e.getMessage(), e);
+            NotificationService.error("Failed to open dialog. Please try again.");
         }
     }
 
