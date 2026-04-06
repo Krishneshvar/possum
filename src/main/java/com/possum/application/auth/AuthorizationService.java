@@ -4,50 +4,57 @@ import java.util.List;
 
 public class AuthorizationService {
 
-    private static final String ADMIN_ROLE = "admin";
+    private final ConfigurableAuthorizationService configurableService;
+
+    public AuthorizationService() {
+        this.configurableService = new ConfigurableAuthorizationService();
+    }
+    
+    public AuthorizationService(ConfigurableAuthorizationService configurableService) {
+        this.configurableService = configurableService;
+    }
 
     public boolean isAdmin(UserContext user) {
-        return user.roles().contains(ADMIN_ROLE);
+        return configurableService.isSuperuser(user);
     }
 
     public boolean hasPermission(UserContext user, String permission) {
-        if (isAdmin(user)) {
-            return true;
-        }
-        return user.permissions().contains(permission);
+        return configurableService.hasPermission(user, permission);
     }
 
     public boolean hasAnyPermission(UserContext user, List<String> permissions) {
-        if (isAdmin(user)) {
-            return true;
-        }
-        return permissions.stream().anyMatch(p -> user.permissions().contains(p));
+        return configurableService.hasAnyPermission(user, permissions);
     }
 
     public boolean hasAllPermissions(UserContext user, List<String> permissions) {
-        if (isAdmin(user)) {
-            return true;
-        }
-        return permissions.stream().allMatch(p -> user.permissions().contains(p));
+        return configurableService.hasAllPermissions(user, permissions);
     }
 
     public boolean hasRole(UserContext user, String role) {
-        return user.roles().contains(role);
+        return configurableService.hasRole(user, role);
     }
 
     public boolean hasAnyRole(UserContext user, List<String> roles) {
-        return roles.stream().anyMatch(r -> user.roles().contains(r));
+        return configurableService.hasAnyRole(user, roles);
     }
 
     public boolean hasAllRoles(UserContext user, List<String> roles) {
-        return roles.stream().allMatch(r -> user.roles().contains(r));
+        return configurableService.hasAllRoles(user, roles);
     }
 
     public boolean isValidPermission(String permission) {
-        return permission != null && permission.matches("^[a-z_]+\\.[a-z_]+$");
+        return configurableService.isValidPermission(permission);
     }
 
     public boolean isValidRoleName(String role) {
-        return role != null && role.matches("^[a-z_]+$");
+        return configurableService.isValidRoleName(role);
+    }
+    
+    public void setSuperuserRole(String roleName) {
+        configurableService.setSuperuserRole(roleName);
+    }
+    
+    public String getSuperuserRole() {
+        return configurableService.getSuperuserRole();
     }
 }

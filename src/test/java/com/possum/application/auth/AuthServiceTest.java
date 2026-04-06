@@ -79,7 +79,7 @@ class AuthServiceTest {
         when(userRepository.findUserByUsername("alice")).thenReturn(Optional.of(user));
         when(passwordHasher.verifyPassword("secret", user.passwordHash())).thenReturn(true);
         when(sessionService.buildAuthUser(1L)).thenReturn(authUser);
-        when(sessionService.createSession(authUser)).thenReturn("token-abc");
+        when(sessionService.createSession(authUser, anyString(), anyString())).thenReturn("token-abc");
 
         LoginResponse response = service.login("alice", "secret");
 
@@ -95,7 +95,7 @@ class AuthServiceTest {
         when(userRepository.findUserByUsername("admin")).thenReturn(Optional.of(admin));
         when(passwordHasher.verifyPassword("admin123", admin.passwordHash())).thenReturn(true);
         when(sessionService.buildAuthUser(1L)).thenReturn(authUser);
-        when(sessionService.createSession(authUser)).thenReturn("token-xyz");
+        when(sessionService.createSession(authUser, anyString(), anyString())).thenReturn("token-xyz");
 
         LoginResponse response = service.login("admin", "admin123");
         assertTrue(response.mustRotate());
@@ -207,7 +207,7 @@ class AuthServiceTest {
 
         AuthUser authUser = Fixtures.authUser(99L, "newadmin");
         when(sessionService.buildAuthUser(99L)).thenReturn(authUser);
-        when(sessionService.createSession(authUser)).thenReturn("setup-token");
+        when(sessionService.createSession(authUser, anyString(), anyString())).thenReturn("setup-token");
 
         LoginResponse response = service.setupInitialAdmin("Admin", "newadmin", "password123");
 

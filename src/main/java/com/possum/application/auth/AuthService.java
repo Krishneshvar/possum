@@ -111,7 +111,7 @@ public class AuthService {
                             password.equals(LEGACY_DEFAULT_ADMIN_PASSWORD);
 
         AuthUser userData = sessionService.buildAuthUser(user.id());
-        String token = sessionService.createSession(userData);
+        String token = sessionService.createSession(userData, "127.0.0.1", "POSSUM-Desktop");
 
         MDC.put("userId", String.valueOf(userData.id()));
         MDC.put("username", userData.username());
@@ -230,7 +230,7 @@ public class AuthService {
         User createdUser = userRepository.insertUserWithRoles(user, Collections.singletonList(adminRole.get().id()));
 
         AuthUser authUser = sessionService.buildAuthUser(createdUser.id());
-        String token = sessionService.createSession(authUser);
+        String token = sessionService.createSession(authUser, "127.0.0.1", "POSSUM-Desktop");
         return new LoginResponse(authUser, token, false);
     }
 

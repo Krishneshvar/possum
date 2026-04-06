@@ -693,31 +693,89 @@ public class PosController {
             NotificationService.error("Please select a payment method");
             return;
         }
-        try {
-            List<CreateSaleItemRequest> items = currentBill.items.stream()
-                    .map(it -> new CreateSaleItemRequest(it.variant.id(), it.quantity, it.discountAmount, it.pricePerUnit)).toList();
-            BigDecimal d = currentBill.isDiscountFixed ? currentBill.overallDiscountValue : currentBill.subtotal.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            BigDecimal pA = currentBill.fullPayment ? currentBill.total : currentBill.amountTendered;
-            Long cId = null;
-            if (currentBill.selectedCustomer != null) cId = currentBill.selectedCustomer.id();
-            else if (!currentBill.customerName.trim().isEmpty() || !currentBill.customerPhone.trim().isEmpty()) {
-                try {
-                    Optional<Customer> ex = customerService.getCustomers(new com.possum.shared.dto.CustomerFilter(currentBill.customerPhone.trim(), 1, 1, 0, 10, "name", "asc")).items().stream().filter(c -> c.phone().equals(currentBill.customerPhone.trim())).findFirst();
-                    if (ex.isPresent()) cId = ex.get().id();
-                    else {
-                        Customer nC = customerService.createCustomer(currentBill.customerName.trim(), currentBill.customerPhone.trim(), currentBill.customerEmail.trim(), currentBill.customerAddress.trim());
-                        cId = nC.id(); NotificationService.success("New customer added: " + nC.name()); loadCombos();
+
+        // Prepare data for the background task
+        final List<CreateSaleItemRequest> items = currentBill.items.stream()
+                .map(it -> new CreateSaleItemRequest(it.variant.id(), it.quantity, it.discountAmount, it.pricePerUnit))
+                .toList();
+        final BigDecimal discount = currentBill.isDiscountFixed ? currentBill.overallDiscountValue 
+                : currentBill.subtotal.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        final BigDecimal paidAmount = currentBill.fullPayment ? currentBill.total : currentBill.amountTendered;
+        final Long paymentMethodId = currentBill.selectedPaymentMethod.id();
+        final long userId = AuthContext.getCurrentUser().id();
+        
+        final String customerName = currentBill.customerName.trim();
+        final String customerPhone = currentBill.customerPhone.trim();
+        final String customerEmail = currentBill.customerEmail.trim();
+        final String customerAddress = currentBill.customerAddress.trim();
+        final Long existingCustomerId = currentBill.selectedCustomer != null ? currentBill.selectedCustomer.id() : null;
+        final BigDecimal totalToDisplay = currentBill.total;
+
+        completeButton.setDisable(true);
+        completeButton.setText("Processing...");
+
+        javafx.concurrent.Task<SaleResponse> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected SaleResponse call() throws Exception {
+                Long cId = existingCustomerId;
+                
+                // 1. Handle Customer logic (Service calls)
+                if (cId == null && (!customerName.isEmpty() || !customerPhone.isEmpty())) {
+                    try {
+                        Optional<Customer> ex = customerService.getCustomers(
+                                new com.possum.shared.dto.CustomerFilter(customerPhone, 1, 1, 0, 10, "name", "asc")
+                        ).items().stream().filter(c -> c.phone().equals(customerPhone)).findFirst();
+                        
+                        if (ex.isPresent()) {
+                            cId = ex.get().id();
+                        } else {
+                            Customer nC = customerService.createCustomer(customerName, customerPhone, customerEmail, customerAddress);
+                            cId = nC.id();
+                            final String createdName = nC.name();
+                            Platform.runLater(() -> {
+                                NotificationService.success("New customer added: " + createdName);
+                                loadCombos();
+                            });
+                        }
+                    } catch (Exception e) {
+                        Platform.runLater(() -> NotificationService.warning("Failed to automatically add customer: " + e.getMessage()));
                     }
-                } catch (Exception e) { NotificationService.warning("Failed to automatically add customer: " + e.getMessage()); }
+                }
+
+                // 2. Create the Sale
+                CreateSaleRequest request = new CreateSaleRequest(
+                        items, 
+                        cId, 
+                        discount.compareTo(BigDecimal.ZERO) > 0 ? discount : null, 
+                        List.of(new PaymentRequest(paidAmount, paymentMethodId))
+                );
+                return salesService.createSale(request, userId);
             }
-            SaleResponse resp = salesService.createSale(new CreateSaleRequest(items, cId, d.compareTo(BigDecimal.ZERO) > 0 ? d : null, List.of(new PaymentRequest(pA, currentBill.selectedPaymentMethod.id()))), AuthContext.getCurrentUser().id());
-            if (confirmPrint()) printReceipt(resp);
-            NotificationService.success("Sale completed successfully! Total: " + currencyFormat.format(currentBill.total));
+        };
+
+        task.setOnSucceeded(e -> {
+            SaleResponse resp = task.getValue();
+            completeButton.setText("Complete Sale");
+            
+            // Handle Printing UI Confirmation
+            if (confirmPrint()) {
+                printReceipt(resp);
+            }
+            
+            NotificationService.success("Sale completed successfully! Total: " + currencyFormat.format(totalToDisplay));
             handleClearCart();
-        } catch (Exception e) { 
-            LoggingConfig.getLogger().error("Sale completion failed", e);
-            NotificationService.error("Sale failed: " + ErrorHandler.toUserMessage(e)); 
-        }
+            completeButton.setDisable(false);
+        });
+
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            LoggingConfig.getLogger().error("Sale completion failed", ex);
+            NotificationService.error("Sale failed: " + ErrorHandler.toUserMessage(ex));
+            completeButton.setText("Complete Sale");
+            completeButton.setDisable(false);
+        });
+
+        new Thread(task).start();
     }
 
     private boolean confirmPrint() {

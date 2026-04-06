@@ -44,6 +44,9 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.5.16")
     implementation("org.mindrot:jbcrypt:0.4")
     
+    // Connection Pooling
+    implementation("com.zaxxer:HikariCP:5.1.0")
+    
     // Export Support
     implementation("org.apache.poi:poi-ooxml:5.2.5")
     

@@ -133,6 +133,11 @@ public class DependencyInjector {
                         workspaceManager, productSearchIndex, salesService));
         registry.put(com.possum.ui.purchase.PurchaseController.class,
                 () -> new com.possum.ui.purchase.PurchaseController(purchaseService, salesService, workspaceManager));
+        
+        // Phase 6: Enhanced UI Controllers
+        registry.put(com.possum.ui.taxes.TaxConfigurationController.class,
+                () -> new com.possum.ui.taxes.TaxConfigurationController(
+                        serviceLocator.getSettingsStore(), toastService));
     }
 
     public com.possum.infrastructure.filesystem.AppPaths getAppPaths() {

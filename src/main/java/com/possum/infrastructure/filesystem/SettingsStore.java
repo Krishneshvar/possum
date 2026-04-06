@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class SettingsStore {
 
@@ -78,5 +79,16 @@ public final class SettingsStore {
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to atomically store settings: " + targetPath, ex);
         }
+    }
+    
+    public <T> Optional<T> get(String key, Class<T> type) {
+        Path path = getSettingsDir().resolve(key + ".json");
+        T value = jsonService.read(path, type);
+        return Optional.ofNullable(value);
+    }
+    
+    public <T> void set(String key, T value) {
+        Path path = getSettingsDir().resolve(key + ".json");
+        writeAtomically(path, value);
     }
 }

@@ -90,6 +90,7 @@ abstract class BaseSqliteRepository {
 
     /**
      * Build dynamic UPDATE SQL with only non-null fields.
+     * Table name is validated to prevent SQL injection.
      */
     protected static class UpdateBuilder {
         private final StringBuilder sql;
@@ -97,11 +98,13 @@ abstract class BaseSqliteRepository {
         private boolean hasFields = false;
 
         public UpdateBuilder(String tableName) {
+            validateTableName(tableName);
             this.sql = new StringBuilder("UPDATE " + tableName + " SET updated_at = CURRENT_TIMESTAMP");
         }
 
         public UpdateBuilder set(String column, Object value) {
             if (value != null) {
+                validateColumnName(column);
                 sql.append(", ").append(column).append(" = ?");
                 params.add(value);
                 hasFields = true;
@@ -128,10 +131,29 @@ abstract class BaseSqliteRepository {
         public boolean hasFields() {
             return hasFields;
         }
+        
+        private static void validateTableName(String tableName) {
+            if (tableName == null || tableName.isBlank()) {
+                throw new IllegalArgumentException("Table name cannot be null or empty");
+            }
+            if (!tableName.matches("^[a-zA-Z_][a-zA-Z0-9_]*$")) {
+                throw new IllegalArgumentException("Invalid table name: " + tableName);
+            }
+        }
+        
+        private static void validateColumnName(String column) {
+            if (column == null || column.isBlank()) {
+                throw new IllegalArgumentException("Column name cannot be null or empty");
+            }
+            if (!column.matches("^[a-zA-Z_][a-zA-Z0-9_]*$")) {
+                throw new IllegalArgumentException("Invalid column name: " + column);
+            }
+        }
     }
 
     /**
      * Build dynamic WHERE clause with search terms.
+     * All column names are validated to prevent SQL injection.
      */
     protected static class WhereBuilder {
         private final StringJoiner joiner = new StringJoiner(" AND ");
@@ -142,7 +164,7 @@ abstract class BaseSqliteRepository {
         }
 
         public WhereBuilder addNotDeleted(String alias) {
-            String column = (alias != null && !alias.isBlank()) ? alias + ".deleted_at" : "deleted_at";
+            String column = validateColumnName(alias != null && !alias.isBlank() ? alias + ".deleted_at" : "deleted_at");
             joiner.add(column + " IS NULL");
             return this;
         }
@@ -152,7 +174,8 @@ abstract class BaseSqliteRepository {
                 String trimmed = searchTerm.trim();
                 StringJoiner orJoiner = new StringJoiner(" OR ");
                 for (String column : columns) {
-                    orJoiner.add(column + " LIKE ?");
+                    String validColumn = validateColumnName(column);
+                    orJoiner.add(validColumn + " LIKE ?");
                     params.add("%" + trimmed + "%");
                 }
                 joiner.add("(" + orJoiner + ")");
@@ -162,8 +185,9 @@ abstract class BaseSqliteRepository {
 
         public WhereBuilder addIn(String column, List<?> values) {
             if (values != null && !values.isEmpty()) {
+                String validColumn = validateColumnName(column);
                 String placeholders = "?,".repeat(values.size()).replaceAll(",$", "");
-                joiner.add(column + " IN (" + placeholders + ")");
+                joiner.add(validColumn + " IN (" + placeholders + ")");
                 params.addAll(values);
             }
             return this;
@@ -183,6 +207,16 @@ abstract class BaseSqliteRepository {
 
         public List<Object> getParams() {
             return params;
+        }
+        
+        private static String validateColumnName(String column) {
+            if (column == null || column.isBlank()) {
+                throw new IllegalArgumentException("Column name cannot be null or empty");
+            }
+            if (!column.matches("^[a-zA-Z_][a-zA-Z0-9_.]*$")) {
+                throw new IllegalArgumentException("Invalid column name: " + column);
+            }
+            return column;
         }
     }
 

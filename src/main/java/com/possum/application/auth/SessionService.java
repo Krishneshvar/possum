@@ -4,6 +4,7 @@ import com.possum.domain.exceptions.DomainException;
 import com.possum.domain.model.Role;
 import com.possum.domain.model.SessionRecord;
 import com.possum.domain.model.User;
+import com.possum.infrastructure.security.SecureTokenGenerator;
 import com.possum.persistence.repositories.interfaces.SessionRepository;
 import com.possum.persistence.repositories.interfaces.UserRepository;
 
@@ -14,6 +15,7 @@ import java.util.UUID;
 public class SessionService {
 
     private static final int SESSION_DURATION_SECONDS = 30 * 60;
+    private static final int MAX_SESSIONS_PER_USER = 5;
 
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
@@ -23,8 +25,9 @@ public class SessionService {
         this.userRepository = userRepository;
     }
 
-    public String createSession(AuthUser user) {
-        String token = UUID.randomUUID().toString();
+    public String createSession(AuthUser user, String ipAddress, String userAgent) {
+        String token = SecureTokenGenerator.generateToken();
+        String fingerprint = SecureTokenGenerator.generateSessionFingerprint(ipAddress, userAgent);
         long expiresAt = System.currentTimeMillis() / 1000 + SESSION_DURATION_SECONDS;
 
         SessionRecord session = new SessionRecord(
@@ -32,7 +35,7 @@ public class SessionService {
                 user.id(),
                 token,
                 expiresAt,
-                null
+                fingerprint
         );
 
         sessionRepository.create(session);
@@ -41,6 +44,14 @@ public class SessionService {
 
     public Optional<SessionRecord> findByToken(String token) {
         return sessionRepository.findByToken(token);
+    }
+    
+    public boolean validateSessionFingerprint(SessionRecord session, String ipAddress, String userAgent) {
+        if (session.data() == null) {
+            return true;
+        }
+        String currentFingerprint = SecureTokenGenerator.generateSessionFingerprint(ipAddress, userAgent);
+        return session.data().equals(currentFingerprint);
     }
 
     public void updateExpiration(String token, long newExpiresAt) {

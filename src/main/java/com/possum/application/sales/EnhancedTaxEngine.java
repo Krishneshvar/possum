@@ -1,5 +1,7 @@
 package com.possum.application.sales;
 
+import com.possum.application.sales.config.TaxConfiguration;
+import com.possum.application.sales.config.TaxRoundingStrategy;
 import com.possum.application.sales.dto.TaxCalculationResult;
 import com.possum.application.sales.dto.TaxableInvoice;
 import com.possum.application.sales.dto.TaxableItem;
@@ -17,23 +19,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class TaxEngine {
+public class EnhancedTaxEngine {
     private final TaxRepository taxRepository;
     private final JsonService jsonService;
+    private final TaxConfiguration config;
     private TaxProfile profile;
     private List<TaxRule> rules;
 
-    public TaxEngine(TaxRepository taxRepository, JsonService jsonService) {
+    public EnhancedTaxEngine(TaxRepository taxRepository, JsonService jsonService, TaxConfiguration config) {
         this.taxRepository = taxRepository;
         this.jsonService = jsonService;
+        this.config = config;
+    }
+
+    public EnhancedTaxEngine(TaxRepository taxRepository, JsonService jsonService) {
+        this(taxRepository, jsonService, TaxConfiguration.defaultConfig());
     }
 
     public void init() {
         this.profile = taxRepository.getActiveTaxProfile().orElse(null);
         if (this.profile != null) {
             this.rules = taxRepository.getTaxRulesByProfileId(this.profile.id());
+            validateRules();
         } else {
             this.rules = List.of();
+        }
+    }
+
+    private void validateRules() {
+        if (!config.isValidateNegativeRates()) return;
+        
+        for (TaxRule rule : rules) {
+            if (rule.ratePercent() != null && rule.ratePercent().compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalStateException("Tax rule " + rule.id() + " has negative rate: " + rule.ratePercent());
+            }
         }
     }
 
@@ -46,15 +65,29 @@ public class TaxEngine {
             return zeroTaxResult(invoice);
         }
 
+        validateInvoice(invoice);
+
+        if (config.getRoundingStrategy() == TaxRoundingStrategy.INVOICE_LEVEL) {
+            return calculateWithInvoiceLevelRounding(invoice, customer);
+        } else {
+            return calculateWithItemLevelRounding(invoice, customer);
+        }
+    }
+
+    private void validateInvoice(TaxableInvoice invoice) {
         for (TaxableItem item : invoice.items()) {
-            if (item.getPrice() == null || item.getPrice().compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException("Item price must be non-negative");
+            if (config.isValidateNegativePrices()) {
+                if (item.getPrice() == null || item.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+                    throw new IllegalArgumentException("Item price must be non-negative");
+                }
             }
             if (item.getQuantity() <= 0) {
                 throw new IllegalArgumentException("Item quantity must be positive");
             }
         }
+    }
 
+    private TaxCalculationResult calculateWithInvoiceLevelRounding(TaxableInvoice invoice, Customer customer) {
         BigDecimal invoiceTotal = invoice.getSubtotal();
         BigDecimal rawTotalTax = BigDecimal.ZERO;
         List<TaxableItem> updatedItems = new ArrayList<>();
@@ -71,7 +104,7 @@ public class TaxEngine {
             rawTotalTax = rawTotalTax.add(result.taxAmount);
         }
 
-        BigDecimal totalTax = rawTotalTax.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalTax = rawTotalTax.setScale(2, config.getRoundingMode());
 
         BigDecimal grandTotal;
         if ("INCLUSIVE".equalsIgnoreCase(profile.pricingMode())) {
@@ -83,7 +116,39 @@ public class TaxEngine {
         return new TaxCalculationResult(
                 updatedItems,
                 totalTax,
-                grandTotal.setScale(2, RoundingMode.HALF_UP)
+                grandTotal.setScale(2, config.getRoundingMode())
+        );
+    }
+
+    private TaxCalculationResult calculateWithItemLevelRounding(TaxableInvoice invoice, Customer customer) {
+        BigDecimal invoiceTotal = invoice.getSubtotal();
+        BigDecimal totalTax = BigDecimal.ZERO;
+        List<TaxableItem> updatedItems = new ArrayList<>();
+
+        for (TaxableItem item : invoice.items()) {
+            List<TaxRule> applicableRules = getApplicableRules(item, invoiceTotal, customer);
+            TaxItemResult result = calculateItemTax(item, applicableRules);
+
+            BigDecimal roundedItemTax = result.taxAmount.setScale(2, config.getRoundingMode());
+            item.setTaxAmount(roundedItemTax);
+            item.setTaxRate(result.taxRate);
+            item.setTaxRuleSnapshot(jsonService.toJson(result.snapshot));
+
+            updatedItems.add(item);
+            totalTax = totalTax.add(roundedItemTax);
+        }
+
+        BigDecimal grandTotal;
+        if ("INCLUSIVE".equalsIgnoreCase(profile.pricingMode())) {
+            grandTotal = invoiceTotal;
+        } else {
+            grandTotal = invoiceTotal.add(totalTax);
+        }
+
+        return new TaxCalculationResult(
+                updatedItems,
+                totalTax,
+                grandTotal.setScale(2, config.getRoundingMode())
         );
     }
 
@@ -95,7 +160,8 @@ public class TaxEngine {
 
         return rules.stream()
                 .filter(rule -> {
-                    if (rule.ratePercent() == null || rule.ratePercent().compareTo(BigDecimal.ZERO) < 0) return false;
+                    if (rule.ratePercent() == null) return false;
+                    if (config.isValidateNegativeRates() && rule.ratePercent().compareTo(BigDecimal.ZERO) < 0) return false;
                     if (rule.taxCategoryId() != null && !rule.taxCategoryId().equals(item.getTaxCategoryId())) {
                         return false;
                     }
