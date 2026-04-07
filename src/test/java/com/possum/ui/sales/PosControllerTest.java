@@ -9,11 +9,11 @@ import com.possum.application.sales.SalesService;
 import com.possum.application.sales.TaxEngine;
 import com.possum.application.sales.dto.*;
 import com.possum.domain.model.*;
+import com.possum.domain.services.SaleCalculator;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.shared.dto.GeneralSettings;
 import com.possum.ui.JavaFXInitializer;
-import javafx.collections.ObservableList;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -42,6 +42,7 @@ class PosControllerTest {
     @Mock private SettingsStore settingsStore;
     @Mock private ProductService productService;
     @Mock private CategoryService categoryService;
+    @Mock private SaleCalculator saleCalculator;
 
     private PosController controller;
 
@@ -49,18 +50,16 @@ class PosControllerTest {
     void setUp() throws Exception {
         AuthContext.setCurrentUser(new AuthUser(1L, "Test User", "testuser", List.of("admin"), List.of("sales:create")));
         controller = new PosController(salesService, customerService, searchIndex, taxEngine,
-                printerService, settingsStore, productService, categoryService);
+                printerService, settingsStore, productService, categoryService, saleCalculator);
         
-        // Initialize the controller's internal state which normally happens in initialize()
-        // But since we can't easily run initialize() without JavaFX toolkit, we'll manually set up what's needed.
+        // Use reflection to initialize the controller fields as initialize() is hard to run in JUnit
         java.lang.reflect.Field billsField = PosController.class.getDeclaredField("bills");
         billsField.setAccessible(true);
-        List<Object> bills = new java.util.ArrayList<>();
-        Class<?> billStateClass = Class.forName("com.possum.ui.sales.PosController$BillState");
-        java.lang.reflect.Constructor<?> billStateConst = billStateClass.getDeclaredConstructor(int.class);
-        billStateConst.setAccessible(true);
+        List<SaleDraft> bills = new java.util.ArrayList<>();
         for (int i = 0; i < 9; i++) {
-            bills.add(billStateConst.newInstance(i));
+            SaleDraft d = new SaleDraft();
+            d.setIndex(i);
+            bills.add(d);
         }
         billsField.set(controller, bills);
         
@@ -79,73 +78,52 @@ class PosControllerTest {
     void addToCart_success() throws Exception {
         Variant variant = createTestVariant(1L, "Test Product", "Standard", "123", new BigDecimal("100.00"), 10);
         
-        // Mock settings to avoid NPE in isInventoryRestrictionsEnabled
         GeneralSettings settings = new GeneralSettings();
         settings.setInventoryAlertsAndRestrictionsEnabled(false);
         when(settingsStore.loadGeneralSettings()).thenReturn(settings);
 
-        // Access addToCart via reflection as it is private
         java.lang.reflect.Method addToCartMethod = PosController.class.getDeclaredMethod("addToCart", Variant.class);
         addToCartMethod.setAccessible(true);
         
-        // Platform.runLater will fail in unit test context, so we'll wrap in try-catch
         try {
             addToCartMethod.invoke(controller, variant);
-        } catch (Exception e) {
-            // item should still be added to list before runLater is called
-        }
+        } catch (Exception e) {}
 
         java.lang.reflect.Field currentBillField = PosController.class.getDeclaredField("currentBill");
         currentBillField.setAccessible(true);
-        Object currentBill = currentBillField.get(controller);
+        SaleDraft currentBill = (SaleDraft) currentBillField.get(controller);
         
-        java.lang.reflect.Field itemsField = currentBill.getClass().getDeclaredField("items");
-        itemsField.setAccessible(true);
-        List<?> items = (List<?>) itemsField.get(currentBill);
-        
-        assertEquals(1, items.size());
+        assertEquals(1, currentBill.getItems().size());
+        assertEquals(variant.sku(), currentBill.getItems().get(0).getVariant().sku());
     }
 
     @Test
     @DisplayName("Should recalculate totals correctly")
-    @SuppressWarnings("unchecked")
     void recalculateTotals_success() throws Exception {
         java.lang.reflect.Field currentBillField = PosController.class.getDeclaredField("currentBill");
         currentBillField.setAccessible(true);
-        Object currentBill = currentBillField.get(controller);
-        
-        java.lang.reflect.Field itemsField = currentBill.getClass().getDeclaredField("items");
-        itemsField.setAccessible(true);
-        ObservableList<Object> items = (ObservableList<Object>) itemsField.get(currentBill);
+        SaleDraft currentBill = (SaleDraft) currentBillField.get(controller);
         
         Variant variant = createTestVariant(1L, "Test Product", "Standard", "123", new BigDecimal("100.00"), 10);
-        Class<?> cartItemClass = Class.forName("com.possum.ui.sales.PosController$CartItem");
-        java.lang.reflect.Constructor<?> cartItemConst = cartItemClass.getDeclaredConstructor(Variant.class, int.class);
-        cartItemConst.setAccessible(true);
-        Object cartItem = cartItemConst.newInstance(variant, 2);
-        items.add(cartItem);
+        CartItem cartItem = new CartItem(variant, 2);
+        currentBill.getItems().add(cartItem);
 
-        // Mock TaxEngine
-        TaxCalculationResult taxResult = new TaxCalculationResult(
-            List.of(), BigDecimal.ZERO, new BigDecimal("200.00")
-        );
-        when(taxEngine.calculate(any(TaxableInvoice.class), any())).thenReturn(taxResult);
+        // Recalculate is now delegated to saleCalculator
+        doAnswer(invocation -> {
+            SaleDraft d = invocation.getArgument(0);
+            d.setTotal(new BigDecimal("200.00"));
+            return null;
+        }).when(saleCalculator).recalculate(any(SaleDraft.class));
 
-        // Access recalculateTotals via reflection
         java.lang.reflect.Method recalculateMethod = PosController.class.getDeclaredMethod("recalculateTotals");
         recalculateMethod.setAccessible(true);
         
         try {
             recalculateMethod.invoke(controller);
-        } catch (Exception e) {
-            // UI label updates will fail, but calculations should proceed
-        }
+        } catch (Exception e) {}
 
-        java.lang.reflect.Field totalField = currentBill.getClass().getDeclaredField("total");
-        totalField.setAccessible(true);
-        BigDecimal total = (BigDecimal) totalField.get(currentBill);
-        
-        assertEquals(new BigDecimal("200.00"), total);
+        assertEquals(new BigDecimal("200.00"), currentBill.getTotal());
+        verify(saleCalculator, times(1)).recalculate(currentBill);
     }
 
     private Variant createTestVariant(Long id, String productName, String variantName, 

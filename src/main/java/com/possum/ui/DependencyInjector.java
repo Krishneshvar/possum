@@ -25,7 +25,9 @@ public class DependencyInjector {
 
     private final SalesService salesService;
     private final com.possum.application.sales.TaxEngine taxEngine;
+    private final com.possum.domain.services.SaleCalculator saleCalculator;
     private final ProductSearchIndex productSearchIndex;
+
     private final TransactionService transactionService;
     private final ReturnsService returnsService;
     private final ReportsService reportsService;
@@ -44,16 +46,21 @@ public class DependencyInjector {
     private final Map<Class<?>, Supplier<Object>> registry = new HashMap<>();
 
     public DependencyInjector(ApplicationModule applicationModule, ServiceLocator serviceLocator,
-                              SalesService salesService, com.possum.application.sales.TaxEngine taxEngine, ProductSearchIndex productSearchIndex,
+                              SalesService salesService, com.possum.application.sales.TaxEngine taxEngine,
+                              com.possum.domain.services.SaleCalculator saleCalculator,
+                              ProductSearchIndex productSearchIndex,
                               TransactionService transactionService, ReturnsService returnsService,
                               ReportsService reportsService, PurchaseService purchaseService,
                               VariantRepository variantRepository, SalesRepository salesRepository,
                               SupplierRepository supplierRepository, TaxRepository taxRepository, com.possum.infrastructure.filesystem.AppPaths appPaths) {
+
         this.applicationModule = applicationModule;
         this.serviceLocator = serviceLocator;
         this.salesService = salesService;
         this.taxEngine = taxEngine;
+        this.saleCalculator = saleCalculator;
         this.productSearchIndex = productSearchIndex;
+
         this.transactionService = transactionService;
         this.returnsService = returnsService;
         this.reportsService = reportsService;
@@ -80,7 +87,9 @@ public class DependencyInjector {
         registry.put(com.possum.application.people.CustomerService.class, applicationModule::getCustomerService);
         registry.put(SalesService.class, () -> salesService);
         registry.put(com.possum.application.sales.TaxEngine.class, () -> taxEngine);
+        registry.put(com.possum.domain.services.SaleCalculator.class, () -> saleCalculator);
         registry.put(ProductSearchIndex.class, () -> productSearchIndex);
+
         registry.put(TransactionService.class, () -> transactionService);
         registry.put(ReturnsService.class, () -> returnsService);
         registry.put(ReportsService.class, () -> reportsService);

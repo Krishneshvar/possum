@@ -8,7 +8,12 @@ import com.possum.application.sales.dto.*;
 import com.possum.domain.model.Customer;
 import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.Variant;
+import com.possum.domain.model.CartItem;
+
+import com.possum.domain.model.SaleDraft;
+import com.possum.domain.services.SaleCalculator;
 import com.possum.infrastructure.filesystem.SettingsStore;
+
 import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.printing.BillRenderer;
 import com.possum.infrastructure.printing.PrintOutcome;
@@ -118,17 +123,21 @@ public class PosController {
     private final SettingsStore settingsStore;
     private final ProductService productService;
     private final CategoryService categoryService;
+    private final SaleCalculator saleCalculator;
+
 
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     private static final int MAX_BILLS = 9;
-    private final List<BillState> bills = new ArrayList<>();
-    private BillState currentBill;
+    private final List<SaleDraft> bills = new ArrayList<>();
+    private SaleDraft currentBill;
+
 
     public PosController(SalesService salesService, com.possum.application.people.CustomerService customerService,
             ProductSearchIndex searchIndex, TaxEngine taxEngine,
             PrinterService printerService, SettingsStore settingsStore,
-            ProductService productService, CategoryService categoryService) {
+            ProductService productService, CategoryService categoryService,
+            SaleCalculator saleCalculator) {
         this.salesService = salesService;
         this.customerService = customerService;
         this.searchIndex = searchIndex;
@@ -137,7 +146,9 @@ public class PosController {
         this.settingsStore = settingsStore;
         this.productService = productService;
         this.categoryService = categoryService;
+        this.saleCalculator = saleCalculator;
     }
+
 
     @FXML
     public void initialize() {
@@ -148,9 +159,13 @@ public class PosController {
         }
 
         for (int i = 0; i < MAX_BILLS; i++) {
-            bills.add(new BillState(i));
+            SaleDraft d = new SaleDraft();
+            d.setIndex(i);
+            bills.add(d);
         }
+
         currentBill = bills.get(0);
+
 
         NotificationService.initialize(rootPane);
         setupTable();
@@ -191,11 +206,13 @@ public class PosController {
         colSno.setCellValueFactory(cell -> new SimpleStringProperty(String.valueOf(cartTable.getTableView().getItems().indexOf(cell.getValue()) + 1)));
 
         colSku.setPrefWidth(95);
-        colSku.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().variant.sku()));
+        colSku.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getVariant().sku()));
+
 
         colProduct.setPrefWidth(180);
         colProduct.setCellValueFactory(cell -> {
-            Variant v = cell.getValue().variant;
+            Variant v = cell.getValue().getVariant();
+
             String disp = v.productName();
             if (v.name() != null && !v.name().equalsIgnoreCase("Standard")) {
                 disp += " (" + v.name() + ")";
@@ -212,7 +229,8 @@ public class PosController {
         colPrice.setCellFactory(col -> new EditablePriceCell());
 
         colMrp.setPrefWidth(96);
-        colMrp.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().variant.price())));
+        colMrp.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().getVariant().price())));
+
 
         colDiscountPct.setPrefWidth(90);
         colDiscountPct.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
@@ -223,7 +241,8 @@ public class PosController {
         colDiscountAmt.setCellFactory(col -> new EditableDiscountAmtCell());
 
         colTotal.setPrefWidth(115);
-        colTotal.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().netLineTotal)));
+        colTotal.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().getNetLineTotal())));
+
 
         cartTable.getTableView().setEditable(true);
         cartTable.getTableView().getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
@@ -236,7 +255,8 @@ public class PosController {
             if (e.getCode() == KeyCode.DELETE || e.getCode() == KeyCode.BACK_SPACE) {
                 CartItem selectedItem = cartTable.getTableView().getSelectionModel().getSelectedItem();
                 if (selectedItem != null) {
-                    currentBill.items.remove(selectedItem);
+                    currentBill.getItems().remove(selectedItem);
+
                     refreshCurrentBill();
                     e.consume();
                 }
@@ -311,9 +331,10 @@ public class PosController {
                 return;
             }
             boolean isFull = newVal == btnFullPayment;
-            currentBill.fullPayment = isFull;
+            currentBill.setFullPayment(isFull);
             updateBalanceLabel();
             refreshCurrentBill();
+
         });
 
         discountTypeGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
@@ -322,8 +343,9 @@ public class PosController {
                 return;
             }
             boolean isFixed = newVal == btnDiscountFixed;
-            currentBill.isDiscountFixed = isFixed;
+            currentBill.setDiscountFixed(isFixed);
             recalculateTotals();
+
         });
     }
 
@@ -384,23 +406,24 @@ public class PosController {
 
         discountField.textProperty().addListener((obs, oldVal, newVal) -> {
             try {
-                currentBill.overallDiscountValue = newVal.isEmpty() ? BigDecimal.ZERO : new BigDecimal(newVal);
+                currentBill.setOverallDiscountValue(newVal.isEmpty() ? BigDecimal.ZERO : new BigDecimal(newVal));
                 recalculateTotals();
             } catch (Exception e) {}
         });
 
         tenderedField.textProperty().addListener((obs, oldVal, newVal) -> {
             try {
-                currentBill.amountTendered = newVal.isEmpty() ? BigDecimal.ZERO : new BigDecimal(newVal);
+                currentBill.setAmountTendered(newVal.isEmpty() ? BigDecimal.ZERO : new BigDecimal(newVal));
                 updateBalanceLabel();
             } catch (Exception e) {}
         });
+
 
         customerCombo.valueProperty().addListener((obs, old, val) -> {
             if (isAutofilling) return;
             isAutofilling = true;
             try {
-                currentBill.selectedCustomer = val;
+                currentBill.setSelectedCustomer(val);
                 if (val != null) {
                     customerNameField.setText(val.name());
                     customerPhoneField.setText(val.phone());
@@ -411,14 +434,16 @@ public class PosController {
                     customerNameField.clear(); customerPhoneField.clear(); customerEmailField.clear(); customerAddressField.clear();
                 }
             } finally { isAutofilling = false; }
+
         });
 
-        customerNameField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.customerName = val; checkCustomerMatch(); recalculateTotals(); } });
-        customerPhoneField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.customerPhone = val; checkCustomerMatch(); recalculateTotals(); } });
-        customerEmailField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) currentBill.customerEmail = val; });
-        customerAddressField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.customerAddress = val; recalculateTotals(); } });
+        customerNameField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.setCustomerName(val); checkCustomerMatch(); recalculateTotals(); } });
+        customerPhoneField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.setCustomerPhone(val); checkCustomerMatch(); recalculateTotals(); } });
+        customerEmailField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) currentBill.setCustomerEmail(val); });
+        customerAddressField.textProperty().addListener((obs, old, val) -> { if (!isAutofilling) { currentBill.setCustomerAddress(val); recalculateTotals(); } });
 
-        paymentMethodCombo.valueProperty().addListener((obs, old, val) -> { currentBill.selectedPaymentMethod = val; updateBalanceLabel(); });
+        paymentMethodCombo.valueProperty().addListener((obs, old, val) -> { currentBill.setSelectedPaymentMethod(val); updateBalanceLabel(); });
+
     }
 
     private void setupKeyboardShortcuts() {
@@ -437,14 +462,15 @@ public class PosController {
                     return;
                 }
                 if (e.getCode() == KeyCode.F12) {
-                    if (currentBill.items.isEmpty()) { NotificationService.warning("Add items to cart first"); e.consume(); return; }
+                    if (currentBill.getItems().isEmpty()) { NotificationService.warning("Add items to cart first"); e.consume(); return; }
                     if (tenderedField.isFocused()) {
                         if (!completeButton.isDisabled()) handleCompleteSale();
-                        else NotificationService.warning(currentBill.fullPayment ? "Tendered amount must be >= total" : "Partial payment must be between 0 and total");
+                        else NotificationService.warning(currentBill.isFullPayment() ? "Tendered amount must be >= total" : "Partial payment must be between 0 and total");
                     } else { tenderedField.requestFocus(); tenderedField.selectAll(); }
                     e.consume();
                     return;
                 }
+
                 if (e.getCode() == KeyCode.ESCAPE) { searchPopup.hide(); quickProductPopup.hide(); quickCategoryPopup.hide(); rootPane.requestFocus(); e.consume(); return; }
                 if (!e.isControlDown() && !e.isMetaDown() && e.getCode() == KeyCode.SLASH && e.isShiftDown()) {
                     NotificationService.info("POS shortcuts: Ctrl+K Search, Ctrl+Enter Complete, Ctrl+N New Bill, Ctrl+1..9 Switch Bill, Esc Close popups");
@@ -468,9 +494,10 @@ public class PosController {
     }
 
     private void openOrSwitchToNextBill() {
-        for (BillState bill : bills) if (bill.items.isEmpty() && bill.index != currentBill.index) { switchBill(bill.index); return; }
-        int next = (currentBill.index + 1) % MAX_BILLS;
-        if (next == currentBill.index) return;
+        for (SaleDraft bill : bills) if (bill.getItems().isEmpty() && bill.getIndex() != currentBill.getIndex()) { switchBill(bill.getIndex()); return; }
+        int next = (currentBill.getIndex() + 1) % MAX_BILLS;
+        if (next == currentBill.getIndex()) return;
+
         bills.get(next).reset();
         switchBill(next);
         NotificationService.info("Switched to a fresh bill tab");
@@ -482,10 +509,11 @@ public class PosController {
         try {
             customerCombo.setValue(null); customerNameField.clear(); customerPhoneField.clear();
             customerEmailField.clear(); customerAddressField.clear();
-            currentBill.selectedCustomer = null; currentBill.customerName = ""; currentBill.customerPhone = "";
-            currentBill.customerEmail = ""; currentBill.customerAddress = "";
+            currentBill.setSelectedCustomer(null); currentBill.setCustomerName(""); currentBill.setCustomerPhone("");
+            currentBill.setCustomerEmail(""); currentBill.setCustomerAddress("");
             recalculateTotals();
         } finally { isAutofilling = false; }
+
     }
 
     private void checkCustomerMatch() {
@@ -502,14 +530,15 @@ public class PosController {
     private void renderBillsFlowPane() {
         billsFlowPane.getChildren().clear();
         for (int i = 0; i < MAX_BILLS; i++) {
-            BillState bill = bills.get(i);
+            SaleDraft bill = bills.get(i);
             Button btn = new Button(String.valueOf(i + 1));
-            boolean act = currentBill.index == i;
-            boolean has = !bill.items.isEmpty();
+            boolean act = currentBill.getIndex() == i;
+            boolean has = !bill.getItems().isEmpty();
             String s = "-fx-font-weight: bold; -fx-background-radius: 8; -fx-border-radius: 8; -fx-min-width: 30; -fx-min-height: 30; -fx-font-size: 11px; ";
             if (act) s += "-fx-background-color: #0f172a; -fx-text-fill: white; -fx-border-color: #0f172a; -fx-border-width: 1;";
             else if (has) s += "-fx-background-color: #fef3c7; -fx-text-fill: #d97706; -fx-border-color: #fcd34d; -fx-border-width: 1;";
             else s += "-fx-background-color: #f8fafc; -fx-text-fill: #94a3b8; -fx-border-color: #e2e8f0; -fx-border-width: 1;";
+
             btn.setStyle(s); btn.setCursor(javafx.scene.Cursor.HAND);
             int idx = i; btn.setOnAction(e -> switchBill(idx));
             billsFlowPane.getChildren().add(btn);
@@ -518,25 +547,26 @@ public class PosController {
 
     private void switchBill(int index) {
         currentBill = bills.get(index);
-        cartTable.getTableView().setItems(currentBill.items);
-        btnFullPayment.setSelected(currentBill.fullPayment);
-        btnPartialPayment.setSelected(!currentBill.fullPayment);
-        discountField.setText(currentBill.overallDiscountValue.compareTo(BigDecimal.ZERO) > 0 ? currentBill.overallDiscountValue.toString() : "");
-        btnDiscountFixed.setSelected(currentBill.isDiscountFixed); btnDiscountPercent.setSelected(!currentBill.isDiscountFixed);
-        tenderedField.setText(currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0 ? currentBill.amountTendered.toString() : "");
+        cartTable.getTableView().setItems(FXCollections.observableArrayList(currentBill.getItems()));
+        btnFullPayment.setSelected(currentBill.isFullPayment());
+        btnPartialPayment.setSelected(!currentBill.isFullPayment());
+        discountField.setText(currentBill.getOverallDiscountValue().compareTo(BigDecimal.ZERO) > 0 ? currentBill.getOverallDiscountValue().toString() : "");
+        btnDiscountFixed.setSelected(currentBill.isDiscountFixed()); btnDiscountPercent.setSelected(!currentBill.isDiscountFixed());
+        tenderedField.setText(currentBill.getAmountTendered().compareTo(BigDecimal.ZERO) > 0 ? currentBill.getAmountTendered().toString() : "");
         isAutofilling = true;
         try {
-            customerCombo.setValue(currentBill.selectedCustomer);
-            customerNameField.setText(currentBill.customerName != null ? currentBill.customerName : "");
-            customerPhoneField.setText(currentBill.customerPhone != null ? currentBill.customerPhone : "");
-            customerEmailField.setText(currentBill.customerEmail != null ? currentBill.customerEmail : "");
-            customerAddressField.setText(currentBill.customerAddress != null ? currentBill.customerAddress : "");
+            customerCombo.setValue(currentBill.getSelectedCustomer());
+            customerNameField.setText(currentBill.getCustomerName() != null ? currentBill.getCustomerName() : "");
+            customerPhoneField.setText(currentBill.getCustomerPhone() != null ? currentBill.getCustomerPhone() : "");
+            customerEmailField.setText(currentBill.getCustomerEmail() != null ? currentBill.getCustomerEmail() : "");
+            customerAddressField.setText(currentBill.getCustomerAddress() != null ? currentBill.getCustomerAddress() : "");
         } finally { isAutofilling = false; }
-        paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
-        if (currentBill.selectedPaymentMethod == null && !paymentMethodCombo.getItems().isEmpty()) {
-            currentBill.selectedPaymentMethod = paymentMethodCombo.getItems().get(0);
-            paymentMethodCombo.setValue(currentBill.selectedPaymentMethod);
+        paymentMethodCombo.setValue(currentBill.getSelectedPaymentMethod());
+        if (currentBill.getSelectedPaymentMethod() == null && !paymentMethodCombo.getItems().isEmpty()) {
+            currentBill.setSelectedPaymentMethod(paymentMethodCombo.getItems().get(0));
+            paymentMethodCombo.setValue(currentBill.getSelectedPaymentMethod());
         }
+
         refreshCurrentBill(); focusSearchAndOpen(false);
     }
 
@@ -590,18 +620,18 @@ public class PosController {
     }
 
     private void addToCart(Variant variant) {
-        Optional<CartItem> exists = currentBill.items.stream().filter(i -> i.variant.id().equals(variant.id())).findFirst();
-        int nQty = exists.map(i -> i.quantity + 1).orElse(1);
+        Optional<CartItem> exists = currentBill.getItems().stream().filter(it -> it.getVariant().id().equals(variant.id())).findFirst();
+        int nQty = exists.map(it -> it.getQuantity() + 1).orElse(1);
         if (isInventoryRestrictionsEnabled() && variant.stock() != null && nQty > variant.stock()) {
             NotificationService.warning("Insufficient stock! Available: " + variant.stock());
             return;
         }
-        if (exists.isPresent()) exists.get().quantity = nQty;
-        else currentBill.items.add(new CartItem(variant, 1));
+        if (exists.isPresent()) exists.get().setQuantity(nQty);
+        else currentBill.getItems().add(new CartItem(variant, 1));
         refreshCurrentBill();
-        final CartItem target = exists.orElse(currentBill.items.get(currentBill.items.size() - 1));
+        final CartItem target = exists.orElse(currentBill.getItems().get(currentBill.getItems().size() - 1));
         Platform.runLater(() -> {
-            int i = currentBill.items.indexOf(target);
+            int i = currentBill.getItems().indexOf(target);
             if (i >= 0) {
                 cartTable.getTableView().getSelectionModel().select(i, colQty);
                 cartTable.getTableView().getFocusModel().focus(i, colQty);
@@ -610,57 +640,33 @@ public class PosController {
         });
     }
 
+
     private void refreshCurrentBill() { cartTable.getTableView().refresh(); renderBillsFlowPane(); updatePaymentSectionState(); recalculateTotals(); }
 
     private void updatePaymentSectionState() {
-        boolean has = currentBill != null && !currentBill.items.isEmpty();
+        boolean has = currentBill != null && !currentBill.getItems().isEmpty();
         if (paymentCard != null) { paymentCard.setDisable(!has); paymentCard.setOpacity(has ? 1.0 : 0.52); }
     }
 
+
     private void recalculateTotals() {
-        if (currentBill.items.isEmpty()) { currentBill.subtotal = BigDecimal.ZERO; currentBill.taxAmount = BigDecimal.ZERO; currentBill.total = BigDecimal.ZERO; currentBill.totalMrp = BigDecimal.ZERO; updateUI(); return; }
-        BigDecimal gT = BigDecimal.ZERO, gM = BigDecimal.ZERO, gP = BigDecimal.ZERO;
-        for (CartItem it : currentBill.items) {
-            BigDecimal lT = it.pricePerUnit.multiply(BigDecimal.valueOf(it.quantity));
-            gP = gP.add(lT); gM = gM.add(it.variant.price().multiply(BigDecimal.valueOf(it.quantity)));
-            BigDecimal lD = "fixed".equals(it.discountType) ? it.discountValue : lT.multiply(it.discountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            it.discountAmount = lD; it.netLineTotal = lT.subtract(lD).max(BigDecimal.ZERO); gT = gT.add(it.netLineTotal);
-        }
-        currentBill.totalMrp = gM; currentBill.totalPrice = gP;
-        BigDecimal oD = BigDecimal.ZERO;
-        if (currentBill.overallDiscountValue.compareTo(BigDecimal.ZERO) > 0) {
-            if (currentBill.isDiscountFixed) oD = currentBill.overallDiscountValue;
-            else oD = gT.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        }
-        BigDecimal tLD = currentBill.items.stream().map(i -> i.discountAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        currentBill.discountTotal = tLD.add(oD);
-        List<TaxableItem> txIds = new ArrayList<>(); BigDecimal distD = BigDecimal.ZERO;
-        for (int i = 0; i < currentBill.items.size(); i++) {
-            CartItem it = currentBill.items.get(i); BigDecimal iGD = BigDecimal.ZERO;
-            if (gT.compareTo(BigDecimal.ZERO) > 0 && oD.compareTo(BigDecimal.ZERO) > 0) {
-                if (i == currentBill.items.size() - 1) iGD = oD.subtract(distD);
-                else { iGD = it.netLineTotal.divide(gT, 10, RoundingMode.HALF_UP).multiply(oD); distD = distD.add(iGD); }
-            }
-            BigDecimal fTA = it.netLineTotal.subtract(iGD).max(BigDecimal.ZERO);
-            BigDecimal eUP = it.quantity > 0 ? fTA.divide(BigDecimal.valueOf(it.quantity), 10, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-            txIds.add(new TaxableItem(it.variant.productName(), it.variant.name(), eUP, it.quantity, null, it.variant.id(), it.variant.productId()));
-        }
-        Customer tC = currentBill.selectedCustomer;
-        if (tC == null && (!currentBill.customerName.isEmpty() || !currentBill.customerAddress.isEmpty())) tC = new Customer(null, currentBill.customerName, currentBill.customerPhone, currentBill.customerEmail, currentBill.customerAddress, null, null, null, null, null);
-        TaxCalculationResult tR = taxEngine.calculate(new TaxableInvoice(txIds), tC);
-        currentBill.subtotal = gT; currentBill.taxAmount = tR.totalTax(); currentBill.total = tR.grandTotal(); updateUI();
+        saleCalculator.recalculate(currentBill);
+        updateUI();
     }
+
 
     private void updateUI() {
-        subtotalLabel.setText(currencyFormat.format(currentBill.subtotal)); totalDiscountLabel.setText(currencyFormat.format(currentBill.discountTotal));
-        taxLabel.setText(currencyFormat.format(currentBill.taxAmount)); totalLabel.setText(currencyFormat.format(currentBill.total));
-        bottomTotalLabel.setText(currencyFormat.format(currentBill.total)); bottomMrpLabel.setText(currencyFormat.format(currentBill.totalMrp));
-        bottomPriceTotalLabel.setText(currencyFormat.format(currentBill.totalPrice));
-        totalQtyLabel.setText(String.valueOf(currentBill.items.stream().mapToInt(i -> i.quantity).sum())); updateBalanceLabel();
+        subtotalLabel.setText(currencyFormat.format(currentBill.getSubtotal())); totalDiscountLabel.setText(currencyFormat.format(currentBill.getDiscountTotal()));
+        taxLabel.setText(currencyFormat.format(currentBill.getTaxAmount())); totalLabel.setText(currencyFormat.format(currentBill.getTotal()));
+        bottomTotalLabel.setText(currencyFormat.format(currentBill.getTotal())); bottomMrpLabel.setText(currencyFormat.format(currentBill.getTotalMrp()));
+        bottomPriceTotalLabel.setText(currencyFormat.format(currentBill.getTotalPrice()));
+        totalQtyLabel.setText(String.valueOf(currentBill.getItems().stream().mapToInt(CartItem::getQuantity).sum())); updateBalanceLabel();
     }
 
+
     private void updateBalanceLabel() {
-        BigDecimal d = currentBill.amountTendered.subtract(currentBill.total);
+        BigDecimal d = currentBill.getAmountTendered().subtract(currentBill.getTotal());
+
         if (d.compareTo(BigDecimal.ZERO) >= 0) {
             balanceTypeLabel.setText("Change"); balanceTypeLabel.setTextFill(Color.web("#16a34a"));
             balanceLabel.setText(currencyFormat.format(d));
@@ -670,46 +676,51 @@ public class PosController {
             balanceLabel.setText(currencyFormat.format(d.abs()));
             balanceLabel.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;");
         }
-        if (!currentBill.items.isEmpty() && currentBill.selectedPaymentMethod != null) {
-            boolean vP = currentBill.fullPayment ? d.compareTo(BigDecimal.ZERO) >= 0 : (currentBill.amountTendered.compareTo(BigDecimal.ZERO) > 0 && currentBill.amountTendered.compareTo(currentBill.total) < 0);
+        if (!currentBill.getItems().isEmpty() && currentBill.getSelectedPaymentMethod() != null) {
+            boolean vP = currentBill.isFullPayment() ? d.compareTo(BigDecimal.ZERO) >= 0 : (currentBill.getAmountTendered().compareTo(BigDecimal.ZERO) > 0 && currentBill.getAmountTendered().compareTo(currentBill.getTotal()) < 0);
             completeButton.setDisable(!vP);
+
         } else completeButton.setDisable(true);
         updateTenderedVisibility();
     }
 
     private void updateTenderedVisibility() {
         if (tenderedBalanceContainer == null) return;
-        PaymentMethod m = currentBill.selectedPaymentMethod; boolean fP = currentBill.fullPayment;
+        PaymentMethod m = currentBill.getSelectedPaymentMethod(); boolean fP = currentBill.isFullPayment();
         if (m == null) { tenderedBalanceContainer.setVisible(true); tenderedBalanceContainer.setManaged(true); return; }
         String n = m.name().toUpperCase(); boolean isD = n.contains("DEBIT") || n.contains("CREDIT") || n.contains("UPI") || n.contains("CARD");
         boolean hide = isD && fP; tenderedBalanceContainer.setVisible(!hide); tenderedBalanceContainer.setManaged(!hide);
-        if (hide) currentBill.amountTendered = currentBill.total;
+        if (hide) currentBill.setAmountTendered(currentBill.getTotal());
     }
+
 
     @FXML
     private void handleCompleteSale() {
-        if (currentBill.items.isEmpty()) return;
-        if (currentBill.selectedPaymentMethod == null) {
+        if (currentBill.getItems().isEmpty()) return;
+        if (currentBill.getSelectedPaymentMethod() == null) {
+
             NotificationService.error("Please select a payment method");
             return;
         }
 
         // Prepare data for the background task
-        final List<CreateSaleItemRequest> items = currentBill.items.stream()
-                .map(it -> new CreateSaleItemRequest(it.variant.id(), it.quantity, it.discountAmount, it.pricePerUnit))
+        final List<CreateSaleItemRequest> items = currentBill.getItems().stream()
+                .map(it -> new CreateSaleItemRequest(it.getVariant().id(), it.getQuantity(), it.getDiscountAmount(), it.getPricePerUnit()))
                 .toList();
-        final BigDecimal discount = currentBill.isDiscountFixed ? currentBill.overallDiscountValue 
-                : currentBill.subtotal.multiply(currentBill.overallDiscountValue).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        final BigDecimal paidAmount = currentBill.fullPayment ? currentBill.total : currentBill.amountTendered;
-        final Long paymentMethodId = currentBill.selectedPaymentMethod.id();
+        final BigDecimal discount = currentBill.isDiscountFixed() ? currentBill.getOverallDiscountValue() 
+                : currentBill.getSubtotal().multiply(currentBill.getOverallDiscountValue()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        final BigDecimal paidAmount = currentBill.isFullPayment() ? currentBill.getTotal() : currentBill.getAmountTendered();
+        final Long paymentMethodId = currentBill.getSelectedPaymentMethod().id();
+
         final long userId = AuthContext.getCurrentUser().id();
         
-        final String customerName = currentBill.customerName.trim();
-        final String customerPhone = currentBill.customerPhone.trim();
-        final String customerEmail = currentBill.customerEmail.trim();
-        final String customerAddress = currentBill.customerAddress.trim();
-        final Long existingCustomerId = currentBill.selectedCustomer != null ? currentBill.selectedCustomer.id() : null;
-        final BigDecimal totalToDisplay = currentBill.total;
+        final String customerName = currentBill.getCustomerName().trim();
+        final String customerPhone = currentBill.getCustomerPhone().trim();
+        final String customerEmail = currentBill.getCustomerEmail().trim();
+        final String customerAddress = currentBill.getCustomerAddress().trim();
+        final Long existingCustomerId = currentBill.getSelectedCustomer() != null ? currentBill.getSelectedCustomer().id() : null;
+        final BigDecimal totalToDisplay = currentBill.getTotal();
+
         final AuthUser taskUser = AuthContext.getCurrentUser();
 
         if (taskUser == null) {
@@ -823,7 +834,8 @@ public class PosController {
         Platform.runLater(() -> NotificationService.warning("Print failed: " + outcome.message()));
     }
 
-    @FXML private void handleClearCart() { currentBill.reset(); refreshCurrentBill(); switchBill(currentBill.index); }
+    @FXML private void handleClearCart() { currentBill.reset(); refreshCurrentBill(); switchBill(currentBill.getIndex()); }
+
 
     private void setupSearchAutocomplete() {
         searchResultsView.getStyleClass().add("search-results-list"); applyPopupListStyles(searchResultsView);
@@ -857,25 +869,15 @@ public class PosController {
         } else searchPopup.hide();
     }
 
-    private static class BillState {
-        int index; ObservableList<CartItem> items = FXCollections.observableArrayList();
-        Customer selectedCustomer; String customerName = "", customerPhone = "", customerEmail = "", customerAddress = "";
-        PaymentMethod selectedPaymentMethod; boolean fullPayment = true; BigDecimal overallDiscountValue = BigDecimal.ZERO; boolean isDiscountFixed = true; BigDecimal amountTendered = BigDecimal.ZERO;
-        BigDecimal subtotal = BigDecimal.ZERO, discountTotal = BigDecimal.ZERO, taxAmount = BigDecimal.ZERO, total = BigDecimal.ZERO, totalMrp = BigDecimal.ZERO, totalPrice = BigDecimal.ZERO;
-        BillState(int i) { this.index = i; }
-        void reset() { items.clear(); selectedCustomer = null; customerName = ""; customerPhone = ""; customerEmail = ""; customerAddress = ""; selectedPaymentMethod = null; fullPayment = true; overallDiscountValue = BigDecimal.ZERO; isDiscountFixed = true; amountTendered = BigDecimal.ZERO; subtotal = BigDecimal.ZERO; taxAmount = BigDecimal.ZERO; total = BigDecimal.ZERO; totalMrp = BigDecimal.ZERO; }
-    }
+    // Internal BillState and CartItem removed. Using domain models instead.
 
-    private static class CartItem {
-        Variant variant; int quantity; BigDecimal pricePerUnit; String discountType = "fixed"; BigDecimal discountValue = BigDecimal.ZERO, discountAmount = BigDecimal.ZERO, netLineTotal = BigDecimal.ZERO;
-        CartItem(Variant v, int q) { this.variant = v; this.quantity = q; this.pricePerUnit = v.price(); }
-    }
 
     private class EditableQuantityCell extends TableCell<CartItem, CartItem> {
         private TextField tf;
         @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(true); setText(null); setGraphic(tf); tf.selectAll(); tf.requestFocus(); }
-        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(String.valueOf(getItem().quantity)); setGraphic(null); }
-        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(String.valueOf(it.quantity)); setText(null); setGraphic(tf); } else { setText(String.valueOf(it.quantity)); setGraphic(null); } }
+        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(String.valueOf(getItem().getQuantity())); setGraphic(null); }
+        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(String.valueOf(it.getQuantity())); setText(null); setGraphic(tf); } else { setText(String.valueOf(it.getQuantity())); setGraphic(null); } }
+
         private TextField createTF(boolean center) { TextField f = new TextField(); f.getStyleClass().add("table-input"); if (center) f.setAlignment(Pos.CENTER); f.setPrefWidth(60); 
             f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colQty); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
@@ -886,13 +888,14 @@ public class PosController {
                 try {
                     int n = Integer.parseInt(tf.getText().trim());
                     int newQty = Math.max(1, n);
-                    if (isInventoryRestrictionsEnabled() && it.variant.stock() != null && newQty > it.variant.stock()) {
-                        NotificationService.warning("Insufficient stock! Available: " + it.variant.stock());
-                        tf.setText(String.valueOf(it.quantity));
+                    if (isInventoryRestrictionsEnabled() && it.getVariant().stock() != null && newQty > it.getVariant().stock()) {
+                        NotificationService.warning("Insufficient stock! Available: " + it.getVariant().stock());
+                        tf.setText(String.valueOf(it.getQuantity()));
                     } else {
-                        it.quantity = newQty;
+                        it.setQuantity(newQty);
                         refreshCurrentBill();
                     }
+
                 } catch (Exception e) {
                     cancelEdit();
                     NotificationService.warning("Quantity must be a positive integer");
@@ -906,39 +909,47 @@ public class PosController {
     private class EditablePriceCell extends TableCell<CartItem, CartItem> {
         private TextField tf;
         @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); tf.selectAll(); tf.requestFocus(); }
-        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(getItem().pricePerUnit.toString()); setGraphic(null); }
-        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(it.pricePerUnit.toString()); setText(null); setGraphic(tf); } else { setText(it.pricePerUnit.toString()); setGraphic(null); } }
+        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(getItem().getPricePerUnit().toString()); setGraphic(null); }
+        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(it.getPricePerUnit().toString()); setText(null); setGraphic(tf); } else { setText(it.getPricePerUnit().toString()); setGraphic(null); } }
+
         private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colPrice); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
             return f;
         }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { BigDecimal v = new BigDecimal(tf.getText().replace("$", "").replace(",", "").trim()).max(BigDecimal.ZERO); BigDecimal m = it.variant.price(); if (v.compareTo(m) > 0) { NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(m) + ")"); v = m; } it.pricePerUnit = v; refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { BigDecimal v = new BigDecimal(tf.getText().replace("$", "").replace(",", "").trim()).max(BigDecimal.ZERO); BigDecimal m = it.getVariant().price(); if (v.compareTo(m) > 0) { NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(m) + ")"); v = m; } it.setPricePerUnit(v); refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
+
     }
 
     private class EditableDiscountPctCell extends TableCell<CartItem, CartItem> {
         private TextField tf;
-        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); CartItem it = getItem(); BigDecimal lT = it.pricePerUnit.multiply(BigDecimal.valueOf(it.quantity)); BigDecimal pct = it.discountType.equals("pct") ? it.discountValue : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.discountAmount.multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); tf.setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "" : pct.toString()); tf.selectAll(); tf.requestFocus(); }
+        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); CartItem it = getItem(); BigDecimal lT = it.getPricePerUnit().multiply(BigDecimal.valueOf(it.getQuantity())); BigDecimal pct = it.getDiscountType().equals("pct") ? it.getDiscountValue() : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.getDiscountAmount().multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); tf.setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "" : pct.toString()); tf.selectAll(); tf.requestFocus(); }
+
         @Override public void cancelEdit() { super.cancelEdit(); updateDisplay(); }
         @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { setGraphic(tf); setText(null); } else updateDisplay(); }
-        private void updateDisplay() { CartItem it = getItem(); if (it != null) { BigDecimal lT = it.pricePerUnit.multiply(BigDecimal.valueOf(it.quantity)); BigDecimal pct = it.discountType.equals("pct") ? it.discountValue : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.discountAmount.multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "0%" : pct + "%"); } setGraphic(null); }
+        private void updateDisplay() { CartItem it = getItem(); if (it != null) { BigDecimal lT = it.getPricePerUnit().multiply(BigDecimal.valueOf(it.getQuantity())); BigDecimal pct = it.getDiscountType().equals("pct") ? it.getDiscountValue() : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.getDiscountAmount().multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "0%" : pct + "%"); } setGraphic(null); }
+
         private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountPct); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
             return f;
         }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "pct"; refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.setDiscountValue(v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v)); it.setDiscountType("pct"); refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
+
     }
 
     private class EditableDiscountAmtCell extends TableCell<CartItem, CartItem> {
         private TextField tf;
-        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); BigDecimal a = getItem().discountAmount; tf.setText(a.compareTo(BigDecimal.ZERO) == 0 ? "" : a.toString()); tf.selectAll(); tf.requestFocus(); }
+        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); BigDecimal a = getItem().getDiscountAmount(); tf.setText(a.compareTo(BigDecimal.ZERO) == 0 ? "" : a.toString()); tf.selectAll(); tf.requestFocus(); }
+
         @Override public void cancelEdit() { super.cancelEdit(); updateDisplay(); }
         @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { setGraphic(tf); setText(null); } else updateDisplay(); }
-        private void updateDisplay() { CartItem it = getItem(); if (it != null) setText(it.discountAmount.compareTo(BigDecimal.ZERO) == 0 ? "0" : currencyFormat.format(it.discountAmount)); setGraphic(null); }
+        private void updateDisplay() { CartItem it = getItem(); if (it != null) setText(it.getDiscountAmount().compareTo(BigDecimal.ZERO) == 0 ? "0" : currencyFormat.format(it.getDiscountAmount())); setGraphic(null); }
+
         private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
             f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountAmt); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
             return f;
         }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.discountValue = v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v); it.discountType = "fixed"; refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
+        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.setDiscountValue(v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v)); it.setDiscountType("fixed"); refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
+
     }
 
     private void moveFocusNext(int row, TableColumn<CartItem, ?> cur) {

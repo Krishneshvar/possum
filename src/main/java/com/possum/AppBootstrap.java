@@ -1,14 +1,9 @@
 package com.possum;
 
 import com.possum.application.ApplicationModule;
-import com.possum.application.audit.AuditService;
-import com.possum.application.categories.CategoryService;
-import com.possum.application.inventory.InventoryService;
-import com.possum.application.inventory.ProductFlowService;
-import com.possum.application.products.ProductModule;
-import com.possum.application.products.ProductService;
-import com.possum.application.variants.VariantService;
 import com.possum.application.sales.SalesService;
+
+
 import com.possum.ui.sales.ProductSearchIndex;
 import com.possum.application.transactions.TransactionService;
 import com.possum.application.returns.ReturnsService;
@@ -62,7 +57,9 @@ public final class AppBootstrap {
     private SqliteSalesRepository salesRepository;
     private SqliteSupplierRepository supplierRepository;
     private SqliteTaxRepository taxRepository;
+    private com.possum.domain.services.SaleCalculator saleCalculator;
     private com.possum.persistence.repositories.sqlite.SqliteAuditRepository auditRepository;
+
 
 
     public void start(Stage stage) {
@@ -133,15 +130,16 @@ public final class AppBootstrap {
         databaseManager.initialize();
         transactionManager = new TransactionManager(databaseManager);
 
-        JsonService jsonService = new JsonService();
         PasswordHasher passwordHasher = new PasswordHasher();
         SqliteUserRepository userRepository = new SqliteUserRepository(databaseManager);
         SqliteSessionRepository sessionRepository = new SqliteSessionRepository(databaseManager);
 
         authModule = new AuthModule(userRepository, sessionRepository, transactionManager, passwordHasher,
+
                 new com.possum.persistence.repositories.sqlite.SqliteAuditRepository(databaseManager));
         com.possum.application.auth.ServiceSecurity.setAuditRepository(
                 new com.possum.persistence.repositories.sqlite.SqliteAuditRepository(databaseManager));
+
         serviceLocator = new ServiceLocator(databaseManager, transactionManager, appPaths);
         backupService = serviceLocator.getDatabaseBackupService();
         backupService.startDailyBackups();
@@ -158,7 +156,8 @@ public final class AppBootstrap {
         SqliteCategoryRepository categoryRepository = new SqliteCategoryRepository(databaseManager);
         SqliteInventoryRepository inventoryRepository = new SqliteInventoryRepository(databaseManager);
         SqliteProductFlowRepository productFlowRepository = new SqliteProductFlowRepository(databaseManager);
-        SqliteAuditRepository auditRepository = new SqliteAuditRepository(databaseManager);
+        auditRepository = new SqliteAuditRepository(databaseManager);
+
         com.possum.persistence.repositories.sqlite.SqliteCustomerRepository customerRepository =
                 new com.possum.persistence.repositories.sqlite.SqliteCustomerRepository(databaseManager);
 
@@ -189,7 +188,9 @@ public final class AppBootstrap {
                 customerRepository, auditRepository, applicationModule.getInventoryService(),
                 taxEngine, paymentService, transactionManager, jsonService, serviceLocator.getSettingsStore(),
                 invoiceNumberService);
+        saleCalculator = new com.possum.domain.services.SaleCalculator(taxEngine);
         productSearchIndex = new ProductSearchIndex(variantRepository);
+
         transactionService = new com.possum.application.transactions.TransactionServiceImpl(transactionRepo, salesRepository);
 
         com.possum.shared.util.TimeUtil.initialize(serviceLocator.getSettingsStore());
@@ -207,8 +208,9 @@ public final class AppBootstrap {
         com.possum.application.sales.TaxEngine taxEngine =
                 new com.possum.application.sales.TaxEngine(taxRepository, jsonService);
         dependencyInjector = new DependencyInjector(applicationModule, serviceLocator, salesService,
-                taxEngine, productSearchIndex, transactionService, returnsService, reportsService,
-                purchaseService, variantRepository, salesRepository, supplierRepository, taxRepository, appPaths);
+                taxEngine, saleCalculator, productSearchIndex, transactionService, returnsService,
+                reportsService, purchaseService, variantRepository, salesRepository, supplierRepository, taxRepository, appPaths);
+
         dependencyInjector.getToastService().setMainStage(null);
     }
 
