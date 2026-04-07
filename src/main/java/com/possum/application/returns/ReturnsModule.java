@@ -3,9 +3,9 @@ package com.possum.application.returns;
 import com.possum.application.inventory.InventoryService;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
-import com.possum.persistence.repositories.interfaces.ReturnsRepository;
-import com.possum.persistence.repositories.interfaces.SalesRepository;
+import com.possum.domain.repositories.AuditRepository;
+import com.possum.domain.repositories.ReturnsRepository;
+import com.possum.domain.repositories.SalesRepository;
 
 public class ReturnsModule {
     private final ReturnsService returnsService;

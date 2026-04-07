@@ -4,7 +4,7 @@ import com.possum.domain.model.TaxCategory;
 import com.possum.domain.model.TaxProfile;
 import com.possum.domain.model.TaxRule;
 import com.possum.infrastructure.caching.CacheManager;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.domain.repositories.TaxRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

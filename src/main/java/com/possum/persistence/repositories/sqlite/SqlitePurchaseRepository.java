@@ -5,7 +5,7 @@ import com.possum.domain.model.PurchaseOrderItem;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.PurchaseOrderItemMapper;
 import com.possum.persistence.mappers.PurchaseOrderMapper;
-import com.possum.persistence.repositories.interfaces.PurchaseRepository;
+import com.possum.domain.repositories.PurchaseRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.PurchaseOrderFilter;
 

@@ -184,11 +184,12 @@ public final class AppBootstrap {
                 new com.possum.application.sales.PaymentService(salesRepository);
         com.possum.application.sales.InvoiceNumberService invoiceNumberService =
                 new com.possum.application.sales.InvoiceNumberService(salesRepository);
+        saleCalculator = new com.possum.domain.services.SaleCalculator(taxEngine);
         salesService = new SalesService(salesRepository, variantRepository, productRepository,
                 customerRepository, auditRepository, applicationModule.getInventoryService(),
-                taxEngine, paymentService, transactionManager, jsonService, serviceLocator.getSettingsStore(),
+                taxEngine, saleCalculator, paymentService, transactionManager, jsonService, serviceLocator.getSettingsStore(),
                 invoiceNumberService);
-        saleCalculator = new com.possum.domain.services.SaleCalculator(taxEngine);
+
         productSearchIndex = new ProductSearchIndex(variantRepository);
 
         transactionService = new com.possum.application.transactions.TransactionServiceImpl(transactionRepo, salesRepository);

@@ -2,7 +2,7 @@ package com.possum.persistence.repositories.sqlite;
 
 import com.possum.domain.model.SessionRecord;
 import com.possum.persistence.db.ConnectionProvider;
-import com.possum.persistence.repositories.interfaces.SessionRepository;
+import com.possum.domain.repositories.SessionRepository;
 
 import java.util.Optional;
 import java.util.UUID;

@@ -1,6 +1,6 @@
 package com.possum.application.sales;
 
-import com.possum.persistence.repositories.interfaces.SalesRepository;
+import com.possum.domain.repositories.SalesRepository;
 
 public class InvoiceNumberService {
     private final SalesRepository salesRepository;

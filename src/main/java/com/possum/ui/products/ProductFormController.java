@@ -7,7 +7,7 @@ import com.possum.domain.model.Category;
 import com.possum.domain.model.TaxCategory;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.logging.LoggingConfig;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.domain.repositories.TaxRepository;
 import com.possum.ui.common.ErrorHandler;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.controls.SingleSelectFilter;

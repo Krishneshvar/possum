@@ -6,7 +6,7 @@ import com.possum.infrastructure.backup.DatabaseBackupService;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.infrastructure.serialization.JsonService;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.domain.repositories.TaxRepository;
 import com.possum.ui.JavaFXInitializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;

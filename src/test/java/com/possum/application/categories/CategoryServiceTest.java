@@ -6,7 +6,7 @@ import com.possum.domain.exceptions.AuthorizationException;
 import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.exceptions.ValidationException;
 import com.possum.domain.model.Category;
-import com.possum.persistence.repositories.interfaces.CategoryRepository;
+import com.possum.domain.repositories.CategoryRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

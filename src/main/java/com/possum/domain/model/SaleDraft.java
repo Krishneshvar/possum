@@ -8,6 +8,10 @@ public class SaleDraft {
     private int index;
     private final List<CartItem> items = new ArrayList<>();
 
+    public void addItem(CartItem item) {
+        this.items.add(item);
+    }
+
     private Customer selectedCustomer;
     private String customerName = "";
     private String customerPhone = "";

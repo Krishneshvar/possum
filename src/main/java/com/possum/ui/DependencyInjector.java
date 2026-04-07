@@ -9,7 +9,7 @@ import com.possum.application.transactions.TransactionService;
 import com.possum.application.returns.ReturnsService;
 import com.possum.application.reports.ReportsService;
 import com.possum.application.purchase.PurchaseService;
-import com.possum.persistence.repositories.interfaces.*;
+import com.possum.domain.repositories.*;
 import com.possum.ui.common.toast.ToastService;
 import com.possum.ui.navigation.NavigationManager;
 

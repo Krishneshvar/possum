@@ -4,10 +4,10 @@ import com.possum.application.variants.VariantService;
 import com.possum.infrastructure.filesystem.AppPaths;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
-import com.possum.persistence.repositories.interfaces.InventoryRepository;
-import com.possum.persistence.repositories.interfaces.ProductRepository;
-import com.possum.persistence.repositories.interfaces.VariantRepository;
+import com.possum.domain.repositories.AuditRepository;
+import com.possum.domain.repositories.InventoryRepository;
+import com.possum.domain.repositories.ProductRepository;
+import com.possum.domain.repositories.VariantRepository;
 
 public class ProductModule {
     private final ProductService productService;

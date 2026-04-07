@@ -82,9 +82,9 @@ class SalesWorkflowIntegrationTest {
         SqliteUserRepository userRepository = new SqliteUserRepository(databaseManager);
         SqliteCustomerRepository customerRepository = new SqliteCustomerRepository(databaseManager);
 
-        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository,
-                auditRepository, inventoryService, taxEngine, paymentService, transactionManager,
-                jsonService, settingsStore, invoiceNumberService);
+        salesService = new SalesService(salesRepository,  variantRepository,  productRepository,  customerRepository, 
+                auditRepository,  inventoryService,  taxEngine, new com.possum.domain.services.SaleCalculator( taxEngine),  paymentService,  transactionManager, 
+                jsonService,  settingsStore,  invoiceNumberService);
 
         // Seed test data
         testUserId = seedUser(userRepository);

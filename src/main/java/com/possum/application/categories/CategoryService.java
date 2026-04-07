@@ -3,7 +3,7 @@ package com.possum.application.categories;
 import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.exceptions.ValidationException;
 import com.possum.domain.model.Category;
-import com.possum.persistence.repositories.interfaces.CategoryRepository;
+import com.possum.domain.repositories.CategoryRepository;
 
 import java.util.ArrayList;
 import java.util.List;

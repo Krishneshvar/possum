@@ -3,7 +3,7 @@ package com.possum.persistence.repositories.sqlite;
 import com.possum.domain.model.Transaction;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.TransactionMapper;
-import com.possum.persistence.repositories.interfaces.TransactionRepository;
+import com.possum.domain.repositories.TransactionRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.TransactionFilter;
 

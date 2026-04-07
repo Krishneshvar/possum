@@ -2,8 +2,8 @@ package com.possum.application.reports;
 
 import com.possum.application.reports.dto.*;
 import com.possum.domain.model.ProductFlow;
-import com.possum.persistence.repositories.interfaces.ProductFlowRepository;
-import com.possum.persistence.repositories.interfaces.ReportsRepository;
+import com.possum.domain.repositories.ProductFlowRepository;
+import com.possum.domain.repositories.ReportsRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

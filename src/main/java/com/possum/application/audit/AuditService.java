@@ -3,7 +3,7 @@ package com.possum.application.audit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.possum.domain.model.AuditLog;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
+import com.possum.domain.repositories.AuditRepository;
 import com.possum.shared.dto.AuditLogFilter;
 import com.possum.shared.dto.PagedResult;
 

@@ -2,7 +2,7 @@ package com.possum.ui.purchase;
 
 import com.possum.domain.model.PaymentPolicy;
 import com.possum.domain.model.Supplier;
-import com.possum.persistence.repositories.interfaces.SupplierRepository;
+import com.possum.domain.repositories.SupplierRepository;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.workspace.WorkspaceManager;
 import com.possum.ui.common.controllers.AbstractFormController;

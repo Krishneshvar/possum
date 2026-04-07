@@ -2,7 +2,7 @@ package com.possum.persistence.repositories.sqlite;
 
 import com.possum.domain.model.ProductFlow;
 import com.possum.persistence.db.ConnectionProvider;
-import com.possum.persistence.repositories.interfaces.ProductFlowRepository;
+import com.possum.domain.repositories.ProductFlowRepository;
 
 import java.util.ArrayList;
 import java.util.List;

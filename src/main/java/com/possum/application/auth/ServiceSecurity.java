@@ -2,7 +2,7 @@ package com.possum.application.auth;
 
 import com.possum.domain.exceptions.AuthorizationException;
 import com.possum.domain.model.AuditLog;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
+import com.possum.domain.repositories.AuditRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

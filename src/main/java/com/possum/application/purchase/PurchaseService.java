@@ -9,7 +9,7 @@ import com.possum.domain.model.*;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.*;
+import com.possum.domain.repositories.*;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.PurchaseOrderFilter;
 

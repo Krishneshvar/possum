@@ -2,7 +2,7 @@ package com.possum.application.inventory;
 
 import com.possum.domain.enums.FlowEventType;
 import com.possum.domain.model.ProductFlow;
-import com.possum.persistence.repositories.interfaces.ProductFlowRepository;
+import com.possum.domain.repositories.ProductFlowRepository;
 
 import java.time.LocalDateTime;
 import com.possum.shared.util.TimeUtil;

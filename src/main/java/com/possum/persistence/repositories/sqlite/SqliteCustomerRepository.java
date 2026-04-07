@@ -3,7 +3,7 @@ package com.possum.persistence.repositories.sqlite;
 import com.possum.domain.model.Customer;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.CustomerMapper;
-import com.possum.persistence.repositories.interfaces.CustomerRepository;
+import com.possum.domain.repositories.CustomerRepository;
 import com.possum.shared.dto.CustomerFilter;
 import com.possum.shared.dto.PagedResult;
 

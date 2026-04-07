@@ -1,7 +1,7 @@
 package com.possum.application.transactions;
 
-import com.possum.persistence.repositories.interfaces.SalesRepository;
-import com.possum.persistence.repositories.interfaces.TransactionRepository;
+import com.possum.domain.repositories.SalesRepository;
+import com.possum.domain.repositories.TransactionRepository;
 
 public final class TransactionsModule {
 

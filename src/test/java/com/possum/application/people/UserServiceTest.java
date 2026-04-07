@@ -7,7 +7,7 @@ import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.exceptions.ValidationException;
 import com.possum.domain.model.User;
 import com.possum.infrastructure.security.PasswordHasher;
-import com.possum.persistence.repositories.interfaces.UserRepository;
+import com.possum.domain.repositories.UserRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.UserFilter;
 import org.junit.jupiter.api.AfterEach;

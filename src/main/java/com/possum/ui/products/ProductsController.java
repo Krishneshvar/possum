@@ -36,7 +36,7 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
 
     private final ProductService productService;
     private final CategoryService categoryService;
-    private final com.possum.persistence.repositories.interfaces.TaxRepository taxRepository;
+    private final com.possum.domain.repositories.TaxRepository taxRepository;
     private final ImportHandler importHandler;
 
     private List<Long> currentTaxCategoryFilters = java.util.Collections.emptyList();
@@ -48,7 +48,7 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
 
     public ProductsController(ProductService productService,
                               CategoryService categoryService,
-                              com.possum.persistence.repositories.interfaces.TaxRepository taxRepository,
+                              com.possum.domain.repositories.TaxRepository taxRepository,
                               WorkspaceManager workspaceManager) {
         super(workspaceManager);
         this.productService = productService;

@@ -1,4 +1,4 @@
-package com.possum.persistence.repositories.interfaces;
+package com.possum.domain.repositories;
 
 import com.possum.domain.model.Product;
 import com.possum.domain.model.TaxRule;

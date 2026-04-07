@@ -81,9 +81,9 @@ class TransactionRollbackIntegrationTest {
         PaymentService paymentService = new PaymentService(salesRepository);
         InvoiceNumberService invoiceNumberService = new InvoiceNumberService(salesRepository);
 
-        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository,
-                auditRepository, inventoryService, taxEngine, paymentService, transactionManager,
-                jsonService, settingsStore, invoiceNumberService);
+        salesService = new SalesService(salesRepository,  variantRepository,  productRepository,  customerRepository, 
+                auditRepository,  inventoryService,  taxEngine, new com.possum.domain.services.SaleCalculator( taxEngine),  paymentService,  transactionManager, 
+                jsonService,  settingsStore,  invoiceNumberService);
 
         long roleId = queryLong("SELECT id FROM roles WHERE name = 'admin'");
         User u = userRepository.insertUserWithRoles(

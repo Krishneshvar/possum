@@ -3,7 +3,7 @@ package com.possum.persistence.repositories.sqlite;
 import com.possum.domain.model.AuditLog;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.AuditLogMapper;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
+import com.possum.domain.repositories.AuditRepository;
 import com.possum.shared.dto.AuditLogFilter;
 import com.possum.shared.dto.PagedResult;
 

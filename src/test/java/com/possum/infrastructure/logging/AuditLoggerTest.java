@@ -1,7 +1,7 @@
 package com.possum.infrastructure.logging;
 
 import com.possum.domain.model.AuditLog;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
+import com.possum.domain.repositories.AuditRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

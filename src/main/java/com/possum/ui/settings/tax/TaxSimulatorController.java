@@ -8,7 +8,7 @@ import com.possum.application.taxes.TaxManagementService;
 import com.possum.domain.model.TaxCategory;
 import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.serialization.JsonService;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.domain.repositories.TaxRepository;
 import com.possum.ui.common.controls.NotificationService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;

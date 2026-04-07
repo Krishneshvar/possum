@@ -7,7 +7,7 @@ import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.InventoryAdjustmentMapper;
 import com.possum.persistence.mappers.InventoryLotMapper;
 import com.possum.persistence.mappers.VariantMapper;
-import com.possum.persistence.repositories.interfaces.InventoryRepository;
+import com.possum.domain.repositories.InventoryRepository;
 import com.possum.shared.dto.AvailableLot;
 import com.possum.shared.util.SqlMapperUtils;
 

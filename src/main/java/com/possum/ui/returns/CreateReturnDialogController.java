@@ -8,7 +8,7 @@ import com.possum.application.sales.SalesService;
 import com.possum.application.sales.dto.SaleResponse;
 import com.possum.domain.model.Sale;
 import com.possum.domain.model.SaleItem;
-import com.possum.persistence.repositories.interfaces.SalesRepository;
+import com.possum.domain.repositories.SalesRepository;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.navigation.Parameterizable;
 import javafx.application.Platform;

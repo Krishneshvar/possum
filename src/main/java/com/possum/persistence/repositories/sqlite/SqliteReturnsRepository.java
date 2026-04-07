@@ -5,7 +5,7 @@ import com.possum.domain.model.ReturnItem;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.ReturnItemMapper;
 import com.possum.persistence.mappers.ReturnMapper;
-import com.possum.persistence.repositories.interfaces.ReturnsRepository;
+import com.possum.domain.repositories.ReturnsRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ReturnFilter;
 

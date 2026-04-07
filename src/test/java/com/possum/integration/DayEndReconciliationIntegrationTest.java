@@ -81,9 +81,9 @@ class DayEndReconciliationIntegrationTest {
         PaymentService paymentService = new PaymentService(salesRepository);
         InvoiceNumberService invoiceNumberService = new InvoiceNumberService(salesRepository);
 
-        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository,
-                auditRepository, inventoryService, taxEngine, paymentService, transactionManager,
-                jsonService, settingsStore, invoiceNumberService);
+        salesService = new SalesService(salesRepository,  variantRepository,  productRepository,  customerRepository, 
+                auditRepository,  inventoryService,  taxEngine, new com.possum.domain.services.SaleCalculator( taxEngine),  paymentService,  transactionManager, 
+                jsonService,  settingsStore,  invoiceNumberService);
 
         returnsService = new ReturnsService(returnsRepository, salesRepository, inventoryService,
                 auditRepository, transactionManager, jsonService);

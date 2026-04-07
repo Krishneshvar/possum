@@ -9,9 +9,14 @@ import com.possum.domain.exceptions.InsufficientStockException;
 import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.model.*;
 import com.possum.infrastructure.filesystem.SettingsStore;
+import com.possum.domain.repositories.SalesRepository;
+import com.possum.domain.repositories.VariantRepository;
+import com.possum.domain.repositories.ProductRepository;
+import com.possum.domain.repositories.CustomerRepository;
+import com.possum.domain.repositories.AuditRepository;
+import com.possum.application.sales.InvoiceNumberService;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,7 +56,7 @@ class SalesServiceTest {
 
     @BeforeEach
     void setUp() {
-        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository, auditRepository, inventoryService, taxEngine, paymentService, transactionManager, jsonService, settingsStore, invoiceNumberService);
+        salesService = new SalesService(salesRepository, variantRepository, productRepository, customerRepository, auditRepository, inventoryService, taxEngine, new com.possum.domain.services.SaleCalculator(taxEngine), paymentService, transactionManager, jsonService, settingsStore, invoiceNumberService);
         AuthContext.setCurrentUser(new AuthUser(1L, "Cashier", "cashier", List.of(), List.of("sales.create", "sales.manage")));
 
         lenient().when(transactionManager.runInTransaction(any())).thenAnswer(invocation -> {

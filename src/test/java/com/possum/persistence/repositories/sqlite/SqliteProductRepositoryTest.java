@@ -2,7 +2,7 @@ package com.possum.persistence.repositories.sqlite;
 
 import com.possum.domain.model.Product;
 import com.possum.persistence.db.ConnectionProvider;
-import com.possum.persistence.repositories.interfaces.ProductRepository;
+import com.possum.domain.repositories.ProductRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ProductFilter;
 import org.junit.jupiter.api.AfterEach;

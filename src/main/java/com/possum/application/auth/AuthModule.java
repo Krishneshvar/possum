@@ -3,9 +3,9 @@ package com.possum.application.auth;
 import com.possum.application.auth.handlers.AuthHandler;
 import com.possum.infrastructure.security.PasswordHasher;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
-import com.possum.persistence.repositories.interfaces.SessionRepository;
-import com.possum.persistence.repositories.interfaces.UserRepository;
+import com.possum.domain.repositories.AuditRepository;
+import com.possum.domain.repositories.SessionRepository;
+import com.possum.domain.repositories.UserRepository;
 
 public class AuthModule {
 

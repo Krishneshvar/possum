@@ -2,7 +2,7 @@ package com.possum.ui.purchase;
 
 import com.possum.domain.model.PaymentPolicy;
 import com.possum.domain.model.Supplier;
-import com.possum.persistence.repositories.interfaces.SupplierRepository;
+import com.possum.domain.repositories.SupplierRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.SupplierFilter;
 import com.possum.ui.common.controllers.AbstractCrudController;

@@ -5,8 +5,8 @@ import com.possum.domain.exceptions.ValidationException;
 import com.possum.domain.model.Customer;
 import com.possum.domain.model.TaxExemption;
 import com.possum.infrastructure.logging.AuditLogger;
-import com.possum.persistence.repositories.interfaces.CustomerRepository;
-import com.possum.persistence.repositories.interfaces.TaxExemptionRepository;
+import com.possum.domain.repositories.CustomerRepository;
+import com.possum.domain.repositories.TaxExemptionRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;

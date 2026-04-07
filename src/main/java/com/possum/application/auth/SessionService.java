@@ -5,8 +5,8 @@ import com.possum.domain.model.Role;
 import com.possum.domain.model.SessionRecord;
 import com.possum.domain.model.User;
 import com.possum.infrastructure.security.SecureTokenGenerator;
-import com.possum.persistence.repositories.interfaces.SessionRepository;
-import com.possum.persistence.repositories.interfaces.UserRepository;
+import com.possum.domain.repositories.SessionRepository;
+import com.possum.domain.repositories.UserRepository;
 
 import java.util.List;
 import java.util.Optional;

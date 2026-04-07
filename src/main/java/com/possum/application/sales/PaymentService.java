@@ -3,7 +3,7 @@ package com.possum.application.sales;
 import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.model.PaymentMethod;
 import com.possum.domain.model.Transaction;
-import com.possum.persistence.repositories.interfaces.SalesRepository;
+import com.possum.domain.repositories.SalesRepository;
 
 import java.util.List;
 

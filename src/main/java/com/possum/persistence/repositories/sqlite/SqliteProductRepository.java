@@ -7,7 +7,7 @@ import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.ProductMapper;
 import com.possum.persistence.mappers.TaxRuleMapper;
 import com.possum.persistence.mappers.VariantMapper;
-import com.possum.persistence.repositories.interfaces.ProductRepository;
+import com.possum.domain.repositories.ProductRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ProductFilter;
 

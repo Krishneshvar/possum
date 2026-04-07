@@ -3,7 +3,7 @@ package com.possum.ui.inventory;
 import com.possum.application.categories.CategoryService;
 import com.possum.domain.model.Category;
 import com.possum.domain.model.Variant;
-import com.possum.persistence.repositories.interfaces.VariantRepository;
+import com.possum.domain.repositories.VariantRepository;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.FilterBar;
 import com.possum.ui.common.controls.NotificationService;
@@ -55,12 +55,12 @@ public class VariantsController {
     private List<Long> currentCategoryFilters = Collections.emptyList();
     private java.math.BigDecimal currentMinPrice = null;
     private java.math.BigDecimal currentMaxPrice = null;
-    private final com.possum.persistence.repositories.interfaces.TaxRepository taxRepository;
+    private final com.possum.domain.repositories.TaxRepository taxRepository;
     private final ToggleGroup viewModeGroup = new ToggleGroup();
     private boolean cardsViewEnabled = true;
 
     public VariantsController(VariantRepository variantRepository, CategoryService categoryService, 
-                              com.possum.persistence.repositories.interfaces.TaxRepository taxRepository,
+                              com.possum.domain.repositories.TaxRepository taxRepository,
                               WorkspaceManager workspaceManager) {
         this.variantRepository = variantRepository;
         this.categoryService = categoryService;

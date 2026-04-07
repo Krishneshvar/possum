@@ -2,7 +2,7 @@ package com.possum.ui.purchase;
 
 import com.possum.application.auth.AuthContext;
 import com.possum.application.auth.AuthUser;
-import com.possum.persistence.repositories.interfaces.SupplierRepository;
+import com.possum.domain.repositories.SupplierRepository;
 import com.possum.domain.model.Supplier;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.SupplierFilter;

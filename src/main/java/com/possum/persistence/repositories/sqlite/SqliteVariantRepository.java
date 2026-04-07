@@ -3,7 +3,7 @@ package com.possum.persistence.repositories.sqlite;
 import com.possum.domain.model.Variant;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.VariantMapper;
-import com.possum.persistence.repositories.interfaces.VariantRepository;
+import com.possum.domain.repositories.VariantRepository;
 import com.possum.shared.dto.PagedResult;
 
 import java.util.ArrayList;

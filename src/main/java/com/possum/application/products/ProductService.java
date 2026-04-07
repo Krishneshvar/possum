@@ -10,9 +10,9 @@ import com.possum.infrastructure.filesystem.AppPaths;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
-import com.possum.persistence.repositories.interfaces.ProductRepository;
-import com.possum.persistence.repositories.interfaces.VariantRepository;
+import com.possum.domain.repositories.AuditRepository;
+import com.possum.domain.repositories.ProductRepository;
+import com.possum.domain.repositories.VariantRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ProductFilter;
 

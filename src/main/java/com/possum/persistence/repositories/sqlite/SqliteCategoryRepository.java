@@ -3,7 +3,7 @@ package com.possum.persistence.repositories.sqlite;
 import com.possum.domain.model.Category;
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.CategoryMapper;
-import com.possum.persistence.repositories.interfaces.CategoryRepository;
+import com.possum.domain.repositories.CategoryRepository;
 
 import java.util.List;
 import java.util.Optional;

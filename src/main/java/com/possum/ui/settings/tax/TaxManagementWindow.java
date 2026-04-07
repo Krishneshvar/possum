@@ -3,7 +3,7 @@ package com.possum.ui.settings.tax;
 import com.possum.application.taxes.TaxManagementService;
 import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.serialization.JsonService;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.domain.repositories.TaxRepository;
 import com.possum.ui.common.controls.ViewStateEnhancer;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

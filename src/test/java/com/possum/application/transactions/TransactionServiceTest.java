@@ -2,8 +2,8 @@ package com.possum.application.transactions;
 
 import com.possum.domain.exceptions.AuthorizationException;
 import com.possum.domain.model.Transaction;
-import com.possum.persistence.repositories.interfaces.SalesRepository;
-import com.possum.persistence.repositories.interfaces.TransactionRepository;
+import com.possum.domain.repositories.SalesRepository;
+import com.possum.domain.repositories.TransactionRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.TransactionFilter;
 import org.junit.jupiter.api.BeforeEach;

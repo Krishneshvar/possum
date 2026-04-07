@@ -1,6 +1,6 @@
 package com.possum.application.reports;
 
-import com.possum.persistence.repositories.interfaces.SalesRepository;
+import com.possum.domain.repositories.SalesRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

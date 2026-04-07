@@ -1,7 +1,7 @@
 package com.possum.persistence.repositories.sqlite;
 
 import com.possum.persistence.db.ConnectionProvider;
-import com.possum.persistence.repositories.interfaces.ReportsRepository;
+import com.possum.domain.repositories.ReportsRepository;
 import com.possum.persistence.mappers.SaleMapper;
 import com.possum.persistence.mappers.SaleItemMapper;
 import com.possum.persistence.mappers.TransactionMapper;

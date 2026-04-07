@@ -7,9 +7,9 @@ import com.possum.domain.model.InventoryLot;
 import com.possum.domain.model.Variant;
 import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
-import com.possum.persistence.repositories.interfaces.InventoryRepository;
-import com.possum.persistence.repositories.interfaces.VariantRepository;
+import com.possum.domain.repositories.AuditRepository;
+import com.possum.domain.repositories.InventoryRepository;
+import com.possum.domain.repositories.VariantRepository;
 import com.possum.shared.dto.PagedResult;
 
 import java.math.BigDecimal;

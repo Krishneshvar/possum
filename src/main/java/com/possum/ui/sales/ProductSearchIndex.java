@@ -1,7 +1,7 @@
 package com.possum.ui.sales;
 
 import com.possum.domain.model.Variant;
-import com.possum.persistence.repositories.interfaces.VariantRepository;
+import com.possum.domain.repositories.VariantRepository;
 import com.possum.shared.dto.PagedResult;
 
 import java.util.*;

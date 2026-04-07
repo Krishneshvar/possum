@@ -10,13 +10,18 @@ import com.possum.domain.model.*;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.*;
+import com.possum.domain.repositories.*;
+import com.possum.domain.services.TaxCalculator;
+import com.possum.domain.services.SaleCalculator;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import com.possum.shared.util.TimeUtil;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class SalesService {
     private final SalesRepository salesRepository;
@@ -25,12 +30,14 @@ public class SalesService {
     private final CustomerRepository customerRepository;
     private final AuditRepository auditRepository;
     private final InventoryService inventoryService;
-    private final TaxEngine taxEngine;
+    private final TaxCalculator taxCalculator;
+    private final SaleCalculator saleCalculator;
     private final PaymentService paymentService;
     private final TransactionManager transactionManager;
     private final JsonService jsonService;
     private final SettingsStore settingsStore;
     private final InvoiceNumberService invoiceNumberService;
+
 
     public SalesService(SalesRepository salesRepository,
                         VariantRepository variantRepository,
@@ -38,7 +45,8 @@ public class SalesService {
                         CustomerRepository customerRepository,
                         AuditRepository auditRepository,
                         InventoryService inventoryService,
-                        TaxEngine taxEngine,
+                        TaxCalculator taxCalculator,
+                        SaleCalculator saleCalculator,
                         PaymentService paymentService,
                         TransactionManager transactionManager,
                         JsonService jsonService,
@@ -50,7 +58,8 @@ public class SalesService {
         this.customerRepository = customerRepository;
         this.auditRepository = auditRepository;
         this.inventoryService = inventoryService;
-        this.taxEngine = taxEngine;
+        this.taxCalculator = taxCalculator;
+        this.saleCalculator = saleCalculator;
         this.paymentService = paymentService;
         this.transactionManager = transactionManager;
         this.jsonService = jsonService;
@@ -58,253 +67,142 @@ public class SalesService {
         this.invoiceNumberService = invoiceNumberService;
     }
 
+
     public SaleResponse createSale(CreateSaleRequest request, long userId) {
         com.possum.application.auth.ServiceSecurity.requirePermission(com.possum.application.auth.Permissions.SALES_CREATE);
         request.validate();
 
-        BigDecimal discount = request.discount() != null ? request.discount() : BigDecimal.ZERO;
-        List<PaymentRequest> payments = request.payments() != null ? request.payments() : List.of();
-
-        for (PaymentRequest payment : payments) {
-            paymentService.validatePaymentMethod(payment.paymentMethodId());
-        }
-
+        // 1. Fetch all variants in batch to minimize queries
         List<Long> variantIds = request.items().stream().map(CreateSaleItemRequest::variantId).toList();
         Map<Long, Variant> variantMap = fetchVariantsBatch(variantIds);
-        boolean enforceInventoryRestrictions = isInventoryRestrictionsEnabled();
 
-        return transactionManager.runInTransaction(() -> {
-            // Stock validation inside transaction
-            for (CreateSaleItemRequest item : request.items()) {
-                Variant variant = variantMap.get(item.variantId());
-                if (variant == null) {
-                    throw new NotFoundException("Variant not found: " + item.variantId());
-                }
+        // 2. Build SaleDraft for calculation
+        SaleDraft draft = new SaleDraft();
+        if (request.customerId() != null) {
+            Customer customer = customerRepository.findCustomerById(request.customerId()).orElse(null);
+            draft.setSelectedCustomer(customer);
+        }
+        
+        draft.setOverallDiscountValue(request.discount() != null ? request.discount() : BigDecimal.ZERO);
+        draft.setDiscountFixed(true); 
 
-                if (enforceInventoryRestrictions) {
-                    int currentStock = inventoryService.getVariantStock(item.variantId());
-                    if (currentStock < item.quantity()) {
-                        throw new InsufficientStockException(currentStock, item.quantity());
-                    }
-                }
+        for (CreateSaleItemRequest itemReq : request.items()) {
+            Variant v = variantMap.get(itemReq.variantId());
+            if (v == null) {
+                throw new NotFoundException("Variant not found: " + itemReq.variantId());
             }
+            CartItem cartItem = new CartItem(v, itemReq.quantity());
+            cartItem.setPricePerUnit(itemReq.pricePerUnit() != null ? itemReq.pricePerUnit() : v.price());
+            cartItem.setDiscountType("fixed");
+            cartItem.setDiscountValue(itemReq.discount() != null ? itemReq.discount() : BigDecimal.ZERO);
+            
+            draft.addItem(cartItem);
+        }
 
-            taxEngine.init();
+        // 3. Perform Domain Calculation
+        saleCalculator.recalculate(draft);
 
-            // Calculate gross total
-            BigDecimal grossTotal = BigDecimal.ZERO;
-            List<TempItem> tempItems = new ArrayList<>();
-
-            for (CreateSaleItemRequest item : request.items()) {
-                Variant variant = variantMap.get(item.variantId());
-                BigDecimal pricePerUnit = item.pricePerUnit() != null ? item.pricePerUnit() : variant.price();
-                BigDecimal lineTotal = pricePerUnit.multiply(BigDecimal.valueOf(item.quantity()));
-                BigDecimal lineDiscount = item.discount() != null ? item.discount() : BigDecimal.ZERO;
-                BigDecimal netLineTotal = lineTotal.subtract(lineDiscount).max(BigDecimal.ZERO);
-
-                grossTotal = grossTotal.add(netLineTotal);
-                tempItems.add(new TempItem(item, pricePerUnit, netLineTotal));
-            }
-
-            // Distribute global discount
-            BigDecimal distributedGlobalDiscount = BigDecimal.ZERO;
-            List<TaxableItem> calculationItems = new ArrayList<>();
-
-            for (int i = 0; i < tempItems.size(); i++) {
-                TempItem tempItem = tempItems.get(i);
-                Variant variant = variantMap.get(tempItem.item.variantId());
-                Product product = productRepository.findProductById(variant.productId())
-                        .orElseThrow(() -> new NotFoundException("Product not found"));
-
-                BigDecimal itemGlobalDiscount = BigDecimal.ZERO;
-                if (grossTotal.compareTo(BigDecimal.ZERO) > 0 && discount.compareTo(BigDecimal.ZERO) > 0) {
-                    if (i == tempItems.size() - 1) {
-                        itemGlobalDiscount = discount.subtract(distributedGlobalDiscount);
-                    } else {
-                        itemGlobalDiscount = tempItem.netLineTotal
-                                .divide(grossTotal, 10, RoundingMode.HALF_UP)
-                                .multiply(discount);
-                        distributedGlobalDiscount = distributedGlobalDiscount.add(itemGlobalDiscount);
-                    }
-                }
-
-                BigDecimal finalTaxableAmount = tempItem.netLineTotal.subtract(itemGlobalDiscount).max(BigDecimal.ZERO);
-                BigDecimal effectiveUnitPrice = tempItem.item.quantity() > 0
-                        ? finalTaxableAmount.divide(BigDecimal.valueOf(tempItem.item.quantity()), 10, RoundingMode.HALF_UP)
-                        : BigDecimal.ZERO;
-
-                TaxableItem taxableItem = new TaxableItem(
-                        product.name(),
-                        variant.name(),
-                        effectiveUnitPrice,
-                        tempItem.item.quantity(),
-                        product.taxCategoryId(),
-                        variant.id(),
-                        product.id()
-                );
-                calculationItems.add(taxableItem);
-            }
-
-            Customer customer = null;
-            if (request.customerId() != null) {
-                customer = customerRepository.findCustomerById(request.customerId()).orElse(null);
-            }
-
-            TaxCalculationResult taxResult = taxEngine.calculate(new TaxableInvoice(calculationItems), customer);
-
-            BigDecimal totalTax = taxResult.totalTax();
-            List<ProcessedItem> processedItems = new ArrayList<>();
-
-            for (int i = 0; i < request.items().size(); i++) {
-                CreateSaleItemRequest item = request.items().get(i);
-                TaxableItem calculatedItem = taxResult.getItemByIndex(i);
-                Variant variant = variantMap.get(item.variantId());
-                Product product = productRepository.findProductById(variant.productId())
-                        .orElseThrow(() -> new NotFoundException("Product not found"));
-
-                BigDecimal pricePerUnit = item.pricePerUnit() != null ? item.pricePerUnit() : variant.price();
-                BigDecimal costPerUnit = variant.costPrice() != null ? variant.costPrice() : BigDecimal.ZERO;
-                BigDecimal itemDiscount = item.discount() != null ? item.discount() : BigDecimal.ZERO;
-
-                processedItems.add(new ProcessedItem(
-                        item.variantId(),
-                        variant.name(),
-                        variant.sku(),
-                        product.name(),
-                        item.quantity(),
-                        pricePerUnit,
-                        costPerUnit,
-                        calculatedItem.getTaxRate(),
-                        calculatedItem.getTaxAmount(),
-                        itemDiscount,
-                        calculatedItem.getTaxRuleSnapshot()
-                ));
-            }
-
-            BigDecimal totalAmount = taxResult.grandTotal();
-            BigDecimal paidAmount = payments.stream()
-                    .map(PaymentRequest::amount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            String status = determineStatus(paidAmount, totalAmount);
-            String fulfillmentStatus = "paid".equals(status) ? "fulfilled" : "pending";
-
-            // Resolve primary payment method code (use first payment if multiple).
-            long primaryPaymentMethodId = payments.isEmpty() ? 0L : payments.get(0).paymentMethodId();
-            String invoiceNumber = invoiceNumberService.generate(primaryPaymentMethodId);
-
-            Sale sale = new Sale(
+        // 4. Persistence logic
+        long saleId = transactionManager.runInTransaction(() -> {
+            boolean enforceInventoryRestrictions = isInventoryRestrictionsEnabled();
+            
+            // Generate Invoice Number
+            String invoiceNumber = invoiceNumberService.generate(userId);
+            
+            Sale saleEntity = new Sale(
                     null,
                     invoiceNumber,
-                    TimeUtil.nowUTC(),
-                    totalAmount,
-                    paidAmount,
-                    discount,
-                    totalTax,
-                    status,
-                    fulfillmentStatus,
-                    request.customerId(),
+                    com.possum.shared.util.TimeUtil.nowUTC(),
+                    draft.getTotal(),
+                    BigDecimal.ZERO, // paid amount (updated later)
+                    draft.getDiscountTotal(),
+                    draft.getTaxAmount(),
+                    "draft", 
+                    "pending",
+                    draft.getSelectedCustomer() != null ? draft.getSelectedCustomer().id() : null,
                     userId,
                     null, null, null, null, null, null
             );
 
-            long saleId = salesRepository.insertSale(sale);
-
-            List<SaleItem> insertedItems = new ArrayList<>();
-            for (ProcessedItem item : processedItems) {
-                SaleItem saleItem = new SaleItem(
+            long newSaleId = salesRepository.insertSale(saleEntity);
+            
+            // Save Items
+            for (CartItem cartItem : draft.getItems()) {
+                SaleItem item = new SaleItem(
                         null,
-                        saleId,
-                        item.variantId,
-                        item.variantName,
-                        item.sku,
-                        item.productName,
-                        item.quantity,
-                        item.pricePerUnit,
-                        item.costPerUnit,
-                        item.taxRate,
-                        item.taxAmount,
-                        item.taxRate,
-                        item.taxAmount,
-                        item.taxRuleSnapshot,
-                        item.discountAmount,
+                        newSaleId,
+                        cartItem.getVariant().id(),
+                        cartItem.getVariant().name(),
+                        cartItem.getVariant().sku(),
+                        cartItem.getVariant().productName(),
+                        cartItem.getQuantity(),
+                        cartItem.getPricePerUnit(),
+                        cartItem.getVariant().costPrice(),
+                        cartItem.getTaxRate(),
+                        cartItem.getTaxAmount(),
+                        cartItem.getTaxRate(), 
+                        cartItem.getTaxAmount(), 
+                        cartItem.getTaxRuleSnapshot(),
+                        cartItem.getDiscountAmount(),
                         null
                 );
+                salesRepository.insertSaleItem(item);
 
-                long saleItemId = salesRepository.insertSaleItem(saleItem);
+                // Stock deduction
+                if (enforceInventoryRestrictions) {
+                    int currentStock = inventoryService.getVariantStock(cartItem.getVariant().id());
+                    if (currentStock < cartItem.getQuantity()) {
+                        throw new InsufficientStockException(currentStock, cartItem.getQuantity());
+                    }
+                }
 
                 inventoryService.deductStock(
-                        item.variantId,
-                        item.quantity,
+                        cartItem.getVariant().id(),
+                        cartItem.getQuantity(),
                         userId,
                         InventoryReason.SALE,
-                        "sale_item",
-                        saleItemId
+                        null,
+                        newSaleId
                 );
-
-                insertedItems.add(new SaleItem(
-                        saleItemId,
-                        saleId,
-                        item.variantId,
-                        item.variantName,
-                        item.sku,
-                        item.productName,
-                        item.quantity,
-                        item.pricePerUnit,
-                        item.costPerUnit,
-                        item.taxRate,
-                        item.taxAmount,
-                        item.taxRate,
-                        item.taxAmount,
-                        item.taxRuleSnapshot,
-                        item.discountAmount,
-                        null
-                ));
             }
 
-            List<Transaction> insertedTransactions = new ArrayList<>();
-            for (PaymentRequest payment : payments) {
-                Transaction transaction = new Transaction(
-                        null,
-                        payment.amount(),
-                        "payment",
-                        payment.paymentMethodId(),
-                        null,
-                        "completed",
-                        TimeUtil.nowUTC(),
-                        invoiceNumber,
-                        null, null
-                );
-                long txId = salesRepository.insertTransaction(transaction, saleId);
-                insertedTransactions.add(new Transaction(
-                        txId,
-                        payment.amount(),
-                        "payment",
-                        payment.paymentMethodId(),
-                        null,
-                        "completed",
-                        TimeUtil.nowUTC(),
-                        invoiceNumber,
-                        null, null
-                ));
+            // Handle payments
+            BigDecimal totalPaid = BigDecimal.ZERO;
+            if (request.payments() != null) {
+                for (PaymentRequest p : request.payments()) {
+                    totalPaid = totalPaid.add(p.amount());
+                    Transaction transaction = new Transaction(
+                            null, p.amount(), "payment", p.paymentMethodId(), 
+                            null, "completed", com.possum.shared.util.TimeUtil.nowUTC(), 
+                            invoiceNumber, null, null
+                    );
+                    salesRepository.insertTransaction(transaction, newSaleId);
+                }
             }
 
-            Map<String, Object> auditData = Map.of(
-                    "invoice_number", invoiceNumber,
-                    "total_amount", totalAmount,
-                    "items_count", processedItems.size()
-            );
-            AuditLog auditLog = new AuditLog(
-                    null, userId, "CREATE", "sales", saleId,
-                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC()
-            );
-            auditRepository.insertAuditLog(auditLog);
-
-            Sale createdSale = salesRepository.findSaleById(saleId)
-                    .orElseThrow(() -> new RuntimeException("Failed to retrieve created sale"));
-
-            return new SaleResponse(createdSale, insertedItems, insertedTransactions);
+            // Update Status
+            String status = "draft";
+            if (totalPaid.compareTo(draft.getTotal()) >= 0) status = "paid";
+            else if (totalPaid.compareTo(BigDecimal.ZERO) > 0) status = "partially_paid";
+            
+            salesRepository.updateSaleStatus(newSaleId, status);
+            salesRepository.updateSalePaidAmount(newSaleId, totalPaid);
+            if (status.equals("paid") || status.equals("partially_paid")) {
+                salesRepository.updateFulfillmentStatus(newSaleId, "fulfilled");
+            }
+            
+            // Audit
+            auditRepository.log("sales", newSaleId, "CREATE", jsonService.toJson(saleEntity), userId);
+            
+            return newSaleId;
         });
+
+        // 5. Finalize Response
+        Sale saleResult = salesRepository.findSaleById(saleId).orElseThrow();
+        List<SaleItem> itemsResult = salesRepository.findSaleItems(saleId);
+        List<Transaction> transactionsResult = salesRepository.findTransactionsBySaleId(saleId);
+
+        return new SaleResponse(saleResult, itemsResult, transactionsResult);
     }
 
     private Map<Long, Variant> fetchVariantsBatch(List<Long> variantIds) {
@@ -314,22 +212,6 @@ public class SalesService {
         }
         return map;
     }
-
-    private String determineStatus(BigDecimal paidAmount, BigDecimal totalAmount) {
-        if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
-            return "draft";
-        } else if (paidAmount.compareTo(totalAmount) >= 0) {
-            return "paid";
-        } else {
-            return "partially_paid";
-        }
-    }
-
-    private record TempItem(CreateSaleItemRequest item, BigDecimal pricePerUnit, BigDecimal netLineTotal) {}
-    private record ProcessedItem(long variantId, String variantName, String sku, String productName, 
-                                  int quantity, BigDecimal pricePerUnit, BigDecimal costPerUnit,
-                                  BigDecimal taxRate, BigDecimal taxAmount, BigDecimal discountAmount,
-                                  String taxRuleSnapshot) {}
 
     public SaleResponse getSaleDetails(long saleId) {
         Sale sale = salesRepository.findSaleById(saleId)
@@ -391,20 +273,20 @@ public class SalesService {
             }
 
             // 3. Recalculate Taxes and insert new items
-            taxEngine.init();
-            List<TaxableItem> calculationItems = new ArrayList<>();
+            List<TaxableItem> itemsToCalculate = new ArrayList<>();
             for (UpdateSaleItemRequest req : itemRequests) {
                 Variant v = variantMap.get(req.variantId());
                 Product p = productRepository.findProductById(v.productId()).orElseThrow();
                 
-                calculationItems.add(new TaxableItem(
+                itemsToCalculate.add(new TaxableItem(
                         p.name(), v.name(), req.pricePerUnit(), req.quantity(),
                         p.taxCategoryId(), v.id(), p.id()
                 ));
             }
 
             Customer customer = sale.customerId() != null ? customerRepository.findCustomerById(sale.customerId()).orElse(null) : null;
-            TaxCalculationResult taxResult = taxEngine.calculate(new TaxableInvoice(calculationItems), customer);
+            TaxCalculationResult taxResult = taxCalculator.calculate(new TaxableInvoice(itemsToCalculate), customer);
+
 
             for (int i = 0; i < itemRequests.size(); i++) {
                 UpdateSaleItemRequest req = itemRequests.get(i);

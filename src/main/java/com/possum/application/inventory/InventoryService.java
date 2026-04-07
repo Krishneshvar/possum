@@ -10,8 +10,8 @@ import com.possum.domain.model.Variant;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.AuditRepository;
-import com.possum.persistence.repositories.interfaces.InventoryRepository;
+import com.possum.domain.repositories.AuditRepository;
+import com.possum.domain.repositories.InventoryRepository;
 import com.possum.shared.dto.AvailableLot;
 
 import java.math.BigDecimal;

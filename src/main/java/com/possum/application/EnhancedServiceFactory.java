@@ -9,7 +9,7 @@ import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.logging.AuditLogger;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.*;
+import com.possum.domain.repositories.*;
 
 import java.sql.Connection;
 

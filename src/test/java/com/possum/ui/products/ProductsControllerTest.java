@@ -6,7 +6,7 @@ import com.possum.application.categories.CategoryService;
 import com.possum.application.products.ProductService;
 import com.possum.domain.model.Category;
 import com.possum.domain.model.Product;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.domain.repositories.TaxRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.ProductFilter;
 import com.possum.ui.common.controls.FilterBar;

@@ -5,7 +5,7 @@ import com.possum.domain.model.Role;
 import com.possum.domain.model.User;
 import com.possum.domain.model.UserPermissionOverride;
 import com.possum.infrastructure.security.PasswordHasher;
-import com.possum.persistence.repositories.interfaces.UserRepository;
+import com.possum.domain.repositories.UserRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.UserFilter;
 import com.possum.shared.util.DomainValidators;

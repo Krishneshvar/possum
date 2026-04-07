@@ -1,7 +1,7 @@
 package com.possum.persistence.repositories.sqlite;
 
 import com.possum.domain.model.TaxExemption;
-import com.possum.persistence.repositories.interfaces.TaxExemptionRepository;
+import com.possum.domain.repositories.TaxExemptionRepository;
 import com.possum.shared.util.SqlMapperUtils;
 
 import java.sql.*;

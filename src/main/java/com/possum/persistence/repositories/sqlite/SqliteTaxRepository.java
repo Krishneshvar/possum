@@ -7,7 +7,7 @@ import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.TaxCategoryMapper;
 import com.possum.persistence.mappers.TaxProfileMapper;
 import com.possum.persistence.mappers.TaxRuleMapper;
-import com.possum.persistence.repositories.interfaces.TaxRepository;
+import com.possum.domain.repositories.TaxRepository;
 
 import java.util.ArrayList;
 import java.util.List;

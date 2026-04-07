@@ -1,4 +1,4 @@
-package com.possum.persistence.repositories.interfaces;
+package com.possum.domain.repositories;
 
 import java.util.List;
 import java.util.Map;

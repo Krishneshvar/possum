@@ -6,7 +6,7 @@ import com.possum.domain.exceptions.AuthorizationException;
 import com.possum.domain.exceptions.NotFoundException;
 import com.possum.domain.exceptions.ValidationException;
 import com.possum.domain.model.Customer;
-import com.possum.persistence.repositories.interfaces.CustomerRepository;
+import com.possum.domain.repositories.CustomerRepository;
 import com.possum.shared.dto.CustomerFilter;
 import com.possum.shared.dto.PagedResult;
 import org.junit.jupiter.api.AfterEach;

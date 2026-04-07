@@ -8,7 +8,7 @@ import com.possum.domain.exceptions.ValidationException;
 import com.possum.domain.model.*;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
-import com.possum.persistence.repositories.interfaces.*;
+import com.possum.domain.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

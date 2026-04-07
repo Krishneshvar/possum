@@ -1,6 +1,6 @@
 package com.possum.application.auth;
 
-import com.possum.persistence.repositories.interfaces.SessionRepository;
+import com.possum.domain.repositories.SessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

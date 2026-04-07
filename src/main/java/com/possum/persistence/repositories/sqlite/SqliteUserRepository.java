@@ -8,7 +8,7 @@ import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.PermissionMapper;
 import com.possum.persistence.mappers.RoleMapper;
 import com.possum.persistence.mappers.UserMapper;
-import com.possum.persistence.repositories.interfaces.UserRepository;
+import com.possum.domain.repositories.UserRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.UserFilter;
 

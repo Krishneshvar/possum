@@ -1,7 +1,7 @@
 package com.possum.application.people;
 
 import com.possum.domain.model.Customer;
-import com.possum.persistence.repositories.interfaces.CustomerRepository;
+import com.possum.domain.repositories.CustomerRepository;
 import com.possum.shared.dto.CustomerFilter;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.util.DomainValidators;

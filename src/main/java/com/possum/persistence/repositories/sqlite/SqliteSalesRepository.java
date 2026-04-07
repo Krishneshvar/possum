@@ -9,7 +9,7 @@ import com.possum.persistence.db.ConnectionProvider;
 import com.possum.persistence.mappers.SaleItemMapper;
 import com.possum.persistence.mappers.SaleMapper;
 import com.possum.persistence.mappers.TransactionMapper;
-import com.possum.persistence.repositories.interfaces.SalesRepository;
+import com.possum.domain.repositories.SalesRepository;
 import com.possum.shared.dto.PagedResult;
 import com.possum.shared.dto.SaleFilter;
 
