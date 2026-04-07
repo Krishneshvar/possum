@@ -20,15 +20,11 @@ import com.possum.ui.navigation.Parameterizable;
 import com.possum.ui.sales.ProductSearchIndex;
 import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
+
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
@@ -36,14 +32,16 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.util.StringConverter;
-import org.kordamp.ikonli.javafx.FontIcon;
+
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class PurchaseOrderFormController implements Parameterizable {
+import com.possum.ui.purchase.cells.*;
+
+public class PurchaseOrderFormController implements Parameterizable, PurchaseCellHandler {
 
     @FXML private Label titleLabel;
     @FXML private ComboBox<Supplier> supplierCombo;
@@ -151,79 +149,13 @@ public class PurchaseOrderFormController implements Parameterizable {
         qtyCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         qtyCol.setPrefWidth(80);
         qtyCol.setStyle("-fx-alignment: CENTER;");
-        qtyCol.setCellFactory(col -> new TableCell<>() {
-            private final Spinner<Integer> spinner = new Spinner<>(1, 10000, 1);
-            {
-                spinner.setEditable(true);
-                spinner.setPrefWidth(70);
-                spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-                    PurchaseItemRow row = getTableRow().getItem();
-                    if (row != null && newVal != null) {
-                        row.setQuantity(newVal);
-                        recalculateTotal();
-                    }
-                });
-            }
-            @Override
-            protected void updateItem(Integer item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
-                    setGraphic(null);
-                } else {
-                    PurchaseItemRow row = getTableRow().getItem();
-                    spinner.getValueFactory().setValue(row.getQuantity());
-                    spinner.setDisable(isViewMode);
-                    setGraphic(spinner);
-                }
-            }
-        });
+        qtyCol.setCellFactory(col -> new PurchaseQtyCell(this));
         
         TableColumn<PurchaseItemRow, BigDecimal> costCol = new TableColumn<>("Unit Cost");
         costCol.setCellValueFactory(cellData -> cellData.getValue().unitCostProperty());
         costCol.setPrefWidth(100);
         costCol.setStyle("-fx-alignment: CENTER-RIGHT;");
-        costCol.setCellFactory(col -> new TableCell<>() {
-            private final TextField textField = new TextField();
-            {
-                textField.setPrefWidth(90);
-                textField.setAlignment(Pos.CENTER_RIGHT);
-                textField.textProperty().addListener((obs, oldVal, newVal) -> {
-                    PurchaseItemRow row = getTableRow() != null ? getTableRow().getItem() : null;
-                    if (row != null && newVal != null && !newVal.isEmpty()) {
-                        try {
-                            BigDecimal val = new BigDecimal(newVal.replaceAll("[^\\d.]", ""));
-                            if (val.compareTo(BigDecimal.ZERO) < 0) {
-                                NotificationService.warning("Unit cost must be non-negative.");
-                                textField.setText(oldVal != null ? oldVal : "0");
-                                return;
-                            }
-                            if (!val.equals(row.getUnitCost())) {
-                                row.setUnitCost(val);
-                                recalculateTotal();
-                            }
-                        } catch (NumberFormatException e) {
-                            NotificationService.warning("Unit cost must be a valid number.");
-                            textField.setText(oldVal != null ? oldVal : "0");
-                        }
-                    }
-                });
-            }
-            @Override
-            protected void updateItem(BigDecimal item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
-                    setGraphic(null);
-                } else {
-                    PurchaseItemRow row = getTableRow().getItem();
-                    String currentText = row.getUnitCost().toString();
-                    if (!textField.getText().equals(currentText)) {
-                        textField.setText(currentText);
-                    }
-                    textField.setDisable(isViewMode);
-                    setGraphic(textField);
-                }
-            }
-        });
+        costCol.setCellFactory(col -> new PurchaseCostCell(this));
         
         TableColumn<PurchaseItemRow, BigDecimal> totalCol = new TableColumn<>("Total");
         totalCol.setCellValueFactory(cellData -> cellData.getValue().totalProperty());
@@ -245,35 +177,9 @@ public class PurchaseOrderFormController implements Parameterizable {
         TableColumn<PurchaseItemRow, Void> actionCol = new TableColumn<>("Delete");
         actionCol.setPrefWidth(60);
         actionCol.setStyle("-fx-alignment: CENTER;");
-        actionCol.setCellFactory(col -> new TableCell<>() {
-            private final Button deleteBtn = new Button();
-            {
-                FontIcon trashIcon = new FontIcon("bx-trash");
-                trashIcon.setIconSize(16);
-                deleteBtn.setGraphic(trashIcon);
-                deleteBtn.getStyleClass().addAll("action-button");
-                deleteBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #ef4444; -fx-cursor: hand;");
-                deleteBtn.setTooltip(new Tooltip("Remove from order"));
-                deleteBtn.setOnAction(e -> {
-                    PurchaseItemRow row = (PurchaseItemRow) getTableRow().getItem();
-                    if (row != null) {
-                        itemRows.remove(row);
-                        recalculateTotal();
-                    }
-                });
-            }
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || isViewMode) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(deleteBtn);
-                }
-            }
-        });
+        actionCol.setCellFactory(col -> new PurchaseActionCell(this));
         
-        itemsTable.getTableView().getColumns().setAll(productCol, qtyCol, costCol, totalCol, actionCol);
+        itemsTable.getTableView().getColumns().setAll(List.of(productCol, qtyCol, costCol, totalCol, actionCol));
         itemsTable.setEmptyMessage("No items added yet");
         itemsTable.setEmptySubtitle("Search and add products above to build your order.");
         itemsTable.getTableView().setItems(itemRows);
@@ -439,7 +345,7 @@ public class PurchaseOrderFormController implements Parameterizable {
         });
     }
 
-    private void recalculateTotal() {
+    public void recalculateTotal() {
         BigDecimal total = BigDecimal.ZERO;
         int totalQty = 0;
         for (PurchaseItemRow row : itemRows) {
@@ -496,30 +402,10 @@ public class PurchaseOrderFormController implements Parameterizable {
         }
     }
 
-    public static class PurchaseItemRow {
-        private final Variant variant;
-        private final IntegerProperty quantity = new SimpleIntegerProperty();
-        private final ObjectProperty<BigDecimal> unitCost = new SimpleObjectProperty<>();
-        private final ObjectProperty<BigDecimal> total = new SimpleObjectProperty<>();
-        public PurchaseItemRow(Variant variant) {
-            this.variant = variant;
-            this.quantity.set(1);
-            this.unitCost.set(variant.costPrice() != null ? variant.costPrice() : BigDecimal.ZERO);
-            total.bind(Bindings.createObjectBinding(() -> getUnitCost().multiply(BigDecimal.valueOf(getQuantity())), quantity, unitCost));
-        }
-        public Long getVariantId() { return variant != null ? variant.id() : null; }
-        public String getProductName() { return variant != null ? variant.productName() : ""; }
-        public String getVariantName() { return variant != null ? variant.name() : ""; }
-        public String getSku() { return variant != null ? variant.sku() : ""; }
-        public String getDisplayName() { return variant != null ? variant.productName() + " - " + variant.name() : ""; }
-        public int getQuantity() { return quantity.get(); }
-        public void setQuantity(int q) { this.quantity.set(q); }
-        public IntegerProperty quantityProperty() { return quantity; }
-        public BigDecimal getUnitCost() { return unitCost.get(); }
-        public void setUnitCost(BigDecimal c) { this.unitCost.set(c); }
-        public ObjectProperty<BigDecimal> unitCostProperty() { return unitCost; }
-        public BigDecimal getTotal() { return total.get(); }
-        public ObjectProperty<BigDecimal> totalProperty() { return total; }
+    public boolean isViewMode() { return isViewMode; }
+    
+    public void removeRow(PurchaseItemRow row) {
+        if (row != null) itemRows.remove(row);
     }
 
     private void applyPopupListStyles(ListView<?> lv) {

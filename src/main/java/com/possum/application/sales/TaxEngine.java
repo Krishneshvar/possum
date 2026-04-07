@@ -19,8 +19,6 @@ import java.util.stream.Collectors;
 
 import com.possum.domain.services.TaxCalculator;
 
-import java.math.BigDecimal;
-
 public class TaxEngine implements TaxCalculator {
     private final TaxRepository taxRepository;
     private final JsonService jsonService;

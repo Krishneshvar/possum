@@ -7,7 +7,6 @@ import com.possum.application.people.CustomerService;
 import com.possum.application.products.ProductService;
 import com.possum.application.sales.SalesService;
 import com.possum.application.sales.TaxEngine;
-import com.possum.application.sales.dto.*;
 import com.possum.domain.model.*;
 import com.possum.domain.services.SaleCalculator;
 import com.possum.infrastructure.filesystem.SettingsStore;

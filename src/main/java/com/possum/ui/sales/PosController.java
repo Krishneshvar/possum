@@ -27,7 +27,6 @@ import com.possum.ui.common.controls.NotificationService;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -43,9 +42,11 @@ import java.util.*;
 import java.util.Locale;
 import javafx.stage.Popup;
 import javafx.scene.input.KeyCode;
-import javafx.geometry.Pos;
 
-public class PosController {
+
+import com.possum.ui.sales.cells.*;
+
+public class PosController implements com.possum.ui.sales.cells.CartCellHandler {
 
     @FXML private VBox leftVBox;
     @FXML private VBox cartCardVBox;
@@ -222,11 +223,11 @@ public class PosController {
 
         colQty.setPrefWidth(78);
         colQty.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colQty.setCellFactory(col -> new EditableQuantityCell());
+        colQty.setCellFactory(col -> new EditableQuantityCell(this, col));
 
         colPrice.setPrefWidth(96);
         colPrice.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colPrice.setCellFactory(col -> new EditablePriceCell());
+        colPrice.setCellFactory(col -> new EditablePriceCell(this, col));
 
         colMrp.setPrefWidth(96);
         colMrp.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().getVariant().price())));
@@ -234,11 +235,11 @@ public class PosController {
 
         colDiscountPct.setPrefWidth(90);
         colDiscountPct.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colDiscountPct.setCellFactory(col -> new EditableDiscountPctCell());
+        colDiscountPct.setCellFactory(col -> new EditableDiscountPctCell(this, col));
 
         colDiscountAmt.setPrefWidth(98);
         colDiscountAmt.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
-        colDiscountAmt.setCellFactory(col -> new EditableDiscountAmtCell());
+        colDiscountAmt.setCellFactory(col -> new EditableDiscountAmtCell(this, col));
 
         colTotal.setPrefWidth(115);
         colTotal.setCellValueFactory(cell -> new SimpleStringProperty(currencyFormat.format(cell.getValue().getNetLineTotal())));
@@ -262,6 +263,7 @@ public class PosController {
                 }
             } else if (e.getCode() == KeyCode.ENTER || e.getCode() == KeyCode.SPACE
                     || (!e.isControlDown() && !e.isAltDown() && e.getText().length() > 0)) {
+                @SuppressWarnings("unchecked")
                 TablePosition<CartItem, ?> pos = cartTable.getTableView().getFocusModel().getFocusedCell();
                 if (pos != null && pos.getTableColumn() != null) {
                     TableColumn<CartItem, ?> col = pos.getTableColumn();
@@ -641,7 +643,7 @@ public class PosController {
     }
 
 
-    private void refreshCurrentBill() { cartTable.getTableView().refresh(); renderBillsFlowPane(); updatePaymentSectionState(); recalculateTotals(); }
+    public void refreshCurrentBill() { cartTable.getTableView().refresh(); renderBillsFlowPane(); updatePaymentSectionState(); recalculateTotals(); }
 
     private void updatePaymentSectionState() {
         boolean has = currentBill != null && !currentBill.getItems().isEmpty();
@@ -872,87 +874,9 @@ public class PosController {
     // Internal BillState and CartItem removed. Using domain models instead.
 
 
-    private class EditableQuantityCell extends TableCell<CartItem, CartItem> {
-        private TextField tf;
-        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(true); setText(null); setGraphic(tf); tf.selectAll(); tf.requestFocus(); }
-        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(String.valueOf(getItem().getQuantity())); setGraphic(null); }
-        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(String.valueOf(it.getQuantity())); setText(null); setGraphic(tf); } else { setText(String.valueOf(it.getQuantity())); setGraphic(null); } }
 
-        private TextField createTF(boolean center) { TextField f = new TextField(); f.getStyleClass().add("table-input"); if (center) f.setAlignment(Pos.CENTER); f.setPrefWidth(60); 
-            f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
-            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colQty); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
-            return f;
-        }
-        @Override public void commitEdit(CartItem it) {
-            if (tf != null && it != null) {
-                try {
-                    int n = Integer.parseInt(tf.getText().trim());
-                    int newQty = Math.max(1, n);
-                    if (isInventoryRestrictionsEnabled() && it.getVariant().stock() != null && newQty > it.getVariant().stock()) {
-                        NotificationService.warning("Insufficient stock! Available: " + it.getVariant().stock());
-                        tf.setText(String.valueOf(it.getQuantity()));
-                    } else {
-                        it.setQuantity(newQty);
-                        refreshCurrentBill();
-                    }
 
-                } catch (Exception e) {
-                    cancelEdit();
-                    NotificationService.warning("Quantity must be a positive integer");
-                    return;
-                }
-            }
-            super.commitEdit(it);
-        }
-    }
-
-    private class EditablePriceCell extends TableCell<CartItem, CartItem> {
-        private TextField tf;
-        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); tf.selectAll(); tf.requestFocus(); }
-        @Override public void cancelEdit() { super.cancelEdit(); if (getItem() != null) setText(getItem().getPricePerUnit().toString()); setGraphic(null); }
-        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { if (tf != null) tf.setText(it.getPricePerUnit().toString()); setText(null); setGraphic(tf); } else { setText(it.getPricePerUnit().toString()); setGraphic(null); } }
-
-        private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
-            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); else if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colPrice); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } });
-            return f;
-        }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { BigDecimal v = new BigDecimal(tf.getText().replace("$", "").replace(",", "").trim()).max(BigDecimal.ZERO); BigDecimal m = it.getVariant().price(); if (v.compareTo(m) > 0) { NotificationService.warning("Price cannot exceed MRP (" + currencyFormat.format(m) + ")"); v = m; } it.setPricePerUnit(v); refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
-
-    }
-
-    private class EditableDiscountPctCell extends TableCell<CartItem, CartItem> {
-        private TextField tf;
-        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); CartItem it = getItem(); BigDecimal lT = it.getPricePerUnit().multiply(BigDecimal.valueOf(it.getQuantity())); BigDecimal pct = it.getDiscountType().equals("pct") ? it.getDiscountValue() : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.getDiscountAmount().multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); tf.setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "" : pct.toString()); tf.selectAll(); tf.requestFocus(); }
-
-        @Override public void cancelEdit() { super.cancelEdit(); updateDisplay(); }
-        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { setGraphic(tf); setText(null); } else updateDisplay(); }
-        private void updateDisplay() { CartItem it = getItem(); if (it != null) { BigDecimal lT = it.getPricePerUnit().multiply(BigDecimal.valueOf(it.getQuantity())); BigDecimal pct = it.getDiscountType().equals("pct") ? it.getDiscountValue() : (lT.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : it.getDiscountAmount().multiply(BigDecimal.valueOf(100)).divide(lT, 2, RoundingMode.HALF_UP)); setText(pct.compareTo(BigDecimal.ZERO) == 0 ? "0%" : pct + "%"); } setGraphic(null); }
-
-        private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
-            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountPct); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
-            return f;
-        }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.setDiscountValue(v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v)); it.setDiscountType("pct"); refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
-
-    }
-
-    private class EditableDiscountAmtCell extends TableCell<CartItem, CartItem> {
-        private TextField tf;
-        @Override public void startEdit() { super.startEdit(); if (tf == null) tf = createTF(); setText(null); setGraphic(tf); BigDecimal a = getItem().getDiscountAmount(); tf.setText(a.compareTo(BigDecimal.ZERO) == 0 ? "" : a.toString()); tf.selectAll(); tf.requestFocus(); }
-
-        @Override public void cancelEdit() { super.cancelEdit(); updateDisplay(); }
-        @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { setGraphic(tf); setText(null); } else updateDisplay(); }
-        private void updateDisplay() { CartItem it = getItem(); if (it != null) setText(it.getDiscountAmount().compareTo(BigDecimal.ZERO) == 0 ? "0" : currencyFormat.format(it.getDiscountAmount())); setGraphic(null); }
-
-        private TextField createTF() { TextField f = new TextField(); f.getStyleClass().add("table-input"); f.setAlignment(Pos.CENTER_RIGHT); f.setOnAction(ev -> commitEdit(getItem())); f.focusedProperty().addListener((o, ol, fw) -> { if (!fw && isEditing()) commitEdit(getItem()); });
-            f.setOnKeyPressed(ev -> { if (ev.getCode() == KeyCode.ENTER) { commitEdit(getItem()); moveFocusNext(getIndex(), colDiscountAmt); ev.consume(); } else if (ev.getCode() == KeyCode.TAB) { commitEdit(getItem()); if (ev.isShiftDown()) moveToPrevious(); else moveToNext(); ev.consume(); } else if (ev.getCode() == KeyCode.ESCAPE) cancelEdit(); });
-            return f;
-        }
-        @Override public void commitEdit(CartItem it) { if (tf != null && it != null) { try { String v = tf.getText().trim(); it.setDiscountValue(v.isEmpty() ? BigDecimal.ZERO : new BigDecimal(v)); it.setDiscountType("fixed"); refreshCurrentBill(); } catch (Exception e) { cancelEdit(); return; } } super.commitEdit(it); }
-
-    }
-
-    private void moveFocusNext(int row, TableColumn<CartItem, ?> cur) {
+    public void moveFocusNext(int row, TableColumn<CartItem, ?> cur) {
         Platform.runLater(() -> {
             if (cur == colQty) { cartTable.getTableView().getSelectionModel().select(row, colPrice); cartTable.getTableView().edit(row, colPrice); }
             else if (cur == colPrice) { cartTable.getTableView().getSelectionModel().select(row, colDiscountPct); cartTable.getTableView().edit(row, colDiscountPct); }
@@ -961,7 +885,8 @@ public class PosController {
         });
     }
 
-    private void moveToNext() {
+    public void moveToNext() {
+        @SuppressWarnings("unchecked")
         TablePosition<CartItem, ?> pos = cartTable.getTableView().getFocusModel().getFocusedCell();
         if (pos != null) {
             int c = cartTable.getTableView().getVisibleLeafIndex(pos.getTableColumn());
@@ -970,7 +895,8 @@ public class PosController {
         }
     }
 
-    private void moveToPrevious() {
+    public void moveToPrevious() {
+        @SuppressWarnings("unchecked")
         TablePosition<CartItem, ?> pos = cartTable.getTableView().getFocusModel().getFocusedCell();
         if (pos != null) {
             int c = cartTable.getTableView().getVisibleLeafIndex(pos.getTableColumn());
@@ -1049,7 +975,7 @@ public class PosController {
         if (!lv.getStylesheets().contains(s)) lv.getStylesheets().add(s);
     }
 
-    private boolean isInventoryRestrictionsEnabled() {
+    public boolean isInventoryRestrictionsEnabled() {
         try {
             return settingsStore.loadGeneralSettings().isInventoryAlertsAndRestrictionsEnabled();
         } catch (Exception ex) {
