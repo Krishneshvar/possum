@@ -37,7 +37,7 @@ class InventoryServiceTest {
 
     @BeforeEach
     void setUp() {
-        inventoryService = new InventoryService(inventoryRepository, productFlowService, auditRepository, transactionManager, jsonService, settingsStore);
+        inventoryService = new InventoryService(inventoryRepository, productFlowService, auditRepository, transactionManager, jsonService, settingsStore, new com.possum.domain.services.StockManager());
         
         lenient().when(transactionManager.runInTransaction(any())).thenAnswer(invocation -> {
             Supplier<?> supplier = invocation.getArgument(0);

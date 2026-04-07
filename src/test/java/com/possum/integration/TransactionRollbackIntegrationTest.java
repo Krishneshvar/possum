@@ -74,7 +74,7 @@ class TransactionRollbackIntegrationTest {
 
         ProductFlowService productFlowService = new ProductFlowService(productFlowRepository);
         inventoryService = new InventoryService(inventoryRepository, productFlowService, auditRepository,
-                transactionManager, jsonService, settingsStore);
+                transactionManager, jsonService, settingsStore, new com.possum.domain.services.StockManager());
 
         SqliteTaxRepository taxRepository = new SqliteTaxRepository(databaseManager);
         TaxEngine taxEngine = new TaxEngine(taxRepository, jsonService);

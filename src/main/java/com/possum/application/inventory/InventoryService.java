@@ -1,9 +1,10 @@
 package com.possum.application.inventory;
 
+import com.possum.domain.services.StockManager;
+
 import com.possum.domain.enums.FlowEventType;
 import com.possum.domain.enums.InventoryReason;
 import com.possum.domain.exceptions.InsufficientStockException;
-import com.possum.domain.model.AuditLog;
 import com.possum.domain.model.InventoryAdjustment;
 import com.possum.domain.model.InventoryLot;
 import com.possum.domain.model.Variant;
@@ -17,7 +18,6 @@ import com.possum.shared.dto.AvailableLot;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.possum.shared.util.TimeUtil;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -28,19 +28,22 @@ public class InventoryService {
     private final TransactionManager transactionManager;
     private final JsonService jsonService;
     private final SettingsStore settingsStore;
+    private final StockManager stockManager;
 
     public InventoryService(InventoryRepository inventoryRepository,
                             ProductFlowService productFlowService,
                             AuditRepository auditRepository,
                             TransactionManager transactionManager,
                             JsonService jsonService,
-                            SettingsStore settingsStore) {
+                            SettingsStore settingsStore,
+                            StockManager stockManager) {
         this.inventoryRepository = inventoryRepository;
         this.productFlowService = productFlowService;
         this.auditRepository = auditRepository;
         this.transactionManager = transactionManager;
         this.jsonService = jsonService;
         this.settingsStore = settingsStore;
+        this.stockManager = stockManager;
     }
 
     public int getVariantStock(long variantId) {
@@ -101,9 +104,7 @@ public class InventoryService {
                     "batch_number", batchNumber != null ? batchNumber : "",
                     "new_stock", newStock
             );
-            AuditLog auditLog = new AuditLog(null, userId, "CREATE", "inventory_lots", lotId,
-                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC());
-            auditRepository.insertAuditLog(auditLog);
+            auditRepository.log("inventory_lots", lotId, "CREATE", jsonService.toJson(auditData), userId);
 
             return new ReceiveInventoryResult(lotId, variantId, quantity, newStock);
         });
@@ -137,28 +138,12 @@ public class InventoryService {
             List<InventoryAdjustment> originalAdjustments = inventoryRepository
                     .findAdjustmentsByReference(referenceType, referenceId);
 
-            originalAdjustments.sort(Comparator.comparing(InventoryAdjustment::adjustedAt).reversed());
+            List<InventoryAdjustment> plan = stockManager.planRestoration(
+                    variantId, quantity, originalAdjustments, reason, newReferenceType, newReferenceId, userId
+            );
 
-            int remainingToRestore = quantity;
-            for (InventoryAdjustment adj : originalAdjustments) {
-                if (remainingToRestore <= 0) break;
-
-                int originalDeduction = Math.abs(adj.quantityChange());
-                int restoreToThisLot = Math.min(remainingToRestore, originalDeduction);
-
-                InventoryAdjustment restoreAdj = new InventoryAdjustment(null, variantId, adj.lotId(),
-                        restoreToThisLot, reason.getValue(), newReferenceType, newReferenceId,
-                        userId, null, TimeUtil.nowUTC());
-                inventoryRepository.insertInventoryAdjustment(restoreAdj);
-
-                remainingToRestore -= restoreToThisLot;
-            }
-
-            if (remainingToRestore > 0) {
-                InventoryAdjustment headlessAdj = new InventoryAdjustment(null, variantId, null,
-                        remainingToRestore, reason.getValue(), newReferenceType, newReferenceId,
-                        userId, null, TimeUtil.nowUTC());
-                inventoryRepository.insertInventoryAdjustment(headlessAdj);
+            for (InventoryAdjustment adj : plan) {
+                inventoryRepository.insertInventoryAdjustment(adj);
             }
 
             FlowEventType eventType = reason == InventoryReason.RETURN ? FlowEventType.RETURN : FlowEventType.ADJUSTMENT;
@@ -207,9 +192,7 @@ public class InventoryService {
                     "reason", reason.getValue(),
                     "new_stock", newStock
             );
-            AuditLog auditLog = new AuditLog(null, userId, "CREATE", "inventory_adjustments", adjustmentId,
-                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC());
-            auditRepository.insertAuditLog(auditLog);
+            auditRepository.log("inventory_adjustments", adjustmentId, "CREATE", jsonService.toJson(auditData), userId);
 
             return new AdjustInventoryResult(adjustmentId, variantId, quantityChange, reason, newStock);
         });
@@ -217,27 +200,13 @@ public class InventoryService {
 
     private void deductStockInternal(long variantId, int quantity, long userId, InventoryReason reason,
                                      String referenceType, Long referenceId) {
-        int remainingToDeduct = quantity;
         List<AvailableLot> availableLots = inventoryRepository.findAvailableLots(variantId);
+        List<InventoryAdjustment> plan = stockManager.planDeduction(
+                variantId, quantity, availableLots, reason, referenceType, referenceId, userId
+        );
 
-        for (AvailableLot lot : availableLots) {
-            if (remainingToDeduct <= 0) break;
-
-            int deductionFromThisLot = Math.min(remainingToDeduct, lot.remainingQuantity());
-
-            InventoryAdjustment adjustment = new InventoryAdjustment(null, variantId, lot.id(),
-                    -deductionFromThisLot, reason.getValue(), referenceType, referenceId,
-                    userId, null, TimeUtil.nowUTC());
-            inventoryRepository.insertInventoryAdjustment(adjustment);
-
-            remainingToDeduct -= deductionFromThisLot;
-        }
-
-        if (remainingToDeduct > 0) {
-            InventoryAdjustment headlessAdj = new InventoryAdjustment(null, variantId, null,
-                    -remainingToDeduct, reason.getValue(), referenceType, referenceId,
-                    userId, null, TimeUtil.nowUTC());
-            inventoryRepository.insertInventoryAdjustment(headlessAdj);
+        for (InventoryAdjustment adj : plan) {
+            inventoryRepository.insertInventoryAdjustment(adj);
         }
 
         FlowEventType eventType = reason == InventoryReason.SALE ? FlowEventType.SALE : FlowEventType.ADJUSTMENT;

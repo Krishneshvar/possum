@@ -80,18 +80,18 @@ class SalesServiceTest {
         Variant v = new Variant(10L, 1L, "Product", "Variant", "SKU1", new BigDecimal("50.00"), new BigDecimal("40.00"), 5, true, "active", null, 100, null, null, LocalDateTime.now(), null, null);
         Product p = new Product(1L, "Product", null, 1L, null, null, null, "active", null, 100, LocalDateTime.now(), null, null);
         
-        when(variantRepository.findVariantByIdSync(10L)).thenReturn(Optional.of(v));
-        when(productRepository.findProductById(1L)).thenReturn(Optional.of(p));
-        when(inventoryService.getVariantStock(10L)).thenReturn(100);
-        when(invoiceNumberService.generate(anyLong())).thenReturn("INV-001");
-        when(salesRepository.insertSale(any())).thenReturn(1L);
-        when(salesRepository.findSaleById(1L)).thenReturn(Optional.of(mock(Sale.class)));
+        lenient().when(variantRepository.findVariantByIdSync(10L)).thenReturn(Optional.of(v));
+        lenient().when(productRepository.findProductById(1L)).thenReturn(Optional.of(p));
+        lenient().when(inventoryService.getVariantStock(10L)).thenReturn(100);
+        lenient().when(invoiceNumberService.generate(anyLong())).thenReturn("INV-001");
+        lenient().when(salesRepository.insertSale(any())).thenReturn(1L);
+        lenient().when(salesRepository.findSaleById(1L)).thenReturn(Optional.of(mock(Sale.class)));
 
         TaxCalculationResult taxResult = mock(TaxCalculationResult.class);
-        when(taxResult.grandTotal()).thenReturn(new BigDecimal("100.00"));
-        when(taxResult.totalTax()).thenReturn(BigDecimal.ZERO);
-        when(taxResult.getItemByIndex(0)).thenReturn(mock(TaxableItem.class));
-        when(taxEngine.calculate(any(), any())).thenReturn(taxResult);
+        lenient().when(taxResult.grandTotal()).thenReturn(new BigDecimal("100.00"));
+        lenient().when(taxResult.totalTax()).thenReturn(BigDecimal.ZERO);
+        lenient().when(taxResult.getItemByIndex(0)).thenReturn(mock(TaxableItem.class));
+        lenient().when(taxEngine.calculate(any(), any())).thenReturn(taxResult);
 
         SaleResponse response = salesService.createSale(request, 1L);
 
@@ -107,8 +107,14 @@ class SalesServiceTest {
         CreateSaleRequest request = new CreateSaleRequest(List.of(itemReq), null, null, List.of(new PaymentRequest(BigDecimal.TEN, 1L)));
         
         Variant v = new Variant(10L, 1L, null, "V", "S", BigDecimal.TEN, BigDecimal.ONE, 1, true, "active", null, 5, null, null, LocalDateTime.now(), null, null);
-        when(variantRepository.findVariantByIdSync(10L)).thenReturn(Optional.of(v));
-        when(inventoryService.getVariantStock(10L)).thenReturn(5);
+        lenient().when(variantRepository.findVariantByIdSync(10L)).thenReturn(Optional.of(v));
+        lenient().when(inventoryService.getVariantStock(10L)).thenReturn(5);
+
+        TaxCalculationResult taxResult = mock(TaxCalculationResult.class);
+        lenient().when(taxResult.grandTotal()).thenReturn(new BigDecimal("100.00"));
+        lenient().when(taxResult.totalTax()).thenReturn(BigDecimal.ZERO);
+        lenient().when(taxResult.getItemByIndex(0)).thenReturn(mock(TaxableItem.class));
+        lenient().when(taxEngine.calculate(any(), any())).thenReturn(taxResult);
 
         assertThrows(InsufficientStockException.class, () -> salesService.createSale(request, 1L));
     }

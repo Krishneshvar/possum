@@ -14,6 +14,7 @@ import com.possum.infrastructure.security.PasswordHasher;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
 import com.possum.domain.repositories.*;
+import com.possum.domain.services.StockManager;
 import com.possum.application.people.UserService;
 import com.possum.application.people.CustomerService;
 
@@ -55,7 +56,8 @@ public final class ApplicationModule {
                 auditRepository,
                 transactionManager,
                 jsonService,
-                settingsStore
+                settingsStore,
+                new StockManager()
         );
         
         this.productModule = new ProductModule(

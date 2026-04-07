@@ -1,4 +1,4 @@
-package com.possum.application.returns;
+package com.possum.domain.services;
 
 import com.possum.application.returns.dto.CreateReturnItemRequest;
 import com.possum.application.returns.dto.RefundCalculation;
@@ -12,7 +12,7 @@ import java.util.List;
 
 public class ReturnCalculator {
 
-    public static List<RefundCalculation> calculateRefunds(
+    public List<RefundCalculation> calculateRefunds(
             List<CreateReturnItemRequest> returnItems,
             List<SaleItem> saleItems,
             BigDecimal saleGlobalDiscount
@@ -69,7 +69,7 @@ public class ReturnCalculator {
         return results;
     }
 
-    public static BigDecimal calculateTotalRefund(List<RefundCalculation> refundItems) {
+    public BigDecimal calculateTotalRefund(List<RefundCalculation> refundItems) {
         return refundItems.stream()
                 .map(RefundCalculation::refundAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

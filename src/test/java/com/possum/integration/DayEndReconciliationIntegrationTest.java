@@ -74,7 +74,7 @@ class DayEndReconciliationIntegrationTest {
 
         ProductFlowService productFlowService = new ProductFlowService(productFlowRepository);
         InventoryService inventoryService = new InventoryService(inventoryRepository, productFlowService, auditRepository,
-                transactionManager, jsonService, settingsStore);
+                transactionManager, jsonService, settingsStore, new com.possum.domain.services.StockManager());
 
         SqliteTaxRepository taxRepository = new SqliteTaxRepository(databaseManager);
         TaxEngine taxEngine = new TaxEngine(taxRepository, jsonService);
@@ -86,7 +86,7 @@ class DayEndReconciliationIntegrationTest {
                 jsonService,  settingsStore,  invoiceNumberService);
 
         returnsService = new ReturnsService(returnsRepository, salesRepository, inventoryService,
-                auditRepository, transactionManager, jsonService);
+                auditRepository, transactionManager, jsonService, new com.possum.domain.services.ReturnCalculator());
 
         long roleId = queryLong("SELECT id FROM roles WHERE name = 'admin'");
         User u = userRepository.insertUserWithRoles(

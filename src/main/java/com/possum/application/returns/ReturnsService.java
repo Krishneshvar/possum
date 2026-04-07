@@ -1,6 +1,7 @@
 package com.possum.application.returns;
 
 import com.possum.application.inventory.InventoryService;
+import com.possum.domain.services.ReturnCalculator;
 import com.possum.application.returns.dto.*;
 import com.possum.domain.enums.InventoryReason;
 import com.possum.domain.exceptions.NotFoundException;
@@ -23,19 +24,22 @@ public class ReturnsService {
     private final AuditRepository auditRepository;
     private final TransactionManager transactionManager;
     private final JsonService jsonService;
+    private final ReturnCalculator returnCalculator;
 
     public ReturnsService(ReturnsRepository returnsRepository,
                           SalesRepository salesRepository,
                           InventoryService inventoryService,
                           AuditRepository auditRepository,
                           TransactionManager transactionManager,
-                          JsonService jsonService) {
+                          JsonService jsonService,
+                          ReturnCalculator returnCalculator) {
         this.returnsRepository = returnsRepository;
         this.salesRepository = salesRepository;
         this.inventoryService = inventoryService;
         this.auditRepository = auditRepository;
         this.transactionManager = transactionManager;
         this.jsonService = jsonService;
+        this.returnCalculator = returnCalculator;
     }
 
     public ReturnResponse createReturn(CreateReturnRequest request) {
@@ -57,9 +61,9 @@ public class ReturnsService {
                     aggregatedItems, saleItems);
 
             // Step 5: Calculate refund amounts
-            List<RefundCalculation> refundCalculations = ReturnCalculator.calculateRefunds(
+            List<RefundCalculation> refundCalculations = returnCalculator.calculateRefunds(
                     validatedItems, saleItems, sale.discount());
-            BigDecimal totalRefund = ReturnCalculator.calculateTotalRefund(refundCalculations);
+            BigDecimal totalRefund = returnCalculator.calculateTotalRefund(refundCalculations);
 
             // Step 6: Validate refund amount
             validateRefundAmount(totalRefund, sale.paidAmount());
@@ -112,11 +116,7 @@ public class ReturnsService {
                     "item_count", refundCalculations.size(),
                     "reason", request.reason()
             );
-            AuditLog auditLog = new AuditLog(
-                    null, request.userId(), "CREATE", "returns", returnId,
-                    null, jsonService.toJson(auditData), null, null, TimeUtil.nowUTC()
-            );
-            auditRepository.insertAuditLog(auditLog);
+            auditRepository.log("returns", returnId, "CREATE", jsonService.toJson(auditData), request.userId());
 
             // Step 11: Return result
             return new ReturnResponse(returnId, request.saleId(), totalRefund, refundCalculations.size());

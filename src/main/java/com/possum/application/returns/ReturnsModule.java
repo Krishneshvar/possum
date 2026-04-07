@@ -1,5 +1,7 @@
 package com.possum.application.returns;
 
+import com.possum.domain.services.ReturnCalculator;
+
 import com.possum.application.inventory.InventoryService;
 import com.possum.infrastructure.serialization.JsonService;
 import com.possum.persistence.db.TransactionManager;
@@ -22,7 +24,8 @@ public class ReturnsModule {
                 inventoryService,
                 auditRepository,
                 transactionManager,
-                jsonService
+                jsonService,
+                new ReturnCalculator()
         );
     }
 
