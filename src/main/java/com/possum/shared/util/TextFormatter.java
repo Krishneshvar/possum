@@ -100,10 +100,11 @@ public final class TextFormatter {
             return input;
         }
         
-        return input.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2")
-                    .replaceAll("([a-z])([A-Z])", "$1 $2")
-                    .replaceAll("([a-zA-Z])([0-9])", "$1 $2")
-                    .replaceAll("([0-9])([a-zA-Z])", "$1 $2");
+        String spaced = input.replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2")
+                             .replaceAll("([a-z])([A-Z])", "$1 $2")
+                             .replaceAll("([a-zA-Z])([0-9])", "$1 $2")
+                             .replaceAll("([0-9])([a-zA-Z])", "$1 $2");
+        return capitalize(spaced);
     }
 
     /**

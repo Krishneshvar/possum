@@ -216,4 +216,398 @@ class EnhancedTaxEngineTest {
         
         assertEquals(BigDecimal.ZERO, result.totalTax());
     }
+
+    @Test
+    void testInclusivePricing_singleSimpleRule() {
+        TaxProfile inclusiveProfile = new TaxProfile(1L, "Inclusive", "US", "CA", "INCLUSIVE", true,
+                LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getActiveTaxProfile()).thenReturn(Optional.of(inclusiveProfile));
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("110.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+        assertEquals(new BigDecimal("110.00"), result.grandTotal());
+    }
+
+    @Test
+    void testInclusivePricing_multipleSimpleRules() {
+        TaxProfile inclusiveProfile = new TaxProfile(1L, "Inclusive", "US", "CA", "INCLUSIVE", true,
+                LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getActiveTaxProfile()).thenReturn(Optional.of(inclusiveProfile));
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule1 = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        TaxRule rule2 = new TaxRule(2L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("5"), false, 1, null, null, "Service Tax", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule1, rule2));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("115.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("15.00"), result.totalTax());
+    }
+
+    @Test
+    void testInclusivePricing_compoundRules() {
+        TaxProfile inclusiveProfile = new TaxProfile(1L, "Inclusive", "US", "CA", "INCLUSIVE", true,
+                LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getActiveTaxProfile()).thenReturn(Optional.of(inclusiveProfile));
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule simpleRule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "Base Tax", LocalDateTime.now(), LocalDateTime.now());
+        TaxRule compoundRule = new TaxRule(2L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("5"), true, 1, null, null, "Compound Tax", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(simpleRule, compoundRule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("115.50"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertTrue(result.totalTax().compareTo(BigDecimal.ZERO) > 0);
+    }
+
+    @Test
+    void testExclusivePricing_multipleSimpleRules() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule1 = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        TaxRule rule2 = new TaxRule(2L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("5"), false, 1, null, null, "Service Tax", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule1, rule2));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("15.00"), result.totalTax());
+        assertEquals(new BigDecimal("115.00"), result.grandTotal());
+    }
+
+    @Test
+    void testRoundingMode_HALF_DOWN() {
+        TaxConfiguration config = new TaxConfiguration(
+                TaxRoundingStrategy.ITEM_LEVEL, RoundingMode.HALF_DOWN, true, true);
+        engine = new EnhancedTaxEngine(taxRepository, jsonService, config);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10.5"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("10.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertNotNull(result);
+    }
+
+    @Test
+    void testMinPriceConstraint_match() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", new BigDecimal("50"), null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+    }
+
+    @Test
+    void testMinPriceConstraint_mismatch() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", new BigDecimal("150"), null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("0.00"), result.totalTax());
+    }
+
+    @Test
+    void testMaxPriceConstraint_match() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, new BigDecimal("150"), null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+    }
+
+    @Test
+    void testMaxPriceConstraint_mismatch() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, new BigDecimal("50"), null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("0.00"), result.totalTax());
+    }
+
+    @Test
+    void testMinInvoiceTotalConstraint_match() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, new BigDecimal("50"), null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+    }
+
+    @Test
+    void testMaxInvoiceTotalConstraint_match() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, new BigDecimal("150"), null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+    }
+
+    @Test
+    void testCustomerTypeConstraint_mismatch() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, "wholesale",
+                new BigDecimal("10"), false, 0, null, null, "Wholesale Tax", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        Customer retailCustomer = new Customer(1L, "Retail Co", null, null, null, "retail", false,
+                LocalDateTime.now(), LocalDateTime.now(), null);
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, retailCustomer);
+        
+        assertEquals(new BigDecimal("0.00"), result.totalTax());
+    }
+
+    @Test
+    void testValidFromConstraint_past() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, LocalDate.now().minusDays(10), null, "VAT",
+                LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+    }
+
+    @Test
+    void testValidToConstraint_expired() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, LocalDate.now().minusDays(1), "Expired Tax",
+                LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("0.00"), result.totalTax());
+    }
+
+    @Test
+    void testValidToConstraint_valid() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, LocalDate.now().plusDays(10), "Valid Tax",
+                LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+    }
+
+    @Test
+    void testTaxCategoryId_match() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, 5L, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "Category Tax", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, 5L, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("10.00"), result.totalTax());
+    }
+
+    @Test
+    void testTaxCategoryId_mismatch() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, 5L, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "Category Tax", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, 3L, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("0.00"), result.totalTax());
+    }
+
+    @Test
+    void testRulePriorityOrdering() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule lowPriority = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("5"), false, 10, null, null, "Low Priority", LocalDateTime.now(), LocalDateTime.now());
+        TaxRule highPriority = new TaxRule(2L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "High Priority", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(lowPriority, highPriority));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        TaxableInvoice invoice = new TaxableInvoice(List.of(item));
+        
+        TaxCalculationResult result = engine.calculate(invoice, null);
+        
+        assertEquals(new BigDecimal("15.00"), result.totalTax());
+    }
+
+    @Test
+    void testGetApplicableRules_allConstraintsSatisfied() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        List<TaxRule> applicable = engine.getApplicableRules(item, new BigDecimal("100.00"), null);
+        
+        assertEquals(1, applicable.size());
+    }
+
+    @Test
+    void testGetApplicableRules_priceOutOfRange() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", new BigDecimal("200"), null, null, null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        List<TaxRule> applicable = engine.getApplicableRules(item, new BigDecimal("100.00"), null);
+        
+        assertEquals(0, applicable.size());
+    }
+
+    @Test
+    void testGetApplicableRules_invoiceTotalOutOfRange() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, new BigDecimal("500"), null, null,
+                new BigDecimal("10"), false, 0, null, null, "VAT", LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        List<TaxRule> applicable = engine.getApplicableRules(item, new BigDecimal("100.00"), null);
+        
+        assertEquals(0, applicable.size());
+    }
+
+    @Test
+    void testGetApplicableRules_dateRangeExpired() {
+        engine = new EnhancedTaxEngine(taxRepository, jsonService);
+        
+        TaxRule rule = new TaxRule(1L, 1L, null, "ITEM", null, null, null, null, null,
+                new BigDecimal("10"), false, 0, null, LocalDate.now().minusDays(1), "Expired",
+                LocalDateTime.now(), LocalDateTime.now());
+        when(taxRepository.getTaxRulesByProfileId(1L)).thenReturn(List.of(rule));
+        engine.init();
+        
+        TaxableItem item = new TaxableItem("Product", "Variant", new BigDecimal("100.00"), 1, null, 1L, 1L);
+        List<TaxRule> applicable = engine.getApplicableRules(item, new BigDecimal("100.00"), null);
+        
+        assertEquals(0, applicable.size());
+    }
 }

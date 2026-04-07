@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 public final class DomainValidators {
     // Shared regex patterns for consistent validation across UI and domain
-    public static final Pattern EMAIL = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    public static final Pattern EMAIL = Pattern.compile("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$");
     public static final Pattern PHONE = Pattern.compile("^[+]?[0-9\\s\\-().]{7,20}$");
     
     // Shared constants

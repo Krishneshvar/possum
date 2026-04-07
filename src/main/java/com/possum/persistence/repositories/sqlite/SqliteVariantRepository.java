@@ -191,7 +191,7 @@ public final class SqliteVariantRepository extends BaseSqliteRepository implemen
                 """
                 SELECT
                   COUNT(*) AS totalVariants,
-                  COUNT(CASE WHEN status != 'active' THEN 1 END) AS inactiveVariants
+                  COUNT(CASE WHEN v.status != 'active' THEN 1 END) AS inactiveVariants
                 FROM variants v
                 JOIN products p ON v.product_id = p.id
                 WHERE v.deleted_at IS NULL AND p.deleted_at IS NULL

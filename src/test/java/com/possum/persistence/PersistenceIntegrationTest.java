@@ -169,7 +169,7 @@ class PersistenceIntegrationTest {
     @Test
     void shouldInsertAndQuerySaleData() {
         long userId = ensureAnyUser();
-        long variantId = queryLong("SELECT id FROM variants ORDER BY id LIMIT 1");
+        long variantId = ensureAnyVariant();
 
         String invoice = "INV-" + UUID.randomUUID().toString().substring(0, 8);
         long saleId = salesRepository.insertSale(
@@ -287,6 +287,27 @@ class PersistenceIntegrationTest {
                 List.of(roleId)
         );
         return user.id();
+    }
+
+    private static long ensureAnyVariant() {
+        try {
+            long variantId = queryLong("SELECT id FROM variants ORDER BY id LIMIT 1");
+            if (variantId > 0) return variantId;
+        } catch (IllegalStateException ignored) {}
+
+        long categoryId = categoryRepository.insertCategory("Test Cat", null).id();
+        long productId = productRepository.insertProduct(new Product(null, "Test Prod", "desc", categoryId, null, null, null, "active", null, null, null, null, null));
+        
+        try (PreparedStatement statement = prepare("INSERT INTO variants (product_id, name, sku, mrp, cost_price, stock_alert_cap, is_default, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id", productId, "Default", "SKU123", new BigDecimal("10.00"), new BigDecimal("5.00"), 10, 1, "active")) {
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to insert variant", ex);
+        }
+        throw new IllegalStateException("Failed to insert variant");
     }
 
     private static long queryLong(String sql, Object... params) {

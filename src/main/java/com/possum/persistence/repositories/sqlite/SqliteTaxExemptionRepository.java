@@ -2,6 +2,7 @@ package com.possum.persistence.repositories.sqlite;
 
 import com.possum.domain.model.TaxExemption;
 import com.possum.persistence.repositories.interfaces.TaxExemptionRepository;
+import com.possum.shared.util.SqlMapperUtils;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -146,11 +147,11 @@ public class SqliteTaxExemptionRepository implements TaxExemptionRepository {
                 rs.getString("exemption_type"),
                 rs.getString("certificate_number"),
                 rs.getString("reason"),
-                rs.getString("valid_from") != null ? LocalDateTime.parse(rs.getString("valid_from")) : null,
-                rs.getString("valid_to") != null ? LocalDateTime.parse(rs.getString("valid_to")) : null,
+                SqlMapperUtils.getLocalDateTime(rs, "valid_from"),
+                SqlMapperUtils.getLocalDateTime(rs, "valid_to"),
                 rs.getLong("approved_by"),
-                LocalDateTime.parse(rs.getString("created_at")),
-                LocalDateTime.parse(rs.getString("updated_at"))
+                SqlMapperUtils.getLocalDateTime(rs, "created_at"),
+                SqlMapperUtils.getLocalDateTime(rs, "updated_at")
         );
     }
 }
