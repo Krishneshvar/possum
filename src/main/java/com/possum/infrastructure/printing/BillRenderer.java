@@ -18,10 +18,12 @@ import java.util.stream.Collectors;
 public class BillRenderer {
 
     private static final String STYLES = """
+      @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
       body {
         margin: 0;
         padding: 0;
-        font-family: 'Courier New', Courier, monospace;
+        font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: bold;
         color: black;
         background: white;
       }
@@ -36,11 +38,10 @@ public class BillRenderer {
       .text-center { text-align: center; }
       .text-right { text-align: right; }
       
-      .text-small { font-size: 12px; }
-      .text-medium { font-size: 14px; }
-      .text-large { font-size: 18px; font-weight: bold; }
-      
-      .bold { font-weight: bold; }
+      .text-small { font-size: 11px; }
+      .text-medium { font-size: 13px; }
+      .text-large { font-size: 18px; }
+      .store-name { font-size: 28px; }
       
       table { width: 100%; border-collapse: collapse; }
       th, td { text-align: left; vertical-align: top; padding: 2px 0; }
@@ -146,7 +147,7 @@ public class BillRenderer {
         }
 
         html.append("<div class=\"header-content\">");
-        html.append("<div class=\"text-large\">").append(escapeHtml(storeName)).append("</div>");
+        html.append("<div class=\"store-name\">").append(escapeHtml(storeName)).append("</div>");
         html.append("</div></div>");
 
         html.append("<div class=\"text-small\" style=\"margin-top: 4px;\">");
@@ -205,8 +206,8 @@ public class BillRenderer {
             html.append("<tr>")
                 .append("<td class=\"col-item\">").append(escapeHtml(itemName)).append("</td>")
                 .append("<td class=\"col-qty\">").append(item.quantity()).append("</td>")
-                .append("<td class=\"col-rate\">").append(formatCurrency(rate, currency)).append("</td>")
-                .append("<td class=\"col-amount\">").append(formatCurrency(amount, currency)).append("</td>")
+                .append("<td class=\"col-rate\">").append(formatAmountOnly(rate)).append("</td>")
+                .append("<td class=\"col-amount\">").append(formatAmountOnly(amount)).append("</td>")
                 .append("</tr>");
         }
         html.append("</tbody></table></div><div class=\"divider\"></div>");
@@ -264,6 +265,11 @@ public class BillRenderer {
     private static String formatCurrency(BigDecimal amount, String currency) {
         if (amount == null) return currency + "0.00";
         return currency + amount.setScale(2, RoundingMode.HALF_UP).toString();
+    }
+
+    private static String formatAmountOnly(BigDecimal amount) {
+        if (amount == null) return "0.00";
+        return amount.setScale(2, RoundingMode.HALF_UP).toString();
     }
 
     private static String escapeHtml(String unsafe) {

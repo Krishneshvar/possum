@@ -19,6 +19,7 @@ import com.possum.infrastructure.printing.PrintOutcome;
 import com.possum.infrastructure.printing.PrinterService;
 import com.possum.ui.common.controls.*;
 import com.possum.ui.common.dialogs.ImportProgressDialog;
+import com.possum.ui.common.ErrorHandler;
 import com.possum.ui.workspace.WorkspaceManager;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -307,14 +308,20 @@ public class SalesHistoryController {
         );
 
         salesTable.setLoading(true);
+        AuthUser currentUser = AuthContext.getCurrentUser();
         CompletableFuture.runAsync(() -> {
-            PagedResult<Sale> results = salesService.findSales(filter);
+            AuthContext.setCurrentUser(currentUser);
+            try {
+                PagedResult<Sale> results = salesService.findSales(filter);
 
-            Platform.runLater(() -> {
-                salesList.setAll(results.items());
-                paginationBar.setTotalItems(results.totalCount());
-                salesTable.setLoading(false);
-            });
+                Platform.runLater(() -> {
+                    salesList.setAll(results.items());
+                    paginationBar.setTotalItems(results.totalCount());
+                    salesTable.setLoading(false);
+                });
+            } finally {
+                AuthContext.clear();
+            }
         }).exceptionally(ex -> {
             ex.printStackTrace();
             Platform.runLater(() -> salesTable.setLoading(false));
@@ -398,17 +405,25 @@ public class SalesHistoryController {
         alert.setContentText("Are you sure you want to cancel this sale? This will restore inventory stock.");
 
         if (alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
-            CompletableFuture.runAsync(() -> salesService.cancelSale(sale.id(), 1L)) // Assuming user ID 1 for now
-                    .thenRun(() -> Platform.runLater(this::loadHistory))
-                    .exceptionally(ex -> {
-                        ex.printStackTrace();
-                        Platform.runLater(() -> {
-                            Alert error = new Alert(Alert.AlertType.ERROR);
-                            DialogStyler.apply(error);
-                            error.setContentText("Failed to cancel sale: " + ex.getMessage());
-                            error.show();
-                        });
-                        return null;
+            AuthUser currentUser = AuthContext.getCurrentUser();
+            CompletableFuture.runAsync(() -> {
+                AuthContext.setCurrentUser(currentUser);
+                try {
+                    salesService.cancelSale(sale.id(), currentUser.id());
+                } finally {
+                    AuthContext.clear();
+                }
+            })
+            .thenRun(() -> Platform.runLater(this::loadHistory))
+            .exceptionally(ex -> {
+                ex.printStackTrace();
+                Platform.runLater(() -> {
+                    Alert error = new Alert(Alert.AlertType.ERROR);
+                    DialogStyler.apply(error);
+                    error.setContentText("Failed to cancel sale: " + ErrorHandler.toUserMessage(ex));
+                    error.show();
+                });
+                return null;
             });
         }
     }

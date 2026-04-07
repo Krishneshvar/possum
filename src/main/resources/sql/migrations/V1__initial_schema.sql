@@ -444,6 +444,7 @@ CREATE INDEX IF NOT EXISTS idx_sale_items_variant_id ON sale_items(variant_id);
 CREATE TABLE IF NOT EXISTS payment_methods (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
+  code TEXT,
   is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0,1))
 );
 

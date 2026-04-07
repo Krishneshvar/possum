@@ -7,6 +7,7 @@ import org.sqlite.SQLiteConfig;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
@@ -52,6 +53,7 @@ public final class DatabaseManager implements ConnectionProvider, AutoCloseable 
     }
 
     private static void runMigrations(String jdbcUrl) {
+        ensureCodeColumnExists(jdbcUrl);
         Flyway flyway = Flyway.configure()
                 .dataSource(jdbcUrl, null, null)
                 .locations("classpath:sql/migrations")
@@ -60,6 +62,41 @@ public final class DatabaseManager implements ConnectionProvider, AutoCloseable 
                 .load();
         flyway.repair();
         flyway.migrate();
+    }
+
+    private static void ensureCodeColumnExists(String jdbcUrl) {
+        try (Connection conn = DriverManager.getConnection(jdbcUrl);
+             Statement stmt = conn.createStatement()) {
+            
+            // 1. Check if payment_methods table exists
+            boolean tableExists = false;
+            try (ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='payment_methods'")) {
+                if (rs.next()) {
+                    tableExists = true;
+                }
+            }
+            
+            if (tableExists) {
+                // 2. Check if code column exists
+                boolean columnExists = false;
+                try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(payment_methods)")) {
+                    while (rs.next()) {
+                        if ("code".equalsIgnoreCase(rs.getString("name"))) {
+                            columnExists = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // 3. Add column if missing
+                if (!columnExists) {
+                    stmt.execute("ALTER TABLE payment_methods ADD COLUMN code TEXT");
+                }
+            }
+        } catch (SQLException ex) {
+            // Log it but don't fail, let Flyway try its best later
+            System.err.println("Database self-healing: Failed to ensure 'code' column: " + ex.getMessage());
+        }
     }
 
     @Override

@@ -710,6 +710,12 @@ public class PosController {
         final String customerAddress = currentBill.customerAddress.trim();
         final Long existingCustomerId = currentBill.selectedCustomer != null ? currentBill.selectedCustomer.id() : null;
         final BigDecimal totalToDisplay = currentBill.total;
+        final AuthUser taskUser = AuthContext.getCurrentUser();
+
+        if (taskUser == null) {
+            NotificationService.error("You are not logged in. Please log in again.");
+            return;
+        }
 
         completeButton.setDisable(true);
         completeButton.setText("Processing...");
@@ -717,39 +723,45 @@ public class PosController {
         javafx.concurrent.Task<SaleResponse> task = new javafx.concurrent.Task<>() {
             @Override
             protected SaleResponse call() throws Exception {
-                Long cId = existingCustomerId;
-                
-                // 1. Handle Customer logic (Service calls)
-                if (cId == null && (!customerName.isEmpty() || !customerPhone.isEmpty())) {
-                    try {
-                        Optional<Customer> ex = customerService.getCustomers(
-                                new com.possum.shared.dto.CustomerFilter(customerPhone, 1, 1, 0, 10, "name", "asc")
-                        ).items().stream().filter(c -> c.phone().equals(customerPhone)).findFirst();
-                        
-                        if (ex.isPresent()) {
-                            cId = ex.get().id();
-                        } else {
-                            Customer nC = customerService.createCustomer(customerName, customerPhone, customerEmail, customerAddress);
-                            cId = nC.id();
-                            final String createdName = nC.name();
-                            Platform.runLater(() -> {
-                                NotificationService.success("New customer added: " + createdName);
-                                loadCombos();
-                            });
+                // Background thread must inherit AuthContext from parent thread
+                AuthContext.setCurrentUser(taskUser);
+                try {
+                    Long cId = existingCustomerId;
+                    
+                    // 1. Handle Customer logic (Service calls)
+                    if (cId == null && (!customerName.isEmpty() || !customerPhone.isEmpty())) {
+                        try {
+                            Optional<Customer> ex = customerService.getCustomers(
+                                    new com.possum.shared.dto.CustomerFilter(customerPhone, 1, 1, 0, 10, "name", "asc")
+                            ).items().stream().filter(c -> c.phone().equals(customerPhone)).findFirst();
+                            
+                            if (ex.isPresent()) {
+                                cId = ex.get().id();
+                            } else {
+                                Customer nC = customerService.createCustomer(customerName, customerPhone, customerEmail, customerAddress);
+                                cId = nC.id();
+                                final String createdName = nC.name();
+                                Platform.runLater(() -> {
+                                    NotificationService.success("New customer added: " + createdName);
+                                    loadCombos();
+                                });
+                            }
+                        } catch (Exception e) {
+                            Platform.runLater(() -> NotificationService.warning("Failed to automatically add customer: " + e.getMessage()));
                         }
-                    } catch (Exception e) {
-                        Platform.runLater(() -> NotificationService.warning("Failed to automatically add customer: " + e.getMessage()));
                     }
-                }
 
-                // 2. Create the Sale
-                CreateSaleRequest request = new CreateSaleRequest(
-                        items, 
-                        cId, 
-                        discount.compareTo(BigDecimal.ZERO) > 0 ? discount : null, 
-                        List.of(new PaymentRequest(paidAmount, paymentMethodId))
-                );
-                return salesService.createSale(request, userId);
+                    // 2. Create the Sale
+                    CreateSaleRequest request = new CreateSaleRequest(
+                            items, 
+                            cId, 
+                            discount.compareTo(BigDecimal.ZERO) > 0 ? discount : null, 
+                            List.of(new PaymentRequest(paidAmount, paymentMethodId))
+                    );
+                    return salesService.createSale(request, userId);
+                } finally {
+                    AuthContext.clear();
+                }
             }
         };
 

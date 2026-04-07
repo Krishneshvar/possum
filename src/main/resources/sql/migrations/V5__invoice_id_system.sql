@@ -2,8 +2,15 @@
 -- Part 2 of 2: Data migration for the PTYYMMDDXXXX invoice ID system.
 -- Assumes the `code` column was added in V3.
 
--- Step 1: Rename the old generic 'Card' to 'Debit Card'.
-UPDATE payment_methods SET name = 'Debit Card' WHERE name = 'Card';
+-- Step 1: Robustly rename/merge 'Card' into 'Debit Card'.
+-- Ensure 'Debit Card' exists first.
+INSERT OR IGNORE INTO payment_methods (name) VALUES ('Debit Card');
+-- Reassign any transactions already pointing to 'Card'.
+UPDATE OR IGNORE transactions 
+SET payment_method_id = (SELECT id FROM payment_methods WHERE name = 'Debit Card') 
+WHERE payment_method_id = (SELECT id FROM payment_methods WHERE name = 'Card');
+-- Clear out the redundant 'Card' entry.
+DELETE FROM payment_methods WHERE name = 'Card';
 
 -- Step 2: Ensure all standard payment methods exist.
 INSERT OR IGNORE INTO payment_methods (name) VALUES ('Cash');
