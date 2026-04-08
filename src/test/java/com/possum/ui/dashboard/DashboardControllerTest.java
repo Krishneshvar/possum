@@ -17,7 +17,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +47,7 @@ class DashboardControllerTest {
         AuthContext.setCurrentUser(new AuthUser(1L, "Test User", "testuser", List.of("admin"), List.of("dashboard:view")));
         
         lenient().when(reportsService.getSalesSummary(any(), any(), any())).thenReturn(
-            new SalesReportSummary(0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
+            new SalesReportSummary(0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
         );
         lenient().when(reportsService.getTopProducts(any(), any(), anyInt(), any())).thenReturn(List.of());
         lenient().when(inventoryService.getLowStockAlerts()).thenReturn(List.of());
@@ -88,7 +87,8 @@ class DashboardControllerTest {
         LocalDate today = LocalDate.now();
         SalesReportSummary summary = new SalesReportSummary(
             10, new BigDecimal("1000.00"), new BigDecimal("180.00"), new BigDecimal("100.00"),
-            new BigDecimal("1180.00"), BigDecimal.ZERO, new BigDecimal("1080.00"), new BigDecimal("100.00")
+            new BigDecimal("1080.00"), BigDecimal.ZERO, new BigDecimal("600.00"), new BigDecimal("400.00"),
+            new BigDecimal("1000.00"), new BigDecimal("100.00")
         );
         List<TopProduct> topProducts = List.of(
             new TopProduct(1L, "Product A", "Standard", "SKU001", 5, new BigDecimal("500.00"))

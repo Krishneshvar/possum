@@ -9,6 +9,8 @@ public record SalesReportSummary(
         BigDecimal totalDiscount,
         BigDecimal totalCollected,
         BigDecimal totalRefunds,
+        BigDecimal totalCost,
+        BigDecimal grossProfit,
         BigDecimal netSales,
         BigDecimal averageSale
 ) {

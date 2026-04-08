@@ -50,6 +50,7 @@ public class NavBarBuilder {
         createNavMenu("Insights", "bx-bar-chart-alt-2", new Object[][]{
             {"Sales Reports",   "/fxml/reports/sales-reports-view.fxml",   com.possum.application.auth.Permissions.REPORTS_VIEW},
             {"Sales Analytics", "/fxml/reports/sales-analytics-view.fxml", com.possum.application.auth.Permissions.REPORTS_VIEW},
+            {"Business Insights", "/fxml/insights/business-insights-view.fxml", com.possum.application.auth.Permissions.REPORTS_VIEW},
             {"Product Flow",    "/fxml/insights/product-flow-view.fxml",   com.possum.application.auth.Permissions.REPORTS_VIEW},
             {"Audit Log",       "/fxml/audit/audit-view.fxml",             com.possum.application.auth.Permissions.AUDIT_VIEW}
         });

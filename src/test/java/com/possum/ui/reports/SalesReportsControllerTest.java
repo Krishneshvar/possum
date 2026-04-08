@@ -51,7 +51,8 @@ class SalesReportsControllerTest {
         
         SalesReportSummary summary = new SalesReportSummary(
             25, new BigDecimal("5000.00"), new BigDecimal("900.00"), new BigDecimal("500.00"),
-            new BigDecimal("5900.00"), BigDecimal.ZERO, new BigDecimal("5400.00"), new BigDecimal("216.00")
+            new BigDecimal("5400.00"), BigDecimal.ZERO, new BigDecimal("3000.00"), new BigDecimal("2400.00"),
+            new BigDecimal("5000.00"), new BigDecimal("200.00")
         );
         
         BreakdownItem item = new BreakdownItem(

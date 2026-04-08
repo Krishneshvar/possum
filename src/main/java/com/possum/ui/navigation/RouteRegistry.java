@@ -41,6 +41,7 @@ public class RouteRegistry {
         // Reports & Insights
         register("reports-sales", "/fxml/reports/sales-reports-view.fxml", "reports.view");
         register("reports-analytics", "/fxml/reports/sales-analytics-view.fxml", "reports.view");
+        register("business-insights", "/fxml/insights/business-insights-view.fxml", "reports.view");
         register("product-flow", "/fxml/insights/product-flow-view.fxml", "reports.view");
         register("audit-log", "/fxml/audit/audit-view.fxml", "audit.view");
 

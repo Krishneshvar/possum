@@ -2,9 +2,6 @@ package com.possum.persistence.repositories.sqlite;
 
 import com.possum.persistence.db.ConnectionProvider;
 import com.possum.domain.repositories.ReportsRepository;
-import com.possum.persistence.mappers.SaleMapper;
-import com.possum.persistence.mappers.SaleItemMapper;
-import com.possum.persistence.mappers.TransactionMapper;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,73 +12,113 @@ import java.util.Map;
 
 public final class SqliteReportsRepository extends BaseSqliteRepository implements ReportsRepository {
 
-    private final SaleMapper saleMapper = new SaleMapper();
-    private final SaleItemMapper saleItemMapper = new SaleItemMapper();
-    private final TransactionMapper transactionMapper = new TransactionMapper();
-
     public SqliteReportsRepository(ConnectionProvider connectionProvider) {
         super(connectionProvider);
     }
 
     @Override
     public Map<String, Object> getSalesReportSummary(String startDate, String endDate, List<Long> paymentMethodIds) {
-        boolean hasPaymentFilter = paymentMethodIds != null && !paymentMethodIds.isEmpty();
-        String paymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
-            ? "" 
-            : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
-        
-        String refundPaymentFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty()) 
-            ? "" 
+        String sFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty())
+            ? ""
+            : "AND s.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
+        String s2Filter = (paymentMethodIds == null || paymentMethodIds.isEmpty())
+            ? ""
+            : "AND s2.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
+        String lsFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty())
+            ? ""
+            : "AND ls.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
+        String tFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty())
+            ? ""
             : "AND t.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
         
         List<Object> params = new ArrayList<>();
-        // For total_transactions, total_sales, total_tax (with subquery), total_discount (with subquery), total_collected
-        for (int i = 0; i < 5; i++) {
-            // total_tax (index 2) and total_discount (index 3) now have extra placeholders for their subqueries
-            if (i == 2 || i == 3) {
-                params.add(startDate);
-                params.add(endDate);
-                if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
-                    params.addAll(paymentMethodIds);
-                }
-            }
-            params.add(startDate);
-            params.add(endDate);
-            if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
-                params.addAll(paymentMethodIds);
-            }
-        }
-        // For total_refunds
+        
+        // 1. total_transactions (4 ?)
         params.add(startDate);
         params.add(endDate);
-        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) {
-            params.addAll(paymentMethodIds);
-        }
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+
+        // 2. total_sales (4 ?)
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+
+        // 3. total_tax (4 ?)
+        // Subquery
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+        // Main
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+
+        // 4. total_discount (4 ?)
+        // Subquery
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+        // Main
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+
+        // 5. total_collected (2 ?)
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+
+        // 6. total_cost (2 ?)
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
+
+        // 7. total_refunds (2 ?)
+        params.add(startDate);
+        params.add(endDate);
+        if (paymentMethodIds != null && !paymentMethodIds.isEmpty()) params.addAll(paymentMethodIds);
 
         Map<String, Object> summary = queryOne(
                 """
                 SELECT
-                  (SELECT COUNT(*) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_transactions,
-                  (SELECT COALESCE(SUM(total_amount), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_sales,
+                  ((SELECT COUNT(*) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) +
+                   (SELECT COUNT(*) FROM legacy_sales ls WHERE date(ls.sale_date) >= ? AND date(ls.sale_date) <= ? %s)) AS total_transactions,
+                  ((SELECT COALESCE(SUM(total_amount), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) +
+                   (SELECT COALESCE(SUM(net_amount), 0) FROM legacy_sales ls WHERE date(ls.sale_date) >= ? AND date(ls.sale_date) <= ? %s)) AS total_sales,
                   (SELECT COALESCE(SUM(s.total_tax), 0) + COALESCE((SELECT SUM(si.tax_amount) FROM sale_items si JOIN sales s2 ON si.sale_id = s2.id WHERE date(s2.sale_date) >= ? AND date(s2.sale_date) <= ? AND s2.status NOT IN ('cancelled', 'draft') %s), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_tax,
                   (SELECT COALESCE(SUM(s.discount), 0) + COALESCE((SELECT SUM(si.discount_amount) FROM sale_items si JOIN sales s2 ON si.sale_id = s2.id WHERE date(s2.sale_date) >= ? AND date(s2.sale_date) <= ? AND s2.status NOT IN ('cancelled', 'draft') %s), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_discount,
                   (SELECT COALESCE(SUM(paid_amount), 0) FROM sales s WHERE date(s.sale_date) >= ? AND date(s.sale_date) <= ? AND s.status NOT IN ('cancelled', 'draft') %s) AS total_collected,
+                  (SELECT COALESCE(SUM(si.quantity * si.cost_per_unit), 0) FROM sale_items si JOIN sales s2 ON si.sale_id = s2.id WHERE date(s2.sale_date) >= ? AND date(s2.sale_date) <= ? AND s2.status NOT IN ('cancelled', 'draft') %s) AS total_cost,
                   (SELECT COALESCE(SUM(ABS(t.amount)), 0) FROM transactions t WHERE t.type = 'refund' AND t.status = 'completed' AND date(t.transaction_date) >= ? AND date(t.transaction_date) <= ? %s) AS total_refunds
-                """.formatted(paymentFilter, paymentFilter, paymentFilter, paymentFilter, paymentFilter, paymentFilter, paymentFilter, refundPaymentFilter),
+                """.formatted(sFilter, lsFilter, sFilter, lsFilter, s2Filter, sFilter, s2Filter, sFilter, sFilter, s2Filter, tFilter),
                 rs -> {
                     Map<String, Object> map = new HashMap<>();
                     BigDecimal totalSales = rs.getBigDecimal("total_sales");
                     BigDecimal totalTax = rs.getBigDecimal("total_tax");
                     BigDecimal totalRefunds = rs.getBigDecimal("total_refunds");
+                    BigDecimal totalCost = rs.getBigDecimal("total_cost");
+                    BigDecimal totalDiscount = rs.getBigDecimal("total_discount");
+                    BigDecimal totalCollected = rs.getBigDecimal("total_collected");
                     int totalTransactions = rs.getInt("total_transactions");
                     
                     map.put("total_transactions", totalTransactions);
                     map.put("total_sales", totalSales);
                     map.put("total_tax", totalTax);
-                    map.put("total_discount", rs.getBigDecimal("total_discount"));
-                    map.put("total_collected", rs.getBigDecimal("total_collected"));
                     map.put("total_refunds", totalRefunds);
-                    map.put("net_sales", totalSales.subtract(totalTax).subtract(totalRefunds));
+                    map.put("total_cost", totalCost);
+                    map.put("total_discount", totalDiscount);
+                    map.put("total_collected", totalCollected);
+                    
+                    System.out.println("DEBUG REPO: sales=" + totalSales + ", tax=" + totalTax + ", cost=" + totalCost + ", discount=" + totalDiscount + ", refunds=" + totalRefunds);
+                    BigDecimal netSales = totalSales.subtract(totalTax).subtract(totalRefunds).subtract(totalDiscount);
+                    map.put("net_sales", netSales);
+                    map.put("gross_profit", netSales.subtract(totalCost));
                     map.put("average_sale", totalTransactions > 0 
                         ? totalSales.divide(BigDecimal.valueOf(totalTransactions), 2, RoundingMode.HALF_UP) 
                         : BigDecimal.ZERO);
@@ -89,50 +126,6 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
                 },
                 params.toArray()
         ).orElseGet(() -> defaultSummaryMap());
-
-        String legacyPaymentFilter = hasPaymentFilter
-                ? "AND ls.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")"
-                : "";
-        List<Object> legacyParams = new ArrayList<>();
-        legacyParams.add(startDate);
-        legacyParams.add(endDate);
-        if (hasPaymentFilter) {
-            legacyParams.addAll(paymentMethodIds);
-        }
-
-        Map<String, Object> legacy = queryOne(
-                """
-                SELECT
-                  COUNT(*) AS total_transactions,
-                  COALESCE(SUM(ls.net_amount), 0) AS total_sales
-                FROM legacy_sales ls
-                WHERE date(ls.sale_date) >= ? AND date(ls.sale_date) <= ?
-                  %s
-                """.formatted(legacyPaymentFilter),
-                rs -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("total_transactions", rs.getInt("total_transactions"));
-                    m.put("total_sales", rs.getBigDecimal("total_sales"));
-                    return m;
-                },
-                legacyParams.toArray()
-        ).orElse(Map.of("total_transactions", 0, "total_sales", BigDecimal.ZERO));
-
-        int mergedTransactions = ((Number) summary.getOrDefault("total_transactions", 0)).intValue()
-                + ((Number) legacy.getOrDefault("total_transactions", 0)).intValue();
-        BigDecimal mergedSales = asBigDecimal(summary.get("total_sales")).add(asBigDecimal(legacy.get("total_sales")));
-        BigDecimal mergedCollected = asBigDecimal(summary.get("total_collected")).add(asBigDecimal(legacy.get("total_sales")));
-        BigDecimal totalTax = asBigDecimal(summary.get("total_tax"));
-        BigDecimal totalRefunds = asBigDecimal(summary.get("total_refunds"));
-
-        summary.put("total_transactions", mergedTransactions);
-        summary.put("total_sales", mergedSales);
-        summary.put("total_collected", mergedCollected);
-        summary.put("net_sales", mergedSales.subtract(totalTax).subtract(totalRefunds));
-        summary.put("average_sale", mergedTransactions > 0
-                ? mergedSales.divide(BigDecimal.valueOf(mergedTransactions), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO);
-
         return summary;
     }
 
@@ -532,6 +525,8 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
         map.put("total_discount", BigDecimal.ZERO);
         map.put("total_collected", BigDecimal.ZERO);
         map.put("total_refunds", BigDecimal.ZERO);
+        map.put("total_cost", BigDecimal.ZERO);
+        map.put("gross_profit", BigDecimal.ZERO);
         map.put("net_sales", BigDecimal.ZERO);
         map.put("average_sale", BigDecimal.ZERO);
         return map;

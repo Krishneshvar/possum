@@ -129,6 +129,17 @@ public final class ReportsService {
         return productFlowRepository.findFlowByVariantId(variantId, 1000, 0, startDate, endDate, null);
     }
 
+    public ComparisonReport getSalesComparison(LocalDate currentStart, LocalDate currentEnd,
+                                              LocalDate previousStart, LocalDate previousEnd) {
+        SalesReportSummary current = getSalesSummary(currentStart, currentEnd, null);
+        SalesReportSummary previous = getSalesSummary(previousStart, previousEnd, null);
+        
+        String label = previousStart.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")) + 
+                       " - " + previousEnd.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
+        
+        return new ComparisonReport(label, current, previous);
+    }
+
     private SalesReportSummary mapToSummary(Map<String, Object> data) {
         int totalTransactions = (int) data.getOrDefault("total_transactions", 0);
         BigDecimal totalSales = (BigDecimal) data.getOrDefault("total_sales", BigDecimal.ZERO);
@@ -136,8 +147,11 @@ public final class ReportsService {
         BigDecimal totalDiscount = (BigDecimal) data.getOrDefault("total_discount", BigDecimal.ZERO);
         BigDecimal totalCollected = (BigDecimal) data.getOrDefault("total_collected", BigDecimal.ZERO);
         BigDecimal totalRefunds = (BigDecimal) data.getOrDefault("total_refunds", BigDecimal.ZERO);
+        BigDecimal totalCost = (BigDecimal) data.getOrDefault("total_cost", BigDecimal.ZERO);
+        BigDecimal grossProfit = (BigDecimal) data.getOrDefault("gross_profit", BigDecimal.ZERO);
         BigDecimal netSales = (BigDecimal) data.getOrDefault("net_sales", BigDecimal.ZERO);
         BigDecimal averageSale = (BigDecimal) data.getOrDefault("average_sale", BigDecimal.ZERO);
+        
         return new SalesReportSummary(
                 totalTransactions,
                 totalSales,
@@ -145,6 +159,8 @@ public final class ReportsService {
                 totalDiscount,
                 totalCollected,
                 totalRefunds,
+                totalCost,
+                grossProfit,
                 netSales,
                 averageSale
         );

@@ -156,6 +156,9 @@ public class DependencyInjector {
                 () -> new com.possum.ui.dashboard.DashboardController(
                         reportsService, applicationModule.getInventoryService(),
                         serviceLocator.getDatabaseBackupService()));
+
+        registry.put(com.possum.ui.insights.BusinessInsightsController.class,
+                () -> new com.possum.ui.insights.BusinessInsightsController(reportsService));
     }
 
     public com.possum.infrastructure.filesystem.AppPaths getAppPaths() {

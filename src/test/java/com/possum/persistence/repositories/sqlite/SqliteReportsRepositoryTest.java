@@ -59,6 +59,7 @@ class SqliteReportsRepositoryTest {
                 variant_id INTEGER,
                 quantity INTEGER,
                 price_per_unit REAL,
+                cost_per_unit REAL DEFAULT 0,
                 tax_amount REAL DEFAULT 0,
                 discount_amount REAL DEFAULT 0
             )
@@ -119,9 +120,9 @@ class SqliteReportsRepositoryTest {
         // One cancelled sale — should be excluded
         connection.createStatement().execute("INSERT INTO sales (id, customer_id, invoice_number, status, total_amount, paid_amount, total_tax, discount, sale_date) VALUES (3, 1, 'INV-003', 'cancelled', 200.0, 0.0, 10.0, 0.0, '2025-06-01 15:00:00')");
 
-        connection.createStatement().execute("INSERT INTO sale_items VALUES (1, 1, 1, 3, 300.0, 15.0, 5.0)");
-        connection.createStatement().execute("INSERT INTO sale_items VALUES (2, 1, 2, 1, 100.0, 5.0, 5.0)");
-        connection.createStatement().execute("INSERT INTO sale_items VALUES (3, 2, 1, 2, 200.0, 10.0, 0.0)");
+        connection.createStatement().execute("INSERT INTO sale_items (id, sale_id, variant_id, quantity, price_per_unit, cost_per_unit, tax_amount, discount_amount) VALUES (1, 1, 1, 3, 300.0, 200.0, 15.0, 5.0)");
+        connection.createStatement().execute("INSERT INTO sale_items (id, sale_id, variant_id, quantity, price_per_unit, cost_per_unit, tax_amount, discount_amount) VALUES (2, 1, 2, 1, 100.0, 50.0, 5.0, 5.0)");
+        connection.createStatement().execute("INSERT INTO sale_items (id, sale_id, variant_id, quantity, price_per_unit, cost_per_unit, tax_amount, discount_amount) VALUES (3, 2, 1, 2, 200.0, 150.0, 10.0, 0.0)");
 
         connection.createStatement().execute("INSERT INTO transactions (id, sale_id, type, status, amount, payment_method_id, transaction_date) VALUES (1, 1, 'payment', 'completed', 1000.0, 1, '2025-06-01 10:00:00')");
         connection.createStatement().execute("INSERT INTO transactions (id, sale_id, type, status, amount, payment_method_id, transaction_date) VALUES (2, 2, 'payment', 'completed', 500.0, 2, '2025-06-01 12:00:00')");
@@ -145,11 +146,28 @@ class SqliteReportsRepositoryTest {
         Map<String, Object> summary = repository.getSalesReportSummary("2025-06-01", "2025-06-01", null);
 
         // 2 completed sales (1000 + 500) + 1 legacy (300) = 1800
-        assertTrue(((Number) summary.get("total_transactions")).intValue() >= 2);
-        assertTrue(((BigDecimal) summary.get("total_sales")).compareTo(new BigDecimal("1300")) >= 0);
+        assertEquals(3, ((Number) summary.get("total_transactions")).intValue());
+        assertTrue(((BigDecimal) summary.get("total_sales")).compareTo(new BigDecimal("1800")) == 0);
 
         // Refunds = ABS(-100) = 100
-        assertTrue(((BigDecimal) summary.get("total_refunds")).compareTo(new BigDecimal("100")) >= 0);
+        assertTrue(((BigDecimal) summary.get("total_refunds")).compareTo(new BigDecimal("100")) == 0);
+    }
+
+    @Test
+    void getSalesReportSummary_calculatesProfitabilityCorrectly() {
+        Map<String, Object> summary = repository.getSalesReportSummary("2025-06-01", "2025-06-01", null);
+
+        // Costs (from items 1, 2, 3): (3*200) + (1*50) + (2*150) = 600 + 50 + 300 = 950
+        BigDecimal totalCost = (BigDecimal) summary.get("total_cost");
+        assertEquals(0, totalCost.compareTo(new BigDecimal("950.0")), "Expected cost 950.0 but got " + totalCost);
+
+        // net_sales = total_sales (1800) - tax (105) - discount (20) - refunds (100) = 1575
+        BigDecimal netSales = (BigDecimal) summary.get("net_sales");
+        assertEquals(0, netSales.compareTo(new BigDecimal("1575.0")), "Expected net sales 1575.0 but got " + netSales);
+
+        // Gross Profit = Net Sales (1575) - Total Cost (950) = 625
+        BigDecimal grossProfit = (BigDecimal) summary.get("gross_profit");
+        assertEquals(0, grossProfit.compareTo(new BigDecimal("625.0")), "Expected gross profit 625.0 but got " + grossProfit);
     }
 
     @Test
