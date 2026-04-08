@@ -12,6 +12,7 @@ import com.possum.domain.repositories.TaxRepository;
 import com.possum.shared.dto.GeneralSettings;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.common.dialogs.DialogStyler;
+import com.possum.shared.util.CurrencyUtil;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -216,7 +217,8 @@ public class SettingsController {
             
             settingsStore.saveGeneralSettings(settings);
             generalSettings = settings;
-            NotificationService.success("General settings saved");
+            CurrencyUtil.refreshCache();
+            NotificationService.success("General settings saved. Currency format updated.");
         } catch (Exception e) {
             NotificationService.error("Failed to save settings: " + e.getMessage());
         }

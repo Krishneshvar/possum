@@ -22,10 +22,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class InventoryController extends AbstractCrudController<Variant, InventoryFilter> {
     
@@ -35,7 +34,6 @@ public class InventoryController extends AbstractCrudController<Variant, Invento
     private final VariantRepository variantRepository;
     private final CategoryService categoryService;
     private final TaxRepository taxRepository;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     
     private List<Long> currentCategoryFilters = List.of();
     private List<Long> currentTaxCategoryFilters = List.of();
@@ -139,7 +137,7 @@ public class InventoryController extends AbstractCrudController<Variant, Invento
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : currencyFormat.format(item));
+                setText(empty || item == null ? null : CurrencyUtil.format(item));
             }
         });
         

@@ -2,6 +2,7 @@ package com.possum.ui.sales;
 
 import com.possum.domain.model.Sale;
 import com.possum.shared.util.TimeUtil;
+import com.possum.shared.util.CurrencyUtil;
 import com.possum.ui.common.dialogs.DialogStyler;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
@@ -13,12 +14,9 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-import java.text.NumberFormat;
-import java.util.Locale;
+import java.math.BigDecimal;
 
 public class LegacySaleSummaryDialog {
-
-    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
 
     public static void show(Sale sale) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -51,7 +49,7 @@ public class LegacySaleSummaryDialog {
 
         addSummaryRow(grid, 0, "👤 Customer", sale.customerName() != null && !sale.customerName().isBlank() ? sale.customerName() : "Walk-in Customer");
         addSummaryRow(grid, 1, "📅 Date & Time", sale.saleDate() != null ? TimeUtil.formatStandard(TimeUtil.toLocal(sale.saleDate())) : "-");
-        addSummaryRow(grid, 2, "💰 Net Amount", sale.totalAmount() != null ? CURRENCY_FORMAT.format(sale.totalAmount()) : "$0.00");
+        addSummaryRow(grid, 2, "💰 Net Amount", sale.totalAmount() != null ? CurrencyUtil.format(sale.totalAmount()) : CurrencyUtil.format(BigDecimal.ZERO));
         addSummaryRow(grid, 3, "💳 Payment", sale.paymentMethodName() != null ? sale.paymentMethodName() : "Unknown");
 
         VBox footer = new VBox(8);

@@ -15,10 +15,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
+import com.possum.shared.util.CurrencyUtil;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 
 public class DashboardController {
     
@@ -32,7 +31,6 @@ public class DashboardController {
     private ReportsService reportsService;
     private InventoryService inventoryService;
     private com.possum.infrastructure.backup.DatabaseBackupService backupService;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public DashboardController(ReportsService reportsService, InventoryService inventoryService, 
                                com.possum.infrastructure.backup.DatabaseBackupService backupService) {
@@ -64,11 +62,10 @@ public class DashboardController {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : currencyFormat.format(item));
+                setText(empty || item == null ? null : CurrencyUtil.format(item));
             }
         });
-        
-        topProductsTable.getTableView().getColumns().setAll(nameCol, variantCol, qtyCol, revenueCol);
+        topProductsTable.getTableView().getColumns().setAll(List.of(nameCol, variantCol, qtyCol, revenueCol));
         topProductsTable.setEmptyMessage("No data available");
         topProductsTable.setEmptySubtitle("Top selling products will appear here.");
     }
@@ -88,8 +85,7 @@ public class DashboardController {
         
         TableColumn<Variant, Integer> alertCol = new TableColumn<>("Alert Level");
         alertCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().stockAlertCap()));
-        
-        lowStockTable.getTableView().getColumns().setAll(nameCol, variantCol, skuCol, stockCol, alertCol);
+        lowStockTable.getTableView().getColumns().setAll(List.of(nameCol, variantCol, skuCol, stockCol, alertCol));
         lowStockTable.setEmptyMessage("Inventory healthy");
         lowStockTable.setEmptySubtitle("No products are currently low on stock.");
     }
@@ -98,7 +94,7 @@ public class DashboardController {
         LocalDate today = LocalDate.now();
         
         SalesReportSummary summary = reportsService.getSalesSummary(today, today, null);
-        dailySalesLabel.setText(currencyFormat.format(summary.totalSales()));
+        dailySalesLabel.setText(CurrencyUtil.format(summary.totalSales()));
         transactionsLabel.setText(String.valueOf(summary.totalTransactions()));
         
         List<TopProduct> topProducts = reportsService.getTopProducts(today, today, 10, null);

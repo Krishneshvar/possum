@@ -22,11 +22,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 public class SalesHistoryController {
@@ -44,7 +43,6 @@ public class SalesHistoryController {
     private final PrinterService printerService;
     private final WorkspaceManager workspaceManager;
     private final ObservableList<Sale> salesList = FXCollections.observableArrayList();
-    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
 
     private int currentPage = 1;
     private int pageSize = 15;
@@ -103,7 +101,7 @@ public class SalesHistoryController {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(CURRENCY_FORMAT.format(item));
+                    setText(CurrencyUtil.format(item));
                 }
             }
         });

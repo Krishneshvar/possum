@@ -79,7 +79,7 @@
                 <Separator/>
                 <HBox alignment="CENTER_LEFT" spacing="10">
                     <Label text="Total Cost:" style="-fx-font-weight: bold; -fx-font-size: 14px;" HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="totalCostLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #2563eb;"/>
+                    <Label fx:id="totalCostLabel" text="-" style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #2563eb;"/>
                 </HBox>
             </VBox>
         </VBox>

@@ -8,16 +8,14 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import org.kordamp.ikonli.javafx.FontIcon;
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class SaleDetailTableManager {
 
     private final DataTableView<SaleItem> itemsTable;
     private final DataTableView<SaleItem> returnedItemsTable;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     private boolean isEditingMode = false;
     private final Runnable onDataChanged;
 
@@ -114,7 +112,7 @@ public class SaleDetailTableManager {
                     setGraphic(field);
                     setText(null);
                 } else {
-                    setText(currencyFormat.format(price));
+                    setText(CurrencyUtil.format(price));
                     setGraphic(null);
                 }
             }
@@ -141,7 +139,7 @@ public class SaleDetailTableManager {
                 if (empty || total == null) {
                     setText(null);
                 } else {
-                    setText(currencyFormat.format(total));
+                    setText(CurrencyUtil.format(total));
                     setStyle("-fx-font-weight: bold;");
                 }
             }
@@ -221,7 +219,7 @@ public class SaleDetailTableManager {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : currencyFormat.format(item));
+                setText(empty || item == null ? null : CurrencyUtil.format(item));
             }
         });
     }

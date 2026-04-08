@@ -23,6 +23,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import com.possum.shared.util.TimeUtil;
+import com.possum.shared.util.CurrencyUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +117,7 @@ public class PurchaseController {
         
         TableColumn<PurchaseOrder, String> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().totalCost() != null ? String.format("$%.2f", cellData.getValue().totalCost()) : "$0.00"));
+                cellData.getValue().totalCost() != null ? CurrencyUtil.format(cellData.getValue().totalCost()) : CurrencyUtil.format(java.math.BigDecimal.ZERO)));
         priceCol.setPrefWidth(100);
         priceCol.getStyleClass().add("text-bold");
         priceCol.setStyle("-fx-alignment: CENTER-RIGHT; -fx-text-fill: black;");

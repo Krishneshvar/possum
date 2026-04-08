@@ -19,12 +19,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import com.possum.shared.util.TimeUtil;
+import com.possum.shared.util.CurrencyUtil;
 import com.possum.application.sales.dto.UpdateSaleItemRequest;
 import javafx.application.Platform;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -77,7 +76,6 @@ public class SaleDetailController implements Parameterizable {
     private final SettingsStore settingsStore;
     private final PrinterService printerService;
     private final ProductSearchIndex searchIndex;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     private SaleDetailTableManager tableManager;
     private SaleDetailSearchHandler searchHandler;
@@ -147,9 +145,9 @@ public class SaleDetailController implements Parameterizable {
                 .map(i -> i.discountAmount() != null ? i.discountAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        draftSubtotalLabel.setText(currencyFormat.format(subtotal));
-        draftTaxLabel.setText(currencyFormat.format(taxEstimate));
-        draftTotalLabel.setText(currencyFormat.format(subtotal.add(taxEstimate).subtract(discounts)));
+        draftSubtotalLabel.setText(CurrencyUtil.format(subtotal));
+        draftTaxLabel.setText(CurrencyUtil.format(taxEstimate));
+        draftTotalLabel.setText(CurrencyUtil.format(subtotal.add(taxEstimate).subtract(discounts)));
     }
 
     private void addVariantToEditingItems(com.possum.domain.model.Variant variant) {
@@ -269,9 +267,9 @@ public class SaleDetailController implements Parameterizable {
         BigDecimal grandTotal = currentSale.totalAmount() != null ? currentSale.totalAmount() : BigDecimal.ZERO;
         BigDecimal paidAmount = currentSale.paidAmount() != null ? currentSale.paidAmount() : BigDecimal.ZERO;
         
-        subtotalLabel.setText(currencyFormat.format(subtotal));
-        taxTotalLabel.setText(currencyFormat.format(totalTax));
-        discountTotalLabel.setText("-" + currencyFormat.format(totalDiscount));
+        subtotalLabel.setText(CurrencyUtil.format(subtotal));
+        taxTotalLabel.setText(CurrencyUtil.format(totalTax));
+        discountTotalLabel.setText("-" + CurrencyUtil.format(totalDiscount));
         BigDecimal totalRefunded = saleDetails.transactions().stream()
                 .filter(t -> "refund".equals(t.type()) && "completed".equals(t.status()))
                 .map(t -> t.amount().abs())
@@ -283,22 +281,22 @@ public class SaleDetailController implements Parameterizable {
             refundSummaryRow.setManaged(hasRefund);
         }
         if (refundTotalLabel != null) {
-            refundTotalLabel.setText("-" + currencyFormat.format(totalRefunded));
+            refundTotalLabel.setText("-" + CurrencyUtil.format(totalRefunded));
         }
 
         BigDecimal effectiveGrandTotal = grandTotal.subtract(totalRefunded).max(BigDecimal.ZERO);
-        grandTotalLabel.setText(currencyFormat.format(effectiveGrandTotal));
-        paidAmountLabel.setText(currencyFormat.format(paidAmount));
+        grandTotalLabel.setText(CurrencyUtil.format(effectiveGrandTotal));
+        paidAmountLabel.setText(CurrencyUtil.format(paidAmount));
         
         BigDecimal balance = paidAmount.subtract(effectiveGrandTotal);
         
         if (balance.compareTo(BigDecimal.ZERO) >= 0) {
             balanceTypeLabel.setText("Change");
-            balanceAmountLabel.setText(currencyFormat.format(balance));
+            balanceAmountLabel.setText(CurrencyUtil.format(balance));
             balanceAmountLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: #16a34a;");
         } else {
             balanceTypeLabel.setText("Due Amount");
-            balanceAmountLabel.setText(currencyFormat.format(balance.abs()));
+            balanceAmountLabel.setText(CurrencyUtil.format(balance.abs()));
             balanceAmountLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: #dc2626;");
         }
     }

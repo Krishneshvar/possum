@@ -15,10 +15,9 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 
-import java.text.NumberFormat;
+import com.possum.shared.util.CurrencyUtil;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 
 public class SalesAnalyticsController {
     
@@ -39,7 +38,6 @@ public class SalesAnalyticsController {
     private SalesService salesService;
     private LocalDate startDate;
     private LocalDate endDate;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public SalesAnalyticsController(ReportsService reportsService, SalesService salesService) {
         this.reportsService = reportsService;
@@ -140,10 +138,10 @@ public class SalesAnalyticsController {
         List<Long> paymentMethodIds = getSelectedPaymentMethodIds();
         SalesReportSummary summary = reportsService.getSalesSummary(startDate, endDate, paymentMethodIds);
         
-        totalSalesLabel.setText(currencyFormat.format(summary.totalSales()));
+        totalSalesLabel.setText(CurrencyUtil.format(summary.totalSales()));
         transactionsLabel.setText(String.valueOf(summary.totalTransactions()));
-        avgSaleLabel.setText(currencyFormat.format(summary.averageSale()));
-        totalTaxLabel.setText(currencyFormat.format(summary.totalTax()));
+        avgSaleLabel.setText(CurrencyUtil.format(summary.averageSale()));
+        totalTaxLabel.setText(CurrencyUtil.format(summary.totalTax()));
     }
 
     private List<Long> getSelectedPaymentMethodIds() {

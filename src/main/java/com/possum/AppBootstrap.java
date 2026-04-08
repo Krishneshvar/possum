@@ -207,6 +207,7 @@ public final class AppBootstrap {
         transactionService = new com.possum.application.transactions.TransactionServiceImpl(transactionRepo, salesRepository);
 
         com.possum.shared.util.TimeUtil.initialize(serviceLocator.getSettingsStore());
+        com.possum.shared.util.CurrencyUtil.initialize(serviceLocator.getSettingsStore());
         returnsService = new ReturnsService(returnRepository, salesRepository,
                 applicationModule.getInventoryService(), auditRepository, transactionManager, jsonService, new com.possum.domain.services.ReturnCalculator());
         com.possum.persistence.repositories.sqlite.SqliteReportsRepository reportsRepository =

@@ -12,7 +12,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 
-import java.text.NumberFormat;
+import com.possum.shared.util.CurrencyUtil;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -35,7 +35,6 @@ public class PosAutocompleteManager {
         void onCategorySelectedForQuickAdd(Category c);
         ProductSearchIndex getSearchIndex();
         com.possum.application.categories.CategoryService getCategoryService();
-        NumberFormat getCurrencyFormat();
     }
 
     private final Callbacks cb;
@@ -78,7 +77,7 @@ public class PosAutocompleteManager {
                 box.getStyleClass().add("search-item-box");
                 Label name = new Label(item.productName() + (item.name().equals("Default") ? "" : " - " + item.name()));
                 name.getStyleClass().add("search-item-name");
-                Label detail = new Label(item.sku() + " • " + cb.getCurrencyFormat().format(item.price()) + " • Stock: " + (item.stock() != null ? item.stock() : "∞"));
+                Label detail = new Label(item.sku() + " • " + CurrencyUtil.format(item.price()) + " • Stock: " + (item.stock() != null ? item.stock() : "∞"));
                 detail.getStyleClass().add("search-item-details");
                 box.getChildren().addAll(name, detail);
                 setGraphic(box);

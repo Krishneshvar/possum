@@ -49,16 +49,16 @@
                                 </HBox>
                                 <HBox spacing="8" alignment="CENTER_LEFT">
                                     <Label text="MRP" styleClass="totals-chip-label"/>
-                                    <Label fx:id="bottomMrpLabel" text="\$0.00" styleClass="totals-chip-value-muted"/>
+                                    <Label fx:id="bottomMrpLabel" text="-" styleClass="totals-chip-value-muted"/>
                                 </HBox>
                                 <HBox spacing="8" alignment="CENTER_LEFT">
                                     <Label text="PRICE" styleClass="totals-chip-label"/>
-                                    <Label fx:id="bottomPriceTotalLabel" text="\$0.00" styleClass="totals-chip-value-muted"/>
+                                    <Label fx:id="bottomPriceTotalLabel" text="-" styleClass="totals-chip-value-muted"/>
                                 </HBox>
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="TOTAL" styleClass="totals-chip-label"/>
-                                    <Label fx:id="bottomTotalLabel" text="\$0.00" styleClass="totals-chip-value-accent"/>
+                                    <Label fx:id="bottomTotalLabel" text="-" styleClass="totals-chip-value-accent"/>
                                 </HBox>
                             </HBox>
                         </VBox>
@@ -176,23 +176,23 @@
                                     <HBox>
                                         <Label text="Subtotal" styleClass="billing-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="subtotalLabel" text="\$0.00" styleClass="billing-value"/>
+                                        <Label fx:id="subtotalLabel" text="-" styleClass="billing-value"/>
                                     </HBox>
                                     <HBox>
                                         <Label text="Discount" styleClass="billing-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="totalDiscountLabel" text="\$0.00" styleClass="billing-value" style="-fx-text-fill: #ef4444;"/>
+                                        <Label fx:id="totalDiscountLabel" text="-" styleClass="billing-value" style="-fx-text-fill: #ef4444;"/>
                                     </HBox>
                                     <HBox>
                                         <Label text="Tax" styleClass="billing-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="taxLabel" text="\$0.00" styleClass="billing-value"/>
+                                        <Label fx:id="taxLabel" text="-" styleClass="billing-value"/>
                                     </HBox>
                                     <Separator/>
                                     <HBox>
                                         <Label text="Total" styleClass="total-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="totalLabel" text="\$0.00" styleClass="total-amount"/>
+                                        <Label fx:id="totalLabel" text="-" styleClass="total-amount"/>
                                     </HBox>
                                 </VBox>
 
@@ -203,7 +203,7 @@
                                     </VBox>
                                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                                         <Label fx:id="balanceTypeLabel" text="Change" styleClass="billing-label"/>
-                                        <Label fx:id="balanceLabel" text="\$0.00" maxWidth="Infinity" styleClass="balance-value"/>
+                                        <Label fx:id="balanceLabel" text="-" maxWidth="Infinity" styleClass="balance-value"/>
                                     </VBox>
                                 </HBox>
 

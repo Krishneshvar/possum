@@ -22,10 +22,9 @@ import javafx.stage.Stage;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
+import com.possum.shared.util.CurrencyUtil;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -50,7 +49,6 @@ public class CreateReturnDialogController implements Parameterizable {
     private final SalesService salesService;
     private final SalesRepository salesRepository;
     private final ReturnsService returnsService;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     private Sale currentSale;
     private SaleResponse saleDetails;
@@ -72,7 +70,7 @@ public class CreateReturnDialogController implements Parameterizable {
     public void initialize() {
         saleDetailsArea.setVisible(false);
         submitButton.setDisable(true);
-        totalRefundLabel.setText(currencyFormat.format(BigDecimal.ZERO));
+        totalRefundLabel.setText(CurrencyUtil.format(BigDecimal.ZERO));
         itemsSelectedLabel.setText("0 items selected");
 
         saleInput.setOnAction(e -> handleFindSale());
@@ -166,7 +164,7 @@ public class CreateReturnDialogController implements Parameterizable {
             }
         }
 
-        totalRefundLabel.setText(currencyFormat.format(totalRefund));
+        totalRefundLabel.setText(CurrencyUtil.format(totalRefund));
         itemsSelectedLabel.setText(selectedCount + " items selected");
         submitButton.setDisable(selectedCount == 0);
     }
@@ -209,13 +207,11 @@ public class CreateReturnDialogController implements Parameterizable {
         final CheckBox checkBox;
         final TextField qtyField;
         final Label lineTotalLabel;
-        final int maxQty;
         final VBox node;
         private int currentQty;
 
         ReturnItemRow(SaleItem item, int maxQty) {
             this.item = item;
-            this.maxQty = maxQty;
             this.currentQty = maxQty;
 
             checkBox = new CheckBox();
@@ -228,7 +224,7 @@ public class CreateReturnDialogController implements Parameterizable {
             variantLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 12px;");
             
             Label detailsLabel = new Label(String.format("Unit Price: %s  |  Available: %d", 
-                currencyFormat.format(item.pricePerUnit()), maxQty));
+                CurrencyUtil.format(item.pricePerUnit()), maxQty));
             detailsLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px;");
 
             VBox nameArea = new VBox(2, nameLabel, variantLabel, detailsLabel);
@@ -303,7 +299,7 @@ public class CreateReturnDialogController implements Parameterizable {
 
         void updateLineTotal() {
             BigDecimal amount = item.pricePerUnit().multiply(BigDecimal.valueOf(currentQty));
-            lineTotalLabel.setText(isSelected() ? currencyFormat.format(amount) : "");
+            lineTotalLabel.setText(isSelected() ? CurrencyUtil.format(amount) : "");
         }
 
         boolean isSelected() {

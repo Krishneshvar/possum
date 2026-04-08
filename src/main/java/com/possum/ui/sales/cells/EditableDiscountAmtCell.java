@@ -8,14 +8,12 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.util.Locale;
+import com.possum.shared.util.CurrencyUtil;
 
 public class EditableDiscountAmtCell extends TableCell<CartItem, CartItem> {
     private TextField tf;
     private final CartCellHandler handler;
     private final TableColumn<CartItem, ?> colDiscountAmt;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     public EditableDiscountAmtCell(CartCellHandler handler, TableColumn<CartItem, ?> colDiscountAmt) {
         this.handler = handler;
@@ -34,7 +32,7 @@ public class EditableDiscountAmtCell extends TableCell<CartItem, CartItem> {
 
     @Override public void cancelEdit() { super.cancelEdit(); updateDisplay(); }
     @Override public void updateItem(CartItem it, boolean e) { super.updateItem(it, e); if (e || it == null) { setText(null); setGraphic(null); } else if (isEditing()) { setGraphic(tf); setText(null); } else updateDisplay(); }
-    private void updateDisplay() { CartItem it = getItem(); if (it != null) setText(it.getDiscountAmount().compareTo(BigDecimal.ZERO) == 0 ? "0" : currencyFormat.format(it.getDiscountAmount())); setGraphic(null); }
+    private void updateDisplay() { CartItem it = getItem(); if (it != null) setText(it.getDiscountAmount().compareTo(BigDecimal.ZERO) == 0 ? "0" : CurrencyUtil.format(it.getDiscountAmount())); setGraphic(null); }
 
     private TextField createTF() { 
         TextField f = new TextField(); 

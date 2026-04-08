@@ -12,9 +12,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 
-import java.text.NumberFormat;
+import com.possum.shared.util.CurrencyUtil;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -23,7 +22,6 @@ public class SaleDetailSearchHandler {
     private final TextField itemSearchField;
     private final ProductSearchIndex searchIndex;
     private final Consumer<Variant> onVariantSelected;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
     private final Popup searchPopup = new Popup();
     private final ListView<Variant> searchResultsView = new ListView<>(FXCollections.observableArrayList());
@@ -50,7 +48,7 @@ public class SaleDetailSearchHandler {
                     b.setPrefHeight(45);
                     Label n = new Label(item.productName() + (item.name().equals("Standard") ? "" : " - " + item.name()));
                     n.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-                    Label d = new Label(item.sku() + " • " + currencyFormat.format(item.price()));
+                    Label d = new Label(item.sku() + " • " + CurrencyUtil.format(item.price()));
                     d.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
                     b.getChildren().addAll(n, d);
                     setGraphic(b);

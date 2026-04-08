@@ -9,7 +9,6 @@ import com.possum.shared.dto.TransactionFilter;
 import com.possum.ui.common.controllers.AbstractCrudController;
 import com.possum.ui.common.controls.NotificationService;
 import com.possum.ui.workspace.WorkspaceManager;
-import javafx.fxml.FXML;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.Label;
@@ -18,19 +17,17 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.SimpleObjectProperty;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
+import com.possum.shared.util.CurrencyUtil;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 public class TransactionsController extends AbstractCrudController<Transaction, TransactionFilter> {
     
     private final TransactionService transactionService;
     private final com.possum.application.sales.SalesService salesService;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     
     private List<String> currentTypes = null;
     private List<Long> currentPaymentMethodIds = null;
@@ -116,7 +113,7 @@ public class TransactionsController extends AbstractCrudController<Transaction, 
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(currencyFormat.format(item.abs()));
+                    setText(CurrencyUtil.format(item.abs()));
                     setStyle(item.compareTo(BigDecimal.ZERO) < 0 ? "-fx-text-fill: #ef4444;" : "-fx-text-fill: #10b981;");
                 }
             }
@@ -162,8 +159,7 @@ public class TransactionsController extends AbstractCrudController<Transaction, 
         paymentCol.setId("payment_method_name");
         amountCol.setId("amount");
         dateCol.setId("transaction_date");
-        
-        dataTable.getTableView().getColumns().addAll(refCol, typeCol, paymentCol, amountCol, dateCol);
+        dataTable.getTableView().getColumns().addAll(List.of(refCol, typeCol, paymentCol, amountCol, dateCol));
         
         dataTable.getTableView().getSortOrder().addListener((javafx.beans.Observable obs) -> {
             if (!dataTable.getTableView().getSortOrder().isEmpty()) {

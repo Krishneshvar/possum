@@ -131,6 +131,6 @@ tasks.register<Exec>("createInstaller") {
         "--java-options", "-Xmx512m",
         "--java-options", "-XX:+UseZGC",
         "--java-options", "-XX:+ZGenerational",
-        "--icon", "src/main/resources/icons/icon.ico"
+        "--icon", "src/main/resources/icons/icon." + (if (System.getProperty("os.name").lowercase().contains("win")) "ico" else if (System.getProperty("os.name").lowercase().contains("mac")) "icns" else "png")
     )
 }

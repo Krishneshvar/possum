@@ -90,14 +90,20 @@ public class ProductVariantRow {
         com.possum.ui.common.validation.FieldValidator.of(priceField)
                 .addValidator(com.possum.ui.common.validation.Validators.required("Price"))
                 .custom(val -> {
-                    try { return new BigDecimal(val.replace("$", "").replace(",", "").trim()).compareTo(BigDecimal.ZERO) >= 0; } catch (Exception e) { return false; }
+                    try { 
+                        String clean = val.replace(com.possum.shared.util.CurrencyUtil.getSymbol(), "").replace(",", "").trim();
+                        return new BigDecimal(clean).compareTo(BigDecimal.ZERO) >= 0; 
+                    } catch (Exception e) { return false; }
                 }, "Must be non-negative number")
                 .validateOnType();
 
         com.possum.ui.common.validation.FieldValidator.of(costPriceField)
                 .addValidator(com.possum.ui.common.validation.Validators.required("Cost Price"))
                 .custom(val -> {
-                    try { return new BigDecimal(val.replace("$", "").replace(",", "").trim()).compareTo(BigDecimal.ZERO) >= 0; } catch (Exception e) { return false; }
+                    try { 
+                        String clean = val.replace(com.possum.shared.util.CurrencyUtil.getSymbol(), "").replace(",", "").trim();
+                        return new BigDecimal(clean).compareTo(BigDecimal.ZERO) >= 0; 
+                    } catch (Exception e) { return false; }
                 }, "Must be non-negative number")
                 .validateOnType();
 

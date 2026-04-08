@@ -85,15 +85,15 @@
                       style="-fx-padding: 12 20; -fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-width: 1 0 0 0;">
                     <HBox spacing="8" alignment="CENTER_LEFT">
                         <Label text="SUBTOTAL" styleClass="form-label" style="-fx-font-size: 10; -fx-text-fill: #94a3b8;"/>
-                        <Label fx:id="draftSubtotalLabel" text="\$0.00" style="-fx-font-weight: 700; -fx-font-size: 14;"/>
+                        <Label fx:id="draftSubtotalLabel" text="-" style="-fx-font-weight: 700; -fx-font-size: 14;"/>
                     </HBox>
                     <HBox spacing="8" alignment="CENTER_LEFT">
                         <Label text="TAX" styleClass="form-label" style="-fx-font-size: 10; -fx-text-fill: #94a3b8;"/>
-                        <Label fx:id="draftTaxLabel" text="\$0.00" style="-fx-font-weight: 700; -fx-font-size: 14;"/>
+                        <Label fx:id="draftTaxLabel" text="-" style="-fx-font-weight: 700; -fx-font-size: 14;"/>
                     </HBox>
                     <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 0 0 0 20;">
                         <Label text="NEW TOTAL" styleClass="form-label" style="-fx-font-size: 10; -fx-text-fill: #64748b;"/>
-                        <Label fx:id="draftTotalLabel" text="\$0.00" style="-fx-font-weight: 900; -fx-font-size: 18; -fx-text-fill: #10B981;"/>
+                        <Label fx:id="draftTotalLabel" text="-" style="-fx-font-weight: 900; -fx-font-size: 18; -fx-text-fill: #10B981;"/>
                     </HBox>
                 </HBox>
             </VBox>

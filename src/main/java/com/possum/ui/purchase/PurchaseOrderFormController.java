@@ -34,6 +34,7 @@ import javafx.stage.Popup;
 import javafx.util.StringConverter;
 
 
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -168,7 +169,7 @@ public class PurchaseOrderFormController implements Parameterizable, PurchaseCel
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(String.format("$%.2f", item));
+                    setText(CurrencyUtil.format(item));
                     setStyle("-fx-font-weight: bold; -fx-text-fill: #1976d2;");
                 }
             }
@@ -214,7 +215,7 @@ public class PurchaseOrderFormController implements Parameterizable, PurchaseCel
                     box.getStyleClass().add("search-item-box");
                     Label name = new Label(item.productName() + (item.name().equals("Default") ? "" : " - " + item.name()));
                     name.getStyleClass().add("search-item-name");
-                    Label details = new Label(item.sku() + " • Cost: $" + (item.costPrice() != null ? item.costPrice() : "0.00") + " • Stock: " + (item.stock() != null ? item.stock() : "∞"));
+                    Label details = new Label(item.sku() + " • Cost: " + CurrencyUtil.format(item.costPrice() != null ? item.costPrice() : BigDecimal.ZERO) + " • Stock: " + (item.stock() != null ? item.stock() : "∞"));
                     details.getStyleClass().add("search-item-details");
                     box.getChildren().addAll(name, details);
                     setGraphic(box);
@@ -290,7 +291,7 @@ public class PurchaseOrderFormController implements Parameterizable, PurchaseCel
             protected void updateItem(Variant item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) setText(null);
-                else setText(item.productName() + " - " + item.name() + " (" + item.sku() + ") - $" + (item.costPrice() != null ? item.costPrice() : "0.00"));
+                else setText(item.productName() + " - " + item.name() + " (" + item.sku() + ") - " + CurrencyUtil.format(item.costPrice() != null ? item.costPrice() : BigDecimal.ZERO));
             }
         });
         dialog.getDialogPane().setContent(listView);
@@ -355,7 +356,7 @@ public class PurchaseOrderFormController implements Parameterizable, PurchaseCel
         final BigDecimal finalTotal = total;
         final int finalQty = totalQty;
         Platform.runLater(() -> {
-            if (totalCostLabel != null) totalCostLabel.setText(String.format("$%.2f", finalTotal));
+            if (totalCostLabel != null) totalCostLabel.setText(CurrencyUtil.format(finalTotal));
             if (itemCountLabel != null) itemCountLabel.setText(itemRows.size() + " item" + (itemRows.size() != 1 ? "s" : "") + " (" + finalQty + " units)");
         });
     }

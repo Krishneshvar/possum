@@ -267,7 +267,10 @@ public class ProductFormController implements Parameterizable {
     }
 
     private java.math.BigDecimal parseSafeBigDecimal(String val) {
-        try { return new java.math.BigDecimal(val.replace("$", "").replace(",", "").trim()); } catch (Exception e) { return java.math.BigDecimal.ZERO; }
+        try { 
+            String clean = val.replace(com.possum.shared.util.CurrencyUtil.getSymbol(), "").replace(",", "").trim();
+            return new java.math.BigDecimal(clean); 
+        } catch (Exception e) { return java.math.BigDecimal.ZERO; }
     }
 
     private Integer parseSafeInt(String val) {

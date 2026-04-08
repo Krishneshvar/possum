@@ -25,8 +25,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.input.KeyCode;
 
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.*;
 
 public class PosController implements CartCellHandler {
@@ -78,7 +78,6 @@ public class PosController implements CartCellHandler {
     private final SaleCalculator           saleCalculator;
     private final com.possum.application.drafts.DraftService draftService;
 
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     private static final int MAX_BILLS = 9;
     private final List<SaleDraft> bills = new ArrayList<>();
     private SaleDraft currentBill;
@@ -135,7 +134,6 @@ public class PosController implements CartCellHandler {
             public void onCategorySelectedForQuickAdd(Category c){ selectCategoryForQuickAdd(c); }
             public ProductSearchIndex getSearchIndex()           { return searchIndex; }
             public com.possum.application.categories.CategoryService getCategoryService() { return categoryService; }
-            public NumberFormat getCurrencyFormat()              { return currencyFormat; }
         });
         autocomplete.setupSearchAutocomplete(searchField);
         autocomplete.setupQuickAddAutocomplete(quickProductName, quickVariantName);
@@ -143,7 +141,7 @@ public class PosController implements CartCellHandler {
 
         completionHandler = new SaleCompletionHandler(
                 salesService, customerService, printerService, settingsStore,
-                rootPane, currencyFormat, () -> { handleClearCart(); loadCombos(); });
+                rootPane, null, () -> { handleClearCart(); loadCombos(); });
 
         setupKeyboardShortcuts();
         updatePaymentSectionState();
@@ -191,7 +189,7 @@ public class PosController implements CartCellHandler {
         colPrice.setCellFactory(col -> new EditablePriceCell(this, col));
 
         colMrp.setPrefWidth(96);
-        colMrp.setCellValueFactory(c -> new SimpleStringProperty(currencyFormat.format(c.getValue().getVariant().price())));
+        colMrp.setCellValueFactory(c -> new SimpleStringProperty(CurrencyUtil.format(c.getValue().getVariant().price())));
 
         colDiscountPct.setPrefWidth(90);
         colDiscountPct.setCellValueFactory(c -> new SimpleObjectProperty<>(c.getValue()));
@@ -202,7 +200,7 @@ public class PosController implements CartCellHandler {
         colDiscountAmt.setCellFactory(col -> new EditableDiscountAmtCell(this, col));
 
         colTotal.setPrefWidth(115);
-        colTotal.setCellValueFactory(c -> new SimpleStringProperty(currencyFormat.format(c.getValue().getNetLineTotal())));
+        colTotal.setCellValueFactory(c -> new SimpleStringProperty(CurrencyUtil.format(c.getValue().getNetLineTotal())));
 
         cartTable.getTableView().setEditable(true);
         cartTable.getTableView().getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
@@ -268,6 +266,7 @@ public class PosController implements CartCellHandler {
         btnFullPayment.setToggleGroup(pg); btnPartialPayment.setToggleGroup(pg);
         ToggleGroup dg = new ToggleGroup();
         btnDiscountFixed.setToggleGroup(dg); btnDiscountPercent.setToggleGroup(dg);
+        btnDiscountFixed.setText(CurrencyUtil.getSymbol());
 
         pg.selectedToggleProperty().addListener((obs, oldV, newV) -> {
             if (newV == null) { oldV.setSelected(true); return; }
@@ -517,13 +516,13 @@ public class PosController implements CartCellHandler {
     private void recalculateTotals() { saleCalculator.recalculate(currentBill); updateUI(); }
 
     private void updateUI() {
-        subtotalLabel.setText(currencyFormat.format(currentBill.getSubtotal()));
-        totalDiscountLabel.setText(currencyFormat.format(currentBill.getDiscountTotal()));
-        taxLabel.setText(currencyFormat.format(currentBill.getTaxAmount()));
-        totalLabel.setText(currencyFormat.format(currentBill.getTotal()));
-        bottomTotalLabel.setText(currencyFormat.format(currentBill.getTotal()));
-        bottomMrpLabel.setText(currencyFormat.format(currentBill.getTotalMrp()));
-        bottomPriceTotalLabel.setText(currencyFormat.format(currentBill.getTotalPrice()));
+        subtotalLabel.setText(CurrencyUtil.format(currentBill.getSubtotal()));
+        totalDiscountLabel.setText(CurrencyUtil.format(currentBill.getDiscountTotal()));
+        taxLabel.setText(CurrencyUtil.format(currentBill.getTaxAmount()));
+        totalLabel.setText(CurrencyUtil.format(currentBill.getTotal()));
+        bottomTotalLabel.setText(CurrencyUtil.format(currentBill.getTotal()));
+        bottomMrpLabel.setText(CurrencyUtil.format(currentBill.getTotalMrp()));
+        bottomPriceTotalLabel.setText(CurrencyUtil.format(currentBill.getTotalPrice()));
         totalQtyLabel.setText(String.valueOf(currentBill.getItems().stream().mapToInt(CartItem::getQuantity).sum()));
         updateBalanceLabel();
     }
@@ -537,11 +536,11 @@ public class PosController implements CartCellHandler {
         BigDecimal diff = currentBill.getAmountTendered().subtract(currentBill.getTotal());
         if (diff.compareTo(BigDecimal.ZERO) >= 0) {
             balanceTypeLabel.setText("Change"); balanceTypeLabel.setTextFill(Color.web("#16a34a"));
-            balanceLabel.setText(currencyFormat.format(diff));
+            balanceLabel.setText(CurrencyUtil.format(diff));
             balanceLabel.setStyle("-fx-background-color: #dcfce7; -fx-text-fill: #16a34a; -fx-border-color: #bbf7d0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;");
         } else {
             balanceTypeLabel.setText("Balance"); balanceTypeLabel.setTextFill(Color.web("#64748b"));
-            balanceLabel.setText(currencyFormat.format(diff.abs()));
+            balanceLabel.setText(CurrencyUtil.format(diff.abs()));
             balanceLabel.setStyle("-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-radius: 6; -fx-padding: 7 10; -fx-font-weight: bold; -fx-font-size: 14px;");
         }
         if (!currentBill.getItems().isEmpty() && currentBill.getSelectedPaymentMethod() != null) {

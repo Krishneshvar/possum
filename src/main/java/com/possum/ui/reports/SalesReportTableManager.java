@@ -11,15 +11,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class SalesReportTableManager {
 
     private final DataTableView<BreakdownItem> breakdownTable;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     
     private TableColumn<BreakdownItem, String> periodCol;
     private TableColumn<BreakdownItem, Integer> transactionsCol;
@@ -76,7 +74,7 @@ public class SalesReportTableManager {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? "" : currencyFormat.format(item));
+                setText(empty || item == null ? "" : CurrencyUtil.format(item));
             }
         };
 
@@ -96,7 +94,7 @@ public class SalesReportTableManager {
                     setText("");
                     setStyle("");
                 } else {
-                    setText(currencyFormat.format(item));
+                    setText(CurrencyUtil.format(item));
                     setStyle("-fx-font-weight: 800; -fx-text-fill: #0891b2; -fx-font-size: 13px;");
                 }
             }
@@ -186,14 +184,14 @@ public class SalesReportTableManager {
         }
 
         totalLabels.get(1).setText(String.valueOf(totalTransactions));
-        totalLabels.get(2).setText(currencyFormat.format(cash));
-        totalLabels.get(3).setText(currencyFormat.format(upi));
-        totalLabels.get(4).setText(currencyFormat.format(debit));
-        totalLabels.get(5).setText(currencyFormat.format(credit));
-        totalLabels.get(6).setText(currencyFormat.format(gift));
-        totalLabels.get(7).setText(currencyFormat.format(totalSalesSum));
-        totalLabels.get(8).setText(currencyFormat.format(totalRefundsSum));
-        totalLabels.get(9).setText(currencyFormat.format(totalNetSalesSum));
+        totalLabels.get(2).setText(CurrencyUtil.format(cash));
+        totalLabels.get(3).setText(CurrencyUtil.format(upi));
+        totalLabels.get(4).setText(CurrencyUtil.format(debit));
+        totalLabels.get(5).setText(CurrencyUtil.format(credit));
+        totalLabels.get(6).setText(CurrencyUtil.format(gift));
+        totalLabels.get(7).setText(CurrencyUtil.format(totalSalesSum));
+        totalLabels.get(8).setText(CurrencyUtil.format(totalRefundsSum));
+        totalLabels.get(9).setText(CurrencyUtil.format(totalNetSalesSum));
     }
 
     public BigDecimal calculateDynamicGrossSales(BreakdownItem item) {

@@ -90,7 +90,7 @@
                     <VBox spacing="15" VBox.vgrow="ALWAYS">
                         <VBox spacing="5" alignment="CENTER_LEFT">
                             <Label text="Total Payable Amount" styleClass="view-subtitle" style="-fx-font-size: 12px;"/>
-                            <Label fx:id="totalCostLabel" text="\$0.00" style="-fx-font-weight: bold; -fx-font-size: 32px; -fx-text-fill: -color-primary;"/>
+                            <Label fx:id="totalCostLabel" text="-" style="-fx-font-weight: bold; -fx-font-size: 32px; -fx-text-fill: -color-primary;"/>
                         </VBox>
                         
                         <Region VBox.vgrow="ALWAYS"/>

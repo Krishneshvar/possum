@@ -1,26 +1,25 @@
 package com.possum;
 
-import javafx.application.Application;
-import javafx.stage.Stage;
 
-public final class AppLauncher extends Application {
-
-    private AppBootstrap appBootstrap;
-
+public final class AppLauncher {
     public static void main(String[] args) {
-        launch(args);
+        javafx.application.Application.launch(MainApp.class, args);
     }
 
-    @Override
-    public void start(Stage primaryStage) {
-        appBootstrap = new AppBootstrap();
-        appBootstrap.start(primaryStage);
-    }
+    public static class MainApp extends javafx.application.Application {
+        private AppBootstrap appBootstrap;
 
-    @Override
-    public void stop() {
-        if (appBootstrap != null) {
-            appBootstrap.shutdown();
+        @Override
+        public void start(javafx.stage.Stage primaryStage) {
+            appBootstrap = new AppBootstrap();
+            appBootstrap.start(primaryStage);
+        }
+
+        @Override
+        public void stop() {
+            if (appBootstrap != null) {
+                appBootstrap.shutdown();
+            }
         }
     }
 }

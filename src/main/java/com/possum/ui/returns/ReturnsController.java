@@ -20,8 +20,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -32,7 +32,6 @@ public class ReturnsController extends AbstractCrudController<Return, ReturnFilt
     
     private final ReturnsService returnsService;
     private final SalesService salesService;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     
     private LocalDate fromDate = null;
     private LocalDate toDate = null;
@@ -104,7 +103,7 @@ public class ReturnsController extends AbstractCrudController<Return, ReturnFilt
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : currencyFormat.format(item));
+                setText(empty || item == null ? null : CurrencyUtil.format(item));
             }
         });
         

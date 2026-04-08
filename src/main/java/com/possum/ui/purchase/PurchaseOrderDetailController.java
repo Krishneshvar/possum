@@ -22,6 +22,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import com.possum.shared.util.CurrencyUtil;
 import java.math.BigDecimal;
 import java.util.Map;
 
@@ -117,7 +118,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(String.format("$%.2f", item));
+                    setText(CurrencyUtil.format(item));
                     setStyle("-fx-alignment: CENTER-RIGHT; -fx-text-fill: gray;");
                 }
             }
@@ -135,7 +136,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
                 } else {
                     PurchaseOrderItem poi = getTableRow().getItem();
                     BigDecimal total = poi.unitCost().multiply(BigDecimal.valueOf(poi.quantity()));
-                    setText(String.format("$%.2f", total));
+                    setText(CurrencyUtil.format(total));
                     setStyle("-fx-alignment: CENTER-RIGHT; -fx-font-weight: bold; -fx-text-fill: #1976d2;");
                 }
             }
@@ -205,7 +206,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
 
         totalItemsLabel.setText(String.valueOf(orderDetail.items().size()));
         totalQuantityLabel.setText(String.valueOf(totalQty));
-        totalCostLabel.setText(String.format("$%.2f", totalCost));
+        totalCostLabel.setText(CurrencyUtil.format(totalCost));
 
         boolean isPending = "pending".equals(orderDetail.purchaseOrder().status());
         receiveButton.setVisible(isPending);
