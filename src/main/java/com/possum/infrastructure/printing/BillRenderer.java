@@ -168,7 +168,7 @@ public class BillRenderer {
     private static String renderMeta(BillSection section, Sale sale, BillSettings billSettings, String commonClasses) {
         StringBuilder html = new StringBuilder();
         html.append("<div class=\"").append(commonClasses).append("\">")
-            .append("<div><span class=\"bold\">Bill No:</span> ").append(escapeHtml(sale.invoiceNumber())).append("</div>")
+            .append("<div><span class=\"bold\">Bill No:</span> ").append(escapeHtml(sale.shortInvoiceNumber())).append("</div>")
             .append("<div><span class=\"bold\">Date:</span> ").append(formatDate(sale.saleDate(), billSettings)).append("</div>");
 
         if (sale.billerName() != null) {

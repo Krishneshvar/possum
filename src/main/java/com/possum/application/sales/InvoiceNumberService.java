@@ -1,6 +1,7 @@
 package com.possum.application.sales;
 
 import com.possum.domain.repositories.SalesRepository;
+import java.time.LocalDate;
 
 public class InvoiceNumberService {
     private final SalesRepository salesRepository;
@@ -17,13 +18,15 @@ public class InvoiceNumberService {
                     .orElse("XX");
         }
 
-        java.time.LocalDate today = java.time.LocalDate.now();
-        String yy = String.format("%02d", today.getYear() % 100);
-        String mm = String.format("%02d", today.getMonthValue());
-        String dd = String.format("%02d", today.getDayOfMonth());
+        LocalDate today = LocalDate.now();
+        int year = today.getYear();
+        String yy = String.format("%02d", year % 100);
 
-        long seq = salesRepository.getNextSequenceForPaymentType("S_" + code);
+        // Sequence resets every year and is shared across payment methods.
+        // We use a fixed prefix "S_GLOBAL_" + year to ensure year-based reset and shared sequence.
+        long seq = salesRepository.getNextSequenceForPaymentType("S_GLOBAL_" + year);
 
-        return String.format("S%s%s%s%s%04d", yy, mm, dd, code, seq);
+        return String.format("S%s%s%07d", yy, code, seq);
     }
 }
+

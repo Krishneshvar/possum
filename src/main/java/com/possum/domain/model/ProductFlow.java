@@ -17,4 +17,13 @@ public record ProductFlow(
         String paymentMethodNames,
         LocalDateTime eventDate
 ) {
+    public String shortBillRefNumber() {
+        if (billRefNumber == null) return "";
+        // Extract trailing digits (the sequence part)
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d+)$").matcher(billRefNumber);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return billRefNumber;
+    }
 }

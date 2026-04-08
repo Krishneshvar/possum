@@ -265,13 +265,12 @@ public class PurchaseService {
         }
 
         java.time.LocalDate today = java.time.LocalDate.now();
-        String yy = String.format("%02d", today.getYear() % 100);
-        String mm = String.format("%02d", today.getMonthValue());
-        String dd = String.format("%02d", today.getDayOfMonth());
+        int year = today.getYear();
+        String yy = String.format("%02d", year % 100);
 
-        long seq = getNextSequenceForPaymentType("P_" + code);
+        long seq = getNextSequenceForPaymentType("P_GLOBAL_" + year);
 
-        return String.format("P%s%s%s%s%04d", yy, mm, dd, code, seq);
+        return String.format("P%s%s%07d", yy, code, seq);
     }
 
     private long getNextSequenceForPaymentType(String paymentTypeCode) {

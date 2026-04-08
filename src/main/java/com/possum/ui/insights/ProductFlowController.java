@@ -145,7 +145,8 @@ public class ProductFlowController {
 
         TableColumn<ProductFlow, String> billIdCol = new TableColumn<>("Bill ID");
         billIdCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-            cellData.getValue().billRefNumber() != null ? cellData.getValue().billRefNumber() : "-"
+            cellData.getValue().shortBillRefNumber() != null && !cellData.getValue().shortBillRefNumber().isEmpty() 
+            ? cellData.getValue().shortBillRefNumber() : "-"
         ));
         billIdCol.setPrefWidth(120);
         billIdCol.setCellFactory(col -> new TableCell<ProductFlow, String>() {

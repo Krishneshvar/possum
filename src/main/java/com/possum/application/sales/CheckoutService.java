@@ -85,7 +85,10 @@ public class CheckoutService {
         long saleId = transactionManager.runInTransaction(() -> {
             boolean enforceInventoryRestrictions = isInventoryRestrictionsEnabled();
             
-            String invoiceNumber = invoiceNumberService.generate(userId);
+            long primaryPaymentMethodId = (request.payments() != null && !request.payments().isEmpty())
+                    ? request.payments().get(0).paymentMethodId()
+                    : 0L;
+            String invoiceNumber = invoiceNumberService.generate(primaryPaymentMethodId);
             
             Sale saleEntity = new Sale(
                     null,

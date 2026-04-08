@@ -60,7 +60,7 @@ public class TransactionsController extends AbstractCrudController<Transaction, 
         refCol.setSortable(false);
         refCol.setCellValueFactory(cellData -> {
             Transaction tx = cellData.getValue();
-            return new SimpleStringProperty(tx.invoiceNumber() != null ? tx.invoiceNumber() : "-");
+            return new SimpleStringProperty(tx.shortInvoiceNumber() != null && !tx.shortInvoiceNumber().isEmpty() ? tx.shortInvoiceNumber() : "-");
         });
         refCol.setCellFactory(col -> new TableCell<Transaction, String>() {
             @Override

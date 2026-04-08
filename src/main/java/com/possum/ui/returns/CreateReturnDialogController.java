@@ -133,7 +133,7 @@ public class CreateReturnDialogController implements Parameterizable {
         this.currentSale = sale;
         this.saleDetails = salesService.getSaleDetails(sale.id());
         
-        invoiceLabel.setText("#" + sale.invoiceNumber());
+        invoiceLabel.setText("#" + sale.shortInvoiceNumber());
         saleIdLabel.setText("ID: " + sale.id());
         customerLabel.setText(sale.customerName() != null ? sale.customerName() : "Walk-in Customer");
         

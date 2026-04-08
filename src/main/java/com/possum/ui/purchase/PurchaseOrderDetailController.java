@@ -159,7 +159,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
     private void displayOrderDetails() {
         if (orderDetail == null) return;
 
-        poNumberLabel.setText("PO-" + orderDetail.purchaseOrder().id());
+        poNumberLabel.setText(orderDetail.purchaseOrder().shortInvoiceNumber());
         orderDateLabel.setText(TimeUtil.formatStandard(TimeUtil.toLocal(orderDetail.purchaseOrder().orderDate())));
         supplierNameLabel.setText(orderDetail.purchaseOrder().supplierName());
         createdByLabel.setText(orderDetail.purchaseOrder().createdByName());
@@ -221,8 +221,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         DialogStyler.apply(confirm);
         confirm.setTitle("Receive Purchase Order");
-        String invNum = orderDetail.purchaseOrder().invoiceNumber();
-        confirm.setHeaderText("Receive " + (invNum != null ? invNum : ("PO-" + orderDetail.purchaseOrder().id())) + "?");
+        confirm.setHeaderText("Receive " + orderDetail.purchaseOrder().shortInvoiceNumber() + "?");
         confirm.setContentText("This will create inventory lots and update stock levels. This action cannot be undone.");
 
         confirm.showAndWait().ifPresent(response -> {
@@ -257,8 +256,7 @@ public class PurchaseOrderDetailController implements Parameterizable {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         DialogStyler.apply(confirm);
         confirm.setTitle("Cancel Purchase Order");
-        String invNum = orderDetail.purchaseOrder().invoiceNumber();
-        confirm.setHeaderText("Cancel " + (invNum != null ? invNum : ("PO-" + orderDetail.purchaseOrder().id())) + "?");
+        confirm.setHeaderText("Cancel " + orderDetail.purchaseOrder().shortInvoiceNumber() + "?");
         confirm.setContentText("This action cannot be undone and the order will not be fulfilled.");
 
         confirm.showAndWait().ifPresent(response -> {

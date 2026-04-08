@@ -112,6 +112,28 @@ class SqliteSalesRepositoryTest {
     }
 
     @Test
+    void shouldFindSaleBySequenceNumber() throws SQLException {
+        PreparedStatement stmt = mock(PreparedStatement.class);
+        ResultSet rs = mock(ResultSet.class);
+        when(connection.prepareStatement(anyString())).thenReturn(stmt);
+        when(stmt.executeQuery()).thenReturn(rs);
+
+        // First call: exact match fails
+        // Second call: LIKE match succeeds
+        when(rs.next())
+                .thenReturn(false) // exact match
+                .thenReturn(true).thenReturn(false); // LIKE match
+
+        when(rs.getLong("id")).thenReturn(1L);
+        when(rs.getString("invoice_number")).thenReturn("S26CH0000001");
+
+        Optional<Sale> result = repository.findSaleByInvoiceNumber("0000001");
+
+        assertTrue(result.isPresent());
+        assertEquals("S26CH0000001", result.get().invoiceNumber());
+    }
+
+    @Test
     void shouldFindSaleItems() throws SQLException {
         PreparedStatement stmt = mock(PreparedStatement.class);
         ResultSet rs = mock(ResultSet.class);

@@ -17,4 +17,13 @@ public record PurchaseOrder(
         Integer itemCount,
         java.math.BigDecimal totalCost
 ) {
+    public String shortInvoiceNumber() {
+        if (invoiceNumber == null) return "PO-" + id;
+        // Extract trailing digits (the sequence part)
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d+)$").matcher(invoiceNumber);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return invoiceNumber;
+    }
 }

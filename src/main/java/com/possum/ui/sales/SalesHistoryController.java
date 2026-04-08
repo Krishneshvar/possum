@@ -87,7 +87,7 @@ public class SalesHistoryController {
     private void setupTable() {
         salesTable.getTableView().setItems(salesList);
 
-        salesTable.addColumn("Invoice #", cellData -> new SimpleStringProperty(cellData.getValue().invoiceNumber()));
+        salesTable.addColumn("Invoice #", cellData -> new SimpleStringProperty(cellData.getValue().shortInvoiceNumber()));
         
         salesTable.addColumn("Customer", cellData -> new SimpleStringProperty(
                 cellData.getValue().customerName() != null ? cellData.getValue().customerName() : "Walk-in Customer"));

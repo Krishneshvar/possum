@@ -153,8 +153,7 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
 
     @Override
     public Optional<Sale> findSaleByInvoiceNumber(String invoiceNumber) {
-        return queryOne(
-                """
+        String query = """
                 SELECT
                   s.*, c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, u.name AS biller_name,
                   t.payment_method_id,
@@ -166,10 +165,19 @@ public final class SqliteSalesRepository extends BaseSqliteRepository implements
                 LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
                 WHERE s.invoice_number = ?
                 GROUP BY s.id
-                """,
-                saleMapper,
-                invoiceNumber
-        );
+                """;
+        
+        Optional<Sale> result = queryOne(query, saleMapper, invoiceNumber);
+        if (result.isPresent()) return result;
+
+        // Stabilization: Also try finding by trailing sequence if the input is numeric
+        if (invoiceNumber != null && invoiceNumber.matches("\\d+")) {
+            String fallbackQuery = query.replace("s.invoice_number = ?", "s.invoice_number LIKE ?")
+                                      .replace("GROUP BY s.id", "GROUP BY s.id ORDER BY s.id DESC LIMIT 1");
+            return queryOne(fallbackQuery, saleMapper, "%" + invoiceNumber);
+        }
+        
+        return Optional.empty();
     }
 
     @Override

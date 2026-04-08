@@ -453,6 +453,7 @@ public class PosController implements CartCellHandler {
         currentBill.reset(); 
         refreshCurrentBill(); 
         switchBill(currentBill.getIndex()); 
+        NotificationService.info("Cart cleared");
     }
 
     @FXML private void handleResetCustomer() {
@@ -461,6 +462,7 @@ public class PosController implements CartCellHandler {
             customerCombo.setValue(null); customerNameField.clear(); customerPhoneField.clear(); customerEmailField.clear(); customerAddressField.clear();
             currentBill.setSelectedCustomer(null); currentBill.setCustomerName(""); currentBill.setCustomerPhone(""); currentBill.setCustomerEmail(""); currentBill.setCustomerAddress("");
             recalculateTotals();
+            NotificationService.info("Customer selection reset");
         } finally { isAutofilling = false; }
     }
 
