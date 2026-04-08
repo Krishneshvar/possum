@@ -26,6 +26,12 @@ public class AppShellController {
 
     private DependencyInjector dependencyInjector;
 
+    public AppShellController(DependencyInjector dependencyInjector) {
+        this.dependencyInjector = dependencyInjector;
+    }
+
+    public AppShellController() {}
+
     @FXML private HBox navbar;
     @FXML private HBox brandBox;
     @FXML private HBox navItems;

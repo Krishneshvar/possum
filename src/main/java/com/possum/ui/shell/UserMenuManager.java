@@ -88,12 +88,17 @@ public class UserMenuManager {
     }
 
     private void handleLogout() {
-        AuthContext.clear();
-        new SessionStore(dependencyInjector.getAppPaths(), new JsonService()).clearSession();
-
-        Stage stage = (Stage) userMenuButton.getScene().getWindow();
-
         try {
+            if (dependencyInjector == null) {
+                com.possum.ui.common.controls.NotificationService.error("Logout failed: System internal state (DependencyInjector) is null.");
+                return;
+            }
+
+            AuthContext.clear();
+            new SessionStore(dependencyInjector.getAppPaths(), new JsonService()).clearSession();
+
+            Stage stage = (Stage) userMenuButton.getScene().getWindow();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/auth/login-view.fxml"));
 
             NavigationManager dummyNav = new NavigationManager(null, null) {
@@ -122,11 +127,13 @@ public class UserMenuManager {
             });
 
             Parent root = loader.load();
-            Scene scene = new Scene(root, 1280, 800);
+            Scene scene = new Scene(root, 1200, 720);
             stage.setTitle("POSSUM - Login");
             stage.setScene(scene);
-        } catch (java.io.IOException e) {
-            LoggingConfig.getLogger().error("Failed to load login screen during logout: {}", e.getMessage(), e);
+            stage.centerOnScreen();
+        } catch (Exception e) {
+            LoggingConfig.getLogger().error("Failed to logout: {}", e.getMessage(), e);
+            com.possum.ui.common.controls.NotificationService.error("Logout failed: " + e.getMessage());
         }
     }
 }

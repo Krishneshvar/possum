@@ -5,7 +5,7 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <fx:root type="javafx.scene.layout.StackPane" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
-    <VBox styleClass="table-shadow-wrapper" VBox.vgrow="ALWAYS">
+    <VBox styleClass="table-shadow-wrapper">
         <TableView fx:id="tableView" styleClass="data-table" VBox.vgrow="ALWAYS">
         </TableView>
     </VBox>

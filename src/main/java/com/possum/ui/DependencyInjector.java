@@ -116,6 +116,7 @@ public class DependencyInjector {
         registry.put(com.possum.ui.workspace.WorkspaceManager.class, () -> workspaceManager);
         registry.put(com.possum.ui.auth.SessionStore.class,
                 () -> new com.possum.ui.auth.SessionStore(appPaths, serviceLocator.getJsonService()));
+        registry.put(DependencyInjector.class, () -> this);
 
         // Composite controllers
         registry.put(com.possum.ui.sales.SalesHistoryController.class,
@@ -150,6 +151,11 @@ public class DependencyInjector {
         registry.put(com.possum.ui.taxes.TaxConfigurationController.class,
                 () -> new com.possum.ui.taxes.TaxConfigurationController(
                         serviceLocator.getSettingsStore(), toastService));
+        
+        registry.put(com.possum.ui.dashboard.DashboardController.class,
+                () -> new com.possum.ui.dashboard.DashboardController(
+                        reportsService, applicationModule.getInventoryService(),
+                        serviceLocator.getDatabaseBackupService()));
     }
 
     public com.possum.infrastructure.filesystem.AppPaths getAppPaths() {
@@ -164,17 +170,28 @@ public class DependencyInjector {
         return type -> {
             try {
                 java.lang.reflect.Constructor<?>[] constructors = type.getConstructors();
-                if (constructors.length > 0) {
-                    java.lang.reflect.Constructor<?> constructor = constructors[0];
+                for (java.lang.reflect.Constructor<?> constructor : constructors) {
                     if (constructor.getParameterCount() > 0) {
-                        Object[] args = new Object[constructor.getParameterCount()];
-                        Parameter[] parameters = constructor.getParameters();
-                        for (int i = 0; i < parameters.length; i++) {
-                            args[i] = resolveDependency(parameters[i].getType());
+                        try {
+                            Object[] args = new Object[constructor.getParameterCount()];
+                            Parameter[] parameters = constructor.getParameters();
+                            boolean allResolved = true;
+                            for (int i = 0; i < parameters.length; i++) {
+                                args[i] = resolveDependency(parameters[i].getType());
+                                if (args[i] == null) {
+                                    allResolved = false;
+                                    break;
+                                }
+                            }
+                            if (allResolved) {
+                                return constructor.newInstance(args);
+                            }
+                        } catch (Exception ignored) {
+                            // Try next constructor
                         }
-                        return constructor.newInstance(args);
                     }
                 }
+                // Fallback to no-args constructor if available or found first
                 return type.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 LoggingConfig.getLogger().error("DependencyInjector failed to instantiate controller of type {}: {}", type.getName(), e.getMessage(), e);

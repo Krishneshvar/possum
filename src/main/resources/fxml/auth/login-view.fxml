@@ -4,107 +4,137 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.possum.ui.auth.LoginController"
-           prefWidth="1280"
-           prefHeight="800"
-           style="-fx-background-color: #f8f9fa;">
+           stylesheets="@../../styles/views/auth.css"
+           styleClass="auth-container">
 
-    <HBox alignment="CENTER">
-        <!-- Brand Panel -->
-        <VBox alignment="CENTER" spacing="20" prefWidth="640" style="-fx-background-color: #eef2f7;">
-            <Label text="POSSUM" style="-fx-font-size: 48px; -fx-font-weight: bold; -fx-text-fill: #343a40;"/>
-            <Label text="Point of Sale Solution for Unified Management" style="-fx-font-size: 18px; -fx-text-fill: #6c757d;"/>
-            <VBox alignment="CENTER" spacing="10" maxWidth="300">
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="•" style="-fx-font-size: 20px; -fx-text-fill: #007bff;"/>
-                    <Label text="Streamlined sales processing" style="-fx-text-fill: #495057;"/>
+    <HBox alignment="CENTER" maxWidth="1000" maxHeight="600" style="-fx-effect: -shadow-lg; -fx-background-radius: 12; -fx-overflow: hidden;">
+        
+        <!-- Brand Panel (Left Side) -->
+        <VBox alignment="CENTER" spacing="40" prefWidth="480" styleClass="brand-panel" HBox.hgrow="ALWAYS">
+            
+            <VBox spacing="10" alignment="CENTER">
+                <HBox alignment="CENTER" spacing="10">
+                    <FontIcon iconLiteral="bx-shield-quarter" iconSize="64" styleClass="brand-logo-icon"/>
+                    <Label text="POSSUM" styleClass="brand-title"/>
                 </HBox>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="•" style="-fx-font-size: 20px; -fx-text-fill: #007bff;"/>
-                    <Label text="Secure authentication" style="-fx-text-fill: #495057;"/>
+                <Label text="Point of Sale System" styleClass="brand-subtitle"/>
+            </VBox>
+
+            <Separator opacity="0.1" maxWidth="200"/>
+
+            <VBox spacing="20" alignment="CENTER_LEFT" maxWidth="300">
+                <HBox styleClass="brand-feature">
+                    <FontIcon iconLiteral="bx-bolt-circle" styleClass="brand-feature-icon"/>
+                    <Label text="Performance-First Architecture" styleClass="brand-feature-text"/>
+                </HBox>
+                <HBox styleClass="brand-feature">
+                    <FontIcon iconLiteral="bx-lock-alt" styleClass="brand-feature-icon"/>
+                    <Label text="End-to-End Secure Auth" styleClass="brand-feature-text"/>
+                </HBox>
+                <HBox styleClass="brand-feature">
+                    <FontIcon iconLiteral="bx-bar-chart-alt-2" styleClass="brand-feature-icon"/>
+                    <Label text="Advanced Business Insights" styleClass="brand-feature-text"/>
+                </HBox>
+                <HBox styleClass="brand-feature">
+                    <FontIcon iconLiteral="bx-cloud-upload" styleClass="brand-feature-icon"/>
+                    <Label text="Automatic Secure Backups" styleClass="brand-feature-text"/>
                 </HBox>
             </VBox>
+            
+            <Region VBox.vgrow="ALWAYS"/>
+            
+            <HBox alignment="CENTER" spacing="5">
+                <Label text="POSSUM v1.0.0" style="-fx-text-fill: white; -fx-opacity: 0.4; -fx-font-size: 11px;"/>
+            </HBox>
         </VBox>
 
-        <!-- Form Panel -->
-        <VBox alignment="CENTER" prefWidth="640" style="-fx-background-color: white;">
-            <padding>
-                <Insets top="40" right="80" bottom="40" left="80"/>
-            </padding>
-
-            <VBox spacing="10" alignment="CENTER_LEFT" maxWidth="400">
-                <Label fx:id="titleLabel" text="Welcome back" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
-                <Label fx:id="subtitleLabel" text="Sign in to your account to continue" style="-fx-text-fill: #6c757d;"/>
+        <!-- Form Panel (Right Side) -->
+        <VBox alignment="CENTER" prefWidth="520" styleClass="form-panel" HBox.hgrow="ALWAYS">
+            
+            <VBox spacing="35" maxWidth="380" alignment="CENTER_LEFT">
                 
-                <Region prefHeight="20"/>
+                <VBox styleClass="form-header-container">
+                    <Label fx:id="titleLabel" text="Welcome back" styleClass="form-title"/>
+                    <Label fx:id="subtitleLabel" text="Sign in to your account with credentials." styleClass="form-subtitle"/>
+                </VBox>
 
                 <StackPane>
                     <!-- Login Form -->
-                    <VBox fx:id="loginForm" spacing="15">
-                        <VBox spacing="5">
-                            <Label text="Username" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="usernameField" promptText="Enter your username" prefHeight="40" style="-fx-background-radius: 5;"/>
+                    <VBox fx:id="loginForm" spacing="20">
+                        <VBox styleClass="field-group">
+                            <Label text="USERNAME" styleClass="field-label"/>
+                            <TextField fx:id="usernameField" promptText="Enter system ID"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="Password" style="-fx-font-weight: bold;"/>
-                            <PasswordField fx:id="passwordField" promptText="Enter your password" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="PASSWORD" styleClass="field-label"/>
+                            <PasswordField fx:id="passwordField" promptText="Your secret token"/>
                         </VBox>
                     </VBox>
 
-                    <!-- Setup Form -->
+                    <!-- Setup Form (Initial Setup) -->
                     <VBox fx:id="setupForm" spacing="15" visible="false" managed="false">
-                        <VBox spacing="5">
-                            <Label text="Full Name" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="setupNameField" promptText="Administrator name" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="FULL NAME" styleClass="field-label"/>
+                            <TextField fx:id="setupNameField" promptText="Primary administrator name"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="Username" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="setupUsernameField" promptText="Choose a username" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="CHOOSE USERNAME" styleClass="field-label"/>
+                            <TextField fx:id="setupUsernameField" promptText="unique_admin_id"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="Password" style="-fx-font-weight: bold;"/>
-                            <PasswordField fx:id="setupPasswordField" promptText="Create a strong password" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="CREATE PASSWORD" styleClass="field-label"/>
+                            <PasswordField fx:id="setupPasswordField" promptText="Min 8 characters"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="Confirm Password" style="-fx-font-weight: bold;"/>
-                            <PasswordField fx:id="setupConfirmPasswordField" promptText="Re-enter password" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="RE-ENTER PASSWORD" styleClass="field-label"/>
+                            <PasswordField fx:id="setupConfirmPasswordField" promptText="Verify credentials"/>
                         </VBox>
                     </VBox>
 
-                    <!-- Rotate Form -->
+                    <!-- Password Rotation Form -->
                     <VBox fx:id="rotateForm" spacing="15" visible="false" managed="false">
-                        <VBox spacing="5">
-                            <Label text="Username" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="rotateUsernameField" editable="false" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="IDENTITY IDENTIFIED" styleClass="field-label"/>
+                            <TextField fx:id="rotateUsernameField" editable="false" style="-fx-opacity: 0.7;"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="Current Password" style="-fx-font-weight: bold;"/>
-                            <PasswordField fx:id="rotateCurrentPasswordField" promptText="Enter current default password" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="CURRENT PASSWORD" styleClass="field-label"/>
+                            <PasswordField fx:id="rotateCurrentPasswordField" promptText="Default or old password"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="New Password" style="-fx-font-weight: bold;"/>
-                            <PasswordField fx:id="rotateNewPasswordField" promptText="Enter new strong password" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="NEW CREATIVE PASSWORD" styleClass="field-label"/>
+                            <PasswordField fx:id="rotateNewPasswordField" promptText="Choose something secure"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="Confirm New Password" style="-fx-font-weight: bold;"/>
-                            <PasswordField fx:id="rotateConfirmNewPasswordField" promptText="Re-enter new password" prefHeight="40" style="-fx-background-radius: 5;"/>
+                        <VBox styleClass="field-group">
+                            <Label text="CONFIRM TRANSITION" styleClass="field-label"/>
+                            <PasswordField fx:id="rotateConfirmNewPasswordField" promptText="Verify new credentials"/>
                         </VBox>
                     </VBox>
                 </StackPane>
 
-                <Label fx:id="errorLabel" textFill="#dc3545" wrapText="true" visible="false" managed="false" style="-fx-font-size: 14px;"/>
+                <Label fx:id="errorLabel" wrapText="true" visible="false" managed="false" styleClass="error-message">
+                    <graphic>
+                        <FontIcon iconLiteral="bx-error-circle" iconSize="16" styleClass="error-icon"/>
+                    </graphic>
+                </Label>
 
-                <Region prefHeight="20"/>
+                <Button fx:id="submitButton" text="Authenticate" maxWidth="Infinity" 
+                        onAction="#handleAction" styleClass="auth-submit-button"/>
 
-                <Button fx:id="submitButton" text="Sign In" maxWidth="Infinity" prefHeight="45" 
-                        onAction="#handleAction"
-                        style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"/>
-
-                <Region prefHeight="40"/>
-                <Label text="Secured by POSSUM Authentication" style="-fx-text-fill: #adb5bd; -fx-font-size: 12px;" maxWidth="Infinity" alignment="CENTER"/>
+                <VBox spacing="10" alignment="CENTER">
+                    <Region prefHeight="10"/>
+                    <HBox alignment="CENTER" spacing="10">
+                        <Separator prefWidth="50" opacity="0.2"/>
+                        <Label text="SECURED TRANSIMISSION" styleClass="footer-text"/>
+                        <Separator prefWidth="50" opacity="0.2"/>
+                    </HBox>
+                </VBox>
+                
             </VBox>
         </VBox>
     </HBox>

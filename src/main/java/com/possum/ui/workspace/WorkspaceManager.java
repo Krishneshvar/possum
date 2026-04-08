@@ -72,6 +72,7 @@ public class WorkspaceManager {
             desktop.addWindow(window);
 
         } catch (Exception e) {
+            e.printStackTrace();
             LoggingConfig.getLogger().error("Failed to load window '{}': {}", fxmlPath, e.getMessage(), e);
             NotificationService.error("Failed to open view. Please try again.");
         }

@@ -62,6 +62,7 @@
     /* Typography */
     -fx-font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
     -font-family-mono: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-size: 13px; /* Reduce this (e.g., to 12px or 11px) to scale down the entire UI */
 
     /* Enhanced Elevating Shadows */
     -shadow-sm: dropshadow(three-pass-box, rgba(15, 23, 42, 0.05), 4, 0, 0, 1);

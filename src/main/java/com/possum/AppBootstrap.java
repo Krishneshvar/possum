@@ -324,7 +324,7 @@ public final class AppBootstrap {
             });
 
             Parent root = loader.load();
-            Scene scene = new Scene(root, 1280, 800);
+            Scene scene = new Scene(root, 1200, 720);
             stage.setTitle("POSSUM - Login");
             stage.setScene(scene);
             dependencyInjector.getToastService().setMainStage(stage);
@@ -343,7 +343,7 @@ public final class AppBootstrap {
             AppShellController shellController = loader.getController();
             shellController.setDependencyInjector(dependencyInjector);
 
-            Scene scene = new Scene(root, 1280, 800);
+            Scene scene = new Scene(root, 1200, 720);
             stage.setTitle("POSSUM - Point of Sale System");
             stage.setMinWidth(1024);
             stage.setMinHeight(768);
