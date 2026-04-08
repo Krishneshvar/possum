@@ -14,23 +14,14 @@ import com.possum.ui.navigation.Parameterizable;
 import com.possum.ui.workspace.WorkspaceManager;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import org.kordamp.ikonli.javafx.FontIcon;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import com.possum.shared.util.TimeUtil;
 import com.possum.application.sales.dto.UpdateSaleItemRequest;
-import javafx.stage.Popup;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ListCell;
-import javafx.scene.input.KeyCode;
 import javafx.application.Platform;
 import java.util.List;
 import java.util.Locale;
@@ -81,16 +72,15 @@ public class SaleDetailController implements Parameterizable {
     private final javafx.collections.ObservableList<SaleItem> editingItems = FXCollections.observableArrayList();
     private boolean isEditingMode = false;
     
-    // Search Autocomplete
-    private Popup searchPopup = new Popup();
-    private ListView<com.possum.domain.model.Variant> searchResultsView = new ListView<>(FXCollections.observableArrayList());
-
     private final SalesService salesService;
     private final WorkspaceManager workspaceManager;
     private final SettingsStore settingsStore;
     private final PrinterService printerService;
     private final ProductSearchIndex searchIndex;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+
+    private SaleDetailTableManager tableManager;
+    private SaleDetailSearchHandler searchHandler;
 
     private Sale currentSale;
     private SaleResponse saleDetails;
@@ -115,10 +105,15 @@ public class SaleDetailController implements Parameterizable {
         if (createReturnButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(createReturnButton, com.possum.application.auth.Permissions.SALES_REFUND);
         }
-        setupActiveItemsTable();
-        setupReturnedItemsTable();
+
+        tableManager = new SaleDetailTableManager(itemsTable, returnedItemsTable, this::calculateDraftTotals);
+        tableManager.setupActiveItemsTable();
+        tableManager.setupReturnedItemsTable();
+
+        searchHandler = new SaleDetailSearchHandler(itemSearchField, searchIndex, this::addVariantToEditingItems);
+        searchHandler.setup();
+
         setupEditControls();
-        setupSearchAutocomplete();
     }
 
     private void setupEditControls() {
@@ -139,156 +134,6 @@ public class SaleDetailController implements Parameterizable {
         paymentMethodCombo.setButtonCell(paymentMethodCombo.getCellFactory().call(null));
     }
 
-    private void setupActiveItemsTable() {
-        TableColumn<SaleItem, String> productCol = new TableColumn<>("Product / Variant");
-        productCol.setMinWidth(250);
-        productCol.setCellValueFactory(data -> new SimpleStringProperty(
-            data.getValue().productName() + (data.getValue().variantName() != null ? " - " + data.getValue().variantName() : "")
-        ));
-
-        TableColumn<SaleItem, Integer> qtyCol = new TableColumn<>("Qty");
-        qtyCol.setPrefWidth(100);
-        qtyCol.setCellValueFactory(data -> new javafx.beans.property.SimpleIntegerProperty(
-                data.getValue().quantity() - (data.getValue().returnedQuantity() != null ? data.getValue().returnedQuantity() : 0)
-        ).asObject());
-        qtyCol.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(Integer qty, boolean empty) {
-                super.updateItem(qty, empty);
-                if (empty || qty == null) {
-                    setGraphic(null);
-                    setText(null);
-                } else if (isEditingMode) {
-                    javafx.scene.control.Spinner<Integer> spinner = new javafx.scene.control.Spinner<>(0, 1000, qty);
-                    spinner.setEditable(true);
-                    spinner.setPrefWidth(80);
-                    spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-                        int index = getIndex();
-                        if (index >= 0 && index < getTableView().getItems().size()) {
-                            SaleItem current = getTableView().getItems().get(index);
-                            getTableView().getItems().set(index, new SaleItem(
-                                    current.id(), current.saleId(), current.variantId(), current.variantName(),
-                                    current.sku(), current.productName(), newVal, current.pricePerUnit(),
-                                    current.costPerUnit(), current.taxRate(), current.taxAmount(),
-                                    current.appliedTaxRate(), current.appliedTaxAmount(), 
-                                    current.taxRuleSnapshot(), current.discountAmount(), null
-                            ));
-                            calculateDraftTotals();
-                        }
-                    });
-                    setGraphic(spinner);
-                    setText(null);
-                } else {
-                    setText(String.valueOf(qty));
-                    setGraphic(null);
-                }
-            }
-        });
-
-        TableColumn<SaleItem, BigDecimal> priceCol = new TableColumn<>("Unit Price");
-        priceCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().pricePerUnit()));
-        priceCol.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(BigDecimal price, boolean empty) {
-                super.updateItem(price, empty);
-                if (empty || price == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else if (isEditingMode) {
-                    javafx.scene.control.TextField field = new javafx.scene.control.TextField(price.toPlainString());
-                    field.setPrefWidth(90);
-                    field.focusedProperty().addListener((obs, oldF, newF) -> {
-                        if (!newF) { // On blur
-                            try {
-                                BigDecimal newVal = new BigDecimal(field.getText());
-                                int index = getIndex();
-                                if (index >= 0 && index < getTableView().getItems().size()) {
-                                    SaleItem current = getTableView().getItems().get(index);
-                                    getTableView().getItems().set(index, new SaleItem(
-                                            current.id(), current.saleId(), current.variantId(), current.variantName(),
-                                            current.sku(), current.productName(), current.quantity(), newVal,
-                                            current.costPerUnit(), current.taxRate(), current.taxAmount(),
-                                            current.appliedTaxRate(), current.appliedTaxAmount(), 
-                                            current.taxRuleSnapshot(), current.discountAmount(), null
-                                    ));
-                                    calculateDraftTotals();
-                                }
-                            } catch (Exception e) {
-                                field.setText(price.toPlainString());
-                            }
-                        }
-                    });
-                    setGraphic(field);
-                    setText(null);
-                } else {
-                    setText(currencyFormat.format(price));
-                    setGraphic(null);
-                }
-            }
-        });
-
-        TableColumn<SaleItem, BigDecimal> taxCol = new TableColumn<>("Tax");
-        taxCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().taxAmount()));
-        setupCurrencyCell(taxCol);
-
-        TableColumn<SaleItem, BigDecimal> discountCol = new TableColumn<>("Discount");
-        discountCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().discountAmount()));
-        setupCurrencyCell(discountCol);
-
-        TableColumn<SaleItem, BigDecimal> totalCol = new TableColumn<>("Line Total");
-        totalCol.setCellValueFactory(data -> {
-            SaleItem item = data.getValue();
-            BigDecimal base = item.pricePerUnit().multiply(BigDecimal.valueOf(item.quantity()));
-            BigDecimal total = base.add(item.taxAmount()).subtract(item.discountAmount());
-            return new SimpleObjectProperty<>(total);
-        });
-        totalCol.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(BigDecimal total, boolean empty) {
-                super.updateItem(total, empty);
-                if (empty || total == null) {
-                    setText(null);
-                } else {
-                    setText(currencyFormat.format(total));
-                    setStyle("-fx-font-weight: bold;");
-                }
-            }
-        });
-
-        TableColumn<SaleItem, Void> actionsCol = new TableColumn<>("");
-        actionsCol.setCellFactory(col -> new TableCell<>() {
-            private final javafx.scene.control.Button deleteBtn = new javafx.scene.control.Button();
-            {
-                deleteBtn.getStyleClass().add("danger-button");
-                FontIcon trashIcon = new FontIcon("bx-trash");
-                trashIcon.setIconSize(14);
-                trashIcon.setIconColor(javafx.scene.paint.Color.WHITE);
-                deleteBtn.setGraphic(trashIcon);
-                deleteBtn.setOnAction(e -> {
-                    int index = getIndex();
-                    if (index >= 0 && index < getTableView().getItems().size()) {
-                        getTableView().getItems().remove(index);
-                        calculateDraftTotals();
-                    }
-                });
-            }
-            @Override protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || !isEditingMode) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(deleteBtn);
-                }
-            }
-        });
-
-        itemsTable.getTableView().getColumns().clear();
-        itemsTable.getTableView().getColumns().addAll(productCol, qtyCol, priceCol, taxCol, discountCol, totalCol);
-        if (isEditingMode) {
-            itemsTable.getTableView().getColumns().add(actionsCol);
-        }
-        
-        itemsTable.getTableView().setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY);
-        itemsTable.setEmptyMessage("No active items in this bill");
-    }
-
     private void calculateDraftTotals() {
         BigDecimal subtotal = editingItems.stream()
                 .map(i -> i.pricePerUnit().multiply(BigDecimal.valueOf(i.quantity())))
@@ -305,101 +150,6 @@ public class SaleDetailController implements Parameterizable {
         draftSubtotalLabel.setText(currencyFormat.format(subtotal));
         draftTaxLabel.setText(currencyFormat.format(taxEstimate));
         draftTotalLabel.setText(currencyFormat.format(subtotal.add(taxEstimate).subtract(discounts)));
-    }
-
-    private void setupSearchAutocomplete() {
-        searchResultsView.getStyleClass().add("search-results-list");
-        searchPopup.getContent().add(searchResultsView);
-        searchPopup.setAutoHide(true);
-        
-        searchResultsView.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(com.possum.domain.model.Variant item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); setGraphic(null); }
-                else {
-                    VBox b = new VBox(2);
-                    b.setPrefHeight(45);
-                    Label n = new Label(item.productName() + (item.name().equals("Standard") ? "" : " - " + item.name()));
-                    n.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-                    Label d = new Label(item.sku() + " • " + currencyFormat.format(item.price()));
-                    d.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
-                    b.getChildren().addAll(n, d);
-                    setGraphic(b);
-                }
-            }
-        });
-
-        searchResultsView.setOnMouseClicked(e -> {
-            com.possum.domain.model.Variant selected = searchResultsView.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                addVariantToEditingItems(selected);
-                searchPopup.hide();
-                itemSearchField.clear();
-            }
-        });
-
-        searchResultsView.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                com.possum.domain.model.Variant selected = searchResultsView.getSelectionModel().getSelectedItem();
-                if (selected != null) {
-                    addVariantToEditingItems(selected);
-                    searchPopup.hide();
-                    itemSearchField.clear();
-                }
-            }
-        });
-
-        itemSearchField.textProperty().addListener((obs, oldV, newVal) -> {
-            String query = newVal != null ? newVal.trim() : "";
-            if (query.isEmpty()) {
-                searchPopup.hide();
-                return;
-            }
-
-            // SKU Quick Add
-            Optional<com.possum.domain.model.Variant> bySku = searchIndex.findBySku(query);
-            if (bySku.isPresent()) {
-                addVariantToEditingItems(bySku.get());
-                itemSearchField.clear();
-                searchPopup.hide();
-                return;
-            }
-
-            // Normal Search Popup
-            List<com.possum.domain.model.Variant> results = searchIndex.searchByName(query);
-            if (!results.isEmpty()) {
-                searchResultsView.getItems().setAll(results);
-                searchResultsView.setPrefHeight(Math.min(results.size() * 52 + 10, 400));
-                searchResultsView.setPrefWidth(Math.max(itemSearchField.getWidth(), 300));
-                
-                javafx.geometry.Point2D p = itemSearchField.localToScreen(0, itemSearchField.getHeight() + 5);
-                if (p != null) {
-                    searchPopup.show(itemSearchField, p.getX(), p.getY());
-                }
-            } else {
-                searchPopup.hide();
-            }
-        });
-
-        itemSearchField.focusedProperty().addListener((obs, oldF, newF) -> {
-            if (!newF) {
-                Platform.runLater(() -> {
-                    if (!searchResultsView.isFocused()) searchPopup.hide();
-                });
-            }
-        });
-
-        itemSearchField.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.DOWN && searchPopup.isShowing()) {
-                searchResultsView.requestFocus();
-                searchResultsView.getSelectionModel().select(0);
-            }
-        });
-    }
-
-    @FXML
-    private void handleItemSearch() {
-        // Handled by setupSearchAutocomplete listeners, but keeping for FXML compat
     }
 
     private void addVariantToEditingItems(com.possum.domain.model.Variant variant) {
@@ -428,48 +178,6 @@ public class SaleDetailController implements Parameterizable {
                 }
             );
         calculateDraftTotals();
-    }
-
-    private void setupReturnedItemsTable() {
-        TableColumn<SaleItem, String> retProductCol = new TableColumn<>("Product / Variant");
-        TableColumn<SaleItem, String> retSkuCol = new TableColumn<>("SKU");
-        TableColumn<SaleItem, Integer> retQtyCol = new TableColumn<>("Returned Qty");
-        TableColumn<SaleItem, BigDecimal> retPriceCol = new TableColumn<>("Unit Price");
-        TableColumn<SaleItem, BigDecimal> retRefundCol = new TableColumn<>("Refund Amount");
-
-        returnedItemsTable.getTableView().getColumns().clear();
-        returnedItemsTable.getTableView().getColumns().addAll(List.of(retProductCol, retSkuCol, retQtyCol, retPriceCol, retRefundCol));
-        returnedItemsTable.getTableView().setColumnResizePolicy(javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY);
-        returnedItemsTable.setEmptyMessage("No returned items recorded");
-
-        retProductCol.setCellValueFactory(data -> new SimpleStringProperty(
-            data.getValue().productName() + (data.getValue().variantName() != null ? " - " + data.getValue().variantName() : "")
-        ));
-        
-        retSkuCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().sku()));
-        
-        retQtyCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().returnedQuantity()));
-        
-        retPriceCol.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().pricePerUnit()));
-        setupCurrencyCell(retPriceCol);
-        
-        retRefundCol.setCellValueFactory(data -> {
-            SaleItem item = data.getValue();
-            BigDecimal price = item.pricePerUnit() != null ? item.pricePerUnit() : BigDecimal.ZERO;
-            BigDecimal qty = BigDecimal.valueOf(item.returnedQuantity() != null ? item.returnedQuantity() : 0);
-            return new SimpleObjectProperty<>(price.multiply(qty));
-        });
-        setupCurrencyCell(retRefundCol);
-    }
-
-    private void setupCurrencyCell(TableColumn<SaleItem, BigDecimal> column) {
-        column.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(BigDecimal item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : currencyFormat.format(item));
-            }
-        });
     }
 
     @Override
@@ -514,8 +222,7 @@ public class SaleDetailController implements Parameterizable {
                 .filter(i -> i.returnedQuantity() != null && i.returnedQuantity() > 0)
                 .toList();
 
-            itemsTable.setItems(FXCollections.observableArrayList(activeItems));
-            returnedItemsTable.setItems(FXCollections.observableArrayList(returnedItems));
+            tableManager.setItems(FXCollections.observableArrayList(activeItems), FXCollections.observableArrayList(returnedItems));
             returnedItemsContainer.setVisible(!returnedItems.isEmpty());
             returnedItemsContainer.setManaged(!returnedItems.isEmpty());
             
@@ -634,6 +341,8 @@ public class SaleDetailController implements Parameterizable {
         isEditingMode = !isEditingMode;
         boolean editing = isEditingMode;
         
+        tableManager.setEditingMode(editing);
+
         if (editing) {
             // Populate selections
             customerCombo.setItems(FXCollections.observableArrayList(salesService.getAllCustomers()));
@@ -685,9 +394,6 @@ public class SaleDetailController implements Parameterizable {
         paymentViewBox.setManaged(!editing);
         paymentEditBox.setVisible(editing);
         paymentEditBox.setManaged(editing);
-
-        // Re-setup table to trigger cell factory updates for editors
-        setupActiveItemsTable();
     }
 
     @FXML
