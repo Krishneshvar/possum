@@ -25,13 +25,30 @@ public final class SettingsStore {
     }
 
     public GeneralSettings loadGeneralSettings() {
-        Path path = getGeneralSettingsPath();
-        GeneralSettings settings = jsonService.read(path, GeneralSettings.class);
-        if (settings == null) {
-            settings = new GeneralSettings();
-            saveGeneralSettings(settings);
+        try {
+            Path path = getGeneralSettingsPath();
+            GeneralSettings settings = jsonService.read(path, GeneralSettings.class);
+            if (settings == null) {
+                settings = new GeneralSettings();
+                saveGeneralSettings(settings);
+            }
+            return settings;
+        } catch (com.possum.domain.exceptions.DataCorruptionException ex) {
+            handleCorruption(getGeneralSettingsPath());
+            GeneralSettings defaults = new GeneralSettings();
+            saveGeneralSettings(defaults);
+            return defaults;
         }
-        return settings;
+    }
+
+    private void handleCorruption(Path corruptPath) {
+        try {
+            Path backup = corruptPath.resolveSibling(corruptPath.getFileName().toString() + ".corrupt." + System.currentTimeMillis());
+            Files.move(corruptPath, backup);
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Self-Healing: Corrupt settings file relocated to {}", backup);
+        } catch (Exception e) {
+            com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Self-Healing: Failed to move corrupt file {}", corruptPath);
+        }
     }
 
     public void saveGeneralSettings(GeneralSettings settings) {
@@ -39,13 +56,20 @@ public final class SettingsStore {
     }
 
     public BillSettings loadBillSettings() {
-        Path path = getBillSettingsPath();
-        BillSettings settings = jsonService.read(path, BillSettings.class);
-        if (settings == null) {
-            settings = new BillSettings();
-            saveBillSettings(settings);
+        try {
+            Path path = getBillSettingsPath();
+            BillSettings settings = jsonService.read(path, BillSettings.class);
+            if (settings == null) {
+                settings = new BillSettings();
+                saveBillSettings(settings);
+            }
+            return settings;
+        } catch (com.possum.domain.exceptions.DataCorruptionException ex) {
+            handleCorruption(getBillSettingsPath());
+            BillSettings defaults = new BillSettings();
+            saveBillSettings(defaults);
+            return defaults;
         }
-        return settings;
     }
 
     public void saveBillSettings(BillSettings settings) {

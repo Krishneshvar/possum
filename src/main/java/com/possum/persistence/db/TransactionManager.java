@@ -19,9 +19,12 @@ public final class TransactionManager {
 
         Connection connection = connectionProvider.getConnection();
         boolean isOuterTransaction = getAutoCommit(connection);
-        return isOuterTransaction
-                ? runOutermost(connection, block)
-                : runNested(connection, block);
+        
+        if (isOuterTransaction) {
+            return com.possum.shared.util.RetryUtil.executeWithRetry(() -> runOutermost(connection, block));
+        } else {
+            return runNested(connection, block);
+        }
     }
 
     private static boolean getAutoCommit(Connection connection) {

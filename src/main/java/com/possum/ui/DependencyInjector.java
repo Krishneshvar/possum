@@ -9,6 +9,7 @@ import com.possum.application.transactions.TransactionService;
 import com.possum.application.returns.ReturnsService;
 import com.possum.application.reports.ReportsService;
 import com.possum.application.purchase.PurchaseService;
+import com.possum.application.drafts.DraftService;
 import com.possum.domain.repositories.*;
 import com.possum.ui.common.toast.ToastService;
 import com.possum.ui.navigation.NavigationManager;
@@ -85,6 +86,7 @@ public class DependencyInjector {
         registry.put(com.possum.application.audit.AuditService.class, applicationModule::getAuditService);
         registry.put(com.possum.application.people.UserService.class, applicationModule::getUserService);
         registry.put(com.possum.application.people.CustomerService.class, applicationModule::getCustomerService);
+        registry.put(DraftService.class, applicationModule::getDraftService);
         registry.put(SalesService.class, () -> salesService);
         registry.put(com.possum.application.sales.TaxEngine.class, () -> taxEngine);
         registry.put(com.possum.domain.services.SaleCalculator.class, () -> saleCalculator);
@@ -127,7 +129,8 @@ public class DependencyInjector {
         registry.put(com.possum.ui.products.ProductFormController.class,
                 () -> new com.possum.ui.products.ProductFormController(
                         applicationModule.getProductService(), applicationModule.getCategoryService(),
-                        taxRepository, workspaceManager, serviceLocator.getSettingsStore(), productSearchIndex));
+                        taxRepository, workspaceManager, serviceLocator.getSettingsStore(), productSearchIndex,
+                        serviceLocator.getDraftService()));
         registry.put(com.possum.ui.inventory.VariantsController.class,
                 () -> new com.possum.ui.inventory.VariantsController(
                         variantRepository, applicationModule.getCategoryService(), taxRepository, workspaceManager));
@@ -200,7 +203,8 @@ public class DependencyInjector {
         registry.put(com.possum.ui.products.ProductFormController.class,
                 () -> new com.possum.ui.products.ProductFormController(
                         applicationModule.getProductService(), applicationModule.getCategoryService(),
-                        taxRepository, workspaceManager, serviceLocator.getSettingsStore(), productSearchIndex));
+                        taxRepository, workspaceManager, serviceLocator.getSettingsStore(), productSearchIndex,
+                        serviceLocator.getDraftService()));
         registry.put(com.possum.ui.inventory.VariantsController.class,
                 () -> new com.possum.ui.inventory.VariantsController(
                         variantRepository, applicationModule.getCategoryService(), taxRepository, workspaceManager));

@@ -17,6 +17,8 @@ import com.possum.domain.repositories.*;
 import com.possum.domain.services.StockManager;
 import com.possum.application.people.UserService;
 import com.possum.application.people.CustomerService;
+import com.possum.application.drafts.DraftService;
+import com.possum.persistence.db.ConnectionProvider;
 
 public final class ApplicationModule {
     private final AuthModule authModule;
@@ -27,6 +29,7 @@ public final class ApplicationModule {
     private final AuditService auditService;
     private final UserService userService;
     private final CustomerService customerService;
+    private final DraftService draftService;
 
     public ApplicationModule(UserRepository userRepository,
                             SessionRepository sessionRepository,
@@ -41,7 +44,8 @@ public final class ApplicationModule {
                             PasswordHasher passwordHasher,
                             JsonService jsonService,
                             AppPaths appPaths,
-                            SettingsStore settingsStore) {
+                            SettingsStore settingsStore,
+                            ConnectionProvider connectionProvider) {
         this.authModule = new AuthModule(userRepository, sessionRepository, transactionManager, passwordHasher);
         this.userService = new com.possum.application.people.UserService(userRepository, passwordHasher);
         this.customerService = new com.possum.application.people.CustomerService(customerRepository);
@@ -71,6 +75,7 @@ public final class ApplicationModule {
         );
         
         this.categoryService = new CategoryService(categoryRepository);
+        this.draftService = new DraftService(connectionProvider, jsonService);
     }
 
     public AuthModule getAuthModule() {
@@ -107,5 +112,9 @@ public final class ApplicationModule {
 
     public com.possum.application.people.CustomerService getCustomerService() {
         return customerService;
+    }
+
+    public DraftService getDraftService() {
+        return draftService;
     }
 }

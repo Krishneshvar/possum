@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.Region?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
@@ -14,7 +15,15 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <Label text="Dashboard" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Dashboard" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS" />
+        <HBox spacing="8" alignment="CENTER_LEFT" style="-fx-background-color: #f0fdf4; -fx-padding: 6 12; -fx-background-radius: 20; -fx-border-color: #bbf7d0; -fx-border-width: 1;">
+             <Label text="●" style="-fx-text-fill: #22c55e; -fx-font-size: 8px;"/>
+             <Label text="Data Protection Active:" style="-fx-font-size: 11px; -fx-text-fill: #166534;"/>
+             <Label fx:id="backupStatusLabel" text="Checking..." style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #166534;"/>
+        </HBox>
+    </HBox>
     
     <GridPane hgap="15" vgap="15">
         <columnConstraints>

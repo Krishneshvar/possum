@@ -22,6 +22,9 @@ public final class ErrorHandler {
         if (e instanceof AuthorizationException) {
             return "You don't have permission to perform this action.";
         }
+        if (e instanceof DatabaseConflictException || e instanceof DatabaseBusyException) {
+            return e.getMessage();
+        }
         if (e instanceof DomainException) {
             return e.getMessage();
         }

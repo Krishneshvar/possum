@@ -19,7 +19,6 @@ public class ServiceLocator {
     
     private final DatabaseManager databaseManager;
     private final TransactionManager transactionManager;
-    private final AppPaths appPaths;
     
     private final LazyService<JsonService> jsonService;
     private final LazyService<SettingsStore> settingsStore;
@@ -28,11 +27,11 @@ public class ServiceLocator {
     private final LazyService<DatabaseBackupService> databaseBackupService;
     private final LazyService<PerformanceMonitor> performanceMonitor;
     private final LazyService<TaxExemptionService> taxExemptionService;
+    private final LazyService<com.possum.application.drafts.DraftService> draftService;
     
     public ServiceLocator(DatabaseManager databaseManager, TransactionManager transactionManager, AppPaths appPaths) {
         this.databaseManager = databaseManager;
         this.transactionManager = transactionManager;
-        this.appPaths = appPaths;
         
         this.jsonService = new LazyService<>(() -> {
             LOGGER.debug("Initializing JsonService");
@@ -73,6 +72,11 @@ public class ServiceLocator {
                 new com.possum.infrastructure.logging.AuditLogger(auditRepo)
             );
         });
+
+        this.draftService = new LazyService<>(() -> {
+            LOGGER.debug("Initializing DraftService");
+            return new com.possum.application.drafts.DraftService(databaseManager, jsonService.get());
+        });
     }
     
     public JsonService getJsonService() {
@@ -101,6 +105,10 @@ public class ServiceLocator {
     
     public TaxExemptionService getTaxExemptionService() {
         return taxExemptionService.get();
+    }
+    
+    public com.possum.application.drafts.DraftService getDraftService() {
+        return draftService.get();
     }
     
     public DatabaseManager getDatabaseManager() {

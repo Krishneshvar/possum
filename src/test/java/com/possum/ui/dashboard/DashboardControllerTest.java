@@ -38,6 +38,8 @@ class DashboardControllerTest {
     @Mock private com.possum.ui.common.controls.DataTableView<com.possum.domain.model.Variant> lowStockTable;
     @Mock private javafx.scene.control.TableView<TopProduct> topTableView;
     @Mock private javafx.scene.control.TableView<com.possum.domain.model.Variant> lowTableView;
+    @Mock private com.possum.infrastructure.backup.DatabaseBackupService backupService;
+    @Mock private javafx.scene.control.Label backupStatusLabel;
 
     private DashboardController controller;
 
@@ -50,8 +52,9 @@ class DashboardControllerTest {
         );
         lenient().when(reportsService.getTopProducts(any(), any(), anyInt(), any())).thenReturn(List.of());
         lenient().when(inventoryService.getLowStockAlerts()).thenReturn(List.of());
+        lenient().when(backupService.findLatestBackup()).thenReturn(java.util.Optional.empty());
 
-        controller = new DashboardController(reportsService, inventoryService);
+        controller = new DashboardController(reportsService, inventoryService, backupService);
         
         lenient().when(topProductsTable.getTableView()).thenReturn(topTableView);
         lenient().when(lowStockTable.getTableView()).thenReturn(lowTableView);
@@ -61,6 +64,7 @@ class DashboardControllerTest {
         setField(controller, "dailySalesLabel", dailySalesLabel);
         setField(controller, "transactionsLabel", transactionsLabel);
         setField(controller, "lowStockLabel", lowStockLabel);
+        setField(controller, "backupStatusLabel", backupStatusLabel);
         setField(controller, "topProductsTable", topProductsTable);
         setField(controller, "lowStockTable", lowStockTable);
         

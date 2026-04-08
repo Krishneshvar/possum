@@ -31,8 +31,10 @@ public final class JsonService {
 
         try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             return objectMapper.readValue(reader, type);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            throw new com.possum.domain.exceptions.DataCorruptionException("JSON corruption detected in file: " + path, ex);
         } catch (IOException ex) {
-            throw new IllegalStateException("Failed to read JSON file: " + path, ex);
+            throw new IllegalStateException("System IO error while reading file: " + path, ex);
         }
     }
 

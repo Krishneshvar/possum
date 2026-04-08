@@ -33,6 +33,7 @@ public class ProductFormController implements Parameterizable {
     private final WorkspaceManager workspaceManager;
     private final SettingsStore settingsStore;
     private final ProductSearchIndex productSearchIndex;
+    private final com.possum.application.drafts.DraftService draftService;
 
     @FXML private Label titleLabel;
     @FXML private TextField nameField;
@@ -54,13 +55,15 @@ public class ProductFormController implements Parameterizable {
                                  TaxRepository taxRepository,
                                  WorkspaceManager workspaceManager,
                                  SettingsStore settingsStore,
-                                 ProductSearchIndex productSearchIndex) {
+                                 ProductSearchIndex productSearchIndex,
+                                 com.possum.application.drafts.DraftService draftService) {
         this.productService = productService;
         this.categoryService = categoryService;
         this.taxRepository = taxRepository;
         this.workspaceManager = workspaceManager;
         this.settingsStore = settingsStore;
         this.productSearchIndex = productSearchIndex;
+        this.draftService = draftService;
     }
 
     @Override
@@ -76,9 +79,44 @@ public class ProductFormController implements Parameterizable {
             this.productId = null;
             titleLabel.setText("Add Product");
             if (variantRows.isEmpty()) {
-                addVariantRow(true, "Default");
+                if (!recoverDraft()) {
+                    addVariantRow(true, "Default");
+                }
             }
         }
+    }
+
+    private boolean recoverDraft() {
+        if (draftService == null) return false;
+        return draftService.recoverDraft("product_new", ProductService.CreateProductCommand.class).map(draft -> {
+            nameField.setText(draft.name() != null ? draft.name() : "");
+            descriptionField.setText(draft.description() != null ? draft.description() : "");
+            if (draft.categoryId() != null) {
+                try {
+                    com.possum.domain.model.Category c = categoryService.getCategoryById(draft.categoryId());
+                    categoryFilter.setSelectedItem(new CategoryItem(c.id(), c.name()));
+                } catch (Exception ignored) {}
+            }
+            statusCombo.setValue(draft.status() != null ? draft.status() : "active");
+            
+            variantRows.clear();
+            variantsContainer.getChildren().clear();
+            if (draft.variants() != null) {
+                for (var v : draft.variants()) {
+                    ProductVariantRow row = new ProductVariantRow(Boolean.TRUE.equals(v.isDefault()), v.name(), defaultVariantGroup, this::removeVariantRow);
+                    row.setSku(v.sku());
+                    row.setPrice(v.price() != null ? v.price().toString() : "");
+                    row.setCostPrice(v.costPrice() != null ? v.costPrice().toString() : "");
+                    row.setStockAlert(v.stockAlertCap() != null ? v.stockAlertCap().toString() : "");
+                    row.setInitialStock(v.stock() != null ? v.stock() : 0);
+                    variantRows.add(row);
+                    variantsContainer.getChildren().add(row.getView());
+                    attachListenersToRow(row);
+                }
+            }
+            NotificationService.success("Unsaved product draft restored.");
+            return true;
+        }).orElse(false);
     }
 
     private void loadProductDetails(boolean isView) {
@@ -192,6 +230,54 @@ public class ProductFormController implements Parameterizable {
         statusCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             updateVariantStatusesBasedOnProductStatus(newVal);
         });
+
+        setupValidation();
+        setupDrafting();
+    }
+
+    private void setupDrafting() {
+        if (productId != null) return; // Only draft new products for now
+        
+        nameField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        descriptionField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        categoryFilter.selectedItemProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        statusCombo.valueProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        taxFilter.selectedItemProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+    }
+
+    private void saveCurrentDraft() {
+        if (productId != null || draftService == null) return;
+        
+        long userId = com.possum.application.auth.AuthContext.getCurrentUser().id();
+        List<ProductService.VariantCommand> variants = variantRows.stream().map(row -> 
+            new ProductService.VariantCommand(null, row.getName(), row.getSku(), 
+                parseSafeBigDecimal(row.getPrice()), parseSafeBigDecimal(row.getCostPrice()),
+                parseSafeInt(row.getStockAlert()), row.isDefault(), row.getStatus(), row.getStock(), null)
+        ).toList();
+
+        ProductService.CreateProductCommand cmd = new ProductService.CreateProductCommand(
+            nameField.getText(), descriptionField.getText(), 
+            categoryFilter.getSelectedItem() != null ? categoryFilter.getSelectedItem().id() : null,
+            statusCombo.getValue(), null, variants, 
+            taxFilter.getSelectedItem() != null ? List.of(taxFilter.getSelectedItem().id()) : List.of(),
+            userId
+        );
+
+        draftService.saveDraft("product_new", "product", cmd, userId);
+    }
+
+    private java.math.BigDecimal parseSafeBigDecimal(String val) {
+        try { return new java.math.BigDecimal(val.replace("$", "").replace(",", "").trim()); } catch (Exception e) { return java.math.BigDecimal.ZERO; }
+    }
+
+    private Integer parseSafeInt(String val) {
+        try { return Integer.parseInt(val.trim()); } catch (Exception e) { return 0; }
+    }
+
+    private void setupValidation() {
+        com.possum.ui.common.validation.FieldValidator.of(nameField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Product Name"))
+                .validateOnType();
     }
 
     private void updateVariantStatusesBasedOnProductStatus(String productStatus) {
@@ -238,6 +324,19 @@ public class ProductFormController implements Parameterizable {
         if (numericSkuGenerationEnabled) {
             refreshAutoGeneratedSkusForNewRows();
         }
+        attachListenersToRow(row);
+        saveCurrentDraft();
+    }
+
+    private void attachListenersToRow(ProductVariantRow row) {
+        row.variantNameField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        row.skuField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        row.priceField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        row.costPriceField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        row.stockAlertField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        row.stockField.textProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        row.variantStatusCombo.valueProperty().addListener((o, old, newVal) -> saveCurrentDraft());
+        row.defaultRadio.selectedProperty().addListener((o, old, newVal) -> saveCurrentDraft());
     }
 
     private void removeVariantRow(ProductVariantRow row) {
@@ -339,6 +438,7 @@ public class ProductFormController implements Parameterizable {
             if (productSearchIndex != null) {
                 productSearchIndex.refresh();
             }
+            draftService.deleteDraft("product_new");
             workspaceManager.closeActiveWindow();
         } catch (Exception e) {
             NotificationService.error("Failed to save product: " + e.getMessage());

@@ -76,6 +76,7 @@ public class PosController implements CartCellHandler {
     private final ProductService           productService;
     private final CategoryService          categoryService;
     private final SaleCalculator           saleCalculator;
+    private final com.possum.application.drafts.DraftService draftService;
 
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     private static final int MAX_BILLS = 9;
@@ -91,7 +92,8 @@ public class PosController implements CartCellHandler {
                          ProductSearchIndex searchIndex, TaxEngine taxEngine,
                          PrinterService printerService, SettingsStore settingsStore,
                          ProductService productService, CategoryService categoryService,
-                         SaleCalculator saleCalculator) {
+                         SaleCalculator saleCalculator,
+                         com.possum.application.drafts.DraftService draftService) {
         this.salesService     = salesService;
         this.customerService  = customerService;
         this.searchIndex      = searchIndex;
@@ -101,6 +103,7 @@ public class PosController implements CartCellHandler {
         this.productService   = productService;
         this.categoryService  = categoryService;
         this.saleCalculator   = saleCalculator;
+        this.draftService     = draftService;
     }
 
     @FXML
@@ -109,7 +112,12 @@ public class PosController implements CartCellHandler {
             com.possum.ui.common.UIPermissionUtil.requirePermission(completeButton,
                     com.possum.application.auth.Permissions.SALES_CREATE);
 
-        for (int i = 0; i < MAX_BILLS; i++) { SaleDraft d = new SaleDraft(); d.setIndex(i); bills.add(d); }
+        for (int i = 0; i < MAX_BILLS; i++) { 
+            int idx = i;
+            SaleDraft d = draftService.recoverDraft("pos_bill_" + i, SaleDraft.class)
+                    .orElseGet(() -> { SaleDraft newD = new SaleDraft(); newD.setIndex(idx); return newD; });
+            bills.add(d); 
+        }
         currentBill = bills.get(0);
 
         NotificationService.initialize(rootPane);
@@ -426,9 +434,26 @@ public class PosController implements CartCellHandler {
         });
     }
 
-    public void refreshCurrentBill() { cartTable.getTableView().refresh(); renderBillsFlowPane(); updatePaymentSectionState(); recalculateTotals(); }
+    public void refreshCurrentBill() { 
+        cartTable.getTableView().refresh(); 
+        renderBillsFlowPane(); 
+        updatePaymentSectionState(); 
+        recalculateTotals(); 
+        saveCurrentDraft();
+    }
 
-    @FXML private void handleClearCart() { currentBill.reset(); refreshCurrentBill(); switchBill(currentBill.getIndex()); }
+    private void saveCurrentDraft() {
+        AuthUser cur = AuthContext.getCurrentUser();
+        Long userId = cur != null ? cur.id() : 1L;
+        draftService.saveDraft("pos_bill_" + currentBill.getIndex(), "sale", currentBill, userId);
+    }
+
+    @FXML private void handleClearCart() { 
+        draftService.deleteDraft("pos_bill_" + currentBill.getIndex());
+        currentBill.reset(); 
+        refreshCurrentBill(); 
+        switchBill(currentBill.getIndex()); 
+    }
 
     @FXML private void handleResetCustomer() {
         isAutofilling = true;
@@ -439,7 +464,10 @@ public class PosController implements CartCellHandler {
         } finally { isAutofilling = false; }
     }
 
-    @FXML private void handleCompleteSale() { completionHandler.execute(currentBill, completeButton); }
+    @FXML private void handleCompleteSale() { 
+        completionHandler.execute(currentBill, completeButton); 
+        // Note: completionHandler should call a callback to delete the draft on success
+    }
 
     @FXML private void handleQuickAddProduct() {
         String pN = quickProductName.getText().trim(), vN = quickVariantName.getText().trim();

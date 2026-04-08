@@ -16,17 +16,17 @@ import java.util.function.Consumer;
  */
 public class ProductVariantRow {
     private final VBox view;
-    private final TextField variantNameField;
-    private final TextField skuField;
-    private final TextField priceField;
-    private final TextField costPriceField;
-    private final TextField marginField;
-    private final TextField stockAlertField;
+    final TextField variantNameField;
+    final TextField skuField;
+    final TextField priceField;
+    final TextField costPriceField;
+    final TextField marginField;
+    final TextField stockAlertField;
     public final TextField stockField; // accessed by validator in controller
-    private final ComboBox<String> adjustmentReasonCombo;
-    private final VBox adjustmentReasonBox;
-    private final ComboBox<String> variantStatusCombo;
-    private final RadioButton defaultRadio;
+    final ComboBox<String> adjustmentReasonCombo;
+    final VBox adjustmentReasonBox;
+    final ComboBox<String> variantStatusCombo;
+    final RadioButton defaultRadio;
     private Long variantId = null;
     private Integer initialStock = 0;
 
@@ -71,7 +71,9 @@ public class ProductVariantRow {
         HBox row2 = new HBox(14);
         row2.getStyleClass().add("variant-field-row");
         priceField = createTextField("Price", "0.00");
+        priceField.setTextFormatter(com.possum.ui.common.controls.InputFilters.decimalFormat());
         costPriceField = createTextField("Cost Price", "0.00");
+        costPriceField.setTextFormatter(com.possum.ui.common.controls.InputFilters.decimalFormat());
         marginField = createTextField("Margin %", "0.00%");
         marginField.setEditable(false);
         marginField.setStyle("-fx-background-color: #f8fafc; -fx-text-fill: #64748b;");
@@ -90,22 +92,23 @@ public class ProductVariantRow {
                 .custom(val -> {
                     try { return new BigDecimal(val.replace("$", "").replace(",", "").trim()).compareTo(BigDecimal.ZERO) >= 0; } catch (Exception e) { return false; }
                 }, "Must be non-negative number")
-                .validateOnFocusLost();
+                .validateOnType();
 
         com.possum.ui.common.validation.FieldValidator.of(costPriceField)
                 .addValidator(com.possum.ui.common.validation.Validators.required("Cost Price"))
                 .custom(val -> {
                     try { return new BigDecimal(val.replace("$", "").replace(",", "").trim()).compareTo(BigDecimal.ZERO) >= 0; } catch (Exception e) { return false; }
                 }, "Must be non-negative number")
-                .validateOnFocusLost();
+                .validateOnType();
 
         com.possum.ui.common.validation.FieldValidator.of(variantNameField)
                 .addValidator(com.possum.ui.common.validation.Validators.required("Variant Name"))
-                .validateOnFocusLost();
+                .validateOnType();
 
         HBox row3 = new HBox(14);
         row3.getStyleClass().add("variant-field-row");
         stockAlertField = createTextField("Stock Alert Cap", "10");
+        stockAlertField.setTextFormatter(com.possum.ui.common.controls.InputFilters.numericFormat());
         variantStatusCombo = new ComboBox<>(FXCollections.observableArrayList("active", "inactive", "discontinued"));
         variantStatusCombo.setConverter(new javafx.util.StringConverter<String>() {
             @Override
@@ -123,6 +126,7 @@ public class ProductVariantRow {
         variantStatusCombo.setMaxWidth(Double.MAX_VALUE);
 
         stockField = createTextField("Stock Level", "0");
+        stockField.setTextFormatter(com.possum.ui.common.controls.InputFilters.numericFormat());
         stockField.textProperty().addListener((obs, oldV, newV) -> updateAdjustmentReasonVisibility());
 
         adjustmentReasonCombo = new ComboBox<>(FXCollections.observableArrayList(
@@ -148,14 +152,14 @@ public class ProductVariantRow {
                 .custom(val -> {
                     try { Integer.parseInt(val); return true; } catch (Exception e) { return false; }
                 }, "Must be an integer")
-                .validateOnFocusLost();
+                .validateOnType();
 
         com.possum.ui.common.validation.FieldValidator.of(stockField)
                 .addValidator(com.possum.ui.common.validation.Validators.required("Stock Level"))
                 .custom(val -> {
                     try { Integer.parseInt(val); return true; } catch (Exception e) { return false; }
                 }, "Must be an integer")
-                .validateOnFocusLost();
+                .validateOnType();
 
         updateMargin();
     }

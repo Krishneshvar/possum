@@ -42,6 +42,13 @@ public class FieldValidator<T> {
     }
 
     /**
+     * Shortcut to create a field validator for a ComboBox without an error label.
+     */
+    public static <T> FieldValidator<T> of(ComboBox<T> field) {
+        return forField(field, null);
+    }
+
+    /**
      * Create a field validator for a TextArea.
      */
     public static FieldValidator<String> forField(TextArea field, Label errorLabel) {
@@ -67,6 +74,13 @@ public class FieldValidator<T> {
         FieldValidator<T> validator = new FieldValidator<>(control, errorLabel);
         validator.valueExtractor = valueExtractor;
         return validator;
+    }
+
+    /**
+     * Shortcut to create a field validator with custom value extractor.
+     */
+    public static <T> FieldValidator<T> of(Control control, java.util.function.Function<Control, T> valueExtractor) {
+        return forField(control, null, valueExtractor);
     }
 
     /**
@@ -189,6 +203,20 @@ public class FieldValidator<T> {
     }
 
     /**
+     * Setup automatic validation whenever the value changes.
+     */
+    public FieldValidator<T> validateOnType() {
+        if (control instanceof TextField tf) {
+            tf.textProperty().addListener((obs, old, newVal) -> validate());
+        } else if (control instanceof TextArea ta) {
+            ta.textProperty().addListener((obs, old, newVal) -> validate());
+        } else if (control instanceof ComboBox<?> cb) {
+            cb.valueProperty().addListener((obs, old, newVal) -> validate());
+        }
+        return this;
+    }
+
+    /**
      * Get the current value.
      */
     public T getValue() {
@@ -199,9 +227,7 @@ public class FieldValidator<T> {
      * Show error on the field.
      */
     private void showError(String message) {
-        if (control != null && !control.getStyleClass().contains("input-error")) {
-            control.getStyleClass().add("input-error");
-        }
+        ValidationDecorator.decorate(control, message);
         if (errorLabel != null) {
             errorLabel.setText(message);
             errorLabel.setVisible(true);
@@ -213,9 +239,7 @@ public class FieldValidator<T> {
      * Clear error from the field.
      */
     private void clearError() {
-        if (control != null) {
-            control.getStyleClass().remove("input-error");
-        }
+        ValidationDecorator.decorate(control, null);
         if (errorLabel != null) {
             errorLabel.setText("");
             errorLabel.setVisible(false);

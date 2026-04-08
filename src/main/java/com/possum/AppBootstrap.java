@@ -119,10 +119,22 @@ public final class AppBootstrap {
     private void initializeCore() {
         appPaths = new AppPaths();
         LoggingConfig.configure(appPaths);
+        setupGlobalExceptionHandler();
         initializePersistence();
         initializeApplication();
         initializeUI();
         LOGGER.info("Core services initialized");
+    }
+
+    private void setupGlobalExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            LOGGER.error("Uncaught exception in thread {}: {}", thread.getName(), throwable.getMessage(), throwable);
+            if (Platform.isFxApplicationThread()) {
+                com.possum.ui.common.dialogs.GlobalErrorDialog.show(throwable);
+            } else {
+                Platform.runLater(() -> com.possum.ui.common.dialogs.GlobalErrorDialog.show(throwable));
+            }
+        });
     }
 
     private void initializePersistence() {
@@ -165,7 +177,7 @@ public final class AppBootstrap {
                 userRepository, sessionRepository, productRepository, variantRepository,
                 categoryRepository, inventoryRepository, productFlowRepository, auditRepository,
                 customerRepository, transactionManager, passwordHasher, jsonService, appPaths,
-                serviceLocator.getSettingsStore()
+                serviceLocator.getSettingsStore(), databaseManager
         );
 
         salesRepository = new SqliteSalesRepository(databaseManager);
@@ -218,14 +230,29 @@ public final class AppBootstrap {
     private void runStartupHealthChecks(Stage stage) {
         java.util.List<String> failures = new java.util.ArrayList<>();
 
-        // 1. Database accessible
+        // 1. Data directory writable
         try {
-            databaseManager.getConnection().createStatement().execute("PRAGMA schema_version");
+            java.nio.file.Files.createDirectories(appPaths.getAppRoot());
+            if (!java.nio.file.Files.isWritable(appPaths.getAppRoot())) {
+                failures.add("Application data directory is not writable: " + appPaths.getAppRoot());
+            }
         } catch (Exception e) {
-            failures.add("Database is not accessible: " + e.getMessage());
+            failures.add("Failed to initialize data directories: " + e.getMessage());
         }
 
-        // 2. Backup directory writable
+        // 2. Database integrity check
+        try (java.sql.ResultSet rs = databaseManager.getConnection().createStatement().executeQuery("PRAGMA integrity_check")) {
+            if (rs.next()) {
+                String result = rs.getString(1);
+                if (!"ok".equalsIgnoreCase(result)) {
+                    failures.add("Database integrity check failed: " + result + ". Try repairing or restoring from a backup.");
+                }
+            }
+        } catch (Exception e) {
+            failures.add("Could not perform database integrity check: " + e.getMessage());
+        }
+
+        // 3. Backup directory writable
         try {
             java.nio.file.Path backupDir = appPaths.getBackupsDir();
             java.nio.file.Files.createDirectories(backupDir);
@@ -237,16 +264,34 @@ public final class AppBootstrap {
         }
 
         if (!failures.isEmpty()) {
-            String message = String.join("\n", failures);
-            LOGGER.error("Startup health check failed:\n{}", message);
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                    javafx.scene.control.Alert.AlertType.ERROR);
-            alert.setTitle("Startup Error");
-            alert.setHeaderText("POSSUM could not start");
-            alert.setContentText(message);
-            alert.showAndWait();
-            shutdown();
-            javafx.application.Platform.exit();
+            LOGGER.error("Startup health check failed:\n{}", String.join("\n", failures));
+            com.possum.ui.common.dialogs.StartupRepairDialog.show(
+                failures,
+                () -> this.start(stage), // Retry
+                () -> { shutdown(); javafx.application.Platform.exit(); System.exit(1); }, // Exit
+                action -> handleRepairAction(action, stage) // Repair
+            );
+        }
+    }
+
+    private void handleRepairAction(String action, Stage stage) {
+        try {
+            switch (action) {
+                case "REINDEX":
+                    databaseManager.getConnection().createStatement().execute("REINDEX");
+                    Platform.runLater(() -> com.possum.ui.common.controls.NotificationService.success("Database indices rebuilt successfully."));
+                    break;
+                case "VACUUM":
+                    databaseManager.getConnection().createStatement().execute("VACUUM");
+                    Platform.runLater(() -> com.possum.ui.common.controls.NotificationService.success("Database compacted and optimized."));
+                    break;
+                case "OPEN_BACKUPS":
+                    java.awt.Desktop.getDesktop().open(appPaths.getBackupsDir().toFile());
+                    break;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Repair action {} failed", action, e);
+            Platform.runLater(() -> com.possum.ui.common.dialogs.GlobalErrorDialog.show(new RuntimeException("Repair failed: " + e.getMessage())));
         }
     }
 

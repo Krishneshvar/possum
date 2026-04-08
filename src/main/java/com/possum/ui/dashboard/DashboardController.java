@@ -25,16 +25,20 @@ public class DashboardController {
     @FXML private Label dailySalesLabel;
     @FXML private Label transactionsLabel;
     @FXML private Label lowStockLabel;
+    @FXML private Label backupStatusLabel;
     @FXML private DataTableView<TopProduct> topProductsTable;
     @FXML private DataTableView<Variant> lowStockTable;
     
     private ReportsService reportsService;
     private InventoryService inventoryService;
+    private com.possum.infrastructure.backup.DatabaseBackupService backupService;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
-    public DashboardController(ReportsService reportsService, InventoryService inventoryService) {
+    public DashboardController(ReportsService reportsService, InventoryService inventoryService, 
+                               com.possum.infrastructure.backup.DatabaseBackupService backupService) {
         this.reportsService = reportsService;
         this.inventoryService = inventoryService;
+        this.backupService = backupService;
     }
 
     @FXML
@@ -103,6 +107,26 @@ public class DashboardController {
         List<Variant> lowStockVariants = inventoryService.getLowStockAlerts();
         lowStockLabel.setText(String.valueOf(lowStockVariants.size()));
         lowStockTable.setItems(FXCollections.observableArrayList(lowStockVariants));
+
+        updateBackupStatus();
+    }
+
+    private void updateBackupStatus() {
+        if (backupService == null) return;
+        
+        java.util.Optional<java.nio.file.Path> latest = backupService.findLatestBackup();
+        if (latest.isPresent()) {
+            try {
+                java.nio.file.attribute.FileTime modified = java.nio.file.Files.getLastModifiedTime(latest.get());
+                java.time.LocalDateTime ldt = java.time.LocalDateTime.ofInstant(modified.toInstant(), java.time.ZoneId.systemDefault());
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd, hh:mm a");
+                backupStatusLabel.setText("Last backup: " + ldt.format(formatter));
+            } catch (java.io.IOException e) {
+                backupStatusLabel.setText("System Protected");
+            }
+        } else {
+            backupStatusLabel.setText("Backup Pending");
+        }
     }
 
     public void refresh() {

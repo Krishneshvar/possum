@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
 
-abstract class BaseSqliteRepository {
+public abstract class BaseSqliteRepository {
 
     private final ConnectionProvider connectionProvider;
 
@@ -34,7 +34,7 @@ abstract class BaseSqliteRepository {
             }
             return Optional.ofNullable(mapper.map(rs));
         } catch (SQLException ex) {
-            throw new IllegalStateException("Failed queryOne for SQL: " + sql, ex);
+            throw DatabaseExceptionTranslator.translate("Failed queryOne for SQL: " + sql, ex);
         }
     }
 
@@ -47,7 +47,7 @@ abstract class BaseSqliteRepository {
             }
             return results;
         } catch (SQLException ex) {
-            throw new IllegalStateException("Failed queryList for SQL: " + sql, ex);
+            throw DatabaseExceptionTranslator.translate("Failed queryList for SQL: " + sql, ex);
         }
     }
 
@@ -62,7 +62,7 @@ abstract class BaseSqliteRepository {
             }
             return -1L;
         } catch (SQLException ex) {
-            throw new IllegalStateException("Failed executeInsert for SQL: " + sql, ex);
+            throw DatabaseExceptionTranslator.translate("Failed executeInsert for SQL: " + sql, ex);
         }
     }
 
@@ -70,7 +70,7 @@ abstract class BaseSqliteRepository {
         try (PreparedStatement statement = prepare(sql, params)) {
             return statement.executeUpdate();
         } catch (SQLException ex) {
-            throw new IllegalStateException("Failed executeUpdate for SQL: " + sql, ex);
+            throw DatabaseExceptionTranslator.translate("Failed executeUpdate for SQL: " + sql, ex);
         }
     }
 

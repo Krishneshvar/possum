@@ -3,7 +3,6 @@ package com.possum.ui.people;
 import com.possum.application.people.UserService;
 import com.possum.domain.model.User;
 import com.possum.ui.common.controllers.AbstractFormController;
-import com.possum.ui.common.validation.FieldValidator;
 import com.possum.ui.workspace.WorkspaceManager;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -18,18 +17,8 @@ public class UserFormController extends AbstractFormController<User> {
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> statusCombo;
     @FXML private Label passwordHelper;
-    
-    @FXML private Label nameErrorLabel;
-    @FXML private Label usernameErrorLabel;
-    @FXML private Label statusErrorLabel;
-    @FXML private Label passwordErrorLabel;
 
     private final UserService userService;
-    
-    private FieldValidator<String> nameValidator;
-    private FieldValidator<String> usernameValidator;
-    private FieldValidator<String> statusValidator;
-    private FieldValidator<String> passwordValidator;
 
     public UserFormController(UserService userService, WorkspaceManager workspaceManager) {
         super(workspaceManager);
@@ -85,59 +74,40 @@ public class UserFormController extends AbstractFormController<User> {
 
     @Override
     protected void setupValidators() {
-        if (nameField != null && nameErrorLabel != null) {
-            nameValidator = FieldValidator.forField(nameField, nameErrorLabel)
-                .required("Full name")
-                .validateOnFocusLost();
-            formValidator.addField(nameValidator);
+        if (nameField != null) {
+            com.possum.ui.common.validation.FieldValidator.of(nameField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Full name"))
+                .validateOnType();
         }
 
-        if (usernameField != null && usernameErrorLabel != null) {
-            usernameValidator = FieldValidator.forField(usernameField, usernameErrorLabel)
-                .required("Username")
-                .noSpaces("Username")
-                .validateOnFocusLost();
-            formValidator.addField(usernameValidator);
+        if (usernameField != null) {
+            com.possum.ui.common.validation.FieldValidator.of(usernameField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Username"))
+                .addValidator(com.possum.ui.common.validation.Validators.noSpaces("Username"))
+                .validateOnType();
         }
 
-        if (statusCombo != null && statusErrorLabel != null) {
-            statusValidator = FieldValidator.forField(statusCombo, statusErrorLabel)
-                .notNull("Status")
-                .validateOnFocusLost();
-            formValidator.addField(statusValidator);
+        if (statusCombo != null) {
+             com.possum.ui.common.validation.FieldValidator.of(statusCombo)
+                .addValidator(com.possum.ui.common.validation.Validators.notNull("Status"))
+                .validateOnFocusLost(); // Combo updates are better on focus lost or selection change
         }
 
-        // Password validation only for create mode
-        if (isCreateMode() && passwordField != null && passwordErrorLabel != null) {
-            passwordValidator = FieldValidator.forField(passwordField, passwordErrorLabel)
-                .required("Password")
-                .minLength(6, "Password")
-                .validateOnFocusLost();
-            formValidator.addField(passwordValidator);
+        if (passwordField != null) {
+             com.possum.ui.common.validation.FieldValidator.of(passwordField)
+                .addValidator(val -> {
+                    if (isCreateMode() && (val == null || val.isEmpty())) 
+                        return com.possum.ui.common.validation.ValidationResult.error("Password is required");
+                    if (val != null && !val.isEmpty() && val.length() < 6) 
+                        return com.possum.ui.common.validation.ValidationResult.error("Min 6 characters required");
+                    return com.possum.ui.common.validation.ValidationResult.success();
+                })
+                .validateOnType();
         }
     }
 
     @Override
     protected boolean validateForm() {
-        // For create mode, password is required
-        if (isCreateMode()) {
-            if (passwordField != null && passwordErrorLabel != null) {
-                String password = passwordField.getText();
-                if (password == null || password.trim().isEmpty()) {
-                    passwordErrorLabel.setText("Password is required for new employees");
-                    passwordErrorLabel.setVisible(true);
-                    passwordField.getStyleClass().add("input-error");
-                    return false;
-                }
-                if (password.length() < 6) {
-                    passwordErrorLabel.setText("Use at least 6 characters");
-                    passwordErrorLabel.setVisible(true);
-                    passwordField.getStyleClass().add("input-error");
-                    return false;
-                }
-            }
-        }
-        
         return super.validateForm();
     }
 

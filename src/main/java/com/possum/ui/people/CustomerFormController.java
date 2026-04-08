@@ -3,7 +3,6 @@ package com.possum.ui.people;
 import com.possum.application.people.CustomerService;
 import com.possum.domain.model.Customer;
 import com.possum.ui.common.controllers.AbstractFormController;
-import com.possum.ui.common.validation.FieldValidator;
 import com.possum.ui.workspace.WorkspaceManager;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -19,18 +18,11 @@ public class CustomerFormController extends AbstractFormController<Customer> {
     @FXML private ComboBox<String> customerTypeCombo;
     @FXML private CheckBox isTaxExemptCheckbox;
 
-    @FXML private Label nameErrorLabel;
-    @FXML private Label phoneErrorLabel;
-    @FXML private Label emailErrorLabel;
-
     private static final List<String> CUSTOMER_TYPES =
             List.of("Retailer", "Wholesaler", "Government", "NGO", "Other");
 
     private final CustomerService customerService;
 
-    private FieldValidator<String> nameValidator;
-    private FieldValidator<String> phoneValidator;
-    private FieldValidator<String> emailValidator;
 
     public CustomerFormController(CustomerService customerService, WorkspaceManager workspaceManager) {
         super(workspaceManager);
@@ -74,25 +66,23 @@ public class CustomerFormController extends AbstractFormController<Customer> {
 
     @Override
     protected void setupValidators() {
-        if (nameField != null && nameErrorLabel != null) {
-            nameValidator = FieldValidator.forField(nameField, nameErrorLabel)
-                .required("Customer name")
-                .validateOnFocusLost();
-            formValidator.addField(nameValidator);
+        if (nameField != null) {
+            com.possum.ui.common.validation.FieldValidator.of(nameField)
+                .addValidator(com.possum.ui.common.validation.Validators.required("Customer name"))
+                .validateOnType();
         }
 
-        if (phoneField != null && phoneErrorLabel != null) {
-            phoneValidator = FieldValidator.forField(phoneField, phoneErrorLabel)
-                .phone()
-                .validateOnFocusLost();
-            formValidator.addField(phoneValidator);
+        if (phoneField != null) {
+            phoneField.setTextFormatter(com.possum.ui.common.controls.InputFilters.numericFormat());
+            com.possum.ui.common.validation.FieldValidator.of(phoneField)
+                .addValidator(com.possum.ui.common.validation.Validators.phone())
+                .validateOnType();
         }
 
-        if (emailField != null && emailErrorLabel != null) {
-            emailValidator = FieldValidator.forField(emailField, emailErrorLabel)
-                .email()
-                .validateOnFocusLost();
-            formValidator.addField(emailValidator);
+        if (emailField != null) {
+            com.possum.ui.common.validation.FieldValidator.of(emailField)
+                .addValidator(com.possum.ui.common.validation.Validators.email())
+                .validateOnType();
         }
     }
 
