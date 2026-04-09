@@ -13,6 +13,8 @@ import java.util.StringJoiner;
 
 public final class SqliteAuditRepository extends BaseSqliteRepository implements AuditRepository {
 
+    private static final int MAX_AUDIT_LOGS = 1000;
+
     private final AuditLogMapper auditLogMapper = new AuditLogMapper();
 
     public SqliteAuditRepository(ConnectionProvider connectionProvider) {
@@ -21,7 +23,7 @@ public final class SqliteAuditRepository extends BaseSqliteRepository implements
 
     @Override
     public long insertAuditLog(AuditLog auditLog) {
-        return executeInsert(
+        long id = executeInsert(
                 """
                 INSERT INTO audit_log (user_id, action, table_name, row_id, old_data, new_data, event_details)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -33,6 +35,26 @@ public final class SqliteAuditRepository extends BaseSqliteRepository implements
                 auditLog.oldData(),
                 auditLog.newData(),
                 auditLog.eventDetails()
+        );
+        cleanupOldLogs();
+        return id;
+    }
+
+    /**
+     * Enforces the audit log retention policy by removing entries older than the most recent 1000 logs.
+     * This keeps the database size manageable and ensures fast lookups on history.
+     */
+    private void cleanupOldLogs() {
+        executeUpdate(
+                """
+                DELETE FROM audit_log 
+                WHERE id <= (
+                    SELECT id FROM audit_log 
+                    ORDER BY id DESC 
+                    LIMIT 1 OFFSET ?
+                )
+                """,
+                MAX_AUDIT_LOGS
         );
     }
 

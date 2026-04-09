@@ -139,4 +139,46 @@ class SqliteAuditRepositoryTest {
         assertEquals(1, result.totalCount());
         assertEquals("CREATE", result.items().get(0).action());
     }
+
+    @Test
+    void insertAuditLog_exactlyAtLimit_noCleanup() {
+        for (int i = 0; i < 1000; i++) {
+            repository.insertAuditLog(new AuditLog(null, 1L, "ACTION", "TABLE", (long)i, null, null, null, null, LocalDateTime.now()));
+        }
+
+        AuditLogFilter filter = new AuditLogFilter(null, null, null, null, null, null, null, "id", "ASC", 1, 1);
+        PagedResult<AuditLog> result = repository.findAuditLogs(filter);
+        assertEquals(1000, result.totalCount());
+
+        assertNotNull(repository.findAuditLogById(1L));
+    }
+
+    @Test
+    void insertAuditLog_oneOverLimit_removesFirst() {
+        for (int i = 0; i < 1001; i++) {
+            repository.insertAuditLog(new AuditLog(null, 1L, "ACTION", "TABLE", (long)i, null, null, null, null, LocalDateTime.now()));
+        }
+
+        AuditLogFilter filter = new AuditLogFilter(null, null, null, null, null, null, null, "id", "ASC", 1, 1);
+        PagedResult<AuditLog> result = repository.findAuditLogs(filter);
+        assertEquals(1000, result.totalCount());
+        assertNull(repository.findAuditLogById(1L));
+        assertNotNull(repository.findAuditLogById(2L));
+    }
+
+    @Test
+    void insertAuditLog_massiveInsertion_maintainsLimit() {
+        for (int i = 0; i < 1100; i++) {
+            repository.insertAuditLog(new AuditLog(null, 1L, "ACTION", "TABLE", (long)i, null, null, null, null, LocalDateTime.now()));
+        }
+
+        AuditLogFilter filter = new AuditLogFilter(null, null, null, null, null, null, null, "id", "ASC", 1, 1);
+        PagedResult<AuditLog> result = repository.findAuditLogs(filter);
+        assertEquals(1000, result.totalCount());
+        
+        // The last 1000 should be from 101 to 1100
+        assertNull(repository.findAuditLogById(100L));
+        assertNotNull(repository.findAuditLogById(101L));
+        assertNotNull(repository.findAuditLogById(1100L));
+    }
 }
