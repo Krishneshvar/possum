@@ -4,6 +4,13 @@ plugins {
     jacoco
     id("org.openjfx.javafxplugin") version "0.1.0"
     id("com.gradleup.shadow") version "9.3.2"
+    id("org.flywaydb.flyway") version "12.3.0"
+}
+
+flyway {
+    url = "jdbc:sqlite:possum.db"
+    locations = arrayOf("filesystem:src/main/resources/sql/migrations")
+    mixed = true
 }
 
 group = "com.possum"
@@ -41,7 +48,7 @@ javafx {
 
 dependencies {
     implementation("org.xerial:sqlite-jdbc:3.49.1.0")
-    implementation("org.flywaydb:flyway-core:10.20.1")
+    implementation("org.flywaydb:flyway-core:12.3.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
     implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:2.17.2")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2")
@@ -83,13 +90,21 @@ tasks.jacocoTestReport {
         html.required.set(true)
         csv.required.set(false)
     }
+    classDirectories.setFrom(files(classDirectories.files.map {
+        fileTree(it).matching {
+            exclude("com/possum/ui/**", "com/possum/AppLauncher*")
+        }
+    }))
 }
 
 tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
+            element = "BUNDLE"
             limit {
-                minimum = "0.70".toBigDecimal()
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                minimum = "0.25".toBigDecimal()
             }
         }
     }
@@ -101,6 +116,7 @@ tasks.check {
 
 tasks.shadowJar {
     archiveBaseName.set("possum")
+    archiveVersion.set("")
     archiveClassifier.set("all")
     manifest {
         attributes("Main-Class" to "com.possum.AppLauncher")

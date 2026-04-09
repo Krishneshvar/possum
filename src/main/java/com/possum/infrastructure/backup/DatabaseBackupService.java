@@ -85,6 +85,13 @@ public final class DatabaseBackupService implements AutoCloseable {
     public synchronized void stopDailyBackups() {
         schedulerStarted = false;
         scheduler.shutdownNow();
+        try {
+            if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                LOGGER.warn("Database backup scheduler did not terminate in time");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         LOGGER.info("Daily database backup scheduler stopped");
     }
 

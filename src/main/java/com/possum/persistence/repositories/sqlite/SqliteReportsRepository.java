@@ -20,10 +20,10 @@ public final class SqliteReportsRepository extends BaseSqliteRepository implemen
     public Map<String, Object> getSalesReportSummary(String startDate, String endDate, List<Long> paymentMethodIds) {
         String sFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty())
             ? ""
-            : "AND s.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
+            : "AND s.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
         String s2Filter = (paymentMethodIds == null || paymentMethodIds.isEmpty())
             ? ""
-            : "AND s2.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";
+            : "AND s2.id IN (SELECT sale_id FROM transactions WHERE payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + "))";
         String lsFilter = (paymentMethodIds == null || paymentMethodIds.isEmpty())
             ? ""
             : "AND ls.payment_method_id IN (" + buildInPlaceholders(paymentMethodIds.size()) + ")";

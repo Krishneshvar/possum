@@ -11,6 +11,7 @@ import com.possum.domain.model.*;
 import com.possum.domain.services.SaleCalculator;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.printing.PrinterService;
+import com.possum.persistence.repositories.sqlite.SqlitePosDraftRepository;
 import com.possum.shared.dto.GeneralSettings;
 import com.possum.ui.JavaFXInitializer;
 import org.junit.jupiter.api.*;
@@ -42,7 +43,7 @@ class PosControllerTest {
     @Mock private ProductService productService;
     @Mock private CategoryService categoryService;
     @Mock private SaleCalculator saleCalculator;
-    @Mock private com.possum.application.drafts.DraftService draftService;
+    @Mock private SqlitePosDraftRepository posDraftRepository;
 
     private PosController controller;
 
@@ -50,7 +51,7 @@ class PosControllerTest {
     void setUp() throws Exception {
         AuthContext.setCurrentUser(new AuthUser(1L, "Test User", "testuser", List.of("admin"), List.of("sales:create")));
         controller = new PosController(salesService, customerService, searchIndex, taxEngine,
-                printerService, settingsStore, productService, categoryService, saleCalculator, draftService);
+                printerService, settingsStore, productService, categoryService, saleCalculator, posDraftRepository);
         
         // Use reflection to initialize the controller fields as initialize() is hard to run in JUnit
         java.lang.reflect.Field billsField = PosController.class.getDeclaredField("bills");
@@ -61,7 +62,6 @@ class PosControllerTest {
             d.setIndex(i);
             bills.add(d);
         }
-        when(draftService.recoverDraft(anyString(), any())).thenReturn(java.util.Optional.empty());
         billsField.set(controller, bills);
         
         java.lang.reflect.Field currentBillField = PosController.class.getDeclaredField("currentBill");
