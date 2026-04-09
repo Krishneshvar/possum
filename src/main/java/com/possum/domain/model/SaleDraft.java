@@ -6,7 +6,7 @@ import java.util.List;
 
 public class SaleDraft {
     private int index;
-    private final List<CartItem> items = new ArrayList<>();
+    private List<CartItem> items = new ArrayList<>();
 
     public void addItem(CartItem item) {
         this.items.add(item);
@@ -54,6 +54,7 @@ public class SaleDraft {
     public int getIndex() { return index; }
     public void setIndex(int index) { this.index = index; }
     public List<CartItem> getItems() { return items; }
+    public void setItems(List<CartItem> items) { this.items = items; }
 
     public Customer getSelectedCustomer() { return selectedCustomer; }
     public void setSelectedCustomer(Customer customer) { this.selectedCustomer = customer; }

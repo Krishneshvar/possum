@@ -17,8 +17,9 @@ public final class JsonService {
 
     public JsonService() {
         objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        objectMapper.registerModule(new com.fasterxml.jackson.module.paramnames.ParameterNamesModule());
+        objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     public <T> T read(Path path, Class<T> type) {

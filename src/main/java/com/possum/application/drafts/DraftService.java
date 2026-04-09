@@ -33,7 +33,7 @@ public class DraftService extends BaseSqliteRepository {
                 "ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, updated_at=excluded.updated_at",
                 id, type, json, userId
             );
-            LOGGER.debug("Saved {} draft for user {}: {}", type, userId, id);
+            LOGGER.info("Saved {} draft for user {}: {}", type, userId, id);
         } catch (Exception e) {
             LOGGER.error("Failed to save draft {}: {}", id, e.getMessage());
         }
@@ -47,6 +47,7 @@ public class DraftService extends BaseSqliteRepository {
             "SELECT payload FROM drafts WHERE id = ?",
             rs -> {
                 try {
+                    LOGGER.info("Recovered {} draft: {}", clazz.getSimpleName(), id);
                     return jsonService.fromJson(rs.getString("payload"), clazz);
                 } catch (Exception e) {
                     LOGGER.error("Failed to deserialize draft {}: {}", id, e.getMessage());

@@ -73,8 +73,8 @@
 
                                 <GridPane hgap="12" vgap="8">
                                     <columnConstraints>
-                                        <ColumnConstraints percentWidth="50"/>
-                                        <ColumnConstraints percentWidth="50"/>
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="100"/>
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="100"/>
                                     </columnConstraints>
 
                                     <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="0">
@@ -104,7 +104,7 @@
                                 </GridPane>
                             </VBox>
 
-                            <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 16;" prefWidth="360">
+                            <VBox spacing="12" styleClass="pos-card" style="-fx-padding: 16;" HBox.hgrow="ALWAYS">
                                 <Label text="Quick Add Product" styleClass="pos-card-title"/>
 
                                 <VBox spacing="8">

@@ -10,6 +10,7 @@ import com.possum.application.returns.ReturnsService;
 import com.possum.application.reports.ReportsService;
 import com.possum.application.purchase.PurchaseService;
 import com.possum.application.drafts.DraftService;
+import com.possum.persistence.repositories.sqlite.SqlitePosDraftRepository;
 import com.possum.domain.repositories.*;
 import com.possum.ui.common.toast.ToastService;
 import com.possum.ui.navigation.NavigationManager;
@@ -71,6 +72,7 @@ public class DependencyInjector {
         this.supplierRepository = supplierRepository;
         this.taxRepository = taxRepository;
         this.appPaths = appPaths;
+        registry.put(SqlitePosDraftRepository.class, () -> new SqlitePosDraftRepository(serviceLocator.getDatabaseManager(), variantRepository, serviceLocator.getTransactionManager()));
         buildRegistry();
     }
 
@@ -102,6 +104,7 @@ public class DependencyInjector {
         registry.put(SalesRepository.class, () -> salesRepository);
         registry.put(SupplierRepository.class, () -> supplierRepository);
         registry.put(TaxRepository.class, () -> taxRepository);
+        registry.put(SqlitePosDraftRepository.class, () -> new SqlitePosDraftRepository(serviceLocator.getDatabaseManager(), variantRepository, serviceLocator.getTransactionManager()));
 
         // Infrastructure
         registry.put(ToastService.class, () -> toastService);

@@ -11,6 +11,7 @@ import com.possum.domain.services.SaleCalculator;
 import com.possum.infrastructure.filesystem.SettingsStore;
 import com.possum.infrastructure.logging.LoggingConfig;
 import com.possum.infrastructure.printing.PrinterService;
+import com.possum.persistence.repositories.sqlite.SqlitePosDraftRepository;
 import com.possum.ui.common.ErrorHandler;
 import com.possum.ui.common.controls.DataTableView;
 import com.possum.ui.common.controls.NotificationService;
@@ -76,7 +77,7 @@ public class PosController implements CartCellHandler {
     private final ProductService           productService;
     private final CategoryService          categoryService;
     private final SaleCalculator           saleCalculator;
-    private final com.possum.application.drafts.DraftService draftService;
+    private final SqlitePosDraftRepository posDraftRepository;
 
     private static final int MAX_BILLS = 9;
     private final List<SaleDraft> bills = new ArrayList<>();
@@ -92,7 +93,7 @@ public class PosController implements CartCellHandler {
                          PrinterService printerService, SettingsStore settingsStore,
                          ProductService productService, CategoryService categoryService,
                          SaleCalculator saleCalculator,
-                         com.possum.application.drafts.DraftService draftService) {
+                         SqlitePosDraftRepository posDraftRepository) {
         this.salesService     = salesService;
         this.customerService  = customerService;
         this.searchIndex      = searchIndex;
@@ -102,19 +103,28 @@ public class PosController implements CartCellHandler {
         this.productService   = productService;
         this.categoryService  = categoryService;
         this.saleCalculator   = saleCalculator;
-        this.draftService     = draftService;
+        this.posDraftRepository = posDraftRepository;
     }
 
     @FXML
     public void initialize() {
-        if (completeButton != null)
-            com.possum.ui.common.UIPermissionUtil.requirePermission(completeButton,
-                    com.possum.application.auth.Permissions.SALES_CREATE);
+        isAutofilling = true;
+        try {
+            if (completeButton != null)
+                com.possum.ui.common.UIPermissionUtil.requirePermission(completeButton,
+                        com.possum.application.auth.Permissions.SALES_CREATE);
 
         for (int i = 0; i < MAX_BILLS; i++) { 
             int idx = i;
-            SaleDraft d = draftService.recoverDraft("pos_bill_" + i, SaleDraft.class)
-                    .orElseGet(() -> { SaleDraft newD = new SaleDraft(); newD.setIndex(idx); return newD; });
+            SaleDraft d;
+            try {
+                d = posDraftRepository.loadBill(i)
+                        .orElseGet(() -> { SaleDraft newD = new SaleDraft(); newD.setIndex(idx); return newD; });
+            } catch (Exception ex) {
+                com.possum.infrastructure.logging.LoggingConfig.getLogger().error("Failed to load bill draft at index " + i, ex);
+                d = new SaleDraft();
+                d.setIndex(idx);
+            }
             bills.add(d); 
         }
         currentBill = bills.get(0);
@@ -141,11 +151,19 @@ public class PosController implements CartCellHandler {
 
         completionHandler = new SaleCompletionHandler(
                 salesService, customerService, printerService, settingsStore,
-                rootPane, null, () -> { handleClearCart(); loadCombos(); });
+                rootPane, java.text.NumberFormat.getCurrencyInstance(), () -> { handleClearCart(); loadCombos(); });
 
-        setupKeyboardShortcuts();
-        updatePaymentSectionState();
-        setupLayoutSizing();
+            setupKeyboardShortcuts();
+            updatePaymentSectionState();
+            setupLayoutSizing();
+            
+            // Prevent Quick Add from shrinking
+            if (rightPane != null) {
+                rightPane.setMinWidth(380);
+            }
+        } finally {
+            isAutofilling = false;
+        }
     }
 
     // ── Table Setup ───────────────────────────────────────────────────────────
@@ -166,8 +184,10 @@ public class PosController implements CartCellHandler {
                 colSno, colSku, colProduct, colQty, colPrice, colMrp, colDiscountPct, colDiscountAmt, colTotal));
 
         colSno.setPrefWidth(48); colSno.setResizable(false);
-        colSno.setCellValueFactory(c -> new SimpleStringProperty(
-                String.valueOf(cartTable.getTableView().getItems().indexOf(c.getValue()) + 1)));
+        colSno.setCellValueFactory(c -> {
+            int idx = cartTable.getTableView().getItems().indexOf(c.getValue());
+            return new SimpleStringProperty(idx < 0 ? "-" : String.valueOf(idx + 1));
+        });
 
         colSku.setPrefWidth(95);
         colSku.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getVariant().sku()));
@@ -230,17 +250,9 @@ public class PosController implements CartCellHandler {
     // ── Combos / Toggles / Listeners ─────────────────────────────────────────
 
     private void loadCombos() {
-        customerCombo.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(Customer item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null || empty ? "Walk-in Customer" : item.name() + " (" + item.phone() + ")");
-            }
-        });
-        customerCombo.setButtonCell(new ListCell<>() {
-            @Override protected void updateItem(Customer item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null || empty ? "Walk-in Customer" : item.name() + " (" + item.phone() + ")");
-            }
+        customerCombo.setConverter(new javafx.util.StringConverter<Customer>() {
+            @Override public String toString(Customer c) { return c == null ? "Walk-in Customer" : c.name() + " (" + c.phone() + ")"; }
+            @Override public Customer fromString(String s) { return null; }
         });
         try { customerCombo.getItems().setAll(salesService.getAllCustomers()); } catch (Exception ignored) {}
 
@@ -269,11 +281,13 @@ public class PosController implements CartCellHandler {
         btnDiscountFixed.setText(CurrencyUtil.getSymbol());
 
         pg.selectedToggleProperty().addListener((obs, oldV, newV) -> {
+            if (isAutofilling) return;
             if (newV == null) { oldV.setSelected(true); return; }
             currentBill.setFullPayment(newV == btnFullPayment);
             updateBalanceLabel(); refreshCurrentBill();
         });
         dg.selectedToggleProperty().addListener((obs, oldV, newV) -> {
+            if (isAutofilling) return;
             if (newV == null) { oldV.setSelected(true); return; }
             currentBill.setDiscountFixed(newV == btnDiscountFixed);
             recalculateTotals();
@@ -304,10 +318,12 @@ public class PosController implements CartCellHandler {
         searchField.setOnMouseClicked(e -> autocomplete.showSearchPopup(searchField, searchField.getText() != null ? searchField.getText().trim() : ""));
 
         discountField.textProperty().addListener((obs, o, n) -> {
+            if (isAutofilling) return;
             try { currentBill.setOverallDiscountValue(n.isEmpty() ? BigDecimal.ZERO : new BigDecimal(n)); recalculateTotals(); } catch (Exception ignored) {}
         });
         tenderedField.textProperty().addListener((obs, o, n) -> {
-            try { currentBill.setAmountTendered(n.isEmpty() ? BigDecimal.ZERO : new BigDecimal(n)); updateBalanceLabel(); } catch (Exception ignored) {}
+            if (isAutofilling) return;
+            try { currentBill.setAmountTendered(n.isEmpty() ? BigDecimal.ZERO : new BigDecimal(n)); updateBalanceLabel(); saveCurrentDraft(); } catch (Exception ignored) {}
         });
         customerCombo.valueProperty().addListener((obs, old, val) -> {
             if (isAutofilling) return;
@@ -320,15 +336,19 @@ public class PosController implements CartCellHandler {
                     customerAddressField.setText(val.address() != null ? val.address() : "");
                 } else if (old != null && old.name().equals(customerNameField.getText().trim())
                         && old.phone().equals(customerPhoneField.getText().trim())) {
+                    System.out.println("DEBUG: Clearing customer fields because combo selection was removed");
                     customerNameField.clear(); customerPhoneField.clear(); customerEmailField.clear(); customerAddressField.clear();
                 }
             } finally { isAutofilling = false; }
         });
         customerNameField.textProperty().addListener((o, oldV, n) -> { if (!isAutofilling) { currentBill.setCustomerName(n); checkCustomerMatch(); recalculateTotals(); } });
         customerPhoneField.textProperty().addListener((o, oldV, n) -> { if (!isAutofilling) { currentBill.setCustomerPhone(n); checkCustomerMatch(); recalculateTotals(); } });
-        customerEmailField.textProperty().addListener((o, oldV, n) -> { if (!isAutofilling) currentBill.setCustomerEmail(n); });
+        customerEmailField.textProperty().addListener((o, oldV, n) -> { if (!isAutofilling) { currentBill.setCustomerEmail(n); saveCurrentDraft(); } });
         customerAddressField.textProperty().addListener((o, oldV, n) -> { if (!isAutofilling) { currentBill.setCustomerAddress(n); recalculateTotals(); } });
-        paymentMethodCombo.valueProperty().addListener((o, oldV, n) -> { currentBill.setSelectedPaymentMethod(n); updateBalanceLabel(); });
+        paymentMethodCombo.valueProperty().addListener((o, oldV, n) -> { 
+            if (isAutofilling) return;
+            currentBill.setSelectedPaymentMethod(n); updateBalanceLabel(); saveCurrentDraft(); 
+        });
     }
 
     // ── Keyboard Shortcuts ────────────────────────────────────────────────────
@@ -358,52 +378,88 @@ public class PosController implements CartCellHandler {
     }
 
     private void setupLayoutSizing() {
-        Platform.runLater(() -> {
-            if (rootPane == null || leftVBox == null || rightPane == null) return;
-            leftVBox.prefWidthProperty().bind(rootPane.widthProperty().multiply(0.60));
-            rightPane.prefWidthProperty().bind(rootPane.widthProperty().multiply(0.40));
-        });
+        // Relying on FXML hgrow for sizing to avoid layout pass conflicts
     }
 
     // ── Bill Management ───────────────────────────────────────────────────────
 
     private void renderBillsFlowPane() {
-        billsFlowPane.getChildren().clear();
-        for (int i = 0; i < MAX_BILLS; i++) {
-            SaleDraft bill = bills.get(i);
-            Button btn = new Button(String.valueOf(i + 1));
-            boolean active = currentBill.getIndex() == i, hasItems = !bill.getItems().isEmpty();
-            String style = "-fx-font-weight: bold; -fx-background-radius: 8; -fx-border-radius: 8; -fx-min-width: 30; -fx-min-height: 30; -fx-font-size: 11px; ";
-            if (active) style += "-fx-background-color: #0f172a; -fx-text-fill: white; -fx-border-color: #0f172a; -fx-border-width: 1;";
-            else if (hasItems) style += "-fx-background-color: #fef3c7; -fx-text-fill: #d97706; -fx-border-color: #fcd34d; -fx-border-width: 1;";
-            else style += "-fx-background-color: #f8fafc; -fx-text-fill: #94a3b8; -fx-border-color: #e2e8f0; -fx-border-width: 1;";
-            btn.setStyle(style); btn.setCursor(javafx.scene.Cursor.HAND);
-            int idx = i; btn.setOnAction(e -> switchBill(idx));
-            billsFlowPane.getChildren().add(btn);
-        }
+        Platform.runLater(() -> {
+            if (billsFlowPane == null) return;
+            List<javafx.scene.Node> children = billsFlowPane.getChildren();
+            int count = Math.min(MAX_BILLS, bills.size());
+            
+            // Re-use or populate initially to avoid modifying scene graph during layout
+            if (children.isEmpty()) {
+                for (int i = 0; i < MAX_BILLS; i++) {
+                    Button btn = new Button(String.valueOf(i + 1));
+                    btn.setCursor(javafx.scene.Cursor.HAND);
+                    int idx = i; 
+                    btn.setOnAction(e -> switchBill(idx));
+                    children.add(btn);
+                }
+            }
+
+            for (int i = 0; i < count; i++) {
+                if (i >= children.size()) break;
+                SaleDraft bill = bills.get(i);
+                Button btn = (Button) children.get(i);
+                
+                boolean active = currentBill != null && currentBill.getIndex() == i;
+                boolean hasItems = !bill.getItems().isEmpty();
+                
+                String style = "-fx-font-weight: bold; -fx-background-radius: 8; -fx-border-radius: 8; "
+                             + "-fx-min-width: 34; -fx-min-height: 34; -fx-font-size: 13px; -fx-padding: 0; ";
+                if (active) {
+                    style += "-fx-background-color: #0f172a; -fx-text-fill: white; -fx-border-color: #0f172a; -fx-border-width: 1.5;";
+                } else if (hasItems) {
+                    style += "-fx-background-color: #fef3c7; -fx-text-fill: #d97706; -fx-border-color: #fcd34d; -fx-border-width: 1;";
+                } else {
+                    style += "-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-border-color: #e2e8f0; -fx-border-width: 1;";
+                }
+                btn.setStyle(style); 
+            }
+        });
     }
 
     private void switchBill(int index) {
         currentBill = bills.get(index);
-        cartTable.getTableView().setItems(FXCollections.observableArrayList(currentBill.getItems()));
-        btnFullPayment.setSelected(currentBill.isFullPayment());
-        btnPartialPayment.setSelected(!currentBill.isFullPayment());
-        discountField.setText(currentBill.getOverallDiscountValue().compareTo(BigDecimal.ZERO) > 0 ? currentBill.getOverallDiscountValue().toString() : "");
-        btnDiscountFixed.setSelected(currentBill.isDiscountFixed()); btnDiscountPercent.setSelected(!currentBill.isDiscountFixed());
-        tenderedField.setText(currentBill.getAmountTendered().compareTo(BigDecimal.ZERO) > 0 ? currentBill.getAmountTendered().toString() : "");
         isAutofilling = true;
         try {
-            customerCombo.setValue(currentBill.getSelectedCustomer());
-            customerNameField.setText(currentBill.getCustomerName() != null ? currentBill.getCustomerName() : "");
-            customerPhoneField.setText(currentBill.getCustomerPhone() != null ? currentBill.getCustomerPhone() : "");
+            btnFullPayment.setSelected(currentBill.isFullPayment());
+            btnPartialPayment.setSelected(!currentBill.isFullPayment());
+            discountField.setText(currentBill.getOverallDiscountValue().compareTo(BigDecimal.ZERO) > 0 ? currentBill.getOverallDiscountValue().toString() : "");
+            btnDiscountFixed.setSelected(currentBill.isDiscountFixed()); btnDiscountPercent.setSelected(!currentBill.isDiscountFixed());
+            tenderedField.setText(currentBill.getAmountTendered().compareTo(BigDecimal.ZERO) > 0 ? currentBill.getAmountTendered().toString() : "");
+            
+            Customer sel = currentBill.getSelectedCustomer();
+            customerCombo.setValue(sel);
+            
+            String name = currentBill.getCustomerName();
+            String phone = currentBill.getCustomerPhone();
+            
+            // If we have a selected customer but the manual fields are empty (e.g. first load after migration)
+            if (sel != null && (name == null || name.isEmpty())) {
+                name = sel.name();
+                phone = sel.phone();
+                currentBill.setCustomerName(name);
+                currentBill.setCustomerPhone(phone);
+                currentBill.setCustomerEmail(sel.email());
+                currentBill.setCustomerAddress(sel.address());
+            }
+
+            customerNameField.setText(name != null ? name : "");
+            customerPhoneField.setText(phone != null ? phone : "");
             customerEmailField.setText(currentBill.getCustomerEmail() != null ? currentBill.getCustomerEmail() : "");
             customerAddressField.setText(currentBill.getCustomerAddress() != null ? currentBill.getCustomerAddress() : "");
-        } finally { isAutofilling = false; }
-        paymentMethodCombo.setValue(currentBill.getSelectedPaymentMethod());
-        if (currentBill.getSelectedPaymentMethod() == null && !paymentMethodCombo.getItems().isEmpty()) {
-            currentBill.setSelectedPaymentMethod(paymentMethodCombo.getItems().get(0));
+            
             paymentMethodCombo.setValue(currentBill.getSelectedPaymentMethod());
-        }
+            if (currentBill.getSelectedPaymentMethod() == null && !paymentMethodCombo.getItems().isEmpty()) {
+                currentBill.setSelectedPaymentMethod(paymentMethodCombo.getItems().get(0));
+                paymentMethodCombo.setValue(currentBill.getSelectedPaymentMethod());
+            }
+        } finally { isAutofilling = false; }
+        
         refreshCurrentBill(); focusSearch(false);
     }
 
@@ -434,7 +490,9 @@ public class PosController implements CartCellHandler {
     }
 
     public void refreshCurrentBill() { 
-        cartTable.getTableView().refresh(); 
+        if (currentBill != null && cartTable != null && cartTable.getTableView().getItems() != null) {
+            cartTable.getTableView().getItems().setAll(currentBill.getItems());
+        }
         renderBillsFlowPane(); 
         updatePaymentSectionState(); 
         recalculateTotals(); 
@@ -442,13 +500,12 @@ public class PosController implements CartCellHandler {
     }
 
     private void saveCurrentDraft() {
-        AuthUser cur = AuthContext.getCurrentUser();
-        Long userId = cur != null ? cur.id() : 1L;
-        draftService.saveDraft("pos_bill_" + currentBill.getIndex(), "sale", currentBill, userId);
+        if (isAutofilling) return;
+        posDraftRepository.saveBill(currentBill);
     }
 
     @FXML private void handleClearCart() { 
-        draftService.deleteDraft("pos_bill_" + currentBill.getIndex());
+        posDraftRepository.deleteBill(currentBill.getIndex());
         currentBill.reset(); 
         refreshCurrentBill(); 
         switchBill(currentBill.getIndex()); 
@@ -525,6 +582,7 @@ public class PosController implements CartCellHandler {
         bottomPriceTotalLabel.setText(CurrencyUtil.format(currentBill.getTotalPrice()));
         totalQtyLabel.setText(String.valueOf(currentBill.getItems().stream().mapToInt(CartItem::getQuantity).sum()));
         updateBalanceLabel();
+        saveCurrentDraft();
     }
 
     private void updatePaymentSectionState() {

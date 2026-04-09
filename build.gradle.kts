@@ -23,6 +23,7 @@ java {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+    options.compilerArgs.add("-parameters")
 }
 
 tasks.withType<JavaExec> {
@@ -42,6 +43,8 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.49.1.0")
     implementation("org.flywaydb:flyway-core:10.20.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-parameter-names:2.17.2")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2")
     implementation("ch.qos.logback:logback-classic:1.5.16")
     implementation("org.mindrot:jbcrypt:0.4")
     
