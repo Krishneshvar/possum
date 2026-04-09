@@ -137,7 +137,7 @@ tasks.register<Exec>("createInstaller") {
     
     commandLine(
         "jpackage",
-        "--type", "app-image",
+        "--type", "msi",
         "--input", "build/libs",
         "--main-jar", "possum-all.jar",
         "--main-class", "com.possum.AppLauncher",
@@ -150,6 +150,8 @@ tasks.register<Exec>("createInstaller") {
         "--java-options", "-Xmx512m",
         "--java-options", "-XX:+UseZGC",
         "--java-options", "-XX:+ZGenerational",
-        "--icon", "src/main/resources/icons/icon." + (if (System.getProperty("os.name").lowercase().contains("win")) "ico" else if (System.getProperty("os.name").lowercase().contains("mac")) "icns" else "png")
+        "--icon", "src/main/resources/icons/icon." + (if (System.getProperty("os.name").lowercase().contains("win")) "ico" else if (System.getProperty("os.name").lowercase().contains("mac")) "icns" else "png"),
+        "--win-shortcut",
+        "--win-menu"
     )
 }
