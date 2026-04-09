@@ -28,10 +28,6 @@ import java.util.Map;
 public class ProductsController extends AbstractCrudController<Product, ProductFilter> {
 
     @FXML private Button addButton;
-    @FXML private FlowPane productsGrid;
-    @FXML private ScrollPane productsGridScroll;
-    @FXML private ToggleButton cardsViewButton;
-    @FXML private ToggleButton tableViewButton;
     @FXML private Button refreshButton;
 
     private final ProductService productService;
@@ -42,9 +38,6 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
     private List<Long> currentTaxCategoryFilters = java.util.Collections.emptyList();
     private List<String> currentStatusFilters = java.util.Collections.emptyList();
     private List<Long> currentCategoryFilters = java.util.Collections.emptyList();
-
-    private final ToggleGroup viewModeGroup = new ToggleGroup();
-    private boolean cardsViewEnabled = true;
 
     public ProductsController(ProductService productService,
                               CategoryService categoryService,
@@ -62,7 +55,6 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
         setupPermissions();
         setupTable();
         setupFilters();
-        setupViewMode();
         loadData();
     }
 
@@ -78,17 +70,6 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
 
         if (importHandler.importButton != null) {
             com.possum.ui.common.UIPermissionUtil.requirePermission(importHandler.importButton, com.possum.application.auth.Permissions.PRODUCTS_MANAGE);
-        }
-
-        if (cardsViewButton != null) {
-            FontIcon gridIcon = new FontIcon("bx-grid-alt");
-            gridIcon.setIconSize(16);
-            cardsViewButton.setGraphic(gridIcon);
-        }
-        if (tableViewButton != null) {
-            FontIcon listIcon = new FontIcon("bx-list-ul");
-            listIcon.setIconSize(16);
-            tableViewButton.setGraphic(listIcon);
         }
 
         if (refreshButton != null) {
@@ -170,45 +151,6 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
         });
     }
 
-    private void setupViewMode() {
-        if (cardsViewButton == null || tableViewButton == null) {
-            return;
-        }
-
-        cardsViewButton.setToggleGroup(viewModeGroup);
-        tableViewButton.setToggleGroup(viewModeGroup);
-        cardsViewButton.setSelected(true);
-
-        viewModeGroup.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
-            cardsViewEnabled = newValue == cardsViewButton || newValue == null;
-            applyViewMode();
-        });
-
-        HBox toggleWrapper = new HBox(8);
-        toggleWrapper.setAlignment(Pos.CENTER_RIGHT);
-        Label viewLabel = new Label("View:");
-        viewLabel.getStyleClass().add("helper-text");
-
-        HBox segmentedControl = new HBox(0);
-        segmentedControl.getStyleClass().add("toggle-group-neon");
-        segmentedControl.getChildren().addAll(cardsViewButton, tableViewButton);
-
-        toggleWrapper.getChildren().addAll(viewLabel, segmentedControl);
-        filterBar.addTopRightControl(toggleWrapper);
-
-        applyViewMode();
-    }
-
-    private void applyViewMode() {
-        if (productsGridScroll != null) {
-            productsGridScroll.setVisible(cardsViewEnabled);
-            productsGridScroll.setManaged(cardsViewEnabled);
-        }
-        if (dataTable != null) {
-            dataTable.setVisible(!cardsViewEnabled);
-            dataTable.setManaged(!cardsViewEnabled);
-        }
-    }
 
     @Override
     protected ProductFilter buildFilter() {
@@ -229,12 +171,8 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
         return productService.getProducts(filter);
     }
 
-    @Override
     protected void loadData() {
         super.loadData();
-        if (cardsViewEnabled && productsGrid != null) {
-            renderProductCards(dataTable.getItems());
-        }
     }
 
     @Override
@@ -282,118 +220,6 @@ public class ProductsController extends AbstractCrudController<Product, ProductF
     @FXML
     private void handleImport() {
         importHandler.handleImport();
-    }
-
-    private void renderProductCards(List<Product> products) {
-        if (productsGrid == null) return;
-
-        productsGrid.getChildren().clear();
-
-        if (products == null || products.isEmpty()) {
-            VBox empty = new VBox(8);
-            empty.getStyleClass().add("empty-state-view");
-            empty.setAlignment(Pos.CENTER);
-            empty.setPrefWidth(560);
-
-            FontIcon packageIcon = new FontIcon("bx-package");
-            packageIcon.setIconSize(48);
-            packageIcon.getStyleClass().add("empty-state-icon");
-
-            Label title = new Label("No products found");
-            title.getStyleClass().add("empty-state-title");
-
-            Label subtitle = new Label("Adjust search or filters, or add a new product.");
-            subtitle.getStyleClass().add("empty-state-subtitle");
-            subtitle.setWrapText(true);
-
-            empty.getChildren().addAll(packageIcon, title, subtitle);
-            productsGrid.getChildren().add(empty);
-            return;
-        }
-
-        for (Product product : products) {
-            productsGrid.getChildren().add(createProductCard(product));
-        }
-    }
-
-    private VBox createProductCard(Product product) {
-        VBox card = new VBox(10);
-        card.getStyleClass().add("product-card");
-        card.setPrefWidth(260);
-        card.setMinWidth(240);
-        card.setMaxWidth(320);
-
-        HBox topRow = new HBox(8);
-        topRow.setAlignment(Pos.CENTER_LEFT);
-
-        Label avatar = new Label(initials(product.name()));
-        avatar.getStyleClass().add("product-card-avatar");
-
-        VBox titleBox = new VBox(4);
-        Label name = new Label(product.name());
-        name.getStyleClass().add("product-card-title");
-        name.setWrapText(true);
-
-        Label category = new Label(product.categoryName() != null ? product.categoryName() : "Uncategorized");
-        category.getStyleClass().add("product-card-meta");
-
-        Label status = com.possum.ui.common.components.BadgeFactory.createProductStatusBadge(product.status());
-        status.setMaxWidth(Region.USE_PREF_SIZE);
-
-        titleBox.getChildren().addAll(name, category, status);
-        HBox.setHgrow(titleBox, Priority.ALWAYS);
-
-        topRow.getChildren().addAll(avatar, titleBox);
-
-        Label tax = new Label("Tax: " + (product.taxCategoryName() != null ? product.taxCategoryName() : "-"));
-        tax.getStyleClass().add("product-card-meta");
-
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-
-        HBox actions = new HBox(8);
-        actions.getStyleClass().add("product-card-actions");
-
-        Button viewBtn = com.possum.ui.common.components.ButtonFactory.createCardActionButton("bx-show", () ->
-            workspaceManager.openWindow("View Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "view"))
-        );
-        viewBtn.setTooltip(new Tooltip("View Details"));
-
-        Button editBtn = com.possum.ui.common.components.ButtonFactory.createCardActionButton("bx-edit", () ->
-            workspaceManager.openWindow("Edit Product: " + product.name(), "/fxml/products/product-form-view.fxml", Map.of("productId", product.id(), "mode", "edit"))
-        );
-        editBtn.setTooltip(new Tooltip("Edit Product"));
-
-        Button deleteBtn = com.possum.ui.common.components.ButtonFactory.createDestructiveCardActionButton("bx-trash", () -> handleDelete(product));
-        deleteBtn.setTooltip(new Tooltip("Delete Product"));
-
-        actions.getChildren().addAll(viewBtn, editBtn, deleteBtn);
-        actions.setVisible(false);
-        actions.setManaged(false);
-
-        card.setOnMouseEntered(e -> {
-            actions.setVisible(true);
-            actions.setManaged(true);
-            if (!card.getStyleClass().contains("product-card-hover")) {
-                card.getStyleClass().add("product-card-hover");
-            }
-        });
-        card.setOnMouseExited(e -> {
-            actions.setVisible(false);
-            actions.setManaged(false);
-            card.getStyleClass().remove("product-card-hover");
-        });
-
-        card.getChildren().addAll(topRow, tax, spacer, actions);
-        return card;
-    }
-
-    private String initials(String name) {
-        return com.possum.shared.util.TextFormatter.initials(name, "P");
-    }
-
-    private String formatStatus(String status) {
-        return com.possum.shared.util.TextFormatter.formatStatus(status);
     }
 
     /**

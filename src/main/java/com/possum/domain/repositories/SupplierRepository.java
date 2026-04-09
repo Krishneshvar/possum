@@ -20,6 +20,7 @@ public interface SupplierRepository {
     int deleteSupplier(long id);
 
     List<PaymentPolicy> getPaymentPolicies();
-
     long createPaymentPolicy(String name, int daysToPay, String description);
+    int updatePaymentPolicy(long id, String name, int daysToPay, String description);
+    int deletePaymentPolicy(long id);
 }

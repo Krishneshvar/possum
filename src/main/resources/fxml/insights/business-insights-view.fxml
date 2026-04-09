@@ -26,8 +26,8 @@
             </VBox>
             
             <HBox spacing="12" alignment="CENTER_RIGHT">
-                <DatePicker fx:id="currentStartDate" promptText="Current Start" prefWidth="150" onAction="#handleFilterChange" />
-                <DatePicker fx:id="currentEndDate" promptText="Current End" prefWidth="150" onAction="#handleFilterChange" />
+                <DatePicker fx:id="currentStartDate" promptText="Current Start" prefWidth="180" onAction="#handleFilterChange" />
+                <DatePicker fx:id="currentEndDate" promptText="Current End" prefWidth="180" onAction="#handleFilterChange" />
                 <Separator orientation="VERTICAL" />
                 <ComboBox fx:id="comparisonTypeCombo" promptText="Compare with..." prefWidth="180" onAction="#handleComparisonChange" />
                 <Button onAction="#handleRefresh" styleClass="btn-icon">

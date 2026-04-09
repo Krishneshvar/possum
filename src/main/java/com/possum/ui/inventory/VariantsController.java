@@ -39,10 +39,6 @@ public class VariantsController {
     @FXML private FilterBar filterBar;
     @FXML private DataTableView<Variant> variantsTable;
     @FXML private PaginationBar paginationBar;
-    @FXML private FlowPane variantsGrid;
-    @FXML private ScrollPane variantsGridScroll;
-    @FXML private ToggleButton cardsViewButton;
-    @FXML private ToggleButton tableViewButton;
     @FXML private Button refreshButton;
 
     private final VariantRepository variantRepository;
@@ -56,8 +52,6 @@ public class VariantsController {
     private java.math.BigDecimal currentMinPrice = null;
     private java.math.BigDecimal currentMaxPrice = null;
     private final com.possum.domain.repositories.TaxRepository taxRepository;
-    private final ToggleGroup viewModeGroup = new ToggleGroup();
-    private boolean cardsViewEnabled = true;
 
     public VariantsController(VariantRepository variantRepository, CategoryService categoryService, 
                               com.possum.domain.repositories.TaxRepository taxRepository,
@@ -81,57 +75,9 @@ public class VariantsController {
         }
         setupTable();
         setupFilters();
-        setupViewMode();
         loadVariants();
     }
 
-    private void setupViewMode() {
-        if (cardsViewButton == null || tableViewButton == null) {
-            return;
-        }
-
-        cardsViewButton.setToggleGroup(viewModeGroup);
-        tableViewButton.setToggleGroup(viewModeGroup);
-        cardsViewButton.setSelected(true);
-
-        viewModeGroup.selectedToggleProperty().addListener((obs, oldValue, newValue) -> {
-            cardsViewEnabled = newValue == cardsViewButton || newValue == null;
-            applyViewMode();
-        });
-
-        HBox toggleWrapper = new HBox(8);
-        toggleWrapper.setAlignment(Pos.CENTER_RIGHT);
-        Label viewLabel = new Label("View:");
-        viewLabel.getStyleClass().add("helper-text");
-
-        if (cardsViewButton != null) {
-            FontIcon gridIcon = new FontIcon("bx-grid-alt");
-            gridIcon.setIconSize(16);
-            cardsViewButton.setGraphic(gridIcon);
-        }
-        if (tableViewButton != null) {
-            FontIcon listIcon = new FontIcon("bx-list-ul");
-            listIcon.setIconSize(16);
-            tableViewButton.setGraphic(listIcon);
-        }
-        HBox segmentedControl = new HBox(0); // No spacing between buttons
-        segmentedControl.getStyleClass().add("toggle-group-neon");
-        segmentedControl.getChildren().addAll(cardsViewButton, tableViewButton);
-
-        toggleWrapper.getChildren().addAll(viewLabel, segmentedControl);
-        filterBar.addTopRightControl(toggleWrapper);
-
-        applyViewMode();
-    }
-
-    private void applyViewMode() {
-        if (variantsGridScroll != null) {
-            variantsGridScroll.setVisible(cardsViewEnabled);
-            variantsGridScroll.setManaged(cardsViewEnabled);
-        }
-        variantsTable.setVisible(!cardsViewEnabled);
-        variantsTable.setManaged(!cardsViewEnabled);
-    }
 
     @FXML
     private void handleRefresh() {
@@ -209,7 +155,6 @@ public class VariantsController {
             Platform.runLater(() -> {
                 var items = FXCollections.observableArrayList(result.items());
                 variantsTable.setItems(items);
-                renderVariantCards(items);
                 paginationBar.setTotalItems(result.totalCount());
                 variantsTable.setLoading(false);
             });
@@ -306,139 +251,6 @@ public class VariantsController {
         variantsTable.addMenuActionColumn("Actions", this::buildActionsMenu);
     }
 
-    private void renderVariantCards(List<Variant> variants) {
-        if (variantsGrid == null) {
-            return;
-        }
-
-        variantsGrid.getChildren().clear();
-
-        if (variants == null || variants.isEmpty()) {
-            VBox empty = new VBox(8);
-            empty.getStyleClass().add("empty-state-view");
-            empty.setAlignment(Pos.CENTER);
-            empty.setPrefWidth(560);
-
-            FontIcon packageIcon = new FontIcon("bx-package");
-            packageIcon.setIconSize(48);
-            packageIcon.getStyleClass().add("empty-state-icon");
-            Label title = new Label("No variants found");
-            title.getStyleClass().add("empty-state-title");
-            Label subtitle = new Label("Adjust filters or search terms to find variants.");
-            subtitle.getStyleClass().add("empty-state-subtitle");
-            subtitle.setWrapText(true);
-
-            empty.getChildren().addAll(packageIcon, title, subtitle);
-            variantsGrid.getChildren().add(empty);
-            return;
-        }
-
-        for (Variant variant : variants) {
-            variantsGrid.getChildren().add(createVariantCard(variant));
-        }
-    }
-
-    private VBox createVariantCard(Variant variant) {
-        VBox card = new VBox(10);
-        card.getStyleClass().add("product-card");
-        card.setPrefWidth(280);
-        card.setMinWidth(250);
-        card.setMaxWidth(340);
-
-        HBox topRow = new HBox(8);
-        topRow.setAlignment(Pos.CENTER_LEFT);
-
-        Label avatar = new Label(initials(variant.productName()));
-        avatar.getStyleClass().add("product-card-avatar");
-
-        VBox titleBox = new VBox(4);
-        Label productName = new Label(variant.productName());
-        productName.getStyleClass().add("product-card-title");
-        productName.setWrapText(true);
-        Label variantName = new Label(variant.name() + " \u2022 " + variant.sku());
-        variantName.getStyleClass().add("product-card-meta");
-
-        Label stockBadge = new Label("Stock " + (variant.stock() == null ? 0 : variant.stock()));
-        stockBadge.getStyleClass().add("badge-status");
-        applyStockBadge(stockBadge, variant);
-        stockBadge.setMaxWidth(Region.USE_PREF_SIZE);
-
-        titleBox.getChildren().addAll(productName, variantName, stockBadge);
-        HBox.setHgrow(titleBox, Priority.ALWAYS);
-
-        topRow.getChildren().addAll(avatar, titleBox);
-
-        Label details = new Label("MRP " + (variant.price() != null ? variant.price() : "-") + " \u2022 Tax " + (variant.taxCategoryName() != null ? variant.taxCategoryName() : "-"));
-        details.getStyleClass().add("product-card-meta");
-
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-
-        HBox actions = new HBox(8);
-        actions.getStyleClass().add("product-card-actions");
-        Button viewBtn = iconButton("", "bx-show", () ->
-            workspaceManager.openWindow("View Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "view"))
-        );
-        viewBtn.setTooltip(new javafx.scene.control.Tooltip("View Details"));
-
-        Button editBtn = iconButton("", "bx-edit", () ->
-            workspaceManager.openWindow("Edit Product", "/fxml/products/product-form-view.fxml", Map.of("productId", variant.productId(), "mode", "edit"))
-        );
-        editBtn.setTooltip(new javafx.scene.control.Tooltip("Edit Product"));
-        actions.getChildren().addAll(viewBtn, editBtn);
-        actions.setVisible(false);
-        actions.setManaged(false);
-
-        card.setOnMouseEntered(e -> {
-            actions.setVisible(true);
-            actions.setManaged(true);
-            if (!card.getStyleClass().contains("product-card-hover")) {
-                card.getStyleClass().add("product-card-hover");
-            }
-        });
-        card.setOnMouseExited(e -> {
-            actions.setVisible(false);
-            actions.setManaged(false);
-            card.getStyleClass().remove("product-card-hover");
-        });
-
-        card.getChildren().addAll(topRow, details, spacer, actions);
-        return card;
-    }
-
-    private Button iconButton(String text, String iconCode, Runnable action) {
-        Button button = new Button(text);
-        button.getStyleClass().add("card-action-btn");
-        FontIcon icon = new FontIcon(iconCode);
-        icon.getStyleClass().add("card-action-icon");
-        icon.setIconSize(16);
-        button.setGraphic(icon);
-        button.setOnAction(e -> action.run());
-        return button;
-    }
-
-    private String initials(String name) {
-        if (name == null || name.isBlank()) {
-            return "V";
-        }
-        String[] parts = name.trim().split("\\s+");
-        if (parts.length == 1) {
-            return parts[0].substring(0, 1).toUpperCase();
-        }
-        return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
-    }
-
-    private void applyStockBadge(Label badge, Variant variant) {
-        int stock = variant.stock() == null ? 0 : variant.stock();
-        int alertCap = variant.stockAlertCap() == null ? 0 : variant.stockAlertCap();
-        if (stock <= 0) {
-            badge.getStyleClass().add("badge-error");
-        } else if (stock <= alertCap) {
-            badge.getStyleClass().add("badge-warning");
-        } else {
-            badge.getStyleClass().add("badge-success");
-        }
-    }
 
     private java.util.List<MenuItem> buildActionsMenu(Variant variant) {
         java.util.List<MenuItem> items = new java.util.ArrayList<>();

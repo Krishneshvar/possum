@@ -39,12 +39,12 @@
             
             <VBox spacing="2">
                 <Label text="From Date:" style="-fx-font-size: 11px; -fx-text-fill: -color-text-muted; -fx-font-weight: 700;"/>
-                <DatePicker fx:id="startDatePicker" onAction="#handleDateChange" prefWidth="130"/>
+                <DatePicker fx:id="startDatePicker" onAction="#handleDateChange" prefWidth="180"/>
             </VBox>
             
             <VBox spacing="2">
                 <Label text="To Date:" style="-fx-font-size: 11px; -fx-text-fill: -color-text-muted; -fx-font-weight: 700;"/>
-                <DatePicker fx:id="endDatePicker" onAction="#handleDateChange" prefWidth="130"/>
+                <DatePicker fx:id="endDatePicker" onAction="#handleDateChange" prefWidth="180"/>
             </VBox>
             
             <VBox spacing="2" fx:id="paymentMethodContainer">

@@ -21,10 +21,9 @@
 .workspace-view .text-field,
 .workspace-view .password-field,
 .workspace-view .combo-box,
-.workspace-view .date-picker,
-.workspace-view .text-area {
-    -fx-min-height: 40;
-    -fx-pref-height: 40;
+.workspace-view .date-picker {
+    -fx-min-height: 42;
+    -fx-pref-height: 42;
 }
 
 .workspace-view .text-area {
@@ -53,7 +52,7 @@
 
 .workspace-view .combo-box > .list-cell,
 .workspace-view .date-picker > .text-field {
-    -fx-padding: 9 12;
+    -fx-padding: 6 12;
 }
 
 .workspace-view .multi-select-filter {
@@ -65,8 +64,8 @@
 
 .workspace-view .filter-bar .combo-box,
 .workspace-view .filter-bar .date-picker {
-    -fx-min-width: 176;
-    -fx-pref-width: 188;
+    -fx-min-width: 180;
+    -fx-pref-width: 200;
 }
 
 .workspace-view .filter-bar .text-field {
@@ -92,79 +91,7 @@
     -fx-effect: -shadow-focus;
 }
 
-/* ========== VIEW MODE TOGGLE ========== */
 
-.view-mode-toggle-row {
-    -fx-padding: 8 0 12 0;
-    -fx-alignment: center-right;
-}
-
-/* ========== PRODUCT GRID & CARDS ========== */
-
-.product-grid-scroll {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-}
-
-.product-grid-scroll > .viewport {
-    -fx-background-color: transparent;
-}
-
-.product-grid {
-    -fx-background-color: transparent;
-    -fx-padding: 4;
-}
-
-.product-card {
-    -fx-background-color: -color-surface;
-    -fx-border-color: -color-border -color-border -color-border -color-primary;
-    -fx-border-width: 1 1 1 4;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
-    -fx-padding: 16;
-    -fx-spacing: 12;
-    -fx-effect: -shadow-sm;
-    -fx-cursor: hand;
-}
-
-.product-card:hover,
-.product-card-hover {
-    -fx-effect: -shadow-card-hover;
-    -fx-border-color: -color-border -color-border -color-border -color-accent;
-    -fx-border-width: 1 1 1 4;
-    -fx-translate-y: -2;
-}
-
-.product-card-avatar {
-    -fx-min-width: 40;
-    -fx-min-height: 40;
-    -fx-pref-width: 40;
-    -fx-pref-height: 40;
-    -fx-alignment: center;
-    -fx-background-color: linear-gradient(to bottom right, #ECFDF5, #D1FAE5);
-    -fx-text-fill: -color-primary-dark;
-    -fx-background-radius: 20;
-    -fx-font-weight: 700;
-    -fx-font-size: 15;
-}
-
-.product-card-title {
-    -fx-font-size: 15;
-    -fx-font-weight: 700;
-    -fx-text-fill: -color-text-main;
-    -fx-wrap-text: true;
-}
-
-.product-card-meta {
-    -fx-font-size: 12;
-    -fx-text-fill: -color-text-muted;
-    -fx-font-weight: 500;
-}
-
-.product-card-actions {
-    -fx-alignment: center-left;
-    -fx-spacing: 6;
-}
 
 /* ========== ENHANCED TABLE STYLING ========== */
 

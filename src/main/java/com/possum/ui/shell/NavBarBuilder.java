@@ -41,6 +41,7 @@ public class NavBarBuilder {
         });
         createNavMenu("Purchase", "bx-purchase-tag", new Object[][]{
             {"Suppliers",       "/fxml/purchase/suppliers-view.fxml",  com.possum.application.auth.Permissions.SUPPLIERS_VIEW},
+            {"Payment Policies", "/fxml/purchase/payment-policies-view.fxml", com.possum.application.auth.Permissions.SUPPLIERS_VIEW},
             {"Purchase Orders", "/fxml/purchase/purchase-view.fxml",   com.possum.application.auth.Permissions.PURCHASE_VIEW}
         });
         createNavMenu("People", "bx-group", new Object[][]{

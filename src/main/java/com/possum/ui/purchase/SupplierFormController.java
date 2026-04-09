@@ -181,4 +181,11 @@ public class SupplierFormController extends AbstractFormController<Supplier> {
         gstinField.setEditable(editable);
         paymentPolicyCombo.setDisable(!editable);
     }
+
+    @FXML
+    private void handleManagePolicies() {
+        workspaceManager.openWindow("Payment Policies", "/fxml/purchase/payment-policies-view.fxml", null);
+        // Refresh policies when return
+        loadPaymentPolicies();
+    }
 }

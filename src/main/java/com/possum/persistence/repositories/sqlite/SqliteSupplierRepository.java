@@ -145,6 +145,22 @@ public final class SqliteSupplierRepository extends BaseSqliteRepository impleme
         );
     }
 
+    @Override
+    public int updatePaymentPolicy(long id, String name, int daysToPay, String description) {
+        return executeUpdate(
+                "UPDATE payment_policies SET name = ?, days_to_pay = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL",
+                name,
+                daysToPay,
+                description,
+                id
+        );
+    }
+
+    @Override
+    public int deletePaymentPolicy(long id) {
+        return softDelete("payment_policies", id);
+    }
+
     private Supplier mapSupplier(ResultSet rs) throws SQLException {
         return new Supplier(
                 rs.getLong("id"),

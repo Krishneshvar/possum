@@ -40,12 +40,12 @@
             
                 <VBox spacing="2">
                     <Label text="From Date:" styleClass="form-label" style="-fx-font-size: 11px;"/>
-                <DatePicker fx:id="startDatePicker" onAction="#handleDateChange" prefWidth="130"/>
+                <DatePicker fx:id="startDatePicker" onAction="#handleDateChange" prefWidth="180"/>
             </VBox>
             
                 <VBox spacing="2">
                     <Label text="To Date:" styleClass="form-label" style="-fx-font-size: 11px;"/>
-                <DatePicker fx:id="endDatePicker" onAction="#handleDateChange" prefWidth="130"/>
+                <DatePicker fx:id="endDatePicker" onAction="#handleDateChange" prefWidth="180"/>
             </VBox>
 
             <Separator orientation="VERTICAL" style="-fx-padding: 0 5;"/>

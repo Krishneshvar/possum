@@ -993,38 +993,7 @@
     -fx-opacity: 0.5;
 }
 
-/* Card Action Buttons Styling */
-.card-action-btn {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-    -fx-cursor: hand;
-    -fx-border-color: transparent;
-    -fx-background-radius: 6;
-    -fx-min-width: 32;
-    -fx-min-height: 32;
-    -fx-pref-width: 32;
-    -fx-pref-height: 32;
-    -fx-max-width: 32;
-    -fx-max-height: 32;
-    -fx-alignment: center;
-    -fx-content-display: graphic-only;
-}
 
-.card-action-btn:hover {
-    -fx-background-color: #F1F5F9; /* Slate-100 */
-}
-
-.card-action-btn .card-action-icon {
-    -fx-icon-color: #64748B; /* Slate-500 */
-}
-
-.card-action-btn:hover .card-action-icon {
-    -fx-icon-color: #10B981; /* Emerald-500 */
-}
-
-.card-action-btn-destructive:hover .card-action-icon {
-    -fx-icon-color: #EF4444; /* Red-500 */
-}
 .view-subtitle {
     -fx-font-size: 13;
     -fx-text-fill: -color-text-muted;
